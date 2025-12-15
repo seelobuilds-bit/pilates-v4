@@ -320,15 +320,15 @@ export default function BookingPage() {
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
         <div className="max-w-2xl mx-auto px-4 pb-4">
-          <div className="flex items-center justify-center gap-6 px-6 py-3 border border-gray-200 rounded-full text-sm bg-white">
+          <div className="flex items-center justify-center gap-4 py-2.5 border border-gray-200 rounded-full text-sm bg-white">
             {selectedLocation && (
-              <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="flex items-center gap-1.5 text-gray-500">
                 <MapPin className="w-4 h-4" />
                 {selectedLocation.name}
               </span>
             )}
             {selectedClass && (
-              <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="flex items-center gap-1.5 text-gray-500">
                 <Link2 className="w-4 h-4" />
                 {selectedClass.name}
               </span>
@@ -466,36 +466,38 @@ export default function BookingPage() {
 
               <div className="mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">Select Date</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
                     disabled={dateOffset === 0}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-1 disabled:opacity-20 transition-opacity"
                   >
-                    <ChevronLeft className="w-4 h-4 text-gray-400" />
+                    <ChevronLeft className="w-5 h-5 text-gray-400" />
                   </button>
-                  <div className="flex gap-2 flex-1 overflow-hidden">
+                  <div className="flex gap-2 flex-1">
                     {visibleDates.map((d) => {
                       const isSelected = selectedDate === d.date
                       const dateParts = d.label.split(", ")
-                      const weekdayMonth = dateParts[0] + (dateParts[1] ? `, ${dateParts[1].split(" ")[0]}` : "")
-                      const day = d.label.split(" ").pop()
+                      const weekday = dateParts[0]
+                      const monthDay = dateParts[1] || ""
+                      const month = monthDay.split(" ")[0]
+                      const day = monthDay.split(" ")[1]
                       return (
                         <button
                           key={d.date}
                           onClick={() => setSelectedDate(d.date)}
-                          className={`flex-1 py-2.5 px-1 rounded-xl text-center transition-all text-xs ${
+                          className={`flex-1 py-2 px-1 rounded-xl text-center transition-all ${
                             isSelected
                               ? "bg-violet-600 text-white"
-                              : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
+                              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                           }`}
                         >
                           {d.isToday || d.isTomorrow ? (
                             <p className="font-medium text-sm">{d.label}</p>
                           ) : (
                             <>
-                              <p className="font-medium">{weekdayMonth}</p>
-                              <p className={`text-sm ${isSelected ? "text-white" : "text-gray-900"}`}>{day}</p>
+                              <p className="text-xs font-medium">{weekday}, {month}</p>
+                              <p className="text-sm font-semibold">{day}</p>
                             </>
                           )}
                         </button>
@@ -505,9 +507,9 @@ export default function BookingPage() {
                   <button
                     onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 1))}
                     disabled={dateOffset >= availableDates.length - 5}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-1 disabled:opacity-20 transition-opacity"
                   >
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
                 </div>
               </div>
@@ -522,9 +524,9 @@ export default function BookingPage() {
                       <button
                         key={slot.id}
                         onClick={() => selectSlotAndContinue(slot)}
-                        className="p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
+                        className="py-4 px-6 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
                       >
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-bold text-gray-900">
                           {new Date(slot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                         </p>
                         <p className="text-sm text-gray-500">{slot.teacher.user.firstName}</p>
