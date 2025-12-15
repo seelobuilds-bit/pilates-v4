@@ -154,16 +154,18 @@ export default function BookingPage() {
   }
 
   function getAvailableDates() {
-    const dates: { date: string; label: string; isToday: boolean; isTomorrow: boolean }[] = []
+    const dates: { date: string; label: string; subLabel?: string; isToday: boolean; isTomorrow: boolean }[] = []
     const today = new Date()
     for (let i = 0; i < 14; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split("T")[0]
-      const label = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+      const weekday = date.toLocaleDateString("en-US", { weekday: "short" })
+      const monthDay = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
       dates.push({
         date: dateStr,
-        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : label,
+        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : `${weekday}, ${monthDay}`,
+        subLabel: i <= 1 ? undefined : undefined,
         isToday: i === 0,
         isTomorrow: i === 1
       })
@@ -303,9 +305,11 @@ export default function BookingPage() {
               <div
                 key={s}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  isCompleted || isCurrent
+                  isCompleted
                     ? "bg-violet-600 text-white"
-                    : "bg-gray-100 text-gray-400"
+                    : isCurrent
+                    ? "bg-violet-600 text-white"
+                    : "bg-white border-2 border-gray-200 text-gray-400"
                 }`}
               >
                 {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
@@ -316,8 +320,8 @@ export default function BookingPage() {
 
         {/* Breadcrumb */}
         {(selectedLocation || selectedClass) && step !== "location" && (
-          <div className="flex justify-center pb-4">
-            <div className="inline-flex items-center gap-4 px-5 py-2.5 bg-gray-50 rounded-full text-sm">
+          <div className="max-w-2xl mx-auto px-4 pb-4">
+            <div className="flex items-center justify-center gap-6 px-6 py-3 border border-gray-200 rounded-full text-sm">
               {selectedLocation && (
                 <span className="flex items-center gap-1.5 text-gray-600">
                   <MapPin className="w-4 h-4" />
@@ -468,26 +472,33 @@ export default function BookingPage() {
                   <button
                     onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
                     disabled={dateOffset === 0}
-                    className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="flex gap-2 flex-1 overflow-hidden">
                     {visibleDates.map((d) => {
                       const isSelected = selectedDate === d.date
+                      const dateParts = d.label.split(", ")
+                      const weekdayMonth = dateParts[0] + (dateParts[1] ? `, ${dateParts[1].split(" ")[0]}` : "")
+                      const day = d.label.split(" ").pop()
                       return (
                         <button
                           key={d.date}
                           onClick={() => setSelectedDate(d.date)}
-                          className={`flex-1 py-2 px-3 rounded-lg text-center transition-all ${
+                          className={`flex-1 py-2.5 px-1 rounded-xl text-center transition-all text-xs ${
                             isSelected
                               ? "bg-violet-600 text-white"
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                              : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
                           }`}
                         >
-                          <p className="text-xs">{d.isToday || d.isTomorrow ? d.label : d.label.split(",")[0]}</p>
-                          {!d.isToday && !d.isTomorrow && (
-                            <p className="font-medium text-sm">{d.label.split(" ").slice(1).join(" ")}</p>
+                          {d.isToday || d.isTomorrow ? (
+                            <p className="font-medium text-sm">{d.label}</p>
+                          ) : (
+                            <>
+                              <p className="font-medium">{weekdayMonth}</p>
+                              <p className={`text-sm ${isSelected ? "text-white" : "text-gray-900"}`}>{day}</p>
+                            </>
                           )}
                         </button>
                       )
@@ -496,9 +507,9 @@ export default function BookingPage() {
                   <button
                     onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 1))}
                     disabled={dateOffset >= availableDates.length - 5}
-                    className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
               </div>
@@ -513,7 +524,7 @@ export default function BookingPage() {
                       <button
                         key={slot.id}
                         onClick={() => selectSlotAndContinue(slot)}
-                        className="p-4 border rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-all text-center"
+                        className="p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
                       >
                         <p className="font-semibold text-gray-900">
                           {new Date(slot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
