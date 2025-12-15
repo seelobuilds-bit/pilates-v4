@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Building2, Globe, Palette } from "lucide-react"
 
 export default async function SettingsPage() {
   const session = await getSession()
@@ -18,55 +22,105 @@ export default async function SettingsPage() {
     redirect("/login")
   }
 
-  const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/${studio.subdomain}/book`
-
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="p-8 bg-gray-50/50 min-h-screen">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <p className="text-gray-500 mt-1">Manage your studio settings</p>
+      </div>
 
-      <div className="space-y-6 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Studio Information</CardTitle>
+      <div className="max-w-2xl space-y-6">
+        {/* Studio Info */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-gray-400" />
+              Studio Information
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Studio Name</label>
-              <p className="text-muted-foreground">{studio.name}</p>
+            <div className="space-y-2">
+              <Label htmlFor="name">Studio Name</Label>
+              <Input id="name" defaultValue={studio.name} />
             </div>
-            <div>
-              <label className="text-sm font-medium">Subdomain</label>
-              <p className="text-muted-foreground">{studio.subdomain}</p>
+            <div className="space-y-2">
+              <Label htmlFor="subdomain">Subdomain</Label>
+              <div className="flex items-center gap-2">
+                <Input id="subdomain" defaultValue={studio.subdomain} />
+                <span className="text-sm text-gray-500 whitespace-nowrap">.cadence.studio</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Your booking page: {studio.subdomain}.cadence.studio
+              </p>
             </div>
-            <div>
-              <label className="text-sm font-medium">Booking URL</label>
-              <p className="text-muted-foreground">{bookingUrl}</p>
+            <Button className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
+          </CardContent>
+        </Card>
+
+        {/* Booking Page */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Globe className="h-5 w-5 text-gray-400" />
+              Booking Page
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Share your booking page with clients or embed it on your website.
+            </p>
+            <div className="space-y-2">
+              <Label>Direct Link</Label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  readOnly 
+                  value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/${studio.subdomain}`} 
+                  className="bg-gray-50"
+                />
+                <Button variant="outline">Copy</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Embed Code</Label>
+              <textarea 
+                readOnly
+                className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"
+                value={`<iframe src="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/${studio.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>`}
+              />
+              <Button variant="outline">Copy Code</Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Embed Booking Widget</CardTitle>
-            <CardDescription>
-              Add this code to your website to embed the booking widget
-            </CardDescription>
+        {/* Branding */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Palette className="h-5 w-5 text-gray-400" />
+              Branding
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <pre className="p-4 bg-gray-100 rounded-lg overflow-x-auto text-sm">
-{`<iframe 
-  src="${bookingUrl.replace('/book', '/embed')}" 
-  width="100%" 
-  height="700" 
-  frameborder="0"
-></iframe>`}
-            </pre>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="color">Primary Color</Label>
+              <div className="flex items-center gap-3">
+                <input 
+                  type="color" 
+                  id="color" 
+                  defaultValue={studio.primaryColor || "#7c3aed"} 
+                  className="w-12 h-10 rounded border cursor-pointer"
+                />
+                <Input 
+                  defaultValue={studio.primaryColor || "#7c3aed"} 
+                  className="w-32"
+                />
+              </div>
+            </div>
+            <Button className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
           </CardContent>
         </Card>
       </div>
     </div>
   )
 }
-
-
-

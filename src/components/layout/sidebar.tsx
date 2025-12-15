@@ -13,25 +13,27 @@ import {
   LogOut,
   GraduationCap,
   UserCircle,
-  MapPin,
+  Megaphone,
+  ChevronLeft,
+  Zap,
   BarChart3,
+  MapPin,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 const hqLinks = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hq/studios", label: "Studios", icon: Building2 },
-  { href: "/hq/users", label: "Users", icon: Users },
+  { href: "/hq/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/hq/settings", label: "Settings", icon: Settings },
 ]
 
 const studioLinks = [
   { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/studio/locations", label: "Locations", icon: MapPin },
+  { href: "/studio/schedule", label: "Schedule", icon: Calendar },
   { href: "/studio/classes", label: "Classes", icon: Calendar },
   { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/studio/clients", label: "Clients", icon: UserCircle },
-  { href: "/studio/reports", label: "Reports", icon: BarChart3 },
+  { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
   { href: "/studio/settings", label: "Settings", icon: Settings },
 ]
 
@@ -49,61 +51,83 @@ export function Sidebar() {
 
   let links = studioLinks
   let title = session?.user?.studioName || "Studio"
+  let subtitle = "Studio Portal"
 
   if (role === "HQ_ADMIN") {
     links = hqLinks
     title = "Cadence HQ"
+    subtitle = "Admin Portal"
   } else if (role === "TEACHER") {
     links = teacherLinks
-    title = "Teacher Portal"
+    title = session?.user?.studioName || "Studio"
+    subtitle = "Teacher Portal"
   }
 
   return (
-    <div className="flex flex-col h-full w-64 bg-gray-900 text-white">
-      <div className="p-6">
-        <h1 className="text-xl font-bold">{title}</h1>
-        {session?.user && (
-          <p className="text-sm text-gray-400 mt-1">
-            {session.user.firstName} {session.user.lastName}
-          </p>
-        )}
+    <div className="flex flex-col h-full w-64 bg-white border-r border-gray-100">
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="font-semibold text-gray-900">{title}</h1>
+            <p className="text-xs text-gray-500">{subtitle}</p>
+          </div>
+        </div>
+        <button className="p-1 hover:bg-gray-100 rounded">
+          <ChevronLeft className="h-4 w-4 text-gray-400" />
+        </button>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-2 space-y-1">
         {links.map((link) => {
           const Icon = link.icon
-          const isActive = pathname === link.href
+          const isActive = pathname === link.href || 
+            (link.href !== "/studio" && link.href !== "/hq" && link.href !== "/teacher" && pathname.startsWith(link.href))
           return (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-violet-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-violet-50 text-violet-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className={cn("h-5 w-5", isActive ? "text-violet-600" : "text-gray-400")} />
               {link.label}
             </Link>
           )
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-800">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800"
+      {/* User Profile */}
+      <div className="p-3 border-t border-gray-100">
+        <div className="flex items-center gap-3 px-3 py-2">
+          <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-medium text-violet-700">
+            {session?.user?.firstName?.[0]}{session?.user?.lastName?.[0]}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {session?.user?.firstName} {session?.user?.lastName}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {session?.user?.email}
+            </p>
+          </div>
+        </div>
+        <button
           onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1"
         >
-          <LogOut className="h-5 w-5 mr-3" />
-          Sign Out
-        </Button>
+          <LogOut className="h-5 w-5 text-gray-400" />
+          Sign out
+        </button>
       </div>
     </div>
   )
 }
-
-
-
