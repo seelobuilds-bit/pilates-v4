@@ -287,59 +287,53 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
+      <div className="bg-white">
+        <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
           <p className="text-gray-500 mt-1">{studioData.name}</p>
         </div>
-      </div>
 
-      {/* Progress Steps */}
-      <div className="bg-white border-b">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center gap-3">
-            {STEPS.map((s, i) => {
-              const Icon = stepIcons[s]
-              const isCompleted = i < currentStepIndex
-              const isCurrent = i === currentStepIndex
-              return (
-                <div
-                  key={s}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    isCompleted || isCurrent
-                      ? "bg-violet-600 text-white"
-                      : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                </div>
-              )
-            })}
-          </div>
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-4 pb-6">
+          {STEPS.map((s, i) => {
+            const Icon = stepIcons[s]
+            const isCompleted = i < currentStepIndex
+            const isCurrent = i === currentStepIndex
+            return (
+              <div
+                key={s}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  isCompleted || isCurrent
+                    ? "bg-violet-600 text-white"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+              </div>
+            )
+          })}
         </div>
-      </div>
 
-      {/* Breadcrumb */}
-      {(selectedLocation || selectedClass) && step !== "location" && (
-        <div className="bg-white border-b">
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-4 text-sm">
+        {/* Breadcrumb */}
+        {(selectedLocation || selectedClass) && step !== "location" && (
+          <div className="flex justify-center pb-4">
+            <div className="inline-flex items-center gap-4 px-5 py-2.5 bg-gray-50 rounded-full text-sm">
               {selectedLocation && (
-                <span className="flex items-center gap-1 text-gray-600">
+                <span className="flex items-center gap-1.5 text-gray-600">
                   <MapPin className="w-4 h-4" />
                   {selectedLocation.name}
                 </span>
               )}
               {selectedClass && (
-                <span className="flex items-center gap-1 text-gray-600">
-                  <Dumbbell className="w-4 h-4" />
+                <span className="flex items-center gap-1.5 text-gray-600">
+                  <Link2 className="w-4 h-4" />
                   {selectedClass.name}
                 </span>
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -347,7 +341,7 @@ export default function BookingPage() {
         {step !== "location" && (
           <button
             onClick={() => setStep(STEPS[currentStepIndex - 1])}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center gap-1 text-gray-500 hover:text-gray-700 mb-5 text-sm"
           >
             <ChevronLeft className="w-4 h-4" />
             Back
@@ -367,13 +361,13 @@ export default function BookingPage() {
                   <button
                     key={loc.id}
                     onClick={() => selectLocationAndContinue(loc)}
-                    className="w-full p-4 border rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-all flex items-center justify-between text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{loc.name}</p>
                       <p className="text-sm text-gray-500">{loc.address}, {loc.city}, {loc.state}</p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-gray-300" />
                   </button>
                 ))}
               </div>
@@ -386,7 +380,7 @@ export default function BookingPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
-                <Dumbbell className="w-5 h-5 text-violet-600" />
+                <Link2 className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Class Type</h2>
               </div>
               <div className="space-y-3">
@@ -394,7 +388,7 @@ export default function BookingPage() {
                   <button
                     key={ct.id}
                     onClick={() => selectClassAndContinue(ct)}
-                    className="w-full p-4 border rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-all text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-left"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -408,7 +402,7 @@ export default function BookingPage() {
                           <span className="font-medium text-gray-900">${ct.price}</span>
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 mt-1" />
+                      <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
                     </div>
                   </button>
                 ))}
@@ -428,30 +422,30 @@ export default function BookingPage() {
               <div className="space-y-3">
                 <button
                   onClick={() => selectTeacherAndContinue(null)}
-                  className="w-full p-4 border rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-all flex items-center justify-between text-left"
+                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
                 >
                   <div>
                     <p className="font-medium text-gray-900">Any Available Teacher</p>
                     <p className="text-sm text-gray-500">Show all available time slots</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  <ChevronRight className="w-5 h-5 text-gray-300" />
                 </button>
                 {studioData.teachers.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => selectTeacherAndContinue(t)}
-                    className="w-full p-4 border rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-all flex items-center justify-between text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-medium">
+                      <div className="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-medium shrink-0">
                         {t.user.firstName[0]}{t.user.lastName[0]}
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{t.user.firstName} {t.user.lastName}</p>
-                        <p className="text-sm text-gray-500">{t.bio || "Certified Pilates instructor"}</p>
+                        <p className="text-sm text-gray-500">{t.bio || "Certified Pilates instructor."}</p>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-gray-300" />
                   </button>
                 ))}
               </div>
