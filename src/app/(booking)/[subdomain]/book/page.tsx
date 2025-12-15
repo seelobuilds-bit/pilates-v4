@@ -289,55 +289,53 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white">
-        <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
-          <p className="text-gray-500 mt-1">{studioData.name}</p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-4 pb-6">
-          {STEPS.map((s, i) => {
-            const Icon = stepIcons[s]
-            const isCompleted = i < currentStepIndex
-            const isCurrent = i === currentStepIndex
-            return (
-              <div
-                key={s}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  isCompleted
-                    ? "bg-violet-600 text-white"
-                    : isCurrent
-                    ? "bg-violet-600 text-white"
-                    : "bg-white border-2 border-gray-200 text-gray-400"
-                }`}
-              >
-                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Breadcrumb */}
-        {(selectedLocation || selectedClass) && step !== "location" && (
-          <div className="max-w-2xl mx-auto px-4 pb-4">
-            <div className="flex items-center justify-center gap-6 px-6 py-3 border border-gray-200 rounded-full text-sm">
-              {selectedLocation && (
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  {selectedLocation.name}
-                </span>
-              )}
-              {selectedClass && (
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <Link2 className="w-4 h-4" />
-                  {selectedClass.name}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
+      <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
+        <p className="text-gray-500 mt-1">{studioData.name}</p>
       </div>
+
+      {/* Progress Steps */}
+      <div className="flex items-center justify-center gap-4 pb-6">
+        {STEPS.map((s, i) => {
+          const Icon = stepIcons[s]
+          const isCompleted = i < currentStepIndex
+          const isCurrent = i === currentStepIndex
+          return (
+            <div
+              key={s}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                isCompleted
+                  ? "bg-violet-600 text-white"
+                  : isCurrent
+                  ? "bg-violet-600 text-white"
+                  : "bg-white border-2 border-gray-200 text-gray-400"
+              }`}
+            >
+              {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Breadcrumb */}
+      {(selectedLocation || selectedClass) && step !== "location" && (
+        <div className="max-w-2xl mx-auto px-4 pb-4">
+          <div className="flex items-center justify-center gap-6 px-6 py-3 border border-gray-200 rounded-full text-sm bg-white">
+            {selectedLocation && (
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <MapPin className="w-4 h-4" />
+                {selectedLocation.name}
+              </span>
+            )}
+            {selectedClass && (
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <Link2 className="w-4 h-4" />
+                {selectedClass.name}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
