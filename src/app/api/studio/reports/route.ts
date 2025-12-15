@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  // Get revenue data from bookings
   const bookings = await db.booking.findMany({
     where: {
       studioId,
@@ -31,7 +30,6 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  // Calculate revenue
   const revenueByLocation: Record<string, number> = {}
   const revenueByClassType: Record<string, number> = {}
   let totalRevenue = 0
@@ -47,7 +45,6 @@ export async function GET(request: NextRequest) {
     revenueByClassType[className] = (revenueByClassType[className] || 0) + amount
   }
 
-  // Get client data
   const totalClients = await db.client.count({ where: { studioId } })
   const newClients = await db.client.count({
     where: {
@@ -68,7 +65,6 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  // Get class data
   const classSessions = await db.classSession.findMany({
     where: {
       studioId,
@@ -89,7 +85,6 @@ export async function GET(request: NextRequest) {
     classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
   }
 
-  // Get booking status counts
   const bookingsByStatus = await db.booking.groupBy({
     by: ["status"],
     where: {
@@ -122,6 +117,3 @@ export async function GET(request: NextRequest) {
     }
   })
 }
-
-
-

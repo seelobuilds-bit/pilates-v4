@@ -14,6 +14,3 @@ export default async function StudioLayout({
 
   return <>{children}</>
 }
-
-
-

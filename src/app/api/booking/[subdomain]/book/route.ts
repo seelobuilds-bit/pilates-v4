@@ -1,34 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { cookies } from "next/headers"
-import { jwtVerify } from "jose"
+import { verify } from "jsonwebtoken"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "secret")
+const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { subdomain: string } }
 ) {
   try {
-    // Verify authentication
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${params.subdomain}`)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Please sign in to book" }, { status: 401 })
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    const clientId = payload.clientId as string
-
-    const body = await request.json()
-    const { classSessionId, bookingType, recurringWeeks, packSize, autoRenew } = body
-
-    if (!classSessionId) {
-      return NextResponse.json({ error: "Class session required" }, { status: 400 })
-    }
-
-    // Get studio
     const studio = await db.studio.findUnique({
       where: { subdomain: params.subdomain }
     })
@@ -37,12 +18,26 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    // Get class session
-    const classSession = await db.classSession.findUnique({
-      where: { id: classSessionId },
+    const token = cookies().get(`client_token_${studio.subdomain}`)?.value
+
+    if (!token) {
+      return NextResponse.json({ error: "Please sign in to book" }, { status: 401 })
+    }
+
+    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
+
+    if (decoded.studioId !== studio.id) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { classSessionId, bookingType, recurringWeeks, packSize, autoRenew } = body
+
+    const classSession = await db.classSession.findFirst({
+      where: { id: classSessionId, studioId: studio.id },
       include: {
         classType: true,
-        _count: { select: { bookings: { where: { status: "confirmed" } } } }
+        _count: { select: { bookings: true } }
       }
     })
 
@@ -50,42 +45,30 @@ export async function POST(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Check capacity
-    const spotsLeft = classSession.capacity - classSession._count.bookings
-    if (spotsLeft <= 0) {
+    if (classSession._count.bookings >= classSession.capacity) {
       return NextResponse.json({ error: "Class is full" }, { status: 400 })
     }
 
-    // Calculate price
-    let price = classSession.classType.price
-    if (bookingType === "recurring" && recurringWeeks) {
-      price = price * recurringWeeks * 0.9 // 10% off
-    } else if (bookingType === "pack" && packSize) {
-      price = price * packSize * 0.85 // 15% off
+    let amount = classSession.classType.price
+    if (bookingType === "recurring") {
+      amount = classSession.classType.price * (recurringWeeks || 4) * 0.9
+    } else if (bookingType === "pack") {
+      amount = classSession.classType.price * (packSize || 5) * 0.85
     }
 
-    // Create booking
     const booking = await db.booking.create({
       data: {
         studioId: studio.id,
-        clientId,
-        classSessionId,
-        paidAmount: price,
-        status: "confirmed"
+        clientId: decoded.clientId,
+        classSessionId: classSession.id,
+        status: "CONFIRMED",
+        paidAmount: amount
       }
     })
 
-    return NextResponse.json({ 
-      success: true, 
-      bookingId: booking.id,
-      bookingType,
-      autoRenew
-    })
+    return NextResponse.json({ success: true, bookingId: booking.id })
   } catch (error) {
     console.error("Booking error:", error)
-    return NextResponse.json({ error: "Booking failed" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
   }
 }
-
-
-

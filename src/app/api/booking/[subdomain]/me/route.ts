@@ -1,45 +1,50 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { cookies } from "next/headers"
-import { jwtVerify } from "jose"
+import { verify } from "jsonwebtoken"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "secret")
+const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { subdomain: string } }
 ) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${params.subdomain}`)?.value
+    const studio = await db.studio.findUnique({
+      where: { subdomain: params.subdomain }
+    })
+
+    if (!studio) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 404 })
+    }
+
+    const token = cookies().get(`client_token_${studio.subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    const clientId = payload.clientId as string
+    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
+
+    if (decoded.studioId !== studio.id) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
 
     const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true
-      }
+      where: { id: decoded.clientId }
     })
 
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    return NextResponse.json(client)
-  } catch {
+    return NextResponse.json({
+      id: client.id,
+      firstName: client.firstName,
+      lastName: client.lastName,
+      email: client.email
+    })
+  } catch (error) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   }
 }
-
-
-

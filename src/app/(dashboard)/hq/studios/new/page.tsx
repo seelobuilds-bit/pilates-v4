@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default function NewStudioPage() {
   const router = useRouter()
@@ -49,22 +51,26 @@ export default function NewStudioPage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Create New Studio</h1>
+      <Link href="/hq/studios" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 mb-6">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Studios
+      </Link>
 
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Studio Details</CardTitle>
+          <CardTitle>Create New Studio</CardTitle>
+          <CardDescription>Add a new studio to the platform</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
                 {error}
               </div>
             )}
 
             <div className="space-y-4">
-              <h3 className="font-medium">Studio Information</h3>
+              <h3 className="font-medium text-gray-900">Studio Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Studio Name</Label>
@@ -78,7 +84,7 @@ export default function NewStudioPage() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-medium">Owner Information</h3>
+              <h3 className="font-medium text-gray-900">Owner Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ownerFirstName">First Name</Label>
@@ -113,6 +119,3 @@ export default function NewStudioPage() {
     </div>
   )
 }
-
-
-

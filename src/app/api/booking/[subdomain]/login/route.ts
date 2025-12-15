@@ -2,22 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { SignJWT } from "jose"
+import { sign } from "jsonwebtoken"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || "secret")
+const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { subdomain: string } }
 ) {
   try {
-    const body = await request.json()
-    const { email, password } = body
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "Missing email or password" }, { status: 400 })
-    }
-
     const studio = await db.studio.findUnique({
       where: { subdomain: params.subdomain }
     })
@@ -26,53 +19,48 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    // Find client for this studio
-    const client = await db.client.findUnique({
-      where: {
-        email_studioId: { email, studioId: studio.id }
-      }
+    const body = await request.json()
+    const { email, password } = body
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 })
+    }
+
+    const client = await db.client.findFirst({
+      where: { email, studioId: studio.id }
     })
 
-    if (!client) {
+    if (!client || !client.password) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
-    // Verify password
     const isValid = await bcrypt.compare(password, client.password)
+
     if (!isValid) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
-    // Create JWT token
-    const token = await new SignJWT({ 
-      clientId: client.id,
-      studioId: studio.id,
-      email: client.email
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("7d")
-      .sign(JWT_SECRET)
+    const token = sign(
+      { clientId: client.id, studioId: studio.id },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    )
 
-    // Set cookie
-    const cookieStore = await cookies()
-    cookieStore.set(`client_token_${params.subdomain}`, token, {
+    cookies().set(`client_token_${studio.subdomain}`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7
     })
 
     return NextResponse.json({
       id: client.id,
-      email: client.email,
       firstName: client.firstName,
-      lastName: client.lastName
+      lastName: client.lastName,
+      email: client.email
     })
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ error: "Login failed" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to login" }, { status: 500 })
   }
 }
-
-
-

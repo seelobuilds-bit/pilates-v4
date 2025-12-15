@@ -35,6 +35,3 @@ declare module "next-auth/jwt" {
     teacherId: string | null
   }
 }
-
-
-

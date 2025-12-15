@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, subdomain, ownerEmail, ownerFirstName, ownerLastName, ownerPassword } = body
 
-    // Check if subdomain is taken
     const existingStudio = await db.studio.findUnique({
       where: { subdomain }
     })
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Subdomain already taken" }, { status: 400 })
     }
 
-    // Check if owner email is taken
     const existingUser = await db.user.findUnique({
       where: { email: ownerEmail }
     })
@@ -56,10 +54,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email already in use" }, { status: 400 })
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(ownerPassword, 10)
 
-    // Create owner and studio in transaction
     const studio = await db.studio.create({
       data: {
         name,
@@ -85,6 +81,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create studio" }, { status: 500 })
   }
 }
-
-
-

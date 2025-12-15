@@ -5,44 +5,43 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { subdomain: string } }
 ) {
-  const studio = await db.studio.findUnique({
-    where: { subdomain: params.subdomain },
-    include: {
-      locations: {
-        where: { isActive: true },
-        select: { id: true, name: true, address: true, city: true }
-      },
-      classTypes: {
-        where: { isActive: true },
-        select: { id: true, name: true, description: true, duration: true, price: true }
-      },
-      teachers: {
-        where: { isActive: true },
-        include: {
-          user: {
-            select: { firstName: true, lastName: true }
+  try {
+    const studio = await db.studio.findUnique({
+      where: { subdomain: params.subdomain },
+      include: {
+        locations: {
+          where: { isActive: true },
+          orderBy: { name: "asc" }
+        },
+        classTypes: {
+          where: { isActive: true },
+          orderBy: { name: "asc" }
+        },
+        teachers: {
+          where: { isActive: true },
+          include: {
+            user: {
+              select: { firstName: true, lastName: true }
+            }
           }
         }
       }
+    })
+
+    if (!studio) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
-  })
 
-  if (!studio) {
-    return NextResponse.json({ error: "Studio not found" }, { status: 404 })
+    return NextResponse.json({
+      id: studio.id,
+      name: studio.name,
+      primaryColor: studio.primaryColor,
+      locations: studio.locations,
+      classTypes: studio.classTypes,
+      teachers: studio.teachers
+    })
+  } catch (error) {
+    console.error("Failed to fetch studio data:", error)
+    return NextResponse.json({ error: "Failed to fetch studio data" }, { status: 500 })
   }
-
-  return NextResponse.json({
-    id: studio.id,
-    name: studio.name,
-    primaryColor: studio.primaryColor,
-    locations: studio.locations,
-    classTypes: studio.classTypes,
-    teachers: studio.teachers.map(t => ({
-      id: t.id,
-      user: t.user
-    }))
-  })
 }
-
-
-

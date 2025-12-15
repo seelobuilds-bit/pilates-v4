@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, Role } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
@@ -7,237 +7,201 @@ async function main() {
   console.log("Seeding database...")
 
   // Create HQ Admin
-  const hashedPassword = await bcrypt.hash("admin123", 10)
-  
-  const hqAdmin = await prisma.user.upsert({
-    where: { email: "admin@pilates.app" },
+  const hqPassword = await bcrypt.hash("admin123", 10)
+  await prisma.user.upsert({
+    where: { email: "admin@cadence.com" },
     update: {},
     create: {
-      email: "admin@pilates.app",
-      password: hashedPassword,
+      email: "admin@cadence.com",
+      password: hqPassword,
       firstName: "Admin",
       lastName: "User",
-      role: "HQ_ADMIN",
+      role: Role.HQ_ADMIN,
     },
   })
-  console.log("Created HQ Admin:", hqAdmin.email)
 
-  // Create Studios with owners
+  // Studio data
   const studios = [
-    { name: "Zenith Pilates", subdomain: "zenith", ownerEmail: "owner@zenithpilates.com", ownerFirst: "Sarah", ownerLast: "Johnson" },
-    { name: "Core Balance Studio", subdomain: "corebalance", ownerEmail: "owner@corebalance.com", ownerFirst: "Michael", ownerLast: "Chen" },
-    { name: "Movement Lab", subdomain: "movementlab", ownerEmail: "owner@movementlab.com", ownerFirst: "Emma", ownerLast: "Williams" },
-    { name: "Flow Studio", subdomain: "flow", ownerEmail: "owner@flowstudio.com", ownerFirst: "David", ownerLast: "Martinez" },
-    { name: "Pure Pilates", subdomain: "pure", ownerEmail: "owner@purepilates.com", ownerFirst: "Lisa", ownerLast: "Anderson" },
+    { name: "Zenith Pilates", subdomain: "zenith", city: "San Francisco", state: "CA" },
+    { name: "Harmony Studio", subdomain: "harmony", city: "Los Angeles", state: "CA" },
+    { name: "Balance & Flow", subdomain: "balance", city: "New York", state: "NY" },
+    { name: "Core Strength", subdomain: "core", city: "Chicago", state: "IL" },
+    { name: "Pure Motion", subdomain: "pure", city: "Austin", state: "TX" },
   ]
 
-  const ownerPassword = await bcrypt.hash("password123", 10)
+  const classTypes = [
+    { name: "Mat Pilates", description: "Classic mat-based Pilates class", duration: 60, price: 30, capacity: 12 },
+    { name: "Reformer", description: "Pilates using reformer machines", duration: 55, price: 45, capacity: 8 },
+    { name: "Tower Class", description: "Pilates using wall tower equipment", duration: 50, price: 40, capacity: 6 },
+    { name: "Beginner Pilates", description: "Perfect for newcomers", duration: 45, price: 25, capacity: 15 },
+    { name: "Advanced Flow", description: "Challenging advanced-level class", duration: 75, price: 50, capacity: 10 },
+  ]
+
+  const teacherNames = [
+    { first: "Sarah", last: "Johnson" },
+    { first: "Michael", last: "Chen" },
+    { first: "Emily", last: "Davis" },
+    { first: "James", last: "Wilson" },
+    { first: "Lisa", last: "Anderson" },
+  ]
+
+  const clientNames = [
+    { first: "Alice", last: "Brown" },
+    { first: "Bob", last: "Taylor" },
+    { first: "Carol", last: "Martinez" },
+    { first: "David", last: "Garcia" },
+    { first: "Emma", last: "Rodriguez" },
+    { first: "Frank", last: "Lee" },
+    { first: "Grace", last: "Kim" },
+    { first: "Henry", last: "Park" },
+  ]
 
   for (const studioData of studios) {
+    console.log(`Creating ${studioData.name}...`)
+
     // Create owner
-    const owner = await prisma.user.upsert({
-      where: { email: studioData.ownerEmail },
-      update: {},
-      create: {
-        email: studioData.ownerEmail,
+    const ownerPassword = await bcrypt.hash("owner123", 10)
+    const owner = await prisma.user.create({
+      data: {
+        email: `owner@${studioData.subdomain}.com`,
         password: ownerPassword,
-        firstName: studioData.ownerFirst,
-        lastName: studioData.ownerLast,
-        role: "OWNER",
+        firstName: "Studio",
+        lastName: "Owner",
+        role: Role.OWNER,
       },
     })
 
     // Create studio
-    const studio = await prisma.studio.upsert({
-      where: { subdomain: studioData.subdomain },
-      update: {},
-      create: {
+    const studio = await prisma.studio.create({
+      data: {
         name: studioData.name,
         subdomain: studioData.subdomain,
         ownerId: owner.id,
-        email: studioData.ownerEmail,
-        primaryColor: "#7c3aed",
       },
     })
-    console.log("Created studio:", studio.name)
 
     // Create locations
     const locations = await Promise.all([
       prisma.location.create({
         data: {
-          studioId: studio.id,
-          name: "Downtown",
+          name: "Downtown Studio",
           address: "123 Main Street",
-          city: "Los Angeles",
-          state: "CA",
-          zipCode: "90001",
-          phone: "(555) 123-4567",
+          city: studioData.city,
+          state: studioData.state,
+          zipCode: "10001",
+          studioId: studio.id,
         },
       }),
       prisma.location.create({
         data: {
+          name: "Westside Location",
+          address: "456 West Avenue",
+          city: studioData.city,
+          state: studioData.state,
+          zipCode: "10002",
           studioId: studio.id,
-          name: "Westside",
-          address: "456 Ocean Blvd",
-          city: "Santa Monica",
-          state: "CA",
-          zipCode: "90401",
-          phone: "(555) 234-5678",
         },
       }),
     ])
-    console.log(`Created ${locations.length} locations for ${studio.name}`)
-
-    // Create teachers
-    const teacherNames = [
-      { first: "Jessica", last: "Taylor" },
-      { first: "Ryan", last: "Brown" },
-      { first: "Amanda", last: "Davis" },
-    ]
-
-    const teachers = []
-    for (const name of teacherNames) {
-      const teacherEmail = `${name.first.toLowerCase()}.${name.last.toLowerCase()}@${studioData.subdomain}.com`
-      const teacherUser = await prisma.user.upsert({
-        where: { email: teacherEmail },
-        update: {},
-        create: {
-          email: teacherEmail,
-          password: ownerPassword,
-          firstName: name.first,
-          lastName: name.last,
-          role: "TEACHER",
-        },
-      })
-
-      const teacher = await prisma.teacher.create({
-        data: {
-          userId: teacherUser.id,
-          studioId: studio.id,
-          bio: `Certified Pilates instructor with years of experience`,
-          specialties: ["Mat Pilates", "Reformer", "Prenatal"],
-        },
-      })
-      teachers.push(teacher)
-    }
-    console.log(`Created ${teachers.length} teachers for ${studio.name}`)
 
     // Create class types
-    const classTypes = await Promise.all([
-      prisma.classType.create({
-        data: {
-          studioId: studio.id,
-          name: "Mat Pilates",
-          description: "Classic mat-based Pilates workout",
-          duration: 60,
-          capacity: 12,
-          price: 30,
-        },
-      }),
-      prisma.classType.create({
-        data: {
-          studioId: studio.id,
-          name: "Reformer",
-          description: "Machine-based Pilates for all levels",
-          duration: 55,
-          capacity: 8,
-          price: 45,
-        },
-      }),
-      prisma.classType.create({
-        data: {
-          studioId: studio.id,
-          name: "Tower Class",
-          description: "Full body workout using the tower",
-          duration: 50,
-          capacity: 6,
-          price: 40,
-        },
-      }),
-      prisma.classType.create({
-        data: {
-          studioId: studio.id,
-          name: "Stretch & Restore",
-          description: "Gentle stretching and recovery",
-          duration: 45,
-          capacity: 15,
-          price: 25,
-        },
-      }),
-    ])
-    console.log(`Created ${classTypes.length} class types for ${studio.name}`)
+    const createdClassTypes = await Promise.all(
+      classTypes.map((ct) =>
+        prisma.classType.create({
+          data: {
+            ...ct,
+            studioId: studio.id,
+          },
+        })
+      )
+    )
 
-    // Create class sessions for the next 15 days
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    for (let dayOffset = 0; dayOffset < 15; dayOffset++) {
-      const sessionDate = new Date(today)
-      sessionDate.setDate(today.getDate() + dayOffset)
-
-      // Create sessions for each location, class type, and time slot
-      for (const location of locations) {
-        for (const classType of classTypes) {
-          const times = ["09:00", "11:00", "14:00", "17:00", "19:00"]
-          
-          for (const time of times) {
-            const [hours, minutes] = time.split(":").map(Number)
-            const startTime = new Date(sessionDate)
-            startTime.setHours(hours, minutes, 0, 0)
-
-            const endTime = new Date(startTime)
-            endTime.setMinutes(endTime.getMinutes() + classType.duration)
-
-            // Rotate through teachers
-            const teacher = teachers[Math.floor(Math.random() * teachers.length)]
-
-            await prisma.classSession.create({
-              data: {
-                studioId: studio.id,
-                classTypeId: classType.id,
-                teacherId: teacher.id,
-                locationId: location.id,
-                startTime,
-                endTime,
-                capacity: classType.capacity,
-              },
-            })
-          }
-        }
-      }
-    }
-    console.log(`Created class sessions for ${studio.name}`)
+    // Create teachers
+    const teachers = await Promise.all(
+      teacherNames.slice(0, 3).map(async (name, i) => {
+        const teacherPassword = await bcrypt.hash("teacher123", 10)
+        const user = await prisma.user.create({
+          data: {
+            email: `${name.first.toLowerCase()}@${studioData.subdomain}.com`,
+            password: teacherPassword,
+            firstName: name.first,
+            lastName: name.last,
+            role: Role.TEACHER,
+          },
+        })
+        return prisma.teacher.create({
+          data: {
+            userId: user.id,
+            studioId: studio.id,
+            specialties: ["Mat Pilates", "Reformer"],
+          },
+        })
+      })
+    )
 
     // Create clients
     const clientPassword = await bcrypt.hash("client123", 10)
-    const clientNames = [
-      { first: "Alice", last: "Smith" },
-      { first: "Bob", last: "Johnson" },
-      { first: "Carol", last: "Williams" },
-      { first: "Dan", last: "Brown" },
-      { first: "Eve", last: "Davis" },
+    await Promise.all(
+      clientNames.map((name) =>
+        prisma.client.create({
+          data: {
+            email: `${name.first.toLowerCase()}.${name.last.toLowerCase()}@email.com`,
+            password: clientPassword,
+            firstName: name.first,
+            lastName: name.last,
+            studioId: studio.id,
+          },
+        })
+      )
+    )
+
+    // Create class sessions for the next 15 days
+    const timeSlots = [
+      { hour: 6, minute: 0 },
+      { hour: 8, minute: 0 },
+      { hour: 9, minute: 30 },
+      { hour: 11, minute: 0 },
+      { hour: 13, minute: 0 },
+      { hour: 15, minute: 30 },
+      { hour: 17, minute: 0 },
+      { hour: 18, minute: 30 },
+      { hour: 20, minute: 0 },
     ]
 
-    for (const name of clientNames) {
-      const clientEmail = `${name.first.toLowerCase()}@example.com`
-      await prisma.client.upsert({
-        where: {
-          email_studioId: { email: clientEmail, studioId: studio.id }
-        },
-        update: {},
-        create: {
-          email: clientEmail,
-          password: clientPassword,
-          firstName: name.first,
-          lastName: name.last,
-          studioId: studio.id,
-        },
-      })
+    for (let day = 0; day < 15; day++) {
+      const date = new Date()
+      date.setDate(date.getDate() + day)
+
+      for (const location of locations) {
+        for (const slot of timeSlots) {
+          const classType = createdClassTypes[Math.floor(Math.random() * createdClassTypes.length)]
+          const teacher = teachers[Math.floor(Math.random() * teachers.length)]
+
+          const startTime = new Date(date)
+          startTime.setHours(slot.hour, slot.minute, 0, 0)
+
+          const endTime = new Date(startTime)
+          endTime.setMinutes(endTime.getMinutes() + classType.duration)
+
+          await prisma.classSession.create({
+            data: {
+              studioId: studio.id,
+              classTypeId: classType.id,
+              teacherId: teacher.id,
+              locationId: location.id,
+              startTime,
+              endTime,
+              capacity: classType.capacity,
+            },
+          })
+        }
+      }
     }
-    console.log(`Created clients for ${studio.name}`)
+
+    console.log(`Created ${studioData.name} with ${locations.length} locations, ${teachers.length} teachers, ${clientNames.length} clients`)
   }
 
-  console.log("Seeding completed!")
+  console.log("Seeding complete!")
 }
 
 main()
@@ -248,4 +212,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
-

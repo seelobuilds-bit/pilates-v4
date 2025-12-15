@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft } from "lucide-react"
 
 export default function NewLocationPage() {
   const router = useRouter()
@@ -49,16 +51,20 @@ export default function NewLocationPage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Add New Location</h1>
+      <Link href="/studio/locations" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 mb-6">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Locations
+      </Link>
 
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Location Details</CardTitle>
+          <CardTitle>Add New Location</CardTitle>
+          <CardDescription>Create a new studio location</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
                 {error}
               </div>
             )}
@@ -70,7 +76,7 @@ export default function NewLocationPage() {
 
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" name="address" required placeholder="123 Main St" />
+              <Input id="address" name="address" required placeholder="123 Main Street" />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -107,6 +113,3 @@ export default function NewLocationPage() {
     </div>
   )
 }
-
-
-

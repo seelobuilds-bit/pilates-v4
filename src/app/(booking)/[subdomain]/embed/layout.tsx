@@ -4,13 +4,10 @@ export default function EmbedLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="bg-white">
+    <html>
+      <body style={{ margin: 0, padding: 0 }}>
         {children}
       </body>
     </html>
   )
 }
-
-
-
