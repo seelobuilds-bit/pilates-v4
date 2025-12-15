@@ -737,7 +737,12 @@ export default function BookingPage() {
                     </div>
                     <div className="flex justify-between pt-2 border-t">
                       <span className="text-gray-500">{bookingType === "recurring" ? "Weekly Payment" : bookingType === "pack" ? `Total (${packSize} classes)` : "Total"}</span>
-                      <span className="text-lg font-semibold text-violet-600">${calculatePrice().toFixed(2)}</span>
+                      <span className="flex items-center gap-2">
+                        {bookingType === "recurring" && (
+                          <span className="text-gray-400 line-through">${selectedClass?.price.toFixed(2)}</span>
+                        )}
+                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>${calculatePrice().toFixed(2)}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
