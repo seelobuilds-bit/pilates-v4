@@ -55,34 +55,14 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
-
 /* Hide scrollbar for date selector */
-.hide-scrollbar::-webkit-scrollbar {
+.date-selector::-webkit-scrollbar {
   display: none;
 }
-.hide-scrollbar {
+.date-selector {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

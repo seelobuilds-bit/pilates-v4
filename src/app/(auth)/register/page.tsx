@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -47,22 +46,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-xl border-0">
-      <CardHeader className="space-y-1 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-violet-600 rounded-xl flex items-center justify-center">
-            <Zap className="w-7 h-7 text-white" />
-          </div>
-        </div>
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-        <CardDescription>
-          Start managing your studio with Cadence
+    <Card className="w-full max-w-md">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">
+          Create an Account
+        </CardTitle>
+        <CardDescription className="text-center">
+          Register as a studio owner on Cadence
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
+            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
               {error}
             </div>
           )}
@@ -102,13 +98,16 @@ export default function RegisterPage() {
         </form>
       </CardContent>
       <CardFooter>
-        <div className="text-sm text-center text-muted-foreground w-full">
+        <p className="text-sm text-muted-foreground text-center w-full">
           Already have an account?{" "}
-          <Link href="/login" className="text-violet-600 hover:underline font-medium">
+          <Link href="/login" className="text-violet-600 hover:underline">
             Sign in
           </Link>
-        </div>
+        </p>
       </CardFooter>
     </Card>
   )
 }
+
+
+
