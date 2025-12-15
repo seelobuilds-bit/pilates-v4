@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  HQ_ADMIN
+  OWNER
+  TEACHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  ownedStudio   Studio?   @relation("StudioOwner")
+  teacher       Teacher?
+}
+
+model Studio {
+  id            String    @id @default(cuid())
+  name          String
+  subdomain     String    @unique
+  phone         String?
+  email         String?
+  logo          String?
+  primaryColor  String    @default("#7c3aed")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Owner relation
+  ownerId       String    @unique
+  owner         User      @relation("StudioOwner", fields: [ownerId], references: [id])
+
+  // Relations
+  locations     Location[]
+  teachers      Teacher[]
+  clients       Client[]
+  classTypes    ClassType[]
+  classSessions ClassSession[]
+  bookings      Booking[]
+}
+
+model Location {
+  id            String    @id @default(cuid())
+  name          String
+  address       String
+  city          String
+  state         String
+  zipCode       String
+  phone         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Studio relation
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  // Relations
+  classSessions ClassSession[]
+
+  @@index([studioId])
+}
+
+model Teacher {
+  id            String    @id @default(cuid())
+  bio           String?
+  specialties   String[]
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // User relation
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+
+  // Studio relation
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  // Relations
+  classSessions ClassSession[]
+
+  @@index([studioId])
+}
+
+model Client {
+  id            String    @id @default(cuid())
+  email         String
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  notes         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Studio relation - clients are studio-specific
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  // Relations
+  bookings      Booking[]
+
+  // Unique constraint: same email can exist for different studios
+  @@unique([email, studioId])
+  @@index([studioId])
+}
+
+model ClassType {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  duration      Int       @default(60) // minutes
+  capacity      Int       @default(10)
+  price         Float     @default(30)
+  color         String    @default("#7c3aed")
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Studio relation
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  // Relations
+  classSessions ClassSession[]
+
+  @@index([studioId])
+}
+
+model ClassSession {
+  id            String    @id @default(cuid())
+  startTime     DateTime
+  endTime       DateTime
+  capacity      Int
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  classTypeId   String
+  classType     ClassType @relation(fields: [classTypeId], references: [id], onDelete: Cascade)
+
+  teacherId     String
+  teacher       Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  locationId    String
+  location      Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  bookings      Booking[]
+
+  @@index([studioId])
+  @@index([classTypeId])
+  @@index([teacherId])
+  @@index([locationId])
+  @@index([startTime])
+}
+
+model Booking {
+  id            String    @id @default(cuid())
+  status        String    @default("confirmed") // confirmed, cancelled, completed
+  paidAmount    Float?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  classSessionId String
+  classSession  ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+
+  @@index([studioId])
+  @@index([clientId])
+  @@index([classSessionId])
+}
