@@ -3,11 +3,13 @@ import { db } from "@/lib/db"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { subdomain: string } }
+  { params }: { params: Promise<{ subdomain: string }> }
 ) {
   try {
+    const { subdomain } = await params
+    
     const studio = await db.studio.findUnique({
-      where: { subdomain: params.subdomain },
+      where: { subdomain },
       include: {
         locations: {
           where: { isActive: true },

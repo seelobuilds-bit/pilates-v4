@@ -8,11 +8,13 @@ const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { subdomain: string } }
+  { params }: { params: Promise<{ subdomain: string }> }
 ) {
   try {
+    const { subdomain } = await params
+    
     const studio = await db.studio.findUnique({
-      where: { subdomain: params.subdomain }
+      where: { subdomain }
     })
 
     if (!studio) {
@@ -46,7 +48,8 @@ export async function POST(
       { expiresIn: "7d" }
     )
 
-    cookies().set(`client_token_${studio.subdomain}`, token, {
+    const cookieStore = await cookies()
+    cookieStore.set(`client_token_${studio.subdomain}`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

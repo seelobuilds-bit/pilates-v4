@@ -7,18 +7,21 @@ const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { subdomain: string; bookingId: string } }
+  { params }: { params: Promise<{ subdomain: string; bookingId: string }> }
 ) {
   try {
+    const { subdomain, bookingId } = await params
+    
     const studio = await db.studio.findUnique({
-      where: { subdomain: params.subdomain }
+      where: { subdomain }
     })
 
     if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const token = cookies().get(`client_token_${studio.subdomain}`)?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get(`client_token_${studio.subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -28,7 +31,7 @@ export async function DELETE(
 
     const booking = await db.booking.findFirst({
       where: {
-        id: params.bookingId,
+        id: bookingId,
         clientId: decoded.clientId,
         studioId: studio.id
       }
@@ -44,7 +47,7 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to cancel booking" }, { status: 500 })
   }
 }

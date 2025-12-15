@@ -7,18 +7,21 @@ const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { subdomain: string } }
+  { params }: { params: Promise<{ subdomain: string }> }
 ) {
   try {
+    const { subdomain } = await params
+    
     const studio = await db.studio.findUnique({
-      where: { subdomain: params.subdomain }
+      where: { subdomain }
     })
 
     if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const token = cookies().get(`client_token_${studio.subdomain}`)?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get(`client_token_${studio.subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Please sign in to book" }, { status: 401 })

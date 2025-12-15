@@ -4,14 +4,17 @@ import { cookies } from "next/headers"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { subdomain: string } }
+  { params }: { params: Promise<{ subdomain: string }> }
 ) {
+  const { subdomain } = await params
+  
   const studio = await db.studio.findUnique({
-    where: { subdomain: params.subdomain }
+    where: { subdomain }
   })
 
   if (studio) {
-    cookies().delete(`client_token_${studio.subdomain}`)
+    const cookieStore = await cookies()
+    cookieStore.delete(`client_token_${studio.subdomain}`)
   }
 
   return NextResponse.json({ success: true })
