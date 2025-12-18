@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
-  Check, Clock, Dumbbell, RefreshCw, Sparkles, Lock, LogOut
+  Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck
 } from "lucide-react"
 
 interface Location {
@@ -52,6 +52,7 @@ interface StudioData {
   locations: Location[]
   classTypes: ClassType[]
   teachers: Teacher[]
+  stripeEnabled: boolean
 }
 
 interface ClientInfo {
@@ -72,15 +73,32 @@ const stepIcons = {
   checkout: CreditCard
 }
 
+interface BookingDetails {
+  className: string
+  date: string
+  time: string
+  location: string
+  teacher: string
+  price: number
+}
+
 export default function BookingPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
+  
+  // Check for payment success/cancel from URL
+  const paymentSuccess = searchParams.get("success") === "true"
+  const paymentCanceled = searchParams.get("canceled") === "true"
+  const sessionId = searchParams.get("session_id")
 
   const [step, setStep] = useState<Step>("location")
   const [studioData, setStudioData] = useState<StudioData | null>(null)
   const [loading, setLoading] = useState(true)
   const [slotsLoading, setSlotsLoading] = useState(false)
+  const [bookingComplete, setBookingComplete] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null)
 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedClass, setSelectedClass] = useState<ClassType | null>(null)
@@ -128,6 +146,26 @@ export default function BookingPage() {
     }
     checkAuth()
   }, [subdomain])
+
+  // Handle payment success
+  useEffect(() => {
+    if (paymentSuccess && sessionId) {
+      // Fetch booking details from session
+      async function fetchBookingDetails() {
+        try {
+          const res = await fetch(`/api/booking/${subdomain}/session/${sessionId}`)
+          if (res.ok) {
+            const data = await res.json()
+            setBookingDetails(data)
+          }
+        } catch (error) {
+          console.error("Error fetching booking details:", error)
+        }
+        setBookingComplete(true)
+      }
+      fetchBookingDetails()
+    }
+  }, [paymentSuccess, sessionId, subdomain])
 
   useEffect(() => {
     if (step === "time" && selectedLocation && selectedClass) {
@@ -239,6 +277,31 @@ export default function BookingPage() {
     setBookingLoading(true)
 
     try {
+      // If Stripe is enabled, redirect to Stripe Checkout
+      if (studioData?.stripeEnabled) {
+        const res = await fetch(`/api/booking/${subdomain}/checkout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            classSessionId: selectedSlot.id,
+            clientEmail: client.email,
+            clientFirstName: client.firstName,
+            clientLastName: client.lastName,
+          })
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || "Checkout failed")
+        }
+
+        const data = await res.json()
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkoutUrl
+        return
+      }
+
+      // Free booking (no Stripe)
       const res = await fetch(`/api/booking/${subdomain}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,6 +343,106 @@ export default function BookingPage() {
           <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500">Loading...</p>
         </div>
+      </div>
+    )
+  }
+
+  // Show booking success screen
+  if (bookingComplete || paymentSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="border-0 shadow-lg max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            {/* Success Icon */}
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-10 w-10 text-emerald-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
+            <p className="text-gray-500 mb-6">Your class has been booked successfully.</p>
+
+            {/* Booking Details */}
+            {bookingDetails ? (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                      <CalendarCheck className="h-5 w-5 text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{bookingDetails.className}</p>
+                      <p className="text-sm text-gray-500">{bookingDetails.date} at {bookingDetails.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{bookingDetails.location}</p>
+                      <p className="text-sm text-gray-500">with {bookingDetails.teacher}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <p className="text-gray-600">Your booking details have been sent to your email.</p>
+              </div>
+            )}
+
+            {/* Email Confirmation Notice */}
+            <div className="flex items-center gap-2 justify-center text-sm text-gray-500 mb-6">
+              <Mail className="h-4 w-4" />
+              <span>A confirmation email has been sent to you</span>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <Button 
+                onClick={() => router.push(`/${subdomain}/account`)}
+                className="w-full bg-violet-600 hover:bg-violet-700"
+              >
+                View My Bookings
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setBookingComplete(false)
+                  router.push(`/${subdomain}/book`)
+                }}
+                className="w-full"
+              >
+                Book Another Class
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show payment canceled message
+  if (paymentCanceled) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="border-0 shadow-lg max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CreditCard className="h-10 w-10 text-amber-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Canceled</h1>
+            <p className="text-gray-500 mb-6">Your payment was canceled. No charges were made.</p>
+
+            <Button 
+              onClick={() => router.push(`/${subdomain}/book`)}
+              className="w-full bg-violet-600 hover:bg-violet-700"
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -810,28 +973,22 @@ export default function BookingPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CreditCard className="w-5 h-5 text-violet-600" />
-                      <p className="font-medium text-gray-900">Payment Details</p>
+                      <p className="font-medium text-gray-900">Payment</p>
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Card Number</Label>
-                        <Input placeholder="4242 4242 4242 4242" defaultValue="4242 4242 4242 4242" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Expiry</Label>
-                          <Input placeholder="MM/YY" />
+                    {studioData?.stripeEnabled ? (
+                      <div className="text-center py-4">
+                        <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Lock className="w-8 h-8 text-violet-600" />
                         </div>
-                        <div>
-                          <Label>CVC</Label>
-                          <Input placeholder="123" defaultValue="123" />
-                        </div>
+                        <p className="text-gray-600 mb-2">Secure payment via Stripe</p>
+                        <p className="text-sm text-gray-400">You&apos;ll be redirected to complete payment</p>
                       </div>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        Your payment info is secure. This is a demo - no real charges.
-                      </p>
-                    </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-gray-600 mb-2">Payments not enabled</p>
+                        <p className="text-sm text-gray-400">This studio hasn&apos;t set up payments yet. Your booking will be free.</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -840,8 +997,16 @@ export default function BookingPage() {
                   disabled={bookingLoading}
                   className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
                 >
-                  <Lock className="w-4 h-4 mr-2" />
-                  {bookingLoading ? "Processing..." : `Pay $${calculatePrice().toFixed(2)}`}
+                  {studioData?.stripeEnabled ? (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      {bookingLoading ? "Redirecting to payment..." : `Pay $${calculatePrice().toFixed(2)}`}
+                    </>
+                  ) : (
+                    <>
+                      {bookingLoading ? "Processing..." : "Confirm Booking"}
+                    </>
+                  )}
                 </Button>
               </>
             )}

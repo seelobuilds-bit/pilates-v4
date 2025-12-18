@@ -10,7 +10,12 @@ export async function GET(
     
     const studio = await db.studio.findUnique({
       where: { subdomain },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        primaryColor: true,
+        stripeChargesEnabled: true,
+        stripeOnboardingComplete: true,
         locations: {
           where: { isActive: true },
           orderBy: { name: "asc" }
@@ -40,7 +45,8 @@ export async function GET(
       primaryColor: studio.primaryColor,
       locations: studio.locations,
       classTypes: studio.classTypes,
-      teachers: studio.teachers
+      teachers: studio.teachers,
+      stripeEnabled: studio.stripeChargesEnabled && studio.stripeOnboardingComplete
     })
   } catch (error) {
     console.error("Failed to fetch studio data:", error)

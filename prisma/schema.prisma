@@ -38,12 +38,325 @@ model Studio {
   ownerId String @unique
   owner   User   @relation(fields: [ownerId], references: [id])
 
+  // Stripe Connect settings
+  stripeAccountId       String?   @unique
+  stripeOnboardingComplete Boolean @default(false)
+  stripeChargesEnabled  Boolean   @default(false)
+  stripePayoutsEnabled  Boolean   @default(false)
+  stripeDetailsSubmitted Boolean  @default(false)
+  stripeCurrency        String?   @default("usd")
+
   locations     Location[]
   classTypes    ClassType[]
   teachers      Teacher[]
   clients       Client[]
   classSessions ClassSession[]
   bookings      Booking[]
+  payments      Payment[]
+  
+  // Communication settings
+  emailConfig   StudioEmailConfig?
+  smsConfig     StudioSmsConfig?
+  messages      Message[]
+  campaigns     Campaign[]
+  automations   Automation[]
+  segments      Segment[]
+  templates     MessageTemplate[]
+}
+
+// Email configuration per studio
+model StudioEmailConfig {
+  id                String   @id @default(cuid())
+  provider          String   @default("sendgrid") // sendgrid, mailgun, ses, smtp
+  apiKey            String?  // encrypted
+  fromEmail         String   // sender email address
+  fromName          String   // sender display name
+  replyToEmail      String?  // reply-to address
+  
+  // SMTP settings (if provider is smtp)
+  smtpHost          String?
+  smtpPort          Int?
+  smtpUser          String?
+  smtpPassword      String?  // encrypted
+  smtpSecure        Boolean  @default(true)
+  
+  // Verification status
+  isVerified        Boolean  @default(false)
+  verifiedAt        DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  studioId String @unique
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+}
+
+// SMS configuration per studio
+model StudioSmsConfig {
+  id                String   @id @default(cuid())
+  provider          String   @default("twilio") // twilio, messagebird, vonage
+  accountSid        String?  // encrypted
+  authToken         String?  // encrypted
+  fromNumber        String   // sender phone number
+  
+  // Verification status
+  isVerified        Boolean  @default(false)
+  verifiedAt        DateTime?
+  
+  // Usage limits
+  monthlyLimit      Int      @default(1000)
+  currentMonthUsage Int      @default(0)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  studioId String @unique
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+}
+
+// Message types
+enum MessageChannel {
+  EMAIL
+  SMS
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  DRAFT
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+  OPENED
+  CLICKED
+}
+
+// All messages (inbox conversations)
+model Message {
+  id            String           @id @default(cuid())
+  channel       MessageChannel
+  direction     MessageDirection
+  status        MessageStatus    @default(QUEUED)
+  
+  // Content
+  subject       String?          // for emails
+  body          String           @db.Text
+  htmlBody      String?          @db.Text // for emails
+  
+  // Sender/Recipient
+  fromAddress   String           // email or phone
+  toAddress     String           // email or phone
+  fromName      String?
+  toName        String?
+  
+  // Tracking
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  failedReason  String?
+  
+  // External IDs (from email/sms provider)
+  externalId    String?
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  studioId      String
+  studio        Studio           @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  clientId      String?
+  client        Client?          @relation(fields: [clientId], references: [id])
+  
+  // Link to campaign if sent via marketing
+  campaignId    String?
+  campaign      Campaign?        @relation(fields: [campaignId], references: [id])
+  
+  automationId  String?
+  automation    Automation?      @relation(fields: [automationId], references: [id])
+
+  @@index([studioId, clientId])
+  @@index([studioId, createdAt])
+}
+
+// Marketing Campaigns
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  PAUSED
+  CANCELLED
+}
+
+model Campaign {
+  id            String         @id @default(cuid())
+  name          String
+  channel       MessageChannel
+  status        CampaignStatus @default(DRAFT)
+  
+  // Content
+  subject       String?        // for emails
+  body          String         @db.Text
+  htmlBody      String?        @db.Text
+  
+  // Scheduling
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  
+  // Targeting
+  targetAll     Boolean        @default(false)
+  
+  // Stats
+  totalRecipients Int          @default(0)
+  sentCount       Int          @default(0)
+  deliveredCount  Int          @default(0)
+  openedCount     Int          @default(0)
+  clickedCount    Int          @default(0)
+  failedCount     Int          @default(0)
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  studioId      String
+  studio        Studio         @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  // Target segment (optional)
+  segmentId     String?
+  segment       Segment?       @relation(fields: [segmentId], references: [id])
+  
+  // Target location (optional)
+  locationId    String?
+  location      Location?      @relation(fields: [locationId], references: [id])
+  
+  // Template used (optional)
+  templateId    String?
+  template      MessageTemplate? @relation(fields: [templateId], references: [id])
+  
+  messages      Message[]
+
+  @@index([studioId, status])
+}
+
+// Marketing Automations
+enum AutomationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum AutomationTrigger {
+  WELCOME           // New client signup
+  CLASS_REMINDER    // Before class
+  CLASS_FOLLOWUP    // After class
+  BOOKING_CONFIRMED // When booking is made
+  BOOKING_CANCELLED // When booking is cancelled
+  CLIENT_INACTIVE   // Client hasn't booked in X days
+  BIRTHDAY          // Client birthday
+  MEMBERSHIP_EXPIRING // Membership about to expire
+}
+
+model Automation {
+  id            String            @id @default(cuid())
+  name          String
+  trigger       AutomationTrigger
+  channel       MessageChannel
+  status        AutomationStatus  @default(DRAFT)
+  
+  // Content
+  subject       String?           // for emails
+  body          String            @db.Text
+  htmlBody      String?           @db.Text
+  
+  // Trigger settings
+  triggerDelay  Int               @default(0) // minutes before/after trigger
+  triggerDays   Int?              // for CLIENT_INACTIVE - days of inactivity
+  reminderHours Int?              // for CLASS_REMINDER - hours before class
+  
+  // Stats
+  totalSent     Int               @default(0)
+  totalDelivered Int              @default(0)
+  totalOpened   Int               @default(0)
+  totalClicked  Int               @default(0)
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  studioId      String
+  studio        Studio            @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  // Target location (optional - all if not set)
+  locationId    String?
+  location      Location?         @relation(fields: [locationId], references: [id])
+  
+  // Template used (optional)
+  templateId    String?
+  template      MessageTemplate?  @relation(fields: [templateId], references: [id])
+  
+  messages      Message[]
+
+  @@index([studioId, status, trigger])
+}
+
+// Client Segments for targeting
+model Segment {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  
+  // Filter rules (JSON structure)
+  rules         String    @db.Text // JSON: { "conditions": [...], "operator": "AND" }
+  
+  // Cached count
+  clientCount   Int       @default(0)
+  lastCalculated DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  studioId      String
+  studio        Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  campaigns     Campaign[]
+
+  @@index([studioId])
+}
+
+// Message Templates
+enum TemplateType {
+  EMAIL
+  SMS
+}
+
+model MessageTemplate {
+  id            String       @id @default(cuid())
+  name          String
+  type          TemplateType
+  
+  // Content
+  subject       String?      // for emails
+  body          String       @db.Text
+  htmlBody      String?      @db.Text
+  
+  // Variables available (e.g., {{firstName}}, {{className}})
+  variables     String[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  studioId      String
+  studio        Studio       @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  campaigns     Campaign[]
+  automations   Automation[]
+
+  @@index([studioId, type])
 }
 
 model Location {
@@ -62,6 +375,8 @@ model Location {
   studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 
   classSessions ClassSession[]
+  campaigns     Campaign[]
+  automations   Automation[]
 }
 
 model ClassType {
@@ -99,21 +414,25 @@ model Teacher {
 }
 
 model Client {
-  id         String   @id @default(cuid())
-  email      String
-  password   String?
-  firstName  String
-  lastName   String
-  phone      String?
-  isActive   Boolean  @default(true)
-  credits    Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  email               String
+  password            String?
+  firstName           String
+  lastName            String
+  phone               String?
+  birthday            DateTime?
+  isActive            Boolean  @default(true)
+  credits             Int      @default(0)
+  stripeCustomerId    String?  // Stripe customer ID for this client at this studio
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   studioId String
   studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 
   bookings Booking[]
+  messages Message[]
+  payments Payment[]
 
   @@unique([email, studioId])
 }
@@ -161,4 +480,61 @@ model Booking {
   client         Client       @relation(fields: [clientId], references: [id])
   classSessionId String
   classSession   ClassSession @relation(fields: [classSessionId], references: [id])
+  
+  // Payment
+  paymentId      String?
+  payment        Payment?     @relation(fields: [paymentId], references: [id])
+}
+
+// Payment tracking
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  amount                Float         // Amount in cents
+  currency              String        @default("usd")
+  status                PaymentStatus @default(PENDING)
+  
+  // Stripe IDs
+  stripePaymentIntentId String?       @unique
+  stripeChargeId        String?
+  stripeRefundId        String?
+  
+  // For checkout sessions
+  stripeCheckoutSessionId String?     @unique
+  
+  // Fees
+  stripeFee             Float?        // Stripe's fee
+  applicationFee        Float?        // Our platform fee (if any)
+  netAmount             Float?        // Amount after fees
+  
+  // Metadata
+  description           String?
+  receiptUrl            String?
+  failureMessage        String?
+  
+  // Refund tracking
+  refundedAmount        Float?
+  refundedAt            DateTime?
+  
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  studioId              String
+  studio                Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  clientId              String
+  client                Client        @relation(fields: [clientId], references: [id])
+  
+  bookings              Booking[]
+
+  @@index([studioId, createdAt])
+  @@index([stripePaymentIntentId])
 }

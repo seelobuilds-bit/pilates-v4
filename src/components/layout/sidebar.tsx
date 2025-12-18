@@ -18,6 +18,9 @@ import {
   Zap,
   BarChart3,
   MapPin,
+  BookOpen,
+  Inbox,
+  CreditCard,
 } from "lucide-react"
 
 const hqLinks = [
@@ -30,10 +33,14 @@ const hqLinks = [
 const studioLinks = [
   { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
   { href: "/studio/schedule", label: "Schedule", icon: Calendar },
-  { href: "/studio/classes", label: "Classes", icon: Calendar },
+  { href: "/studio/classes", label: "Classes", icon: BookOpen },
   { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/studio/clients", label: "Clients", icon: UserCircle },
+  { href: "/studio/inbox", label: "Inbox", icon: Inbox },
+  { href: "/studio/locations", label: "Locations", icon: MapPin },
+  { href: "/studio/payments", label: "Payments", icon: CreditCard },
   { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
+  { href: "/studio/reports", label: "Reports", icon: BarChart3 },
   { href: "/studio/settings", label: "Settings", icon: Settings },
 ]
 
