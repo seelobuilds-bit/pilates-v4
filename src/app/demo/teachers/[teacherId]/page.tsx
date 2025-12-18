@@ -484,20 +484,22 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                   <div key={dayIndex} className="space-y-2 min-h-[200px]">
                     {classesByDay[dayIndex].length > 0 ? (
                       classesByDay[dayIndex].map((cls) => (
-                        <div key={cls.id} className="p-2 bg-violet-50 rounded-lg border-l-4 border-l-violet-500 hover:bg-violet-100 transition-colors cursor-pointer">
-                          <p className="font-medium text-xs text-gray-900 truncate">{cls.classType.name}</p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate mt-1">
-                            <MapPin className="h-3 w-3 inline mr-1" />
-                            {cls.location.name}
-                          </p>
-                          <p className={`text-xs mt-1 font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-emerald-500'}`}>
-                            {cls._count.bookings}/{cls.capacity} booked
-                          </p>
-                        </div>
+                        <Link key={cls.id} href={`/demo/schedule/${cls.id}`}>
+                          <div className="p-2 bg-violet-50 rounded-lg border-l-4 border-l-violet-500 hover:bg-violet-100 transition-colors cursor-pointer">
+                            <p className="font-medium text-xs text-gray-900 truncate">{cls.classType.name}</p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </p>
+                            <p className="text-xs text-gray-400 truncate mt-1">
+                              <MapPin className="h-3 w-3 inline mr-1" />
+                              {cls.location.name}
+                            </p>
+                            <p className={`text-xs mt-1 font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-emerald-500'}`}>
+                              {cls._count.bookings}/{cls.capacity} booked
+                            </p>
+                          </div>
+                        </Link>
                       ))
                     ) : (
                       <div className="h-full flex items-center justify-center">
