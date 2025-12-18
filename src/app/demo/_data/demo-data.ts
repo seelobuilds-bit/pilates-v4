@@ -65,11 +65,11 @@ export const demoUpcomingClasses = [
 
 // Recent Bookings for Dashboard
 export const demoRecentBookings = [
-  { id: "1", client: { firstName: "Emily", lastName: "Chen" }, classSession: { classType: { name: "Morning Flow Pilates" } }, createdAt: new Date(), status: "CONFIRMED" },
-  { id: "2", client: { firstName: "Rachel", lastName: "Kim" }, classSession: { classType: { name: "Reformer Basics" } }, createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), status: "CONFIRMED" },
-  { id: "3", client: { firstName: "Lisa", lastName: "Wang" }, classSession: { classType: { name: "Power Pilates" } }, createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), status: "CONFIRMED" },
-  { id: "4", client: { firstName: "Michelle", lastName: "Torres" }, classSession: { classType: { name: "Evening Stretch" } }, createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), status: "CONFIRMED" },
-  { id: "5", client: { firstName: "Anna", lastName: "Lee" }, classSession: { classType: { name: "Beginner Mat" } }, createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), status: "WAITLIST" },
+  { id: "1", client: { firstName: "Emily", lastName: "Chen" }, classSession: { classType: { name: "Morning Flow Pilates" }, startTime: new Date(Date.now() + 2 * 60 * 60 * 1000), teacher: { user: { firstName: "Sarah", lastName: "Mitchell" } }, location: { name: "Main Studio" } }, createdAt: new Date(), status: "CONFIRMED" },
+  { id: "2", client: { firstName: "Rachel", lastName: "Kim" }, classSession: { classType: { name: "Reformer Basics" }, startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), teacher: { user: { firstName: "Jessica", lastName: "Taylor" } }, location: { name: "Studio B" } }, createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), status: "CONFIRMED" },
+  { id: "3", client: { firstName: "Lisa", lastName: "Wang" }, classSession: { classType: { name: "Power Pilates" }, startTime: new Date(Date.now() + 48 * 60 * 60 * 1000), teacher: { user: { firstName: "Sarah", lastName: "Mitchell" } }, location: { name: "Main Studio" } }, createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), status: "CONFIRMED" },
+  { id: "4", client: { firstName: "Michelle", lastName: "Torres" }, classSession: { classType: { name: "Evening Stretch" }, startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), teacher: { user: { firstName: "Amanda", lastName: "Lopez" } }, location: { name: "Main Studio" } }, createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), status: "COMPLETED" },
+  { id: "5", client: { firstName: "Anna", lastName: "Lee" }, classSession: { classType: { name: "Beginner Mat" }, startTime: new Date(Date.now() - 72 * 60 * 60 * 1000), teacher: { user: { firstName: "Jessica", lastName: "Taylor" } }, location: { name: "Downtown" } }, createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000), status: "CANCELLED" },
 ]
 
 // Schedule Classes
@@ -126,9 +126,9 @@ export const demoClassTypes = [
 
 // Locations
 export const demoLocations = [
-  { id: "1", name: "Main Studio", address: "123 Pilates Way, San Francisco, CA 94102", _count: { classSessions: 98 }, isActive: true },
-  { id: "2", name: "Studio B", address: "123 Pilates Way, Suite B, San Francisco, CA 94102", _count: { classSessions: 45 }, isActive: true },
-  { id: "3", name: "Downtown", address: "456 Market Street, San Francisco, CA 94105", _count: { classSessions: 58 }, isActive: true },
+  { id: "1", name: "Main Studio", address: "123 Pilates Way", city: "San Francisco", state: "CA", zipCode: "94102", _count: { classSessions: 98 }, isActive: true },
+  { id: "2", name: "Studio B", address: "123 Pilates Way, Suite B", city: "San Francisco", state: "CA", zipCode: "94102", _count: { classSessions: 45 }, isActive: true },
+  { id: "3", name: "Downtown", address: "456 Market Street", city: "San Francisco", state: "CA", zipCode: "94105", _count: { classSessions: 58 }, isActive: true },
 ]
 
 // Marketing Automations
