@@ -80,11 +80,17 @@ export async function POST(request: NextRequest) {
 
     // Handle recurring classes
     if (recurring && recurring.days && recurring.days.length > 0 && recurring.endDate) {
-      const { days, endDate: recurringEndDate, time, duration } = recurring
+      const { days, endDate: recurringEndDate, time, duration, skipFirst } = recurring
       
       // Generate all dates for the recurring series
       const startDate = new Date(startTime)
       startDate.setHours(0, 0, 0, 0)
+      
+      // If skipFirst is true, start from the next day (for adding recurring to existing class)
+      if (skipFirst) {
+        startDate.setDate(startDate.getDate() + 1)
+      }
+      
       const endDateObj = new Date(recurringEndDate + "T23:59:59")
       
       const classesToCreate: Array<{

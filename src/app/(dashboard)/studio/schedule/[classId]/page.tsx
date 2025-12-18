@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { 
   ArrowLeft, 
   Calendar, 
@@ -19,8 +20,21 @@ import {
   Save,
   Trash2,
   AlertTriangle,
-  User
+  User,
+  Repeat,
+  Info,
+  Copy
 } from "lucide-react"
+
+const DAYS_OF_WEEK = [
+  { id: 0, name: "Sun", fullName: "Sunday" },
+  { id: 1, name: "Mon", fullName: "Monday" },
+  { id: 2, name: "Tue", fullName: "Tuesday" },
+  { id: 3, name: "Wed", fullName: "Wednesday" },
+  { id: 4, name: "Thu", fullName: "Thursday" },
+  { id: 5, name: "Fri", fullName: "Friday" },
+  { id: 6, name: "Sat", fullName: "Saturday" },
+]
 
 interface ClassSession {
   id: string
@@ -65,6 +79,13 @@ export default function ClassSessionDetailPage({
   const [selectedTeacher, setSelectedTeacher] = useState("")
   const [selectedLocation, setSelectedLocation] = useState("")
 
+  // Recurring state
+  const [showRecurring, setShowRecurring] = useState(false)
+  const [recurringDays, setRecurringDays] = useState<number[]>([])
+  const [recurringEndDate, setRecurringEndDate] = useState("")
+  const [creatingRecurring, setCreatingRecurring] = useState(false)
+  const [recurringCreatedCount, setRecurringCreatedCount] = useState<number | null>(null)
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -98,6 +119,98 @@ export default function ClassSessionDetailPage({
     }
     fetchData()
   }, [resolvedParams.classId])
+
+  // Initialize recurring days when showing recurring panel
+  useEffect(() => {
+    if (showRecurring && classSession && recurringDays.length === 0) {
+      const classDate = new Date(classSession.startTime)
+      setRecurringDays([classDate.getDay()])
+      // Default end date to 4 weeks from the class date
+      const defaultEnd = new Date(classDate)
+      defaultEnd.setDate(defaultEnd.getDate() + 28)
+      setRecurringEndDate(defaultEnd.toISOString().split("T")[0])
+    }
+  }, [showRecurring, classSession, recurringDays.length])
+
+  const toggleRecurringDay = (dayId: number) => {
+    setRecurringDays(prev => 
+      prev.includes(dayId) 
+        ? prev.filter(d => d !== dayId)
+        : [...prev, dayId].sort((a, b) => a - b)
+    )
+  }
+
+  const calculateRecurringCount = () => {
+    if (!classSession || !recurringEndDate || recurringDays.length === 0) return 0
+    
+    const classDate = new Date(classSession.startTime)
+    const start = new Date(classDate)
+    start.setDate(start.getDate() + 1) // Start from the day after the original class
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(recurringEndDate + "T23:59:59")
+    let count = 0
+    
+    const current = new Date(start)
+    while (current <= end) {
+      if (recurringDays.includes(current.getDay())) {
+        count++
+      }
+      current.setDate(current.getDate() + 1)
+    }
+    
+    return count
+  }
+
+  const handleCreateRecurring = async () => {
+    if (!classSession || recurringDays.length === 0 || !recurringEndDate) return
+    
+    setCreatingRecurring(true)
+    setRecurringCreatedCount(null)
+    
+    try {
+      const classDate = new Date(classSession.startTime)
+      const classTime = classDate.toTimeString().slice(0, 5) // HH:MM format
+      const duration = Math.round((new Date(classSession.endTime).getTime() - classDate.getTime()) / 60000)
+      
+      const res = await fetch("/api/studio/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classTypeId: classSession.classType.id,
+          teacherId: selectedTeacher,
+          locationId: selectedLocation,
+          startTime: classDate.toISOString(),
+          endTime: classSession.endTime,
+          capacity: capacity,
+          recurring: {
+            days: recurringDays,
+            endDate: recurringEndDate,
+            time: classTime,
+            duration: duration,
+            skipFirst: true // Skip the first occurrence since we already have this class
+          }
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setRecurringCreatedCount(data.count || 0)
+        setTimeout(() => {
+          router.push("/studio/schedule")
+        }, 2000)
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to create recurring classes")
+      }
+    } catch (error) {
+      console.error("Error creating recurring classes:", error)
+      alert("Failed to create recurring classes")
+    } finally {
+      setCreatingRecurring(false)
+    }
+  }
+
+  const expectedRecurringCount = calculateRecurringCount()
 
   const handleSave = async () => {
     setSaving(true)
@@ -311,6 +424,123 @@ export default function ClassSessionDetailPage({
                   Minimum: {classSession._count.bookings} (current bookings)
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Make Recurring */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              {/* Success Message */}
+              {recurringCreatedCount !== null && (
+                <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <p className="text-emerald-800 font-medium">
+                    ✓ Successfully created {recurringCreatedCount} additional class{recurringCreatedCount > 1 ? "es" : ""}!
+                  </p>
+                  <p className="text-emerald-600 text-sm mt-1">Redirecting to schedule...</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <Repeat className="h-5 w-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">Make Recurring</h2>
+                    <p className="text-sm text-gray-500">Create copies of this class on other days</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={showRecurring}
+                  onCheckedChange={(checked) => {
+                    setShowRecurring(checked)
+                    if (!checked) {
+                      setRecurringDays([])
+                      setRecurringEndDate("")
+                      setRecurringCreatedCount(null)
+                    }
+                  }}
+                />
+              </div>
+
+              {showRecurring && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  {/* Days of Week */}
+                  <div className="space-y-2">
+                    <Label>Repeat on</Label>
+                    <div className="flex gap-2">
+                      {DAYS_OF_WEEK.map((day) => (
+                        <button
+                          key={day.id}
+                          type="button"
+                          onClick={() => toggleRecurringDay(day.id)}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                            recurringDays.includes(day.id)
+                              ? "bg-violet-600 text-white"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-violet-300"
+                          }`}
+                          title={day.fullName}
+                        >
+                          {day.name}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500">Select which days to create this class</p>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="space-y-2">
+                    <Label htmlFor="recurringEndDate">Repeat until</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="recurringEndDate"
+                        type="date"
+                        value={recurringEndDate}
+                        onChange={(e) => setRecurringEndDate(e.target.value)}
+                        min={classSession ? new Date(classSession.startTime).toISOString().split("T")[0] : ""}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  {expectedRecurringCount > 0 && classSession && (
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+                      <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                      <div className="text-sm">
+                        <p className="text-blue-800 font-medium">
+                          This will create {expectedRecurringCount} additional class{expectedRecurringCount > 1 ? "es" : ""}
+                        </p>
+                        <p className="text-blue-600">
+                          Every {recurringDays.map(d => DAYS_OF_WEEK.find(day => day.id === d)?.fullName).join(", ")}
+                          {" "}at {new Date(classSession.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          {" "}until {new Date(recurringEndDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Create Button */}
+                  <Button
+                    onClick={handleCreateRecurring}
+                    disabled={creatingRecurring || recurringDays.length === 0 || !recurringEndDate || expectedRecurringCount === 0}
+                    className="w-full bg-violet-600 hover:bg-violet-700"
+                  >
+                    {creatingRecurring ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Create {expectedRecurringCount} Classes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
