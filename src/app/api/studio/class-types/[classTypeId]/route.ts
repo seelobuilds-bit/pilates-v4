@@ -4,7 +4,7 @@ import { getSession } from "@/lib/session"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { classTypeId: string } }
+  { params }: { params: Promise<{ classTypeId: string }> }
 ) {
   const session = await getSession()
 
@@ -12,9 +12,10 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { classTypeId } = await params
   const classType = await db.classType.findFirst({
     where: {
-      id: params.classTypeId,
+      id: classTypeId,
       studioId: session.user.studioId
     }
   })
@@ -28,7 +29,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { classTypeId: string } }
+  { params }: { params: Promise<{ classTypeId: string }> }
 ) {
   const session = await getSession()
 
@@ -37,12 +38,13 @@ export async function PATCH(
   }
 
   try {
+    const { classTypeId } = await params
     const body = await request.json()
     const { name, description, duration, capacity, price, isActive } = body
 
     const classType = await db.classType.updateMany({
       where: {
-        id: params.classTypeId,
+        id: classTypeId,
         studioId: session.user.studioId
       },
       data: {

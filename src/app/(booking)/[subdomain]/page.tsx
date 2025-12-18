@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 export default async function StudioLandingPage({
   params,
 }: {
-  params: { subdomain: string }
+  params: Promise<{ subdomain: string }>
 }) {
+  const { subdomain } = await params
   const studio = await db.studio.findUnique({
-    where: { subdomain: params.subdomain },
+    where: { subdomain },
     include: {
       locations: true
     }
@@ -38,12 +39,12 @@ export default async function StudioLandingPage({
               <CardTitle>Ready to book?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Link href={`/${params.subdomain}/book`} className="block">
+              <Link href={`/${subdomain}/book`} className="block">
                 <Button className="w-full" style={{ backgroundColor: studio.primaryColor }}>
                   Book a Class
                 </Button>
               </Link>
-              <Link href={`/${params.subdomain}/account`} className="block">
+              <Link href={`/${subdomain}/account`} className="block">
                 <Button variant="outline" className="w-full">
                   My Account
                 </Button>
