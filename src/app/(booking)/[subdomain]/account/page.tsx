@@ -264,10 +264,10 @@ export default function AccountPage() {
   }
 
   const upcomingBookings = bookings.filter(b => 
-    b.status === "confirmed" && new Date(b.classSession.startTime) > new Date()
+    b.status === "CONFIRMED" && new Date(b.classSession.startTime) > new Date()
   )
   const pastBookings = bookings.filter(b => 
-    b.status === "completed" || new Date(b.classSession.startTime) <= new Date()
+    b.status === "COMPLETED" || b.status === "CANCELLED" || new Date(b.classSession.startTime) <= new Date()
   )
 
   return (
@@ -373,7 +373,7 @@ export default function AccountPage() {
                           </p>
                         </div>
                         <Badge variant="secondary">
-                          {booking.status === "cancelled" ? "Cancelled" : "Completed"}
+                          {booking.status === "CANCELLED" ? "Cancelled" : "Completed"}
                         </Badge>
                       </div>
                     ))}
