@@ -15,8 +15,74 @@ import {
   Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
 } from "lucide-react"
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "")
+// Stripe Payment Wrapper - loads Stripe with connected account
+function StripePaymentWrapper({
+  clientSecret,
+  connectedAccountId,
+  subdomain,
+  paymentId,
+  amount,
+  onSuccess,
+  selectedSlot,
+  selectedClass,
+  selectedLocation,
+}: {
+  clientSecret: string
+  connectedAccountId: string
+  subdomain: string
+  paymentId: string
+  amount: number
+  onSuccess: (bookingData: BookingDetails) => void
+  selectedSlot: TimeSlot | null
+  selectedClass: ClassType | null
+  selectedLocation: Location | null
+}) {
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
+
+  useEffect(() => {
+    // Load Stripe with the connected account ID
+    const promise = loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
+      { stripeAccount: connectedAccountId }
+    )
+    setStripePromise(promise)
+  }, [connectedAccountId])
+
+  if (!stripePromise) {
+    return (
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
+        <p className="text-gray-500">Loading payment form...</p>
+      </div>
+    )
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#7c3aed',
+            borderRadius: '8px',
+          },
+        },
+      }}
+    >
+      <EmbeddedPaymentForm 
+        subdomain={subdomain}
+        paymentId={paymentId}
+        amount={amount}
+        onSuccess={onSuccess}
+        selectedSlot={selectedSlot}
+        selectedClass={selectedClass}
+        selectedLocation={selectedLocation}
+      />
+    </Elements>
+  )
+}
 
 // Embedded Payment Form Component
 function EmbeddedPaymentForm({ 
@@ -1157,29 +1223,17 @@ export default function BookingPage() {
                           </Button>
                         </div>
                       ) : clientSecret && connectedAccountId ? (
-                        <Elements 
-                          stripe={stripePromise} 
-                          options={{ 
-                            clientSecret,
-                            appearance: {
-                              theme: 'stripe',
-                              variables: {
-                                colorPrimary: '#7c3aed',
-                                borderRadius: '8px',
-                              },
-                            },
-                          }}
-                        >
-                          <EmbeddedPaymentForm 
-                            subdomain={subdomain}
-                            paymentId={paymentId!}
-                            amount={calculatePrice()}
-                            onSuccess={handlePaymentSuccess}
-                            selectedSlot={selectedSlot}
-                            selectedClass={selectedClass}
-                            selectedLocation={selectedLocation}
-                          />
-                        </Elements>
+                        <StripePaymentWrapper
+                          clientSecret={clientSecret}
+                          connectedAccountId={connectedAccountId}
+                          subdomain={subdomain}
+                          paymentId={paymentId!}
+                          amount={calculatePrice()}
+                          onSuccess={handlePaymentSuccess}
+                          selectedSlot={selectedSlot}
+                          selectedClass={selectedClass}
+                          selectedLocation={selectedLocation}
+                        />
                       ) : (
                         <div className="text-center py-4">
                           <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
