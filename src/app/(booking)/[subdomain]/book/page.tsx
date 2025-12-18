@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
+import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -107,6 +107,78 @@ function EmbeddedPaymentForm({
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Handle successful payment (shared between card and express checkout)
+  async function handlePaymentSuccess(paymentIntentId: string) {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/confirm-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentIntentId,
+          paymentId,
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to complete booking")
+      }
+
+      const data = await res.json()
+      
+      // Call success handler
+      onSuccess({
+        className: selectedClass?.name || data.booking.className,
+        date: selectedSlot ? new Date(selectedSlot.startTime).toLocaleDateString("en-US", { 
+          weekday: "long", 
+          month: "long", 
+          day: "numeric" 
+        }) : "",
+        time: selectedSlot ? new Date(selectedSlot.startTime).toLocaleTimeString([], { 
+          hour: "numeric", 
+          minute: "2-digit" 
+        }) : "",
+        location: selectedLocation?.name || data.booking.location,
+        teacher: selectedSlot ? `${selectedSlot.teacher.user.firstName} ${selectedSlot.teacher.user.lastName}` : data.booking.teacher,
+        price: amount,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete booking")
+      setProcessing(false)
+    }
+  }
+
+  // Handle Express Checkout (Apple Pay, Google Pay, Link)
+  async function handleExpressCheckoutConfirm() {
+    if (!stripe || !elements) return
+
+    setProcessing(true)
+    setError(null)
+
+    const { error: submitError } = await elements.submit()
+    if (submitError) {
+      setError(submitError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (confirmError) {
+      setError(confirmError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      await handlePaymentSuccess(paymentIntent.id)
+    }
+  }
+
+  // Handle regular card form submission
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -130,87 +202,85 @@ function EmbeddedPaymentForm({
     }
 
     if (paymentIntent && paymentIntent.status === "succeeded") {
-      // Payment successful - create booking
-      try {
-        const res = await fetch(`/api/booking/${subdomain}/confirm-payment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            paymentIntentId: paymentIntent.id,
-            paymentId,
-          })
-        })
-
-        if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.error || "Failed to complete booking")
-        }
-
-        const data = await res.json()
-        
-        // Call success handler
-        onSuccess({
-          className: selectedClass?.name || data.booking.className,
-          date: selectedSlot ? new Date(selectedSlot.startTime).toLocaleDateString("en-US", { 
-            weekday: "long", 
-            month: "long", 
-            day: "numeric" 
-          }) : "",
-          time: selectedSlot ? new Date(selectedSlot.startTime).toLocaleTimeString([], { 
-            hour: "numeric", 
-            minute: "2-digit" 
-          }) : "",
-          location: selectedLocation?.name || data.booking.location,
-          teacher: selectedSlot ? `${selectedSlot.teacher.user.firstName} ${selectedSlot.teacher.user.lastName}` : data.booking.teacher,
-          price: amount,
-        })
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to complete booking")
-      }
+      await handlePaymentSuccess(paymentIntent.id)
+    } else {
+      setProcessing(false)
     }
-
-    setProcessing(false)
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
+      {/* Express Checkout - Apple Pay, Google Pay, Link */}
       <div className="mb-4">
-        <PaymentElement 
+        <ExpressCheckoutElement 
+          onConfirm={handleExpressCheckoutConfirm}
           options={{
-            layout: "tabs",
+            buttonType: {
+              applePay: "book",
+              googlePay: "book",
+            },
+            buttonTheme: {
+              applePay: "black",
+              googlePay: "black",
+            },
+            layout: {
+              maxColumns: 2,
+              maxRows: 1,
+            },
           }}
         />
       </div>
-      
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-          {error}
+
+      {/* Divider */}
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
         </div>
-      )}
-
-      <Button
-        type="submit"
-        disabled={!stripe || processing}
-        className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
-      >
-        {processing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          <>
-            <Lock className="w-4 h-4 mr-2" />
-            Pay ${amount.toFixed(2)}
-          </>
-        )}
-      </Button>
-
-      <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
-        <Lock className="w-3 h-3" />
-        <span>Secured by Stripe</span>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-3 bg-white text-gray-500">Or pay with card</span>
+        </div>
       </div>
-    </form>
+
+      {/* Card Form */}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <PaymentElement 
+            options={{
+              layout: "tabs",
+            }}
+          />
+        </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={!stripe || processing}
+          className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
+        >
+          {processing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4 mr-2" />
+              Pay ${amount.toFixed(2)}
+            </>
+          )}
+        </Button>
+
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <Lock className="w-3 h-3" />
+          <span>Secured by Stripe</span>
+        </div>
+      </form>
+    </div>
   )
 }
 
