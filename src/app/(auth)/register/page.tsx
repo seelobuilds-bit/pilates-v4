@@ -52,7 +52,7 @@ export default function RegisterPage() {
           Create an Account
         </CardTitle>
         <CardDescription className="text-center">
-          Register as a studio owner on Cadence
+          Register as a studio owner on SOULFLOW
         </CardDescription>
       </CardHeader>
       <CardContent>

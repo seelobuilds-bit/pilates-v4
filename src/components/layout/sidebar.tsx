@@ -62,7 +62,7 @@ export function Sidebar() {
 
   if (role === "HQ_ADMIN") {
     links = hqLinks
-    title = "Cadence HQ"
+    title = "SOULFLOW HQ"
     subtitle = "Admin Portal"
   } else if (role === "TEACHER") {
     links = teacherLinks

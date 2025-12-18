@@ -53,7 +53,7 @@ export default function LoginPage() {
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">
-          Welcome to Cadence
+          Welcome to SOULFLOW
         </CardTitle>
         <CardDescription className="text-center">
           Platform login for HQ Admins, Studio Owners & Teachers

@@ -375,10 +375,10 @@ export default function SettingsPage() {
               <Label htmlFor="subdomain">Subdomain</Label>
               <div className="flex items-center gap-2">
                 <Input id="subdomain" defaultValue={studio?.subdomain} />
-                <span className="text-sm text-gray-500 whitespace-nowrap">.cadence.studio</span>
+                <span className="text-sm text-gray-500 whitespace-nowrap">.soulflow.studio</span>
               </div>
               <p className="text-xs text-gray-500">
-                Your booking page: {studio?.subdomain}.cadence.studio
+                Your booking page: {studio?.subdomain}.soulflow.studio
               </p>
             </div>
             <Button className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
