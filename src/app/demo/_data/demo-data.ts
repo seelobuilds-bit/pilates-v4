@@ -21,13 +21,38 @@ export const demoUser = {
 // Dashboard Stats
 export const demoStats = {
   revenue: 24850,
-  revenueChange: 12,
+  revenueChange: 8.5,
   activeClients: 156,
   totalClients: 203,
   bookings: 342,
   weekBookings: 47,
+  todayBookings: 12,
   churnRate: 4.2,
+  newClientsThisWeek: 8,
+  // Today's overview
+  todayClasses: 6,
+  todayTotalBookings: 42,
+  todayFillRate: 78,
+  // Monthly revenue
+  monthlyRevenue: 12450,
 }
+
+// At-Risk Clients (haven't booked in 21+ days)
+export const demoAtRiskClients = [
+  { id: "7", firstName: "Jennifer", lastName: "Park", email: "jennifer@email.com", lastActive: "24 days ago" },
+  { id: "11", firstName: "Natalie", lastName: "Brown", email: "natalie@email.com", lastActive: "28 days ago" },
+  { id: "12", firstName: "Stephanie", lastName: "Wilson", email: "stephanie@email.com", lastActive: "22 days ago" },
+]
+
+// Today's Classes (for dashboard schedule)
+export const demoTodayClasses = [
+  { id: "tc1", classType: { name: "Morning Flow Pilates" }, startTime: new Date(new Date().setHours(7, 0, 0)), teacher: { user: { firstName: "Sarah", lastName: "Mitchell" } }, location: { name: "Main Studio" }, capacity: 12, _count: { bookings: 10 } },
+  { id: "tc2", classType: { name: "Reformer Basics" }, startTime: new Date(new Date().setHours(9, 30, 0)), teacher: { user: { firstName: "Jessica", lastName: "Taylor" } }, location: { name: "Studio B" }, capacity: 10, _count: { bookings: 10 } },
+  { id: "tc3", classType: { name: "Power Pilates" }, startTime: new Date(new Date().setHours(12, 0, 0)), teacher: { user: { firstName: "Sarah", lastName: "Mitchell" } }, location: { name: "Main Studio" }, capacity: 12, _count: { bookings: 8 } },
+  { id: "tc4", classType: { name: "Prenatal Pilates" }, startTime: new Date(new Date().setHours(14, 30, 0)), teacher: { user: { firstName: "Amanda", lastName: "Lopez" } }, location: { name: "Studio C" }, capacity: 8, _count: { bookings: 5 } },
+  { id: "tc5", classType: { name: "Evening Stretch" }, startTime: new Date(new Date().setHours(17, 0, 0)), teacher: { user: { firstName: "Jessica", lastName: "Taylor" } }, location: { name: "Main Studio" }, capacity: 10, _count: { bookings: 6 } },
+  { id: "tc6", classType: { name: "Reformer Advanced" }, startTime: new Date(new Date().setHours(19, 0, 0)), teacher: { user: { firstName: "Sarah", lastName: "Mitchell" } }, location: { name: "Studio B" }, capacity: 8, _count: { bookings: 3 } },
+]
 
 // Upcoming Classes for Dashboard
 export const demoUpcomingClasses = [

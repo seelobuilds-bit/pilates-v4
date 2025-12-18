@@ -397,10 +397,10 @@ export default function HomePage() {
       {/* ============================================ */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 border-y border-gray-100">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-sm text-gray-400 mb-8">Trusted by 200+ studios across the US, UK, and Australia</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-40 grayscale">
+          <p className="text-center text-sm text-gray-500 mb-8">Trusted by 200+ studios across the US, UK, and Australia</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
             {['ALIGN', 'BREATHE', 'CORE', 'FLOW STATE', 'PURE', 'REFORM'].map((name) => (
-              <span key={name} className="text-xl font-bold text-gray-400 tracking-wide">{name}</span>
+              <span key={name} className="text-xl font-bold text-gray-800 tracking-wide">{name}</span>
             ))}
           </div>
         </div>
