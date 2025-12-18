@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,8 +12,141 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
-  Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck
+  Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
 } from "lucide-react"
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "")
+
+// Embedded Payment Form Component
+function EmbeddedPaymentForm({ 
+  subdomain,
+  paymentId,
+  amount,
+  onSuccess,
+  selectedSlot,
+  selectedClass,
+  selectedLocation,
+}: { 
+  subdomain: string
+  paymentId: string
+  amount: number
+  onSuccess: (bookingData: BookingDetails) => void
+  selectedSlot: TimeSlot | null
+  selectedClass: ClassType | null
+  selectedLocation: Location | null
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!stripe || !elements) {
+      return
+    }
+
+    setProcessing(true)
+    setError(null)
+
+    // Confirm the payment
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (stripeError) {
+      setError(stripeError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      // Payment successful - create booking
+      try {
+        const res = await fetch(`/api/booking/${subdomain}/confirm-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentIntentId: paymentIntent.id,
+            paymentId,
+          })
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || "Failed to complete booking")
+        }
+
+        const data = await res.json()
+        
+        // Call success handler
+        onSuccess({
+          className: selectedClass?.name || data.booking.className,
+          date: selectedSlot ? new Date(selectedSlot.startTime).toLocaleDateString("en-US", { 
+            weekday: "long", 
+            month: "long", 
+            day: "numeric" 
+          }) : "",
+          time: selectedSlot ? new Date(selectedSlot.startTime).toLocaleTimeString([], { 
+            hour: "numeric", 
+            minute: "2-digit" 
+          }) : "",
+          location: selectedLocation?.name || data.booking.location,
+          teacher: selectedSlot ? `${selectedSlot.teacher.user.firstName} ${selectedSlot.teacher.user.lastName}` : data.booking.teacher,
+          price: amount,
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to complete booking")
+      }
+    }
+
+    setProcessing(false)
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="mb-4">
+        <PaymentElement 
+          options={{
+            layout: "tabs",
+          }}
+        />
+      </div>
+      
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+
+      <Button
+        type="submit"
+        disabled={!stripe || processing}
+        className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
+      >
+        {processing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Lock className="w-4 h-4 mr-2" />
+            Pay ${amount.toFixed(2)}
+          </>
+        )}
+      </Button>
+
+      <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+        <Lock className="w-3 h-3" />
+        <span>Secured by Stripe</span>
+      </div>
+    </form>
+  )
+}
 
 interface Location {
   id: string
@@ -118,6 +253,13 @@ export default function BookingPage() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState(false)
+
+  // Stripe embedded payment state
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [connectedAccountId, setConnectedAccountId] = useState<string | null>(null)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -272,14 +414,16 @@ export default function BookingPage() {
     setClient(null)
   }
 
-  async function handleConfirmBooking() {
-    if (!selectedSlot || !client) return
-    setBookingLoading(true)
+  // Create PaymentIntent when user is logged in and on checkout step with Stripe enabled
+  useEffect(() => {
+    async function createPaymentIntent() {
+      if (step !== "checkout" || !client || !selectedSlot || !studioData?.stripeEnabled || clientSecret) return
+      
+      setCreatingPaymentIntent(true)
+      setPaymentError(null)
 
-    try {
-      // If Stripe is enabled, redirect to Stripe Checkout
-      if (studioData?.stripeEnabled) {
-        const res = await fetch(`/api/booking/${subdomain}/checkout`, {
+      try {
+        const res = await fetch(`/api/booking/${subdomain}/create-payment-intent`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -292,16 +436,34 @@ export default function BookingPage() {
 
         if (!res.ok) {
           const data = await res.json()
-          throw new Error(data.error || "Checkout failed")
+          throw new Error(data.error || "Failed to initialize payment")
         }
 
         const data = await res.json()
-        // Redirect to Stripe Checkout
-        window.location.href = data.checkoutUrl
-        return
+        setClientSecret(data.clientSecret)
+        setPaymentId(data.paymentId)
+        setConnectedAccountId(data.connectedAccountId)
+      } catch (err) {
+        setPaymentError(err instanceof Error ? err.message : "Failed to initialize payment")
       }
+      setCreatingPaymentIntent(false)
+    }
 
-      // Free booking (no Stripe)
+    createPaymentIntent()
+  }, [step, client, selectedSlot, studioData?.stripeEnabled, subdomain, clientSecret])
+
+  // Handle successful payment completion
+  function handlePaymentSuccess(bookingData: BookingDetails) {
+    setBookingDetails(bookingData)
+    setBookingComplete(true)
+  }
+
+  async function handleConfirmBooking() {
+    if (!selectedSlot || !client) return
+    setBookingLoading(true)
+
+    try {
+      // Free booking (no Stripe) - payment handled by embedded form when Stripe is enabled
       const res = await fetch(`/api/booking/${subdomain}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -973,16 +1135,60 @@ export default function BookingPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CreditCard className="w-5 h-5 text-violet-600" />
-                      <p className="font-medium text-gray-900">Payment</p>
+                      <p className="font-medium text-gray-900">Payment Details</p>
                     </div>
                     {studioData?.stripeEnabled ? (
-                      <div className="text-center py-4">
-                        <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Lock className="w-8 h-8 text-violet-600" />
+                      creatingPaymentIntent ? (
+                        <div className="text-center py-8">
+                          <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
+                          <p className="text-gray-500">Initializing secure payment...</p>
                         </div>
-                        <p className="text-gray-600 mb-2">Secure payment via Stripe</p>
-                        <p className="text-sm text-gray-400">You&apos;ll be redirected to complete payment</p>
-                      </div>
+                      ) : paymentError ? (
+                        <div className="text-center py-4">
+                          <p className="text-red-600 mb-2">{paymentError}</p>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setClientSecret(null)
+                              setPaymentError(null)
+                            }}
+                          >
+                            Try Again
+                          </Button>
+                        </div>
+                      ) : clientSecret && connectedAccountId ? (
+                        <Elements 
+                          stripe={stripePromise} 
+                          options={{ 
+                            clientSecret,
+                            appearance: {
+                              theme: 'stripe',
+                              variables: {
+                                colorPrimary: '#7c3aed',
+                                borderRadius: '8px',
+                              },
+                            },
+                          }}
+                        >
+                          <EmbeddedPaymentForm 
+                            subdomain={subdomain}
+                            paymentId={paymentId!}
+                            amount={calculatePrice()}
+                            onSuccess={handlePaymentSuccess}
+                            selectedSlot={selectedSlot}
+                            selectedClass={selectedClass}
+                            selectedLocation={selectedLocation}
+                          />
+                        </Elements>
+                      ) : (
+                        <div className="text-center py-4">
+                          <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Lock className="w-8 h-8 text-violet-600" />
+                          </div>
+                          <p className="text-gray-600 mb-2">Secure payment via Stripe</p>
+                          <p className="text-sm text-gray-400">Card form will appear here</p>
+                        </div>
+                      )
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-gray-600 mb-2">Payments not enabled</p>
@@ -992,22 +1198,16 @@ export default function BookingPage() {
                   </CardContent>
                 </Card>
 
-                <Button
-                  onClick={handleConfirmBooking}
-                  disabled={bookingLoading}
-                  className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
-                >
-                  {studioData?.stripeEnabled ? (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      {bookingLoading ? "Redirecting to payment..." : `Pay $${calculatePrice().toFixed(2)}`}
-                    </>
-                  ) : (
-                    <>
-                      {bookingLoading ? "Processing..." : "Confirm Booking"}
-                    </>
-                  )}
-                </Button>
+                {/* Only show confirm button if Stripe is NOT enabled (free booking) */}
+                {!studioData?.stripeEnabled && (
+                  <Button
+                    onClick={handleConfirmBooking}
+                    disabled={bookingLoading}
+                    className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
+                  >
+                    {bookingLoading ? "Processing..." : "Confirm Booking"}
+                  </Button>
+                )}
               </>
             )}
           </div>
