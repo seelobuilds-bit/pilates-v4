@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { classTypeId, teacherId, locationId, startTime, endTime, capacity } = body
+    const { classTypeId, teacherId, locationId, startTime, endTime, capacity, recurring } = body
 
     // Verify the class type, teacher, and location belong to this studio
     const [classType, teacher, location] = await Promise.all([
@@ -78,6 +78,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid class type, teacher, or location" }, { status: 400 })
     }
 
+    // Handle recurring classes
+    if (recurring && recurring.days && recurring.days.length > 0 && recurring.endDate) {
+      const { days, endDate: recurringEndDate, time, duration } = recurring
+      
+      // Generate all dates for the recurring series
+      const startDate = new Date(startTime)
+      startDate.setHours(0, 0, 0, 0)
+      const endDateObj = new Date(recurringEndDate + "T23:59:59")
+      
+      const classesToCreate: Array<{
+        studioId: string
+        classTypeId: string
+        teacherId: string
+        locationId: string
+        startTime: Date
+        endTime: Date
+        capacity: number
+      }> = []
+      
+      // Parse time
+      const [hours, minutes] = time.split(":").map(Number)
+      
+      // Iterate through each day from start to end
+      const current = new Date(startDate)
+      while (current <= endDateObj) {
+        if (days.includes(current.getDay())) {
+          const classStart = new Date(current)
+          classStart.setHours(hours, minutes, 0, 0)
+          
+          const classEnd = new Date(classStart.getTime() + duration * 60000)
+          
+          classesToCreate.push({
+            studioId: session.user.studioId,
+            classTypeId,
+            teacherId,
+            locationId,
+            startTime: classStart,
+            endTime: classEnd,
+            capacity
+          })
+        }
+        current.setDate(current.getDate() + 1)
+      }
+      
+      // Create all classes in a transaction
+      if (classesToCreate.length > 0) {
+        await db.classSession.createMany({
+          data: classesToCreate
+        })
+        
+        return NextResponse.json({ 
+          success: true, 
+          count: classesToCreate.length,
+          message: `Created ${classesToCreate.length} classes`
+        })
+      }
+      
+      return NextResponse.json({ error: "No classes to create" }, { status: 400 })
+    }
+
+    // Single class creation (non-recurring)
     const classSession = await db.classSession.create({
       data: {
         studioId: session.user.studioId,

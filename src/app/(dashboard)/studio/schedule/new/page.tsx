@@ -7,8 +7,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Calendar, Clock } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, Repeat, Info } from "lucide-react"
 
 interface ClassType {
   id: string
@@ -27,6 +28,16 @@ interface Location {
   name: string
 }
 
+const DAYS_OF_WEEK = [
+  { id: 0, name: "Sun", fullName: "Sunday" },
+  { id: 1, name: "Mon", fullName: "Monday" },
+  { id: 2, name: "Tue", fullName: "Tuesday" },
+  { id: 3, name: "Wed", fullName: "Wednesday" },
+  { id: 4, name: "Thu", fullName: "Thursday" },
+  { id: 5, name: "Fri", fullName: "Friday" },
+  { id: 6, name: "Sat", fullName: "Saturday" },
+]
+
 export default function NewSchedulePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -42,6 +53,12 @@ export default function NewSchedulePage() {
     time: "",
     capacity: ""
   })
+
+  // Recurring options
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [selectedDays, setSelectedDays] = useState<number[]>([])
+  const [endDate, setEndDate] = useState("")
+  const [createdCount, setCreatedCount] = useState<number | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -62,32 +79,99 @@ export default function NewSchedulePage() {
     fetchData()
   }, [])
 
+  // When start date is selected, auto-select that day of week for recurring
+  useEffect(() => {
+    if (formData.date && isRecurring && selectedDays.length === 0) {
+      const startDate = new Date(formData.date + "T00:00:00")
+      setSelectedDays([startDate.getDay()])
+    }
+  }, [formData.date, isRecurring, selectedDays.length])
+
+  // Set default end date to 4 weeks from start date
+  useEffect(() => {
+    if (formData.date && isRecurring && !endDate) {
+      const startDate = new Date(formData.date + "T00:00:00")
+      const defaultEnd = new Date(startDate)
+      defaultEnd.setDate(defaultEnd.getDate() + 28) // 4 weeks
+      setEndDate(defaultEnd.toISOString().split("T")[0])
+    }
+  }, [formData.date, isRecurring, endDate])
+
   const selectedClassType = classTypes.find(ct => ct.id === formData.classTypeId)
+
+  const toggleDay = (dayId: number) => {
+    setSelectedDays(prev => 
+      prev.includes(dayId) 
+        ? prev.filter(d => d !== dayId)
+        : [...prev, dayId].sort((a, b) => a - b)
+    )
+  }
+
+  // Calculate how many classes will be created
+  const calculateClassCount = () => {
+    if (!formData.date || !formData.time || !endDate || selectedDays.length === 0) return 0
+    
+    const start = new Date(formData.date + "T00:00:00")
+    const end = new Date(endDate + "T23:59:59")
+    let count = 0
+    
+    const current = new Date(start)
+    while (current <= end) {
+      if (selectedDays.includes(current.getDay())) {
+        count++
+      }
+      current.setDate(current.getDate() + 1)
+    }
+    
+    return count
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setCreatedCount(null)
 
     try {
       const startTime = new Date(`${formData.date}T${formData.time}`)
       const duration = selectedClassType?.duration || 60
       const endTime = new Date(startTime.getTime() + duration * 60000)
 
+      const payload: Record<string, unknown> = {
+        classTypeId: formData.classTypeId,
+        teacherId: formData.teacherId,
+        locationId: formData.locationId,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        capacity: parseInt(formData.capacity) || selectedClassType?.capacity || 10
+      }
+
+      // Add recurring options if enabled
+      if (isRecurring && selectedDays.length > 0 && endDate) {
+        payload.recurring = {
+          days: selectedDays,
+          endDate: endDate,
+          time: formData.time,
+          duration: duration
+        }
+      }
+
       const res = await fetch("/api/studio/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          classTypeId: formData.classTypeId,
-          teacherId: formData.teacherId,
-          locationId: formData.locationId,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          capacity: parseInt(formData.capacity) || selectedClassType?.capacity || 10
-        })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
-        router.push("/studio/schedule")
+        const data = await res.json()
+        if (data.count && data.count > 1) {
+          setCreatedCount(data.count)
+          // Show success briefly then redirect
+          setTimeout(() => {
+            router.push("/studio/schedule")
+          }, 2000)
+        } else {
+          router.push("/studio/schedule")
+        }
       } else {
         const data = await res.json()
         alert(data.error || "Failed to create class")
@@ -100,6 +184,8 @@ export default function NewSchedulePage() {
     }
   }
 
+  const expectedCount = isRecurring ? calculateClassCount() : 1
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -111,6 +197,16 @@ export default function NewSchedulePage() {
         <h1 className="text-2xl font-bold text-gray-900">Add Class to Schedule</h1>
         <p className="text-gray-500 mt-1">Schedule a new class session</p>
       </div>
+
+      {/* Success Message */}
+      {createdCount !== null && (
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p className="text-emerald-800 font-medium">
+            ✓ Successfully created {createdCount} class{createdCount > 1 ? "es" : ""}!
+          </p>
+          <p className="text-emerald-600 text-sm mt-1">Redirecting to schedule...</p>
+        </div>
+      )}
 
       <Card className="border-0 shadow-sm max-w-2xl">
         <CardContent className="p-6">
@@ -185,7 +281,7 @@ export default function NewSchedulePage() {
             {/* Date and Time */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">{isRecurring ? "Start Date" : "Date"}</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -228,6 +324,92 @@ export default function NewSchedulePage() {
               <p className="text-xs text-gray-500">Maximum number of students for this session</p>
             </div>
 
+            {/* Recurring Toggle */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between p-4 bg-violet-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <Repeat className="h-5 w-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Recurring Class</p>
+                    <p className="text-sm text-gray-500">Repeat this class on selected days</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={isRecurring}
+                  onCheckedChange={(checked) => {
+                    setIsRecurring(checked)
+                    if (!checked) {
+                      setSelectedDays([])
+                      setEndDate("")
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Recurring Options */}
+            {isRecurring && (
+              <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                {/* Days of Week */}
+                <div className="space-y-2">
+                  <Label>Repeat on</Label>
+                  <div className="flex gap-2">
+                    {DAYS_OF_WEEK.map((day) => (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => toggleDay(day.id)}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                          selectedDays.includes(day.id)
+                            ? "bg-violet-600 text-white"
+                            : "bg-white border border-gray-200 text-gray-600 hover:border-violet-300"
+                        }`}
+                        title={day.fullName}
+                      >
+                        {day.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">Select which days to repeat this class</p>
+                </div>
+
+                {/* End Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">Repeat until</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      min={formData.date}
+                      className="pl-10"
+                      required={isRecurring}
+                    />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                {expectedCount > 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+                    <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="text-blue-800 font-medium">
+                        This will create {expectedCount} class{expectedCount > 1 ? "es" : ""}
+                      </p>
+                      <p className="text-blue-600">
+                        Every {selectedDays.map(d => DAYS_OF_WEEK.find(day => day.id === d)?.fullName).join(", ")}
+                        {" "}at {formData.time} until {new Date(endDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">
               <Link href="/studio/schedule">
@@ -236,9 +418,9 @@ export default function NewSchedulePage() {
               <Button 
                 type="submit" 
                 className="bg-violet-600 hover:bg-violet-700"
-                disabled={loading || !formData.classTypeId || !formData.teacherId || !formData.locationId}
+                disabled={loading || !formData.classTypeId || !formData.teacherId || !formData.locationId || (isRecurring && selectedDays.length === 0)}
               >
-                {loading ? "Creating..." : "Create Class"}
+                {loading ? "Creating..." : isRecurring ? `Create ${expectedCount} Classes` : "Create Class"}
               </Button>
             </div>
           </form>
