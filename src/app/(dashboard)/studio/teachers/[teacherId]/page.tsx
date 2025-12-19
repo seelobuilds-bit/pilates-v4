@@ -27,7 +27,8 @@ import {
   BookOpen,
   Award,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Ban
 } from "lucide-react"
 
 interface Teacher {
@@ -72,6 +73,13 @@ interface TeacherStats {
   topClients: { name: string; bookings: number }[]
 }
 
+interface BlockedTime {
+  id: string
+  startTime: string
+  endTime: string
+  reason: string | null
+}
+
 export default function TeacherDetailPage({
   params,
 }: {
@@ -85,6 +93,7 @@ export default function TeacherDetailPage({
   const [specialtiesInput, setSpecialtiesInput] = useState("")
   const [extendedStats, setExtendedStats] = useState<TeacherStats | null>(null)
   const [scheduleWeekOffset, setScheduleWeekOffset] = useState(0)
+  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([])
 
   useEffect(() => {
     async function fetchTeacher() {
@@ -138,6 +147,34 @@ export default function TeacherDetailPage({
     }
     fetchTeacher()
   }, [resolvedParams.teacherId])
+
+  // Fetch blocked times when week offset changes
+  useEffect(() => {
+    async function fetchBlockedTimes() {
+      try {
+        const today = new Date()
+        const currentDay = today.getDay()
+        const startOfWeek = new Date(today)
+        startOfWeek.setDate(today.getDate() - currentDay + (scheduleWeekOffset * 7))
+        startOfWeek.setHours(0, 0, 0, 0)
+        
+        const endOfWeek = new Date(startOfWeek)
+        endOfWeek.setDate(startOfWeek.getDate() + 6)
+        endOfWeek.setHours(23, 59, 59, 999)
+
+        const res = await fetch(
+          `/api/studio/teachers/${resolvedParams.teacherId}/blocked-times?start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setBlockedTimes(data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch blocked times:", error)
+      }
+    }
+    fetchBlockedTimes()
+  }, [resolvedParams.teacherId, scheduleWeekOffset])
 
   const handleSave = async () => {
     if (!teacher) return
@@ -588,6 +625,18 @@ export default function TeacherDetailPage({
                   }
                 })
 
+                // Group blocked times by day
+                const blockedByDay: Record<number, BlockedTime[]> = {
+                  0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []
+                }
+                blockedTimes.forEach(bt => {
+                  const btDate = new Date(bt.startTime)
+                  if (btDate >= weekStart && btDate <= weekEnd) {
+                    const day = btDate.getDay()
+                    blockedByDay[day].push(bt)
+                  }
+                })
+
                 // Sort classes by time within each day
                 Object.keys(classesByDay).forEach(day => {
                   classesByDay[parseInt(day)].sort((a, b) => 
@@ -616,30 +665,56 @@ export default function TeacherDetailPage({
                       {/* Day Headers */}
                       {weekDates.map((date, i) => {
                         const isToday = today.toDateString() === date.toDateString()
+                        const hasBlockedTime = blockedByDay[i].length > 0
                         return (
                           <div 
                             key={i}
                             className={`text-center p-3 rounded-xl ${
-                              isToday ? 'bg-violet-100' : 'bg-gray-50'
+                              isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
                             }`}
                           >
                             <p className={`text-xs font-medium ${
-                              isToday ? 'text-violet-600' : 'text-gray-500'
+                              isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-500'
                             }`}>
                               {dayNames[i]}
                             </p>
                             <p className={`text-lg font-bold ${
-                              isToday ? 'text-violet-600' : 'text-gray-900'
+                              isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-900'
                             }`}>
                               {date.getDate()}
                             </p>
+                            {hasBlockedTime && (
+                              <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 mt-1">
+                                <Ban className="h-2.5 w-2.5 mr-1" />
+                                Blocked
+                              </Badge>
+                            )}
                           </div>
                         )
                       })}
 
-                      {/* Classes for each day */}
+                      {/* Classes and Blocked Times for each day */}
                       {weekDates.map((_, dayIndex) => (
                         <div key={dayIndex} className="space-y-2 min-h-[200px]">
+                          {/* Blocked Times */}
+                          {blockedByDay[dayIndex].map((bt) => (
+                            <div key={bt.id} className="p-2 bg-red-50 rounded-lg border-l-4 border-l-red-500">
+                              <div className="flex items-center gap-1 text-red-600">
+                                <Ban className="h-3 w-3" />
+                                <span className="text-xs font-medium">Blocked</span>
+                              </div>
+                              <p className="text-xs text-red-700 flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - 
+                                {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </p>
+                              {bt.reason && (
+                                <p className="text-xs text-red-500 mt-1 truncate">{bt.reason}</p>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {/* Classes */}
                           {classesByDay[dayIndex].length > 0 ? (
                             classesByDay[dayIndex].map((cls) => (
                               <Link
@@ -666,11 +741,11 @@ export default function TeacherDetailPage({
                                 </div>
                               </Link>
                             ))
-                          ) : (
+                          ) : blockedByDay[dayIndex].length === 0 ? (
                             <div className="h-full flex items-center justify-center">
                               <p className="text-xs text-gray-400">No classes</p>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       ))}
                     </div>

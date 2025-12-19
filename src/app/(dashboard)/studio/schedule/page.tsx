@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban } from "lucide-react"
 
 interface Location {
   id: string
@@ -38,6 +38,20 @@ interface ClassSession {
   teacher: Teacher
   location: Location
   _count: { bookings: number }
+}
+
+interface BlockedTime {
+  id: string
+  startTime: string
+  endTime: string
+  reason: string | null
+  teacherId: string
+  teacher: {
+    user: {
+      firstName: string
+      lastName: string
+    }
+  }
 }
 
 const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
@@ -95,11 +109,13 @@ export default function SchedulePage() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [classTypes, setClassTypes] = useState<ClassType[]>([])
   const [classes, setClasses] = useState<ClassSession[]>([])
+  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([])
   
   // Filters
   const [filterLocation, setFilterLocation] = useState<string>("all")
   const [filterTeacher, setFilterTeacher] = useState<string>(initialTeacher || "all")
   const [filterClassType, setFilterClassType] = useState<string>("all")
+  const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
 
   const weekDates = getWeekDates(weekOffset)
 
@@ -145,6 +161,13 @@ export default function SchedulePage() {
           const classesData = await classesRes.json()
           setClasses(classesData)
         }
+
+        // Fetch blocked times for the week
+        const blockedRes = await fetch(`/api/studio/blocked-times?start=${startDate}&end=${endDate.toISOString()}`)
+        if (blockedRes.ok) {
+          const blockedData = await blockedRes.json()
+          setBlockedTimes(blockedData)
+        }
       } catch (error) {
         console.error("Failed to fetch schedule data:", error)
       }
@@ -179,6 +202,24 @@ export default function SchedulePage() {
       new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     )
   })
+
+  // Filter and group blocked times by day
+  const filteredBlockedTimes = blockedTimes.filter(bt => {
+    if (filterTeacher !== "all" && bt.teacherId !== filterTeacher) return false
+    return true
+  })
+
+  const blockedByDay: Record<number, BlockedTime[]> = {}
+  for (let i = 0; i < 7; i++) {
+    blockedByDay[i] = []
+  }
+  
+  if (showBlockedTimes) {
+    filteredBlockedTimes.forEach(bt => {
+      const day = new Date(bt.startTime).getDay()
+      blockedByDay[day].push(bt)
+    })
+  }
 
   const formatDateRange = () => {
     const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' }
@@ -274,6 +315,22 @@ export default function SchedulePage() {
               </SelectContent>
             </Select>
 
+            {/* Blocked Times Toggle */}
+            <Button 
+              variant={showBlockedTimes ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setShowBlockedTimes(!showBlockedTimes)}
+              className={showBlockedTimes ? "bg-red-600 hover:bg-red-700" : "text-red-600 border-red-200 hover:bg-red-50"}
+            >
+              <Ban className="h-4 w-4 mr-2" />
+              Blocked Times
+              {blockedTimes.length > 0 && (
+                <Badge className="ml-2 bg-white text-red-600 h-5 min-w-5 px-1">
+                  {blockedTimes.length}
+                </Badge>
+              )}
+            </Button>
+
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-gray-500">
                 <X className="h-4 w-4 mr-1" />
@@ -353,33 +410,66 @@ export default function SchedulePage() {
                 {weekDates.map((date, i) => {
                   const isToday = new Date().toDateString() === date.toDateString()
                   const dayClasses = classesByDay[i] || []
+                  const dayBlocked = blockedByDay[i] || []
+                  const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
                   return (
                     <div 
                       key={i}
                       className={`text-center p-3 rounded-xl ${
-                        isToday ? 'bg-violet-100' : 'bg-gray-50'
+                        isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
                       }`}
                     >
                       <p className={`text-xs font-medium ${
-                        isToday ? 'text-violet-600' : 'text-gray-500'
+                        isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-500'
                       }`}>
                         {dayNames[i]}
                       </p>
                       <p className={`text-xl font-bold ${
-                        isToday ? 'text-violet-600' : 'text-gray-900'
+                        isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-900'
                       }`}>
                         {date.getDate()}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {dayClasses.length} class{dayClasses.length !== 1 ? 'es' : ''}
                       </p>
+                      {hasBlockedTime && (
+                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 mt-1">
+                          <Ban className="h-2.5 w-2.5 mr-1" />
+                          {dayBlocked.length} blocked
+                        </Badge>
+                      )}
                     </div>
                   )
                 })}
 
-                {/* Classes for each day */}
+                {/* Classes and Blocked Times for each day */}
                 {weekDates.map((_, dayIndex) => (
                   <div key={dayIndex} className="space-y-2 min-h-[400px]">
+                    {/* Blocked Times */}
+                    {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
+                      <div
+                        key={bt.id}
+                        className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500 shadow-sm"
+                      >
+                        <div className="flex items-center gap-1 text-red-600">
+                          <Ban className="h-3 w-3" />
+                          <span className="text-xs font-medium">Blocked</span>
+                        </div>
+                        <p className="text-xs text-red-700 flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - 
+                          {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </p>
+                        <p className="text-xs text-red-500 mt-1">
+                          {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
+                        </p>
+                        {bt.reason && (
+                          <p className="text-xs text-red-400 mt-1 truncate">{bt.reason}</p>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Classes */}
                     {(classesByDay[dayIndex] || []).length > 0 ? (
                       (classesByDay[dayIndex] || []).map((cls) => (
                         <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
@@ -411,9 +501,9 @@ export default function SchedulePage() {
                           </div>
                         </Link>
                       ))
-                    ) : (
+                    ) : (blockedByDay[dayIndex] || []).length === 0 ? (
                       <p className="text-xs text-gray-400 text-center pt-4">No classes</p>
-                    )}
+                    ) : null}
                   </div>
                 ))}
               </div>

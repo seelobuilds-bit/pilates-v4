@@ -62,6 +62,7 @@ model Studio {
   automations   Automation[]
   segments      Segment[]
   templates     MessageTemplate[]
+  systemEmails  SystemEmailTemplate[]
 }
 
 // Email configuration per studio
@@ -359,6 +360,40 @@ model MessageTemplate {
   @@index([studioId, type])
 }
 
+// System Email Templates (transactional emails)
+enum SystemEmailType {
+  BOOKING_CONFIRMATION       // When a client books a class
+  CLASS_CANCELLED_BY_STUDIO  // When studio cancels a class
+  CLASS_CANCELLED_BY_CLIENT  // When client cancels their booking
+  PAYMENT_SUCCESS            // When payment/rebill succeeds
+  PAYMENT_FAILED             // When payment/rebill fails
+  PAYMENT_REFUND             // When a refund is processed
+  PASSWORD_RESET             // Forgotten password email
+  WELCOME                    // Welcome email for new clients
+}
+
+model SystemEmailTemplate {
+  id            String          @id @default(cuid())
+  type          SystemEmailType @unique
+  name          String          // Display name for the template
+  subject       String          // Email subject line
+  body          String          @db.Text // Plain text version
+  htmlBody      String          @db.Text // HTML version
+  isEnabled     Boolean         @default(true)
+  
+  // Available variables for this template type
+  variables     String[]
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  studioId      String
+  studio        Studio          @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  @@unique([studioId, type])
+  @@index([studioId])
+}
+
 model Location {
   id        String   @id @default(cuid())
   name      String
@@ -411,6 +446,24 @@ model Teacher {
   studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 
   classSessions ClassSession[]
+  blockedTimes  TeacherBlockedTime[]
+}
+
+// Teacher blocked/unavailable times
+model TeacherBlockedTime {
+  id          String   @id @default(cuid())
+  startTime   DateTime
+  endTime     DateTime
+  reason      String?  // Optional reason (e.g., "Vacation", "Personal", "Training")
+  isRecurring Boolean  @default(false)
+  recurringDays Int[]  // Day of week (0-6) if recurring
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, startTime, endTime])
 }
 
 model Client {

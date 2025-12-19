@@ -291,9 +291,17 @@ export default function ReportsPage() {
     }
   }
 
-  const handleReachOut = (clientId: string) => {
-    // Navigate to inbox with this client pre-selected
-    router.push(`/studio/inbox?client=${clientId}`)
+  const handleReachOut = (client: { id: string; name: string; email: string; phone?: string }) => {
+    // Navigate to inbox with client details pre-populated
+    const params = new URLSearchParams({
+      clientId: client.id,
+      clientName: client.name,
+      clientEmail: client.email
+    })
+    if (client.phone) {
+      params.set('clientPhone', client.phone)
+    }
+    router.push(`/studio/inbox?${params.toString()}`)
   }
   
   const getTrendIcon = (trend: string) => {
@@ -667,7 +675,7 @@ export default function ReportsPage() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleReachOut(client.id)}
+                        onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
                       >
                         <Mail className="h-4 w-4 mr-1" />
                         Reach Out
@@ -1230,7 +1238,7 @@ export default function ReportsPage() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleReachOut(client.id)}
+                        onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
                       >
                         <Mail className="h-4 w-4 mr-2" />
                         Reach Out

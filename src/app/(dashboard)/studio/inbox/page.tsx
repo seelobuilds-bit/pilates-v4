@@ -137,15 +137,18 @@ export default function InboxPage() {
 
   // Handle URL params for pre-populated client
   useEffect(() => {
-    if (urlClientId && urlClientName && urlClientEmail && clients.length > 0) {
+    if (urlClientId && urlClientName && urlClientEmail) {
       // Check if conversation exists
       const existingConv = conversations.find(c => c.clientId === urlClientId)
       if (existingConv) {
         setSelectedConversation(existingConv)
         fetchMessages(urlClientId)
       } else {
-        // Create draft conversation
-        const draftClient: Client = {
+        // Try to find client in loaded clients list
+        const existingClient = clients.find(c => c.id === urlClientId)
+        
+        // Create draft conversation with client from URL params or existing client
+        const draftClient: Client = existingClient || {
           id: urlClientId,
           firstName: urlClientName.split(' ')[0] || '',
           lastName: urlClientName.split(' ').slice(1).join(' ') || '',
@@ -153,7 +156,7 @@ export default function InboxPage() {
           phone: urlClientPhone
         }
         setSelectedClient(draftClient)
-        setClientSearch(urlClientName)
+        setClientSearch(`${draftClient.firstName} ${draftClient.lastName}`)
         setSelectedConversation({
           clientId: urlClientId,
           client: draftClient,

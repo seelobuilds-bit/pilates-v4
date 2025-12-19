@@ -78,6 +78,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid class type, teacher, or location" }, { status: 400 })
     }
 
+    // Helper function to check for blocked time conflicts
+    const checkBlockedTimeConflict = async (teacherIdToCheck: string, start: Date, end: Date) => {
+      const blockedTimes = await db.teacherBlockedTime.findMany({
+        where: {
+          teacherId: teacherIdToCheck,
+          OR: [
+            { startTime: { gte: start, lt: end } },
+            { endTime: { gt: start, lte: end } },
+            { AND: [{ startTime: { lte: start } }, { endTime: { gte: end } }] }
+          ]
+        }
+      })
+      return blockedTimes
+    }
+
+    // Check single class for blocked time conflict
+    const singleClassStart = new Date(startTime)
+    const singleClassEnd = new Date(endTime)
+    const singleConflicts = await checkBlockedTimeConflict(teacherId, singleClassStart, singleClassEnd)
+    
+    if (singleConflicts.length > 0 && !recurring) {
+      return NextResponse.json({ 
+        error: "Teacher has blocked off this time. Please choose a different time or teacher.",
+        blockedTimes: singleConflicts.map(bt => ({
+          startTime: bt.startTime,
+          endTime: bt.endTime,
+          reason: bt.reason
+        }))
+      }, { status: 400 })
+    }
+
     // Handle recurring classes
     if (recurring && recurring.days && recurring.days.length > 0 && recurring.endDate) {
       const { days, endDate: recurringEndDate, time, duration, skipFirst } = recurring
@@ -128,17 +159,48 @@ export async function POST(request: NextRequest) {
         current.setDate(current.getDate() + 1)
       }
       
-      // Create all classes in a transaction
-      if (classesToCreate.length > 0) {
+      // Check for blocked time conflicts in recurring classes
+      const blockedTimeConflicts: Array<{ date: Date; reason: string | null }> = []
+      for (const classToCreate of classesToCreate) {
+        const conflicts = await checkBlockedTimeConflict(teacherId, classToCreate.startTime, classToCreate.endTime)
+        if (conflicts.length > 0) {
+          blockedTimeConflicts.push({
+            date: classToCreate.startTime,
+            reason: conflicts[0].reason
+          })
+        }
+      }
+
+      // Filter out classes that conflict with blocked times
+      const validClasses = classesToCreate.filter(c => {
+        return !blockedTimeConflicts.some(bc => bc.date.getTime() === c.startTime.getTime())
+      })
+      
+      // Create all valid classes in a transaction
+      if (validClasses.length > 0) {
         await db.classSession.createMany({
-          data: classesToCreate
+          data: validClasses
         })
         
-        return NextResponse.json({ 
+        const response: {
+          success: boolean
+          count: number
+          message: string
+          skipped?: number
+          skippedDates?: Array<{ date: Date; reason: string | null }>
+        } = { 
           success: true, 
-          count: classesToCreate.length,
-          message: `Created ${classesToCreate.length} classes`
-        })
+          count: validClasses.length,
+          message: `Created ${validClasses.length} classes`
+        }
+
+        if (blockedTimeConflicts.length > 0) {
+          response.skipped = blockedTimeConflicts.length
+          response.skippedDates = blockedTimeConflicts
+          response.message += ` (${blockedTimeConflicts.length} skipped due to blocked times)`
+        }
+        
+        return NextResponse.json(response)
       }
       
       return NextResponse.json({ error: "No classes to create" }, { status: 400 })

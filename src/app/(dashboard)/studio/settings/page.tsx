@@ -17,8 +17,11 @@ import {
   AlertCircle,
   Loader2,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  Mail,
+  ChevronRight
 } from "lucide-react"
+import Link from "next/link"
 
 interface StripeStatus {
   connected: boolean
@@ -416,6 +419,38 @@ export default function SettingsPage() {
                 value={`<iframe src="http://localhost:3000/${studio?.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>`}
               />
               <Button variant="outline">Copy Code</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Email Templates */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-gray-400" />
+              Email Templates
+            </CardTitle>
+            <CardDescription>
+              Customize automated emails sent to your clients
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/studio/settings/emails">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
+                <div>
+                  <p className="font-medium text-gray-900">Manage Email Templates</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Booking confirmations, cancellations, payment receipts, and more
+                  </p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+            </Link>
+            <div className="mt-4">
+              <div className="p-3 bg-violet-50 rounded-lg inline-block">
+                <p className="text-xs text-violet-600 font-medium">Active Templates</p>
+                <p className="text-2xl font-bold text-violet-700">8</p>
+              </div>
             </div>
           </CardContent>
         </Card>

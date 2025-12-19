@@ -19,7 +19,13 @@ import {
   Sparkles,
   Gift,
   Filter,
-  Loader2
+  Loader2,
+  CheckSquare,
+  Square,
+  Minus,
+  Trash2,
+  X,
+  AlertTriangle
 } from "lucide-react"
 
 interface Client {
@@ -144,6 +150,11 @@ export default function SegmentDetailPage({
   const [loading, setLoading] = useState(true)
   const [segment, setSegment] = useState<Segment | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  
+  // Selection state
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     const data = segmentData[resolvedParams.segmentId]
@@ -179,6 +190,54 @@ export default function SegmentDetailPage({
   const filteredClients = segment.clients.filter(client =>
     `${client.firstName} ${client.lastName} ${client.email}`.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const isAllSelected = filteredClients.length > 0 && selectedClients.size === filteredClients.length
+  const isPartialSelected = selectedClients.size > 0 && selectedClients.size < filteredClients.length
+
+  const handleSelectAll = () => {
+    if (selectedClients.size === filteredClients.length) {
+      setSelectedClients(new Set())
+    } else {
+      setSelectedClients(new Set(filteredClients.map(c => c.id)))
+    }
+  }
+
+  const handleSelectClient = (clientId: string) => {
+    const newSelected = new Set(selectedClients)
+    if (newSelected.has(clientId)) {
+      newSelected.delete(clientId)
+    } else {
+      newSelected.add(clientId)
+    }
+    setSelectedClients(newSelected)
+  }
+
+  const handleRemoveFromSegment = async () => {
+    if (selectedClients.size === 0) return
+    
+    setRemoving(true)
+    try {
+      // In production, this would call an API to remove clients from the segment
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Update local state to remove clients
+      if (segment) {
+        const updatedClients = segment.clients.filter(c => !selectedClients.has(c.id))
+        setSegment({
+          ...segment,
+          clients: updatedClients,
+          count: updatedClients.length
+        })
+      }
+      
+      setSelectedClients(new Set())
+      setShowRemoveConfirm(false)
+    } catch (error) {
+      console.error("Failed to remove from segment:", error)
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
@@ -225,7 +284,7 @@ export default function SegmentDetailPage({
                 <Users className="h-5 w-5 text-violet-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{segment.count}</p>
+                <p className="text-2xl font-bold text-gray-900">{segment.clients.length}</p>
                 <p className="text-xs text-gray-500">Total Clients</p>
               </div>
             </div>
@@ -238,7 +297,7 @@ export default function SegmentDetailPage({
                 <Mail className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{segment.count}</p>
+                <p className="text-2xl font-bold text-gray-900">{segment.clients.length}</p>
                 <p className="text-xs text-gray-500">Email Reachable</p>
               </div>
             </div>
@@ -251,7 +310,7 @@ export default function SegmentDetailPage({
                 <MessageSquare className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{Math.floor(segment.count * 0.75)}</p>
+                <p className="text-2xl font-bold text-gray-900">{Math.floor(segment.clients.length * 0.75)}</p>
                 <p className="text-xs text-gray-500">SMS Reachable</p>
               </div>
             </div>
@@ -265,7 +324,9 @@ export default function SegmentDetailPage({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(segment.clients.reduce((acc, c) => acc + c.bookings, 0) / segment.clients.length)}
+                  {segment.clients.length > 0 
+                    ? Math.round(segment.clients.reduce((acc, c) => acc + c.bookings, 0) / segment.clients.length)
+                    : 0}
                 </p>
                 <p className="text-xs text-gray-500">Avg. Bookings</p>
               </div>
@@ -293,11 +354,104 @@ export default function SegmentDetailPage({
         </Card>
       )}
 
+      {/* Selection Actions */}
+      {selectedClients.size > 0 && (
+        <Card className="border-0 shadow-sm mb-4 bg-red-50 border-l-4 border-l-red-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-5 w-5 text-red-600" />
+                <span className="font-medium text-red-900">
+                  {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="destructive"
+                  onClick={() => setShowRemoveConfirm(true)}
+                  disabled={removing}
+                >
+                  {removing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Remove from Segment
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setSelectedClients(new Set())}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Remove Confirmation Modal */}
+      {showRemoveConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowRemoveConfirm(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Remove from Segment</h3>
+                    <p className="text-sm text-gray-500">This action cannot be undone</p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to remove {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} from the <strong>{segment.name}</strong> segment?
+                </p>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setShowRemoveConfirm(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleRemoveFromSegment}
+                    disabled={removing}
+                  >
+                    {removing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Removing...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
       {/* Client List */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900">Clients in Segment</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-gray-900">Clients in Segment</h3>
+              {segment.type === "static" && (
+                <Badge variant="secondary" className="text-xs">
+                  Manual membership
+                </Badge>
+              )}
+            </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -309,44 +463,82 @@ export default function SegmentDetailPage({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Client</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Email</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Bookings</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Last Booking</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Credits</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClients.map((client) => (
-                  <tr key={client.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
-                          {client.firstName[0]}{client.lastName[0]}
-                        </div>
-                        <span className="font-medium text-gray-900">
-                          {client.firstName} {client.lastName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{client.email}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{client.bookings}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{client.lastBooking || "-"}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{client.credits}</td>
+          {filteredClients.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-3 px-4 w-12">
+                      <button 
+                        onClick={handleSelectAll}
+                        className="flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
+                      >
+                        {isAllSelected ? (
+                          <CheckSquare className="h-5 w-5 text-violet-600" />
+                        ) : isPartialSelected ? (
+                          <div className="relative">
+                            <Square className="h-5 w-5" />
+                            <Minus className="h-3 w-3 absolute top-1 left-1" />
+                          </div>
+                        ) : (
+                          <Square className="h-5 w-5" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Client</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Email</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Bookings</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Last Booking</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Credits</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredClients.length === 0 && (
+                </thead>
+                <tbody>
+                  {filteredClients.map((client) => (
+                    <tr 
+                      key={client.id} 
+                      className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                        selectedClients.has(client.id) ? 'bg-violet-50/50' : ''
+                      }`}
+                    >
+                      <td className="py-3 px-4">
+                        <button 
+                          onClick={() => handleSelectClient(client.id)}
+                          className="flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
+                        >
+                          {selectedClients.has(client.id) ? (
+                            <CheckSquare className="h-5 w-5 text-violet-600" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Link href={`/studio/clients/${client.id}`}>
+                          <div className="flex items-center gap-3 hover:opacity-70 transition-opacity">
+                            <div className="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
+                              {client.firstName[0]}{client.lastName[0]}
+                            </div>
+                            <span className="font-medium text-gray-900">
+                              {client.firstName} {client.lastName}
+                            </span>
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{client.email}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{client.bookings}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{client.lastBooking || "-"}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{client.credits}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-gray-500">No clients match your search</p>
+              <p className="text-gray-500">
+                {searchQuery ? "No clients match your search" : "No clients in this segment"}
+              </p>
             </div>
           )}
         </CardContent>
