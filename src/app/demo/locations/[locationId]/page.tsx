@@ -395,3 +395,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
     </div>
   )
 }
+
+
+
+

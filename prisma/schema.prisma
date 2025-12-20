@@ -63,6 +63,18 @@ model Studio {
   segments      Segment[]
   templates     MessageTemplate[]
   systemEmails  SystemEmailTemplate[]
+  
+  // Website Analytics
+  websiteConfig   WebsiteAnalyticsConfig?
+  websiteEvents   WebsiteEvent[]
+  websiteVisitors WebsiteVisitor[]
+  
+  // Teacher Invoices
+  teacherInvoices TeacherInvoice[]
+  
+  // Class Flows & Training
+  classFlowProgress ClassFlowProgress[]
+  trainingRequests  TrainingRequest[]
 }
 
 // Email configuration per studio
@@ -445,8 +457,12 @@ model Teacher {
   studioId String
   studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 
-  classSessions ClassSession[]
-  blockedTimes  TeacherBlockedTime[]
+  classSessions     ClassSession[]
+  blockedTimes      TeacherBlockedTime[]
+  payRate           TeacherPayRate?
+  invoices          TeacherInvoice[]
+  classFlowProgress ClassFlowProgress[]
+  trainingRequests  TrainingRequest[]
 }
 
 // Teacher blocked/unavailable times
@@ -464,6 +480,81 @@ model TeacherBlockedTime {
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([teacherId, startTime, endTime])
+}
+
+// Teacher pay rate configuration
+enum PayRateType {
+  PER_CLASS     // Fixed amount per class taught
+  PER_HOUR      // Hourly rate
+  PER_STUDENT   // Amount per student that attends
+  PERCENTAGE    // Percentage of class revenue
+}
+
+model TeacherPayRate {
+  id            String      @id @default(cuid())
+  type          PayRateType @default(PER_CLASS)
+  rate          Float       // Amount in currency
+  currency      String      @default("USD")
+  
+  // Optional overrides per class type
+  classTypeRates String?    @db.Text // JSON: { classTypeId: rate }
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  teacherId     String      @unique
+  teacher       Teacher     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+// Teacher invoice status
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  SENT
+  PAID
+  CANCELLED
+}
+
+model TeacherInvoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        // e.g., INV-2024-001
+  status          InvoiceStatus @default(DRAFT)
+  
+  // Period covered
+  periodStart     DateTime
+  periodEnd       DateTime
+  
+  // Line items stored as JSON
+  lineItems       String        @db.Text // JSON array of { description, classId?, quantity, rate, amount }
+  
+  // Totals
+  subtotal        Float
+  tax             Float         @default(0)
+  taxRate         Float         @default(0)
+  total           Float
+  
+  // Payment info
+  currency        String        @default("USD")
+  notes           String?       @db.Text
+  
+  // Sent/Paid tracking
+  sentAt          DateTime?
+  paidAt          DateTime?
+  paidAmount      Float?
+  paymentMethod   String?
+  paymentReference String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  teacherId       String
+  teacher         Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  studioId        String
+  studio          Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, periodStart])
+  @@index([studioId, invoiceNumber])
 }
 
 model Client {
@@ -590,4 +681,298 @@ model Payment {
 
   @@index([studioId, createdAt])
   @@index([stripePaymentIntentId])
+}
+
+// Website Analytics Configuration
+model WebsiteAnalyticsConfig {
+  id              String   @id @default(cuid())
+  trackingId      String   @unique @default(cuid()) // Unique ID for the tracking script
+  websiteUrl      String?  // Main website URL
+  platform        String?  // wordpress, wix, shopify, squarespace, custom, etc.
+  isEnabled       Boolean  @default(true)
+  
+  // Tracking settings
+  trackPageViews  Boolean  @default(true)
+  trackClicks     Boolean  @default(true)
+  trackForms      Boolean  @default(true)
+  trackScrollDepth Boolean @default(false)
+  trackOutboundLinks Boolean @default(true)
+  
+  // Conversion tracking
+  conversionGoals String?  @db.Text // JSON array of conversion goals
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studioId        String   @unique
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+}
+
+// Website Visitors (unique visitors)
+model WebsiteVisitor {
+  id              String   @id @default(cuid())
+  visitorId       String   // Anonymous visitor ID (stored in cookie)
+  
+  // Visitor info
+  firstVisit      DateTime @default(now())
+  lastVisit       DateTime @default(now())
+  totalVisits     Int      @default(1)
+  totalPageViews  Int      @default(0)
+  
+  // Device/Browser info
+  userAgent       String?
+  browser         String?
+  os              String?
+  device          String?  // desktop, mobile, tablet
+  
+  // Location (from IP)
+  country         String?
+  city            String?
+  
+  // Source attribution
+  firstSource     String?  // Where they first came from
+  firstMedium     String?  // organic, paid, referral, direct, social
+  firstCampaign   String?  // UTM campaign
+  
+  // Conversion status
+  hasConverted    Boolean  @default(false)
+  convertedAt     DateTime?
+  
+  // Link to client if they become one
+  clientId        String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studioId        String
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  events          WebsiteEvent[]
+
+  @@unique([studioId, visitorId])
+  @@index([studioId, lastVisit])
+  @@index([studioId, hasConverted])
+}
+
+// Website Events (page views, clicks, conversions, etc.)
+enum WebsiteEventType {
+  PAGE_VIEW
+  CLICK
+  FORM_SUBMIT
+  SCROLL_DEPTH
+  OUTBOUND_LINK
+  CONVERSION
+  CUSTOM
+}
+
+model WebsiteEvent {
+  id              String           @id @default(cuid())
+  type            WebsiteEventType
+  
+  // Page info
+  pageUrl         String
+  pageTitle       String?
+  pagePath        String?
+  
+  // Event details
+  eventName       String?          // For custom events
+  eventData       String?          @db.Text // JSON data
+  
+  // Click tracking
+  elementId       String?
+  elementClass    String?
+  elementText     String?
+  
+  // Scroll depth
+  scrollDepth     Int?             // Percentage 0-100
+  
+  // Referrer
+  referrer        String?
+  
+  // UTM parameters
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  
+  // Session info
+  sessionId       String?
+  
+  createdAt       DateTime         @default(now())
+
+  studioId        String
+  studio          Studio           @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  visitorId       String?
+  visitor         WebsiteVisitor?  @relation(fields: [visitorId], references: [id])
+
+  @@index([studioId, createdAt])
+  @@index([studioId, type])
+  @@index([studioId, pagePath])
+}
+
+// ==========================================
+// CLASS FLOWS & TRAINING CONTENT
+// ==========================================
+
+// Class flow categories (Reformer, Mat, Tower, etc.)
+model ClassFlowCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?  // Icon name or emoji
+  color       String?  // Hex color for styling
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contents    ClassFlowContent[]
+}
+
+// Content types
+enum ContentType {
+  VIDEO
+  PDF
+  ARTICLE
+  QUIZ
+}
+
+// Difficulty levels
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+// Individual class flow content items
+model ClassFlowContent {
+  id              String          @id @default(cuid())
+  title           String
+  description     String?         @db.Text
+  type            ContentType
+  difficulty      DifficultyLevel @default(BEGINNER)
+  
+  // Content URLs
+  videoUrl        String?         // YouTube, Vimeo, or hosted video URL
+  thumbnailUrl    String?         // Preview image
+  pdfUrl          String?         // PDF file URL
+  articleContent  String?         @db.Text // Rich text content for articles
+  
+  // Duration in minutes (for videos)
+  duration        Int?
+  
+  // Ordering and status
+  order           Int             @default(0)
+  isPublished     Boolean         @default(true)
+  isFeatured      Boolean         @default(false)
+  
+  // Metadata
+  tags            String[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  categoryId      String
+  category        ClassFlowCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  progress        ClassFlowProgress[]
+
+  @@index([categoryId])
+  @@index([type])
+  @@index([difficulty])
+}
+
+// Track teacher progress on class flows
+model ClassFlowProgress {
+  id              String   @id @default(cuid())
+  
+  // Progress tracking
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  lastViewedAt    DateTime @default(now())
+  progressPercent Int      @default(0) // 0-100 for videos
+  notes           String?  @db.Text    // Teacher's personal notes
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contentId       String
+  content         ClassFlowContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  studioId        String
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, teacherId])
+  @@index([teacherId])
+  @@index([studioId])
+}
+
+// Training request status
+enum TrainingRequestStatus {
+  PENDING
+  APPROVED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+// On-site training requests
+model TrainingRequest {
+  id              String                @id @default(cuid())
+  
+  // Request details
+  title           String
+  description     String                @db.Text
+  trainingType    String                // "reformer-advanced", "mat-certification", etc.
+  
+  // Preferred dates
+  preferredDate1  DateTime?
+  preferredDate2  DateTime?
+  preferredDate3  DateTime?
+  
+  // Scheduling
+  scheduledDate   DateTime?
+  scheduledTime   String?               // e.g., "9:00 AM - 5:00 PM"
+  
+  // Status tracking
+  status          TrainingRequestStatus @default(PENDING)
+  
+  // Contact info
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  
+  // Location (where training will be held)
+  location        String?
+  address         String?               @db.Text
+  
+  // Number of attendees
+  attendeeCount   Int                   @default(1)
+  
+  // Notes
+  notes           String?               @db.Text
+  adminNotes      String?               @db.Text // Internal notes
+  
+  // Pricing (if applicable)
+  estimatedCost   Float?
+  finalCost       Float?
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  studioId        String
+  studio          Studio                @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  requestedById   String
+  requestedBy     Teacher               @relation(fields: [requestedById], references: [id])
+
+  @@index([studioId, status])
+  @@index([status])
 }

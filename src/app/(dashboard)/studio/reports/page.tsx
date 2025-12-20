@@ -35,7 +35,15 @@ import {
   ExternalLink,
   Settings,
   Eye,
-  X
+  X,
+  Globe,
+  MousePointer,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Copy,
+  Code,
+  Loader2
 } from "lucide-react"
 
 // Mock data - in production this would come from API
@@ -506,6 +514,10 @@ export default function ReportsPage() {
           <TabsTrigger value="marketing" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Mail className="h-4 w-4 mr-2" />
             Marketing
+          </TabsTrigger>
+          <TabsTrigger value="website" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+            <Globe className="h-4 w-4 mr-2" />
+            Website
           </TabsTrigger>
         </TabsList>
 
@@ -1402,7 +1414,490 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Website Analytics Tab */}
+        <TabsContent value="website" className="space-y-6">
+          <WebsiteAnalyticsSection />
+        </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+// Website Analytics Component
+function WebsiteAnalyticsSection() {
+  const [loading, setLoading] = useState(true)
+  const [period, setPeriod] = useState("7d")
+  const [config, setConfig] = useState<{
+    trackingId: string
+    websiteUrl: string | null
+    platform: string | null
+    isEnabled: boolean
+  } | null>(null)
+  const [analytics, setAnalytics] = useState<{
+    overview: {
+      totalPageViews: number
+      uniqueVisitors: number
+      totalConversions: number
+      conversionRate: string
+      avgPagesPerVisit: string
+    }
+    topPages: { path: string; views: number }[]
+    topSources: { source: string; visitors: number }[]
+    deviceBreakdown: { device: string; count: number }[]
+  } | null>(null)
+  const [showSetup, setShowSetup] = useState(false)
+  const [platform, setPlatform] = useState("custom")
+  const [websiteUrl, setWebsiteUrl] = useState("")
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [period])
+
+  async function fetchAnalytics() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/studio/website-analytics?period=${period}`)
+      if (res.ok) {
+        const data = await res.json()
+        setConfig(data.config)
+        setAnalytics(data.analytics)
+        setWebsiteUrl(data.config?.websiteUrl || "")
+        setPlatform(data.config?.platform || "custom")
+      }
+    } catch (error) {
+      console.error("Failed to fetch website analytics:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function saveConfig() {
+    try {
+      await fetch("/api/studio/website-analytics", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteUrl, platform })
+      })
+      setShowSetup(false)
+      fetchAnalytics()
+    } catch (error) {
+      console.error("Failed to save config:", error)
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+  const trackingScript = config ? `<script src="${baseUrl}/api/analytics/script/${config.trackingId}" async></script>` : ''
+
+  const platformInstructions: Record<string, { name: string; steps: string[] }> = {
+    wordpress: {
+      name: "WordPress",
+      steps: [
+        "Go to Appearance → Theme Editor (or use a plugin like 'Insert Headers and Footers')",
+        "Find your theme's header.php file or use the plugin settings",
+        "Paste the tracking code just before the closing </head> tag",
+        "Save changes"
+      ]
+    },
+    wix: {
+      name: "Wix",
+      steps: [
+        "Go to Settings → Custom Code",
+        "Click '+ Add Custom Code'",
+        "Paste the tracking code",
+        "Set placement to 'Head' and apply to 'All Pages'",
+        "Click 'Apply'"
+      ]
+    },
+    shopify: {
+      name: "Shopify",
+      steps: [
+        "Go to Online Store → Themes → Edit Code",
+        "Find theme.liquid in the Layout folder",
+        "Paste the tracking code just before </head>",
+        "Save"
+      ]
+    },
+    squarespace: {
+      name: "Squarespace",
+      steps: [
+        "Go to Settings → Advanced → Code Injection",
+        "Paste the tracking code in the Header section",
+        "Save"
+      ]
+    },
+    webflow: {
+      name: "Webflow",
+      steps: [
+        "Go to Project Settings → Custom Code",
+        "Paste the tracking code in the Head Code section",
+        "Save and Publish"
+      ]
+    },
+    custom: {
+      name: "Custom/Other",
+      steps: [
+        "Add the tracking script to your website's <head> section",
+        "The script will automatically track page views, clicks, and conversions",
+        "Make sure the script loads on all pages you want to track"
+      ]
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Setup */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Website Analytics</h3>
+          <p className="text-sm text-gray-500">Track visitors, conversions, and customer journeys on your website</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h">Last 24h</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => setShowSetup(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Setup
+          </Button>
+        </div>
+      </div>
+
+      {/* Setup Modal */}
+      {showSetup && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowSetup(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                      <Globe className="h-5 w-5 text-violet-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Website Tracking Setup</h3>
+                      <p className="text-sm text-gray-500">Add the tracking code to your website</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setShowSetup(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Website URL */}
+                  <div>
+                    <Label>Website URL</Label>
+                    <Input
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://yourstudio.com"
+                      className="mt-1.5"
+                    />
+                  </div>
+
+                  {/* Platform Selection */}
+                  <div>
+                    <Label>Platform</Label>
+                    <Select value={platform} onValueChange={setPlatform}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="wordpress">WordPress</SelectItem>
+                        <SelectItem value="wix">Wix</SelectItem>
+                        <SelectItem value="shopify">Shopify</SelectItem>
+                        <SelectItem value="squarespace">Squarespace</SelectItem>
+                        <SelectItem value="webflow">Webflow</SelectItem>
+                        <SelectItem value="custom">Custom / Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Tracking Code */}
+                  <div>
+                    <Label>Tracking Code</Label>
+                    <div className="mt-1.5 relative">
+                      <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg text-sm overflow-x-auto">
+                        <code>{trackingScript}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2"
+                        onClick={() => copyToClipboard(trackingScript)}
+                      >
+                        {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Platform-specific Instructions */}
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-3">
+                      How to add to {platformInstructions[platform]?.name || "your website"}
+                    </h4>
+                    <ol className="space-y-2">
+                      {platformInstructions[platform]?.steps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-blue-800">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center text-xs font-medium">
+                            {i + 1}
+                          </span>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  {/* What gets tracked */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">What gets tracked</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Page views
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Button clicks
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Form submissions
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Outbound links
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Traffic sources
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        Device types
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button variant="outline" onClick={() => setShowSetup(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveConfig} className="bg-violet-600 hover:bg-violet-700">
+                    Save Configuration
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {/* Analytics Overview */}
+      {analytics && (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Eye className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalPageViews.toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Page Views</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-violet-600" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{analytics.overview.uniqueVisitors.toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Unique Visitors</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-emerald-600" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalConversions}</p>
+                <p className="text-sm text-gray-500">Conversions</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <Percent className="h-5 w-5 text-amber-600" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{analytics.overview.conversionRate}%</p>
+                <p className="text-sm text-gray-500">Conv. Rate</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                    <Activity className="h-5 w-5 text-pink-600" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{analytics.overview.avgPagesPerVisit}</p>
+                <p className="text-sm text-gray-500">Pages/Visit</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Analytics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Top Pages */}
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Top Pages</h4>
+                {analytics.topPages.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.topPages.map((page, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs text-gray-400 w-4">{i + 1}</span>
+                          <span className="text-sm text-gray-700 truncate">{page.path}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{page.views}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No page data yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Traffic Sources */}
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Traffic Sources</h4>
+                {analytics.topSources.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.topSources.map((source, i) => {
+                      const total = analytics.topSources.reduce((sum, s) => sum + s.visitors, 0)
+                      const percent = total > 0 ? Math.round((source.visitors / total) * 100) : 0
+                      return (
+                        <div key={i}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-700">{source.source}</span>
+                            <span className="text-sm font-medium text-gray-900">{percent}%</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-violet-500 rounded-full"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No source data yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Device Breakdown */}
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Devices</h4>
+                {analytics.deviceBreakdown.length > 0 ? (
+                  <div className="space-y-4">
+                    {analytics.deviceBreakdown.map((device, i) => {
+                      const total = analytics.deviceBreakdown.reduce((sum, d) => sum + d.count, 0)
+                      const percent = total > 0 ? Math.round((device.count / total) * 100) : 0
+                      const Icon = device.device === "mobile" ? Smartphone : device.device === "tablet" ? Tablet : Monitor
+                      return (
+                        <div key={i} className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-gray-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-900 capitalize">{device.device}</span>
+                              <span className="text-sm text-gray-500">{percent}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No device data yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* No Data State */}
+          {analytics.overview.totalPageViews === 0 && (
+            <Card className="border-0 shadow-sm bg-blue-50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                  <Globe className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No website data yet</h3>
+                <p className="text-gray-600 mb-4 max-w-md mx-auto">
+                  Add the tracking code to your website to start collecting visitor data, page views, and conversion analytics.
+                </p>
+                <Button onClick={() => setShowSetup(true)} className="bg-violet-600 hover:bg-violet-700">
+                  <Code className="h-4 w-4 mr-2" />
+                  Get Tracking Code
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   )
 }

@@ -213,3 +213,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete blocked time" }, { status: 500 })
   }
 }
+
+
+
+

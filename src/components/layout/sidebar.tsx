@@ -15,12 +15,12 @@ import {
   UserCircle,
   Megaphone,
   ChevronLeft,
-  Zap,
   BarChart3,
   MapPin,
   BookOpen,
   Inbox,
   CreditCard,
+  PlayCircle,
 } from "lucide-react"
 
 const hqLinks = [
@@ -39,6 +39,7 @@ const studioLinks = [
   { href: "/studio/inbox", label: "Inbox", icon: Inbox },
   { href: "/studio/locations", label: "Locations", icon: MapPin },
   { href: "/studio/payments", label: "Payments", icon: CreditCard },
+  { href: "/studio/class-flows", label: "Class Flows", icon: PlayCircle },
   { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
   { href: "/studio/reports", label: "Reports", icon: BarChart3 },
   { href: "/studio/settings", label: "Settings", icon: Settings },
@@ -47,6 +48,7 @@ const studioLinks = [
 const teacherLinks = [
   { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teacher/schedule", label: "My Schedule", icon: Calendar },
+  { href: "/teacher/class-flows", label: "Class Flows", icon: PlayCircle },
   { href: "/teacher/clients", label: "Clients", icon: UserCircle },
   { href: "/teacher/settings", label: "Settings", icon: Settings },
 ]
@@ -74,14 +76,9 @@ export function Sidebar() {
     <div className="flex flex-col h-full w-64 bg-white border-r border-gray-100">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="font-semibold text-gray-900">{title}</h1>
-            <p className="text-xs text-gray-500">{subtitle}</p>
-          </div>
+        <div>
+          <h1 className="font-semibold text-gray-900">{title}</h1>
+          <p className="text-xs text-gray-500">{subtitle}</p>
         </div>
         <button className="p-1 hover:bg-gray-100 rounded">
           <ChevronLeft className="h-4 w-4 text-gray-400" />

@@ -79,3 +79,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update email template" }, { status: 500 })
   }
 }
+
+
+
+

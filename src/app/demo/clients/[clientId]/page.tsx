@@ -574,3 +574,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
     </div>
   )
 }
+
+
+
+
