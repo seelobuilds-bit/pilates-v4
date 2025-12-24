@@ -43,7 +43,10 @@ import {
   Tablet,
   Copy,
   Code,
-  Loader2
+  Loader2,
+  Instagram,
+  Target,
+  MessageCircle
 } from "lucide-react"
 
 // Mock data - in production this would come from API
@@ -518,6 +521,10 @@ export default function ReportsPage() {
           <TabsTrigger value="website" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Globe className="h-4 w-4 mr-2" />
             Website
+          </TabsTrigger>
+          <TabsTrigger value="social" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+            <Instagram className="h-4 w-4 mr-2" />
+            Social Media
           </TabsTrigger>
         </TabsList>
 
@@ -1419,7 +1426,275 @@ export default function ReportsPage() {
         <TabsContent value="website" className="space-y-6">
           <WebsiteAnalyticsSection />
         </TabsContent>
+
+        {/* ==================== SOCIAL MEDIA TAB ==================== */}
+        <TabsContent value="social" className="space-y-6">
+          <SocialMediaReportSection />
+        </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+// Social Media Report Section Component
+function SocialMediaReportSection() {
+  const [loading, setLoading] = useState(true)
+  const [flows, setFlows] = useState<Array<{
+    id: string
+    name: string
+    triggerType: string
+    totalTriggered: number
+    totalResponded: number
+    totalBooked: number
+    isActive: boolean
+    account: { platform: string; username: string }
+  }>>([])
+  const [trackingLinks, setTrackingLinks] = useState<Array<{
+    id: string
+    code: string
+    campaign: string | null
+    source: string
+    medium: string
+    clicks: number
+    conversions: number
+    revenue: number
+  }>>([])
+
+  useEffect(() => {
+    fetchSocialData()
+  }, [])
+
+  async function fetchSocialData() {
+    try {
+      const [flowsRes, linksRes] = await Promise.all([
+        fetch("/api/social-media/flows"),
+        fetch("/api/social-media/tracking")
+      ])
+      
+      if (flowsRes.ok) {
+        const data = await flowsRes.json()
+        setFlows(data.flows || [])
+      }
+      if (linksRes.ok) {
+        setTrackingLinks(await linksRes.json())
+      }
+    } catch (err) {
+      console.error("Failed to fetch social data:", err)
+    }
+    setLoading(false)
+  }
+
+  const totalTriggered = flows.reduce((sum, f) => sum + f.totalTriggered, 0)
+  const totalBooked = flows.reduce((sum, f) => sum + f.totalBooked, 0)
+  const totalClicks = trackingLinks.reduce((sum, l) => sum + l.clicks, 0)
+  const totalConversions = trackingLinks.reduce((sum, l) => sum + l.conversions, 0)
+  const conversionRate = totalClicks > 0 ? Math.round((totalConversions / totalClicks) * 100) : 0
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-pink-500 to-rose-500 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Instagram className="h-8 w-8 opacity-80" />
+              <div>
+                <p className="text-2xl font-bold">{totalTriggered}</p>
+                <p className="text-sm opacity-80">Total Triggers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                <MessageCircle className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{flows.length}</p>
+                <p className="text-sm text-gray-500">Active Flows</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{totalBooked}</p>
+                <p className="text-sm text-gray-500">Bookings from Social</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Target className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{conversionRate}%</p>
+                <p className="text-sm text-gray-500">Conversion Rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Automation Flows Performance */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              <h3 className="font-semibold text-gray-900">Automation Flow Performance</h3>
+            </div>
+            <Link href="/studio/marketing/social">
+              <Button variant="outline" size="sm">
+                Manage Flows
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+
+          {flows.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <Instagram className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-2">No automation flows set up</p>
+              <p className="text-sm text-gray-400">Create flows in Social Media to start tracking</p>
+              <Link href="/studio/marketing/social">
+                <Button className="mt-4 bg-violet-600 hover:bg-violet-700">
+                  Set Up Flows
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {flows.map(flow => {
+                const responseRate = flow.totalTriggered > 0 
+                  ? Math.round((flow.totalResponded / flow.totalTriggered) * 100) 
+                  : 0
+                const bookingRate = flow.totalTriggered > 0 
+                  ? Math.round((flow.totalBooked / flow.totalTriggered) * 100) 
+                  : 0
+
+                return (
+                  <div key={flow.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          flow.account.platform === "INSTAGRAM" ? "bg-pink-100" : "bg-gray-100"
+                        }`}>
+                          <Instagram className={`h-5 w-5 ${
+                            flow.account.platform === "INSTAGRAM" ? "text-pink-600" : "text-gray-600"
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{flow.name}</p>
+                          <p className="text-sm text-gray-500">@{flow.account.username}</p>
+                        </div>
+                      </div>
+                      <Badge variant={flow.isActive ? "default" : "secondary"}>
+                        {flow.isActive ? "Active" : "Paused"}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <p className="text-lg font-bold text-gray-900">{flow.totalTriggered}</p>
+                        <p className="text-xs text-gray-500">Triggered</p>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <p className="text-lg font-bold text-gray-900">{flow.totalResponded}</p>
+                        <p className="text-xs text-gray-500">Responded</p>
+                      </div>
+                      <div className="text-center p-2 bg-emerald-50 rounded">
+                        <p className="text-lg font-bold text-emerald-600">{flow.totalBooked}</p>
+                        <p className="text-xs text-gray-500">Booked</p>
+                      </div>
+                      <div className="text-center p-2 bg-violet-50 rounded">
+                        <p className="text-lg font-bold text-violet-600">{bookingRate}%</p>
+                        <p className="text-xs text-gray-500">Conversion</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Tracking Links Performance */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Target className="h-5 w-5 text-gray-400" />
+            <h3 className="font-semibold text-gray-900">Tracking Links Performance</h3>
+          </div>
+
+          {trackingLinks.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <Target className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No tracking links yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-sm text-gray-500 border-b">
+                    <th className="pb-3 font-medium">Campaign</th>
+                    <th className="pb-3 font-medium">Source</th>
+                    <th className="pb-3 font-medium text-right">Clicks</th>
+                    <th className="pb-3 font-medium text-right">Conversions</th>
+                    <th className="pb-3 font-medium text-right">Conv. Rate</th>
+                    <th className="pb-3 font-medium text-right">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {trackingLinks.map(link => {
+                    const rate = link.clicks > 0 ? Math.round((link.conversions / link.clicks) * 100) : 0
+                    return (
+                      <tr key={link.id} className="text-sm">
+                        <td className="py-3 font-medium text-gray-900">{link.campaign || "Direct"}</td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">{link.source}</Badge>
+                            <span className="text-gray-500">{link.medium}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-right text-gray-900">{link.clicks}</td>
+                        <td className="py-3 text-right text-emerald-600 font-medium">{link.conversions}</td>
+                        <td className="py-3 text-right">
+                          <span className={`font-medium ${rate >= 10 ? "text-emerald-600" : rate >= 5 ? "text-amber-600" : "text-gray-600"}`}>
+                            {rate}%
+                          </span>
+                        </td>
+                        <td className="py-3 text-right font-medium text-gray-900">
+                          ${link.revenue.toFixed(2)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

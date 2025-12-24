@@ -27,7 +27,8 @@ import {
   UserMinus,
   Copy,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Instagram
 } from "lucide-react"
 
 interface Automation {
@@ -362,6 +363,10 @@ export default function MarketingPage() {
           <TabsTrigger value="templates" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <FileText className="h-4 w-4 mr-2" />
             Templates
+          </TabsTrigger>
+          <TabsTrigger value="social" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+            <Instagram className="h-4 w-4 mr-2" />
+            Social Media
           </TabsTrigger>
         </TabsList>
 
@@ -745,6 +750,55 @@ export default function MarketingPage() {
                   </Link>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Social Media Tab */}
+        <TabsContent value="social">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Social Media Marketing</h3>
+                  <p className="text-sm text-gray-500">Training, automation tools, and tracking for Instagram & TikTok</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Link href="/studio/marketing/social" className="block p-6 bg-gradient-to-br from-pink-50 to-violet-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-violet-500 flex items-center justify-center mb-4">
+                    <Instagram className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Training & Content</h4>
+                  <p className="text-sm text-gray-600">Video courses on content creation, hooks, storytelling, and more</p>
+                </Link>
+
+                <Link href="/studio/marketing/social?tab=tools" className="block p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4">
+                    <Zap className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Automation Tools</h4>
+                  <p className="text-sm text-gray-600">Auto-reply to comments and DMs, build booking flows</p>
+                </Link>
+
+                <Link href="/studio/marketing/social?tab=tracking" className="block p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Tracking & Analytics</h4>
+                  <p className="text-sm text-gray-600">Track conversions from social with auto-generated links</p>
+                </Link>
+              </div>
+
+              <div className="mt-6 text-center">
+                <Link href="/studio/marketing/social">
+                  <Button className="bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600">
+                    Open Social Media Hub
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -21,11 +21,18 @@ import {
   Inbox,
   CreditCard,
   PlayCircle,
+  Instagram,
+  FileText,
+  Lock,
+  MessageSquare,
+  ShoppingBag,
+  Trophy,
 } from "lucide-react"
 
 const hqLinks = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hq/studios", label: "Studios", icon: Building2 },
+  { href: "/hq/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/hq/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/hq/settings", label: "Settings", icon: Settings },
 ]
@@ -35,12 +42,17 @@ const studioLinks = [
   { href: "/studio/schedule", label: "Schedule", icon: Calendar },
   { href: "/studio/classes", label: "Classes", icon: BookOpen },
   { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
+  { href: "/studio/invoices", label: "Invoices", icon: FileText },
   { href: "/studio/clients", label: "Clients", icon: UserCircle },
   { href: "/studio/inbox", label: "Inbox", icon: Inbox },
+  { href: "/studio/community", label: "Community", icon: MessageSquare },
   { href: "/studio/locations", label: "Locations", icon: MapPin },
   { href: "/studio/payments", label: "Payments", icon: CreditCard },
+  { href: "/studio/store", label: "Store", icon: ShoppingBag },
+  { href: "/studio/vault", label: "The Vault", icon: Lock },
   { href: "/studio/class-flows", label: "Class Flows", icon: PlayCircle },
   { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
+  { href: "/studio/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/studio/reports", label: "Reports", icon: BarChart3 },
   { href: "/studio/settings", label: "Settings", icon: Settings },
 ]
@@ -50,6 +62,12 @@ const teacherLinks = [
   { href: "/teacher/schedule", label: "My Schedule", icon: Calendar },
   { href: "/teacher/class-flows", label: "Class Flows", icon: PlayCircle },
   { href: "/teacher/clients", label: "Clients", icon: UserCircle },
+  { href: "/teacher/invoices", label: "Invoices", icon: FileText },
+  { href: "/teacher/vault", label: "The Vault", icon: Lock },
+  { href: "/teacher/inbox", label: "Inbox", icon: Inbox },
+  { href: "/teacher/community", label: "Community", icon: MessageSquare },
+  { href: "/teacher/social", label: "Social Media", icon: Instagram },
+  { href: "/teacher/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/teacher/settings", label: "Settings", icon: Settings },
 ]
 

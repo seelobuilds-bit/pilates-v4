@@ -25,6 +25,15 @@ model User {
 
   ownedStudio Studio?
   teacher     Teacher?
+  
+  // Social media homework for studio owners
+  homeworkSubmissions SocialHomeworkSubmission[]
+  
+  // The Vault - Course Platform (for studio owners)
+  vaultEnrollments        VaultEnrollment[]
+  vaultBundleSubscriptions VaultBundleSubscription[]
+  vaultReviews            VaultReview[]
+  vaultSubscriptions      VaultSubscriber[] @relation("VaultUserSubscription")
 }
 
 model Studio {
@@ -75,6 +84,18 @@ model Studio {
   // Class Flows & Training
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
+  
+  // Social Media Marketing
+  socialAccounts      SocialMediaAccount[]
+  socialTrackingLinks SocialMediaTrackingLink[]
+  
+  // The Vault - Course Platform
+  vaultCourses        VaultCourse[]
+  vaultBundles        VaultBundle[]
+  vaultSubscriptionPlans VaultSubscriptionPlan[]
+  
+  // E-commerce Store
+  merchStore          StudioStore?
 }
 
 // Email configuration per studio
@@ -463,6 +484,22 @@ model Teacher {
   invoices          TeacherInvoice[]
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
+  
+  // Social Media Marketing
+  socialAccounts          SocialMediaAccount[]
+  socialTrackingLinks     SocialMediaTrackingLink[]
+  socialTrainingProgress  SocialTrainingProgress[]
+  socialHomeworkSubmissions SocialHomeworkSubmission[]
+  socialEventRegistrations  SocialEventRegistration[]
+  
+  // The Vault - Course Platform
+  createdCourses          VaultCourse[] @relation("VaultCourseCreator")
+  instructorRoles         VaultCourseInstructor[]
+  vaultEnrollments        VaultEnrollment[]
+  vaultAffiliateLinks     VaultAffiliateLink[]
+  vaultBundleSubscriptions VaultBundleSubscription[]
+  vaultReviews            VaultReview[]
+  vaultSubscriptions      VaultSubscriber[] @relation("VaultTeacherSubscription")
 }
 
 // Teacher blocked/unavailable times
@@ -577,6 +614,15 @@ model Client {
   bookings Booking[]
   messages Message[]
   payments Payment[]
+  
+  // The Vault - Course Platform
+  vaultEnrollments        VaultEnrollment[]
+  vaultBundleSubscriptions VaultBundleSubscription[]
+  vaultReviews            VaultReview[]
+  vaultSubscriptions      VaultSubscriber[] @relation("VaultClientSubscription")
+  
+  // E-commerce Orders
+  merchOrders             MerchOrder[]
 
   @@unique([email, studioId])
 }
@@ -975,4 +1021,1941 @@ model TrainingRequest {
 
   @@index([studioId, status])
   @@index([status])
+}
+
+// ==========================================
+// SOCIAL MEDIA MARKETING SYSTEM
+// ==========================================
+
+// Social media platforms
+enum SocialPlatform {
+  INSTAGRAM
+  TIKTOK
+}
+
+// Connected social media accounts
+model SocialMediaAccount {
+  id              String         @id @default(cuid())
+  platform        SocialPlatform
+  
+  // Account info
+  platformUserId  String         // Instagram/TikTok user ID
+  username        String
+  displayName     String?
+  profilePicture  String?
+  
+  // OAuth tokens (encrypted in production)
+  accessToken     String         @db.Text
+  refreshToken    String?        @db.Text
+  tokenExpiresAt  DateTime?
+  
+  // Account stats (updated periodically)
+  followerCount   Int            @default(0)
+  followingCount  Int            @default(0)
+  postsCount      Int            @default(0)
+  
+  // Status
+  isActive        Boolean        @default(true)
+  lastSyncedAt    DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Can belong to studio or teacher
+  studioId        String?
+  studio          Studio?        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher?       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  // Relations
+  flows           SocialMediaFlow[]
+  messages        SocialMediaMessage[]
+  trackingLinks   SocialMediaTrackingLink[]
+
+  @@unique([platform, platformUserId])
+  @@index([studioId])
+  @@index([teacherId])
+}
+
+// Automation flow trigger types
+enum FlowTriggerType {
+  COMMENT_KEYWORD       // Comment on post/reel contains keyword
+  STORY_REPLY           // Reply to story
+  STORY_REACTION        // Reaction to story
+  INBOUND_DM_KEYWORD    // DM contains keyword
+  CLICK_TO_MESSAGE_AD   // From ad click
+}
+
+// Social media automation flows
+model SocialMediaFlow {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  
+  // Trigger configuration
+  triggerType     FlowTriggerType
+  triggerKeywords String[]        // Keywords that trigger the flow
+  
+  // Response configuration
+  responseMessage String          @db.Text // Initial DM message
+  followUpMessages String?        @db.Text // JSON array of follow-up messages with delays
+  
+  // Booking integration
+  includeBookingLink Boolean      @default(true)
+  bookingMessage    String?       // Message to include with booking link
+  
+  // Status
+  isActive        Boolean         @default(true)
+  
+  // Stats
+  totalTriggered  Int             @default(0)
+  totalResponded  Int             @default(0)
+  totalBooked     Int             @default(0)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  accountId       String
+  account         SocialMediaAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  // Track which content/post this flow is for
+  postId          String?         // Platform post ID
+  postUrl         String?
+  
+  // Generated tracking links for this flow
+  trackingLinks   SocialMediaTrackingLink[]
+  
+  // Triggered events
+  events          SocialMediaFlowEvent[]
+  
+  // Homework submissions using this flow for tracking
+  homeworkSubmissions SocialHomeworkSubmission[]
+
+  @@index([accountId])
+  @@index([triggerType])
+}
+
+// Track individual flow trigger events
+model SocialMediaFlowEvent {
+  id              String   @id @default(cuid())
+  
+  // User who triggered
+  platformUserId  String   // Instagram/TikTok user ID
+  platformUsername String?
+  
+  // What triggered it
+  triggerContent  String?  @db.Text // The comment/message content
+  triggerType     FlowTriggerType
+  
+  // Response sent
+  responseSent    Boolean  @default(false)
+  responseAt      DateTime?
+  
+  // Conversion tracking
+  clickedLink     Boolean  @default(false)
+  clickedAt       DateTime?
+  converted       Boolean  @default(false) // Made a booking
+  convertedAt     DateTime?
+  bookingId       String?  // Link to booking if converted
+  
+  createdAt       DateTime @default(now())
+
+  flowId          String
+  flow            SocialMediaFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+
+  @@index([flowId, createdAt])
+  @@index([converted])
+}
+
+// Tracking links for attribution
+model SocialMediaTrackingLink {
+  id              String   @id @default(cuid())
+  
+  // Unique tracking code
+  code            String   @unique @default(cuid())
+  
+  // What this tracks
+  campaign        String?  // Campaign name
+  source          String   // instagram, tiktok
+  medium          String   // comment_reply, dm, story, ad
+  content         String?  // Specific post/reel ID
+  
+  // The actual booking URL with tracking
+  destinationUrl  String
+  fullTrackingUrl String   // The complete URL with all params
+  
+  // Stats
+  clicks          Int      @default(0)
+  conversions     Int      @default(0)
+  revenue         Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Attribution
+  accountId       String?
+  account         SocialMediaAccount? @relation(fields: [accountId], references: [id])
+  
+  flowId          String?
+  flow            SocialMediaFlow? @relation(fields: [flowId], references: [id])
+  
+  studioId        String?
+  studio          Studio?  @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id])
+
+  @@index([code])
+  @@index([studioId])
+  @@index([teacherId])
+}
+
+// Social media messages (for inbox)
+model SocialMediaMessage {
+  id              String         @id @default(cuid())
+  platform        SocialPlatform
+  
+  // Conversation participant
+  platformUserId  String         // Their user ID
+  platformUsername String?
+  profilePicture  String?
+  
+  // Message content
+  direction       MessageDirection // INBOUND or OUTBOUND
+  content         String         @db.Text
+  mediaUrl        String?        // If message has media
+  mediaType       String?        // image, video, etc.
+  
+  // Platform message ID
+  platformMessageId String?
+  
+  // Status
+  isRead          Boolean        @default(false)
+  readAt          DateTime?
+  
+  // Automation flag
+  isAutomated     Boolean        @default(false)
+  flowId          String?        // If sent by a flow
+  
+  createdAt       DateTime       @default(now())
+
+  accountId       String
+  account         SocialMediaAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, platformUserId])
+  @@index([accountId, createdAt])
+  @@index([isRead])
+}
+
+// ==========================================
+// SOCIAL MEDIA TRAINING SYSTEM
+// ==========================================
+
+// Training categories
+model SocialTrainingCategory {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "Profile Optimization", "Content Creation", "Editing"
+  description String?
+  icon        String?
+  color       String?
+  order       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules     SocialTrainingModule[]
+}
+
+// Training modules
+model SocialTrainingModule {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?  @db.Text
+  
+  // AI-generated summary of the module content
+  summary         String?  @db.Text
+  keyTakeaways    String?  @db.Text // JSON array of key points
+  
+  // Content
+  videoUrl        String?
+  thumbnailUrl    String?
+  duration        Int?     // in minutes
+  
+  // Additional resources
+  resources       String?  @db.Text // JSON array of { title, url, type }
+  
+  // Is this a live session?
+  isLive          Boolean  @default(false)
+  liveDate        DateTime?
+  liveUrl         String?  // Zoom/Meet link
+  
+  // Is this an in-person event?
+  isInPerson      Boolean  @default(false)
+  eventLocation   String?
+  eventAddress    String?
+  maxAttendees    Int?
+  
+  // Ordering
+  order           Int      @default(0)
+  isPublished     Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  categoryId      String
+  category        SocialTrainingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // Homework for this module
+  homework        SocialTrainingHomework[]
+  
+  // Progress tracking
+  progress        SocialTrainingProgress[]
+  
+  // Event registrations
+  registrations   SocialEventRegistration[]
+
+  @@index([categoryId])
+}
+
+// Homework assignments
+model SocialTrainingHomework {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @db.Text
+  
+  // Requirements
+  requirements    String   @db.Text // JSON array of { task, quantity, metric }
+  // e.g., [{ "task": "Create Instagram Reels", "quantity": 8, "metric": "reels_created" },
+  //        { "task": "Set up auto-reply", "quantity": 1, "metric": "flow_created" },
+  //        { "task": "Get bookings", "quantity": 3, "metric": "bookings" }]
+  
+  // AI-generated instructions based on module content
+  aiInstructions  String?  @db.Text // JSON array of step-by-step instructions for each task
+  
+  // Due date (optional)
+  dueInDays       Int?     // Days from assignment
+  
+  // Points/rewards
+  points          Int      @default(10)
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  moduleId        String
+  module          SocialTrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  // Submissions
+  submissions     SocialHomeworkSubmission[]
+
+  @@index([moduleId])
+}
+
+// Homework submissions
+// Homework submission status
+enum HomeworkStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model SocialHomeworkSubmission {
+  id              String   @id @default(cuid())
+  
+  // Progress on requirements
+  progress        String   @db.Text // JSON object tracking each requirement
+  // e.g., { "reels_created": 5, "flow_created": 1, "bookings": 2 }
+  
+  // Status tracking
+  status          HomeworkStatus @default(ACTIVE)
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  startedAt       DateTime @default(now())
+  
+  // Auto-generated tracking link for this homework
+  trackingCode    String?  @unique
+  fullTrackingUrl String?  @db.Text // The complete booking URL with tracking
+  
+  // Evidence/proof - video links submitted by user
+  submissionNotes String?  @db.Text
+  submissionUrls  String[] // URLs to content created (video links)
+  
+  // Attached automation flow for tracking
+  attachedFlowId  String?
+  attachedFlow    SocialMediaFlow? @relation(fields: [attachedFlowId], references: [id], onDelete: SetNull)
+  
+  // Feedback
+  feedback        String?  @db.Text
+  pointsAwarded   Int?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  homeworkId      String
+  homework        SocialTrainingHomework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  
+  // Can be done by either a teacher OR a studio owner (user)
+  teacherId       String?
+  teacher         Teacher?  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  userId          String?   // For studio owners doing homework
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, teacherId])
+  @@unique([homeworkId, userId])
+  @@index([teacherId])
+  @@index([userId])
+  @@index([attachedFlowId])
+}
+
+// Trending/Viral Content Discovery
+model TrendingContent {
+  id              String   @id @default(cuid())
+  
+  // Platform info
+  platform        SocialPlatform
+  platformPostId  String   @unique // Instagram/TikTok post ID
+  postUrl         String
+  
+  // Creator info
+  creatorUsername String
+  creatorDisplayName String?
+  creatorProfilePic String?
+  creatorFollowers Int      @default(0)
+  isVerified      Boolean  @default(false)
+  
+  // Content info
+  contentType     SocialContentType @default(VIDEO)
+  thumbnailUrl    String?
+  videoUrl        String?
+  caption         String?  @db.Text
+  hashtags        String[] // Array of hashtags used
+  
+  // Engagement metrics
+  viewCount       Int      @default(0)
+  likeCount       Int      @default(0)
+  commentCount    Int      @default(0)
+  shareCount      Int      @default(0)
+  saveCount       Int      @default(0)
+  engagementRate  Float    @default(0) // (likes+comments+shares)/views * 100
+  
+  // Content categorization
+  category        String?  // e.g., "Reformer", "Mat", "Props", "Transitions"
+  contentStyle    String?  // e.g., "Tutorial", "Transformation", "Day in Life", "Tips"
+  difficulty      String?  // e.g., "Beginner", "Intermediate", "Advanced"
+  
+  // Timing
+  postedAt        DateTime
+  scrapedAt       DateTime @default(now())
+  lastUpdatedAt   DateTime @updatedAt
+  
+  // Trending score (calculated)
+  trendingScore   Float    @default(0) // Algorithm-based score
+  
+  // Admin flags
+  isFeatured      Boolean  @default(false)
+  isHidden        Boolean  @default(false)
+  
+  @@index([platform])
+  @@index([postedAt])
+  @@index([trendingScore])
+  @@index([category])
+  @@index([viewCount])
+  @@index([likeCount])
+}
+
+enum SocialContentType {
+  VIDEO
+  IMAGE
+  CAROUSEL
+  REEL
+  STORY
+}
+
+// Training progress
+model SocialTrainingProgress {
+  id              String   @id @default(cuid())
+  
+  // Progress
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  watchedPercent  Int      @default(0) // 0-100
+  lastWatchedAt   DateTime?
+  notes           String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  moduleId        String
+  module          SocialTrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, teacherId])
+  @@index([teacherId])
+}
+
+// Event registrations
+model SocialEventRegistration {
+  id              String   @id @default(cuid())
+  
+  // Status
+  isConfirmed     Boolean  @default(true)
+  attendedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+
+  moduleId        String
+  module          SocialTrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, teacherId])
+}
+
+// Weekly content ideas
+model SocialContentIdea {
+  id              String   @id @default(cuid())
+  
+  // Content
+  title           String
+  description     String   @db.Text
+  category        String   // hooks, storytelling, offers, etc.
+  
+  // Example content
+  exampleScript   String?  @db.Text
+  exampleVideoUrl String?
+  
+  // For which week
+  weekOf          DateTime // Start of the week
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([weekOf])
+  @@index([category])
+}
+
+// ==================== THE VAULT - Course & Membership Platform ====================
+
+// Course target audience
+enum VaultAudience {
+  STUDIO_OWNERS   // For pilates studio owners
+  TEACHERS        // For pilates teachers
+  CLIENTS         // For end clients (at-home, mentorship)
+  ALL             // Available to everyone
+}
+
+// Course pricing model
+enum VaultPricingType {
+  FREE            // Free course
+  ONE_TIME        // Single purchase
+  SUBSCRIPTION    // Recurring access
+  BUNDLE          // Part of a bundle/membership
+}
+
+// Access type
+enum VaultAccessType {
+  LIFETIME        // Forever access after purchase
+  TIME_LIMITED    // Access for X days/months
+  DRIP            // Content released over time
+}
+
+// Enrollment status
+enum VaultEnrollmentStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  COMPLETED
+}
+
+// Main course model
+model VaultCourse {
+  id              String   @id @default(cuid())
+  
+  // Basic info
+  title           String
+  slug            String   @unique
+  subtitle        String?
+  description     String   @db.Text
+  thumbnailUrl    String?
+  promoVideoUrl   String?
+  
+  // Categorization
+  audience        VaultAudience @default(CLIENTS)
+  category        String?       // e.g., "Business Growth", "Teaching Skills", "At-Home Workouts"
+  tags            String[]
+  difficulty      String?       // Beginner, Intermediate, Advanced
+  
+  // Pricing
+  pricingType     VaultPricingType @default(ONE_TIME)
+  price           Float            @default(0)
+  currency        String           @default("USD")
+  
+  // Subscription options (if pricingType is SUBSCRIPTION)
+  subscriptionInterval String?     // monthly, quarterly, yearly
+  subscriptionPrice    Float?
+  
+  // Access settings
+  accessType      VaultAccessType @default(LIFETIME)
+  accessDays      Int?            // For TIME_LIMITED: number of days
+  dripIntervalDays Int?           // For DRIP: days between releases
+  
+  // Features (Note: Community chat is subscription-only, not per-course)
+  hasLiveEvents   Boolean  @default(false) // Live Q&A sessions
+  hasCertificate  Boolean  @default(false) // Completion certificate
+  
+  // Affiliate settings
+  affiliateEnabled    Boolean @default(true)
+  affiliateCommission Float   @default(20)  // Percentage
+  
+  // Subscription Vault - include in all-access subscription
+  includeInSubscription Boolean @default(false)
+  
+  // Status
+  isPublished     Boolean  @default(false)
+  isFeatured      Boolean  @default(false)
+  
+  // Stats (denormalized for performance)
+  enrollmentCount Int      @default(0)
+  reviewCount     Int      @default(0)
+  averageRating   Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  publishedAt     DateTime?
+
+  // Relations
+  studioId        String
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  creatorId       String?  // Teacher who created (if created by teacher)
+  creator         Teacher? @relation("VaultCourseCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  
+  // Course structure
+  modules         VaultModule[]
+  
+  // Instructors (can have multiple teachers)
+  instructors     VaultCourseInstructor[]
+  
+  // Enrollments
+  enrollments     VaultEnrollment[]
+  
+  // Affiliate links
+  affiliateLinks  VaultAffiliateLink[]
+  
+  // Reviews
+  reviews         VaultReview[]
+  
+  // Bundles this course is part of
+  bundles         VaultBundleCourse[]
+
+  @@index([studioId])
+  @@index([audience])
+  @@index([isPublished])
+  @@index([isFeatured])
+}
+
+// Course instructors (many-to-many)
+model VaultCourseInstructor {
+  id          String   @id @default(cuid())
+  role        String   @default("instructor") // lead, instructor, guest
+  bio         String?  @db.Text
+  
+  courseId    String
+  course      VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([courseId, teacherId])
+}
+
+// Course modules (sections)
+model VaultModule {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  order       Int      @default(0)
+  
+  // Drip settings
+  dripDelay   Int?     // Days after enrollment to unlock (null = immediately)
+  
+  isPublished Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courseId    String
+  course      VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  lessons     VaultLesson[]
+
+  @@index([courseId, order])
+}
+
+// Individual lessons
+model VaultLesson {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?  @db.Text
+  order           Int      @default(0)
+  
+  // Content type
+  contentType     String   @default("video") // video, text, pdf, quiz, assignment
+  
+  // Content
+  videoUrl        String?
+  videoDuration   Int?     // Duration in seconds
+  textContent     String?  @db.Text
+  pdfUrl          String?
+  
+  // Quiz/Assignment content (JSON)
+  quizContent     String?  @db.Text
+  
+  // Preview
+  isPreview       Boolean  @default(false) // Free preview before purchase
+  
+  isPublished     Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  moduleId        String
+  module          VaultModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  // Progress tracking
+  progress        VaultProgress[]
+  
+  // Resources/attachments
+  resources       VaultLessonResource[]
+
+  @@index([moduleId, order])
+}
+
+// Lesson resources/attachments
+model VaultLessonResource {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // pdf, download, link
+  url         String
+  
+  lessonId    String
+  lesson      VaultLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+}
+
+// Course enrollments
+model VaultEnrollment {
+  id              String   @id @default(cuid())
+  
+  status          VaultEnrollmentStatus @default(ACTIVE)
+  
+  // Access dates
+  enrolledAt      DateTime @default(now())
+  expiresAt       DateTime?
+  completedAt     DateTime?
+  
+  // Progress
+  progressPercent Float    @default(0)
+  lessonsCompleted Int     @default(0)
+  lastAccessedAt  DateTime?
+  
+  // Payment info
+  paidAmount      Float?
+  paidAt          DateTime?
+  paymentMethod   String?
+  transactionId   String?
+  
+  // Subscription info
+  subscriptionId  String?
+  subscriptionStatus String?
+  nextBillingDate DateTime?
+  
+  // Affiliate tracking
+  affiliateLinkId String?
+  affiliateLink   VaultAffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  courseId        String
+  course          VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Who enrolled - can be client, teacher, or user (studio owner)
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  userId          String?  // For studio owners
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Progress records
+  progress        VaultProgress[]
+  
+  // Chat membership
+  chatMembership  VaultChatMember?
+
+  @@unique([courseId, clientId])
+  @@unique([courseId, teacherId])
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([clientId])
+  @@index([teacherId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Lesson progress tracking
+model VaultProgress {
+  id              String   @id @default(cuid())
+  
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  
+  // Video progress
+  watchedSeconds  Int      @default(0)
+  lastPosition    Int      @default(0) // Resume position
+  
+  // Quiz/Assignment
+  quizScore       Float?
+  quizAttempts    Int      @default(0)
+  submissionData  String?  @db.Text // JSON for assignment submissions
+  
+  startedAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  enrollmentId    String
+  enrollment      VaultEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  
+  lessonId        String
+  lesson          VaultLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+}
+
+// Course bundles/memberships
+// Vault Subscription Plan - All-access subscription to vault courses
+// Each studio can have 3 subscription tiers: STUDIO_OWNERS, TEACHERS, CLIENTS
+model VaultSubscriptionPlan {
+  id              String   @id @default(cuid())
+  
+  name            String   // e.g., "Studio Owner Vault", "Teacher Vault", "At-Home Vault"
+  description     String   @db.Text
+  
+  // Which audience this subscription is for
+  audience        VaultAudience // STUDIO_OWNERS, TEACHERS, CLIENTS
+  
+  // Pricing tiers
+  monthlyPrice    Float
+  quarterlyPrice  Float?
+  yearlyPrice     Float?
+  currency        String   @default("USD")
+  
+  // Benefits
+  includesAllCourses Boolean @default(true) // Access to all courses for this audience
+  includesClasses    Boolean @default(false) // Include studio class credits
+  classCreditsPerMonth Int?  // Monthly class credits
+  
+  // Features display
+  features        String[] // List of features to display
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studioId        String
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  subscribers     VaultSubscriber[]
+  
+  // Community chat for this subscription tier
+  communityChat   VaultSubscriptionChat?
+
+  @@unique([studioId, audience]) // Only one plan per audience per studio
+  @@index([studioId])
+}
+
+// Community chat room for a subscription tier (NOT for individual courses)
+model VaultSubscriptionChat {
+  id              String   @id @default(cuid())
+  
+  name            String?  // e.g., "Studio Owners Community"
+  description     String?
+  
+  // Settings
+  isEnabled       Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  planId          String   @unique
+  plan            VaultSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  members         VaultSubscriptionChatMember[]
+  messages        VaultSubscriptionChatMessage[]
+}
+
+// Members of subscription community chat
+model VaultSubscriptionChatMember {
+  id              String   @id @default(cuid())
+  
+  role            String   @default("member") // admin, moderator, member
+  
+  // Notification settings
+  notificationsEnabled Boolean @default(true)
+  lastReadAt      DateTime?
+  
+  isMuted         Boolean  @default(false)
+  isBanned        Boolean  @default(false)
+  
+  joinedAt        DateTime @default(now())
+
+  chatId          String
+  chat            VaultSubscriptionChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  subscriberId    String   @unique
+  subscriber      VaultSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  
+  messages        VaultSubscriptionChatMessage[]
+
+  @@unique([chatId, subscriberId])
+  @@index([chatId])
+}
+
+// Messages in subscription community chat
+model VaultSubscriptionChatMessage {
+  id              String   @id @default(cuid())
+  
+  content         String   @db.Text
+  type            String   @default("text") // text, image, announcement
+  mediaUrl        String?
+  
+  isEdited        Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  chatId          String
+  chat            VaultSubscriptionChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  memberId        String
+  member          VaultSubscriptionChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
+
+// Active vault subscriptions
+model VaultSubscriber {
+  id              String   @id @default(cuid())
+  
+  status          String   @default("active") // active, cancelled, past_due, paused
+  interval        String   // monthly, quarterly, yearly
+  
+  startedAt       DateTime @default(now())
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt     DateTime?
+  
+  // Payment
+  stripeSubscriptionId String?
+  paidAmount      Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  planId          String
+  plan            VaultSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  // Subscriber (one of these)
+  clientId        String?
+  client          Client?  @relation("VaultClientSubscription", fields: [clientId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher? @relation("VaultTeacherSubscription", fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  userId          String?
+  user            User?    @relation("VaultUserSubscription", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Community chat membership
+  chatMembership  VaultSubscriptionChatMember?
+
+  @@index([planId])
+  @@index([status])
+}
+
+model VaultBundle {
+  id              String   @id @default(cuid())
+  
+  title           String
+  slug            String   @unique
+  description     String   @db.Text
+  thumbnailUrl    String?
+  
+  // Pricing
+  price           Float
+  currency        String   @default("USD")
+  
+  // Subscription options
+  isSubscription  Boolean  @default(false)
+  subscriptionInterval String? // monthly, quarterly, yearly
+  
+  // Bundle benefits
+  includesClasses Boolean  @default(false) // Include studio class credits
+  classCredits    Int?     // Number of class credits per period
+  
+  isPublished     Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studioId        String
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  // Courses in bundle
+  courses         VaultBundleCourse[]
+  
+  // Subscriptions
+  subscriptions   VaultBundleSubscription[]
+
+  @@index([studioId])
+}
+
+// Bundle-Course relationship
+model VaultBundleCourse {
+  id          String   @id @default(cuid())
+  
+  bundleId    String
+  bundle      VaultBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  
+  courseId    String
+  course      VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([bundleId, courseId])
+}
+
+// Bundle subscriptions
+model VaultBundleSubscription {
+  id              String   @id @default(cuid())
+  
+  status          String   @default("active") // active, cancelled, past_due
+  
+  startedAt       DateTime @default(now())
+  cancelledAt     DateTime?
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  
+  stripeSubscriptionId String?
+  
+  bundleId        String
+  bundle          VaultBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  
+  // Subscriber
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([status])
+}
+
+// ==================== VAULT COMMUNITY/CHAT ====================
+
+// Chat room for a course
+// DEPRECATED: Course-level chat is no longer used. 
+// Community chat is now subscription-tier only (see VaultSubscriptionChat).
+// Keeping this model for data migration purposes.
+model VaultChatRoom {
+  id              String   @id @default(cuid())
+  
+  name            String?
+  description     String?
+  
+  isEnabled       Boolean  @default(true)
+  instructorsOnly Boolean  @default(false)
+  moderationEnabled Boolean @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // No longer linked to course - subscription chats are separate
+  deprecatedCourseId String?
+  
+  members         VaultChatMember[]
+  messages        VaultChatMessage[]
+  pinnedMessages  VaultChatPinned[]
+}
+
+// Chat room members
+model VaultChatMember {
+  id              String   @id @default(cuid())
+  
+  role            String   @default("member") // admin, instructor, moderator, member
+  
+  // Notification settings
+  notificationsEnabled Boolean @default(true)
+  lastReadAt      DateTime?
+  
+  isMuted         Boolean  @default(false)
+  mutedUntil      DateTime?
+  
+  isBanned        Boolean  @default(false)
+  
+  joinedAt        DateTime @default(now())
+
+  chatRoomId      String
+  chatRoom        VaultChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  
+  enrollmentId    String   @unique
+  enrollment      VaultEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  
+  messages        VaultChatMessage[]
+
+  @@index([chatRoomId])
+}
+
+// Chat messages
+model VaultChatMessage {
+  id              String   @id @default(cuid())
+  
+  content         String   @db.Text
+  
+  // Message type
+  type            String   @default("text") // text, image, file, announcement
+  
+  // Media (if any)
+  mediaUrl        String?
+  mediaType       String?  // image, video, file
+  fileName        String?
+  
+  // Reply
+  replyToId       String?
+  replyTo         VaultChatMessage? @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         VaultChatMessage[] @relation("MessageReplies")
+  
+  // Status
+  isEdited        Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
+  deletedAt       DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  chatRoomId      String
+  chatRoom        VaultChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  
+  memberId        String
+  member          VaultChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  // Reactions
+  reactions       VaultChatReaction[]
+  
+  pinnedIn        VaultChatPinned?
+
+  @@index([chatRoomId, createdAt])
+}
+
+// Message reactions
+model VaultChatReaction {
+  id          String   @id @default(cuid())
+  emoji       String   // emoji code
+  
+  messageId   String
+  message     VaultChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  // Who reacted (store member ID as string to avoid complex relations)
+  memberId    String
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([messageId, memberId, emoji])
+}
+
+// Pinned messages
+model VaultChatPinned {
+  id          String   @id @default(cuid())
+  
+  chatRoomId  String
+  chatRoom    VaultChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  
+  messageId   String   @unique
+  message     VaultChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  pinnedAt    DateTime @default(now())
+  pinnedBy    String   // Member ID who pinned
+}
+
+// ==================== VAULT AFFILIATES ====================
+
+// Affiliate links for teachers
+model VaultAffiliateLink {
+  id              String   @id @default(cuid())
+  
+  code            String   @unique // Unique referral code
+  
+  // Custom commission (overrides course default)
+  customCommission Float?
+  
+  // Stats
+  clicks          Int      @default(0)
+  conversions     Int      @default(0)
+  totalEarnings   Float    @default(0)
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courseId        String
+  course          VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  // Enrollments from this link
+  enrollments     VaultEnrollment[]
+  
+  // Sales records
+  sales           VaultAffiliateSale[]
+
+  @@unique([courseId, teacherId])
+  @@index([code])
+}
+
+// Affiliate sale records
+model VaultAffiliateSale {
+  id              String   @id @default(cuid())
+  
+  saleAmount      Float    // Total sale amount
+  commissionRate  Float    // Commission % at time of sale
+  commissionAmount Float   // Actual commission earned
+  
+  // Payment status
+  status          String   @default("pending") // pending, approved, paid, rejected
+  paidAt          DateTime?
+  paymentReference String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  affiliateLinkId String
+  affiliateLink   VaultAffiliateLink @relation(fields: [affiliateLinkId], references: [id], onDelete: Cascade)
+  
+  // The enrollment that generated this sale
+  enrollmentId    String?
+
+  @@index([affiliateLinkId])
+  @@index([status])
+}
+
+// ==================== VAULT REVIEWS ====================
+
+model VaultReview {
+  id              String   @id @default(cuid())
+  
+  rating          Int      // 1-5
+  title           String?
+  content         String?  @db.Text
+  
+  isVerified      Boolean  @default(true)  // From verified purchaser
+  isApproved      Boolean  @default(true)  // Moderation
+  isFeatured      Boolean  @default(false)
+  
+  // Helpful votes
+  helpfulCount    Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courseId        String
+  course          VaultCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Reviewer (one of these)
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([rating])
+}
+
+// ===========================================
+// E-COMMERCE / MERCHANDISE STORE
+// ===========================================
+
+enum ProductCategory {
+  APPAREL
+  EQUIPMENT
+  ACCESSORIES
+  NUTRITION
+  WELLNESS
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  DISCONTINUED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum SampleOrderStatus {
+  PENDING
+  APPROVED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// Master product catalog (managed by HQ)
+model Product {
+  id              String   @id @default(cuid())
+  
+  name            String
+  slug            String   @unique
+  description     String   @db.Text
+  shortDescription String?
+  
+  category        ProductCategory
+  subcategory     String?
+  
+  // Base pricing (wholesale/cost)
+  baseCost        Float
+  suggestedRetail Float
+  
+  // Images
+  images          String[]  // Array of image URLs
+  
+  // Customization options
+  canAddLogo      Boolean   @default(true)
+  logoPlacement   String[]  // e.g., ["front", "back", "sleeve"]
+  
+  // Inventory
+  inStock         Boolean   @default(true)
+  leadTimeDays    Int       @default(7)
+  
+  // Metadata
+  weight          Float?    // in kg
+  dimensions      String?   // e.g., "30x20x10cm"
+  materials       String?
+  careInstructions String?
+  
+  status          ProductStatus @default(ACTIVE)
+  isFeatured      Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  variants        ProductVariant[]
+  studioProducts  StudioProduct[]
+  sampleOrderItems SampleOrderItem[]
+  
+  @@index([category])
+  @@index([status])
+}
+
+// Product variants (sizes, colors)
+model ProductVariant {
+  id              String   @id @default(cuid())
+  
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  sku             String   @unique
+  name            String   // e.g., "Small / Black"
+  
+  size            String?  // e.g., "S", "M", "L", "XL"
+  color           String?
+  colorHex        String?  // e.g., "#000000"
+  
+  // Variant-specific pricing adjustment
+  priceAdjustment Float    @default(0)
+  
+  // Inventory
+  inStock         Boolean  @default(true)
+  stockQuantity   Int?
+  
+  images          String[] // Variant-specific images
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  studioProductVariants StudioProductVariant[]
+  orderItems      MerchOrderItem[]
+  sampleOrderItems SampleOrderItem[]
+  
+  @@index([productId])
+}
+
+// Studio's store configuration
+model StudioStore {
+  id              String   @id @default(cuid())
+  
+  studioId        String   @unique
+  studio          Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  // Store settings
+  isEnabled       Boolean  @default(false)
+  storeName       String?
+  storeDescription String?
+  
+  // Branding
+  logoUrl         String?
+  bannerUrl       String?
+  accentColor     String?
+  
+  // Shipping settings
+  freeShippingThreshold Float?
+  flatShippingRate Float?
+  
+  // Policies
+  returnPolicy    String?  @db.Text
+  shippingInfo    String?  @db.Text
+  
+  // Connected Stripe for payouts
+  stripeAccountId String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  products        StudioProduct[]
+  orders          MerchOrder[]
+  sampleOrders    SampleOrder[]
+}
+
+// Products listed in a studio's store
+model StudioProduct {
+  id              String   @id @default(cuid())
+  
+  storeId         String
+  store           StudioStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Custom pricing
+  price           Float    // Studio's retail price
+  compareAtPrice  Float?   // Original price for showing discount
+  
+  // Customization
+  hasCustomLogo   Boolean  @default(false)
+  logoUrl         String?  // Studio's logo for this product
+  logoPlacement   String?  // Where logo is placed
+  
+  // Custom content
+  customTitle     String?
+  customDescription String? @db.Text
+  
+  // Status
+  isActive        Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  variants        StudioProductVariant[]
+  orderItems      MerchOrderItem[]
+  
+  @@unique([storeId, productId])
+  @@index([storeId])
+}
+
+// Studio-specific variant settings
+model StudioProductVariant {
+  id              String   @id @default(cuid())
+  
+  studioProductId String
+  studioProduct   StudioProduct @relation(fields: [studioProductId], references: [id], onDelete: Cascade)
+  
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  
+  // Override pricing
+  price           Float?
+  
+  // Availability
+  isActive        Boolean  @default(true)
+  
+  @@unique([studioProductId, variantId])
+}
+
+// Sample orders for studios to try products
+model SampleOrder {
+  id              String   @id @default(cuid())
+  
+  storeId         String
+  store           StudioStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  status          SampleOrderStatus @default(PENDING)
+  
+  // Shipping
+  shippingName    String
+  shippingAddress String
+  shippingCity    String
+  shippingState   String
+  shippingZip     String
+  shippingCountry String   @default("US")
+  
+  // Tracking
+  trackingNumber  String?
+  trackingUrl     String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  
+  // Cost (may be free or discounted for samples)
+  subtotal        Float
+  shippingCost    Float    @default(0)
+  discount        Float    @default(0)
+  total           Float
+  
+  notes           String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  items           SampleOrderItem[]
+  
+  @@index([storeId])
+  @@index([status])
+}
+
+// Items in a sample order
+model SampleOrderItem {
+  id              String   @id @default(cuid())
+  
+  orderId         String
+  order           SampleOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  
+  variantId       String?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  quantity        Int      @default(1)
+  unitPrice       Float
+  
+  // For logo samples
+  includeLogoSample Boolean @default(false)
+  logoUrl         String?
+  
+  @@index([orderId])
+}
+
+// Customer orders
+model MerchOrder {
+  id              String   @id @default(cuid())
+  
+  orderNumber     String   @unique
+  
+  storeId         String
+  store           StudioStore @relation(fields: [storeId], references: [id])
+  
+  // Customer info (can be linked to Client or guest)
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id])
+  
+  customerEmail   String
+  customerName    String
+  customerPhone   String?
+  
+  // Shipping
+  shippingName    String
+  shippingAddress String
+  shippingAddress2 String?
+  shippingCity    String
+  shippingState   String
+  shippingZip     String
+  shippingCountry String   @default("US")
+  
+  // Order totals
+  subtotal        Float
+  shippingCost    Float
+  taxAmount       Float    @default(0)
+  discount        Float    @default(0)
+  total           Float
+  
+  // Payment
+  paymentStatus   String   @default("pending")
+  paymentMethod   String?
+  stripePaymentId String?
+  paidAt          DateTime?
+  
+  // Fulfillment
+  status          OrderStatus @default(PENDING)
+  trackingNumber  String?
+  trackingUrl     String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  
+  // Payout to studio
+  studioEarnings  Float?
+  platformFee     Float?
+  payoutStatus    String?  @default("pending")
+  paidOutAt       DateTime?
+  
+  notes           String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  items           MerchOrderItem[]
+  
+  @@index([storeId])
+  @@index([status])
+  @@index([customerEmail])
+}
+
+// Items in a customer order
+model MerchOrderItem {
+  id              String   @id @default(cuid())
+  
+  orderId         String
+  order           MerchOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  studioProductId String
+  studioProduct   StudioProduct @relation(fields: [studioProductId], references: [id])
+  
+  variantId       String?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  // Snapshot at time of order
+  productName     String
+  variantName     String?
+  
+  quantity        Int
+  unitPrice       Float
+  totalPrice      Float
+  
+  // Customization applied
+  hasCustomLogo   Boolean  @default(false)
+  logoUrl         String?
+  
+  // Fulfillment
+  fulfilledQuantity Int    @default(0)
+  
+  @@index([orderId])
+}
+
+// ==========================================
+// LEADERBOARDS & PRIZES SYSTEM
+// ==========================================
+
+enum LeaderboardCategory {
+  // Content & Social Media
+  MOST_CONTENT_POSTED
+  MOST_SOCIAL_VIEWS
+  MOST_SOCIAL_LIKES
+  MOST_SOCIAL_ENGAGEMENT
+  CONTENT_CONSISTENCY
+  
+  // Growth Metrics
+  FASTEST_GROWING
+  BIGGEST_GROWTH_MONTHLY
+  BIGGEST_GROWTH_QUARTERLY
+  MOST_NEW_CLIENTS
+  HIGHEST_RETENTION
+  
+  // Course/Vault Metrics
+  MOST_COURSES_COMPLETED
+  MOST_COURSE_ENROLLMENTS
+  TOP_COURSE_CREATOR
+  BEST_COURSE_RATINGS
+  
+  // Booking & Revenue
+  MOST_BOOKINGS
+  HIGHEST_ATTENDANCE_RATE
+  MOST_CLASSES_TAUGHT
+  TOP_REVENUE
+  
+  // Engagement
+  MOST_ACTIVE_COMMUNITY
+  TOP_REVIEWER
+  MOST_REFERRALS
+  
+  // Special Categories
+  NEWCOMER_OF_MONTH
+  COMEBACK_CHAMPION
+  ALL_ROUNDER
+}
+
+enum LeaderboardTimeframe {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  ALL_TIME
+}
+
+enum LeaderboardParticipantType {
+  STUDIO
+  TEACHER
+}
+
+enum PrizeType {
+  CASH
+  GIFT_CARD
+  HOLIDAY
+  MERCHANDISE
+  SUBSCRIPTION
+  FEATURE_SPOTLIGHT
+  BADGE
+  OTHER
+}
+
+enum LeaderboardStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+// Defines a leaderboard competition
+model Leaderboard {
+  id              String   @id @default(cuid())
+  
+  name            String
+  slug            String   @unique
+  description     String?  @db.Text
+  
+  category        LeaderboardCategory
+  participantType LeaderboardParticipantType
+  timeframe       LeaderboardTimeframe
+  
+  // Scoring
+  metricName      String   // e.g., "posts", "views", "new_clients"
+  metricUnit      String?  // e.g., "posts", "views", "%"
+  higherIsBetter  Boolean  @default(true)
+  minimumEntries  Int      @default(1)  // Minimum activity to qualify
+  
+  // Display
+  icon            String?  // Icon name for UI
+  color           String?  // Brand color for the leaderboard
+  badgeImageUrl   String?  // Badge for winners
+  
+  // Configuration
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  showOnDashboard Boolean  @default(true)
+  
+  // Auto-calculation settings
+  autoCalculate   Boolean  @default(true)
+  calculationCron String?  // e.g., "0 0 * * *" for daily
+  lastCalculated  DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  periods         LeaderboardPeriod[]
+  prizes          LeaderboardPrize[]
+  
+  @@index([category])
+  @@index([participantType])
+  @@index([isActive])
+}
+
+// Prizes available for a leaderboard
+model LeaderboardPrize {
+  id              String   @id @default(cuid())
+  
+  leaderboardId   String
+  leaderboard     Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  
+  position        Int      // 1st, 2nd, 3rd, etc.
+  name            String   // e.g., "Bali Retreat", "$500 Cash"
+  description     String?  @db.Text
+  
+  prizeType       PrizeType
+  prizeValue      Float?   // Monetary value
+  prizeCurrency   String?  @default("USD")
+  
+  // Prize details
+  prizeDetails    Json?    // Additional details like gift card brand, holiday destination
+  imageUrl        String?
+  
+  // Sponsor info
+  sponsorName     String?
+  sponsorLogo     String?
+  sponsorUrl      String?
+  
+  createdAt       DateTime @default(now())
+  
+  winners         LeaderboardWinner[]
+  
+  @@unique([leaderboardId, position])
+  @@index([leaderboardId])
+}
+
+// A specific time period for a leaderboard (e.g., January 2025)
+model LeaderboardPeriod {
+  id              String   @id @default(cuid())
+  
+  leaderboardId   String
+  leaderboard     Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  
+  name            String   // e.g., "January 2025", "Q1 2025"
+  startDate       DateTime
+  endDate         DateTime
+  
+  status          LeaderboardStatus @default(ACTIVE)
+  
+  // When winners were finalized
+  finalizedAt     DateTime?
+  finalizedBy     String?  // Admin user ID
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  entries         LeaderboardEntry[]
+  winners         LeaderboardWinner[]
+  
+  @@unique([leaderboardId, startDate])
+  @@index([leaderboardId])
+  @@index([status])
+}
+
+// Individual entries/scores in a leaderboard period
+model LeaderboardEntry {
+  id              String   @id @default(cuid())
+  
+  periodId        String
+  period          LeaderboardPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  // Participant (either studio or teacher)
+  studioId        String?
+  teacherId       String?
+  
+  // Score/metrics
+  score           Float
+  previousScore   Float?   // For showing change
+  rank            Int?     // Calculated rank
+  previousRank    Int?     // For showing movement
+  
+  // Detailed metrics breakdown
+  metricsBreakdown Json?   // Store detailed metrics
+  
+  // Tracking
+  lastUpdated     DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([periodId, studioId])
+  @@unique([periodId, teacherId])
+  @@index([periodId])
+  @@index([rank])
+}
+
+// Winners of prizes
+model LeaderboardWinner {
+  id              String   @id @default(cuid())
+  
+  periodId        String
+  period          LeaderboardPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  
+  prizeId         String
+  prize           LeaderboardPrize @relation(fields: [prizeId], references: [id])
+  
+  // Winner (either studio or teacher)
+  studioId        String?
+  teacherId       String?
+  
+  position        Int      // Final position
+  finalScore      Float    // Score at time of win
+  
+  // Prize fulfillment
+  prizeStatus     String   @default("pending")  // pending, claimed, fulfilled, expired
+  claimedAt       DateTime?
+  fulfilledAt     DateTime?
+  
+  // Prize delivery details
+  deliveryDetails Json?    // Address, preferences, etc.
+  notes           String?  @db.Text
+  
+  // Notification
+  notifiedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([periodId, prizeId])
+  @@index([periodId])
+  @@index([prizeStatus])
+}
+
+// Track achievements and badges earned
+model LeaderboardBadge {
+  id              String   @id @default(cuid())
+  
+  name            String
+  description     String?
+  imageUrl        String
+  
+  // Requirements
+  category        LeaderboardCategory?
+  requiredWins    Int      @default(1)
+  requiredRank    Int?     // Must achieve this rank or better
+  
+  // Styling
+  color           String?
+  rarity          String   @default("common")  // common, rare, epic, legendary
+  
+  createdAt       DateTime @default(now())
+  
+  earnedBadges    EarnedBadge[]
+}
+
+// Badges earned by studios/teachers
+model EarnedBadge {
+  id              String   @id @default(cuid())
+  
+  badgeId         String
+  badge           LeaderboardBadge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  // Earned by (either studio or teacher)
+  studioId        String?
+  teacherId       String?
+  
+  earnedAt        DateTime @default(now())
+  
+  // What triggered earning this badge
+  triggeredBy     String?  // e.g., "leaderboard_win", "streak", "milestone"
+  triggerDetails  Json?
+  
+  @@unique([badgeId, studioId])
+  @@unique([badgeId, teacherId])
+  @@index([studioId])
+  @@index([teacherId])
 }

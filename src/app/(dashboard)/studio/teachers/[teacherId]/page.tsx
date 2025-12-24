@@ -31,7 +31,6 @@ import {
   Ban,
   FileText,
   Send,
-  Download,
   CheckCircle,
   AlertCircle,
   Eye,
@@ -95,17 +94,6 @@ interface PayRate {
   currency: string
 }
 
-interface InvoiceClass {
-  id: string
-  date: string
-  startTime: string
-  endTime: string
-  classType: string
-  location: string
-  students: number
-  earnings: number
-}
-
 interface Invoice {
   id: string
   invoiceNumber: string
@@ -140,16 +128,7 @@ export default function TeacherDetailPage({
   // Invoice state
   const [payRate, setPayRate] = useState<PayRate>({ type: "PER_CLASS", rate: 0, currency: "USD" })
   const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [showInvoiceCreator, setShowInvoiceCreator] = useState(false)
-  const [invoicePeriodStart, setInvoicePeriodStart] = useState("")
-  const [invoicePeriodEnd, setInvoicePeriodEnd] = useState("")
-  const [invoiceClasses, setInvoiceClasses] = useState<InvoiceClass[]>([])
-  const [invoiceSummary, setInvoiceSummary] = useState<{ totalClasses: number; totalStudents: number; totalEarnings: number } | null>(null)
-  const [invoiceTaxRate, setInvoiceTaxRate] = useState(0)
-  const [invoiceNotes, setInvoiceNotes] = useState("")
-  const [loadingInvoiceData, setLoadingInvoiceData] = useState(false)
   const [savingPayRate, setSavingPayRate] = useState(false)
-  const [creatingInvoice, setCreatingInvoice] = useState(false)
 
   useEffect(() => {
     async function fetchTeacher() {
@@ -257,37 +236,6 @@ export default function TeacherDetailPage({
     fetchPayRateAndInvoices()
   }, [resolvedParams.teacherId])
 
-  // Fetch classes when invoice period changes
-  useEffect(() => {
-    if (!invoicePeriodStart || !invoicePeriodEnd) {
-      setInvoiceClasses([])
-      setInvoiceSummary(null)
-      return
-    }
-
-    async function fetchInvoiceClasses() {
-      setLoadingInvoiceData(true)
-      try {
-        const res = await fetch(
-          `/api/studio/teachers/${resolvedParams.teacherId}/classes?startDate=${invoicePeriodStart}&endDate=${invoicePeriodEnd}`
-        )
-        if (res.ok) {
-          const data = await res.json()
-          console.log("Invoice classes data:", data)
-          setInvoiceClasses(data.classes || [])
-          setInvoiceSummary(data.summary || null)
-        } else {
-          const error = await res.json()
-          console.error("Failed to fetch classes:", error)
-        }
-      } catch (error) {
-        console.error("Failed to fetch classes:", error)
-      }
-      setLoadingInvoiceData(false)
-    }
-    fetchInvoiceClasses()
-  }, [resolvedParams.teacherId, invoicePeriodStart, invoicePeriodEnd])
-
   async function savePayRate() {
     setSavingPayRate(true)
     try {
@@ -303,54 +251,6 @@ export default function TeacherDetailPage({
     setSavingPayRate(false)
   }
 
-  async function createInvoice(send: boolean = false) {
-    if (!invoiceSummary || invoiceClasses.length === 0) return
-    
-    setCreatingInvoice(true)
-    try {
-      const lineItems = invoiceClasses.map(cls => ({
-        description: `${cls.classType} - ${new Date(cls.date).toLocaleDateString()}`,
-        classId: cls.id,
-        quantity: 1,
-        rate: cls.earnings,
-        amount: cls.earnings
-      }))
-
-      const subtotal = invoiceSummary.totalEarnings
-      const tax = Math.round((subtotal * invoiceTaxRate / 100) * 100) / 100
-      const total = subtotal + tax
-
-      const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}/invoices`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          periodStart: invoicePeriodStart,
-          periodEnd: invoicePeriodEnd,
-          lineItems,
-          subtotal,
-          tax,
-          taxRate: invoiceTaxRate,
-          total,
-          notes: invoiceNotes,
-          sendEmail: send
-        })
-      })
-
-      if (res.ok) {
-        const newInvoice = await res.json()
-        setInvoices([newInvoice, ...invoices])
-        setShowInvoiceCreator(false)
-        setInvoicePeriodStart("")
-        setInvoicePeriodEnd("")
-        setInvoiceNotes("")
-        setInvoiceTaxRate(0)
-      }
-    } catch (error) {
-      console.error("Failed to create invoice:", error)
-    }
-    setCreatingInvoice(false)
-  }
-
   async function markInvoicePaid(invoiceId: string) {
     try {
       const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}/invoices/${invoiceId}`, {
@@ -364,22 +264,6 @@ export default function TeacherDetailPage({
       }
     } catch (error) {
       console.error("Failed to update invoice:", error)
-    }
-  }
-
-  async function sendInvoice(invoiceId: string) {
-    try {
-      const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}/invoices/${invoiceId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "SENT", sendEmail: true })
-      })
-      if (res.ok) {
-        const updated = await res.json()
-        setInvoices(invoices.map(inv => inv.id === invoiceId ? updated : inv))
-      }
-    } catch (error) {
-      console.error("Failed to send invoice:", error)
     }
   }
 
@@ -1124,220 +1008,24 @@ export default function TeacherDetailPage({
             </CardContent>
           </Card>
 
-          {/* Create Invoice */}
+          {/* Teacher Submitted Invoices */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Generate Invoice</h3>
+                  <h3 className="font-semibold text-gray-900">Submitted Invoices</h3>
                 </div>
-                {!showInvoiceCreator && (
-                  <Button onClick={() => setShowInvoiceCreator(true)} className="bg-violet-600 hover:bg-violet-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Invoice
-                  </Button>
-                )}
-              </div>
-
-              {showInvoiceCreator && (
-                <div className="space-y-6">
-                  {/* Date Range */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Period Start</Label>
-                      <Input
-                        type="date"
-                        value={invoicePeriodStart}
-                        onChange={(e) => setInvoicePeriodStart(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Period End</Label>
-                      <Input
-                        type="date"
-                        value={invoicePeriodEnd}
-                        onChange={(e) => setInvoicePeriodEnd(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Loading */}
-                  {loadingInvoiceData && (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
-                    </div>
-                  )}
-
-                  {/* Invoice Preview */}
-                  {!loadingInvoiceData && invoiceSummary && invoiceClasses.length > 0 && (
-                    <div className="border rounded-lg overflow-hidden">
-                      {/* Invoice Header */}
-                      <div className="bg-gradient-to-r from-violet-600 to-violet-500 text-white p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-2xl font-bold">INVOICE</h4>
-                            <p className="text-violet-200 mt-1">
-                              {new Date(invoicePeriodStart).toLocaleDateString()} - {new Date(invoicePeriodEnd).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-violet-200">For</p>
-                            <p className="font-semibold">
-                              {teacher?.user.firstName} {teacher?.user.lastName}
-                            </p>
-                            <p className="text-violet-200 text-sm">{teacher?.user.email}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Line Items */}
-                      <div className="p-6">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 text-sm font-medium text-gray-500">Description</th>
-                              <th className="text-center py-2 text-sm font-medium text-gray-500">Date</th>
-                              <th className="text-center py-2 text-sm font-medium text-gray-500">Students</th>
-                              <th className="text-right py-2 text-sm font-medium text-gray-500">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {invoiceClasses.slice(0, 10).map((cls) => (
-                              <tr key={cls.id} className="border-b border-gray-100">
-                                <td className="py-3 text-sm text-gray-900">{cls.classType}</td>
-                                <td className="py-3 text-sm text-gray-500 text-center">
-                                  {new Date(cls.date).toLocaleDateString()}
-                                </td>
-                                <td className="py-3 text-sm text-gray-500 text-center">{cls.students}</td>
-                                <td className="py-3 text-sm text-gray-900 text-right">${cls.earnings.toFixed(2)}</td>
-                              </tr>
-                            ))}
-                            {invoiceClasses.length > 10 && (
-                              <tr>
-                                <td colSpan={4} className="py-3 text-sm text-gray-500 text-center">
-                                  ... and {invoiceClasses.length - 10} more classes
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-
-                        {/* Summary */}
-                        <div className="mt-6 border-t pt-4">
-                          <div className="flex justify-between py-1">
-                            <span className="text-gray-500">Total Classes</span>
-                            <span className="font-medium">{invoiceSummary.totalClasses}</span>
-                          </div>
-                          <div className="flex justify-between py-1">
-                            <span className="text-gray-500">Total Students</span>
-                            <span className="font-medium">{invoiceSummary.totalStudents}</span>
-                          </div>
-                          <div className="flex justify-between py-1">
-                            <span className="text-gray-500">Subtotal</span>
-                            <span className="font-medium">${invoiceSummary.totalEarnings.toFixed(2)}</span>
-                          </div>
-                          
-                          {/* Tax Input */}
-                          <div className="flex justify-between items-center py-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">Tax</span>
-                              <Input
-                                type="number"
-                                className="w-20 h-8 text-sm"
-                                value={invoiceTaxRate}
-                                onChange={(e) => setInvoiceTaxRate(parseFloat(e.target.value) || 0)}
-                                placeholder="%"
-                              />
-                              <span className="text-gray-400 text-sm">%</span>
-                            </div>
-                            <span className="font-medium">
-                              ${((invoiceSummary.totalEarnings * invoiceTaxRate) / 100).toFixed(2)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between py-2 border-t mt-2">
-                            <span className="text-lg font-semibold">Total</span>
-                            <span className="text-lg font-bold text-violet-600">
-                              ${(invoiceSummary.totalEarnings + (invoiceSummary.totalEarnings * invoiceTaxRate) / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Notes */}
-                        <div className="mt-4">
-                          <Label>Notes (optional)</Label>
-                          <Textarea
-                            value={invoiceNotes}
-                            onChange={(e) => setInvoiceNotes(e.target.value)}
-                            placeholder="Add any notes for this invoice..."
-                            rows={2}
-                            className="mt-1.5"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Classes Found */}
-                  {!loadingInvoiceData && invoicePeriodStart && invoicePeriodEnd && invoiceClasses.length === 0 && (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg">
-                      <AlertCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No classes found in this period</p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowInvoiceCreator(false)
-                        setInvoicePeriodStart("")
-                        setInvoicePeriodEnd("")
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => createInvoice(false)}
-                      disabled={creatingInvoice || !invoiceSummary || invoiceClasses.length === 0}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Save as Draft
-                    </Button>
-                    <Button
-                      onClick={() => createInvoice(true)}
-                      disabled={creatingInvoice || !invoiceSummary || invoiceClasses.length === 0}
-                      className="bg-violet-600 hover:bg-violet-700"
-                    >
-                      {creatingInvoice ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4 mr-2" />
-                      )}
-                      Create & Send
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Past Invoices */}
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900">Invoice History</h3>
+                <p className="text-sm text-gray-500">
+                  Teachers create and submit invoices from their portal
+                </p>
               </div>
 
               {invoices.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No invoices yet</p>
-                  <p className="text-sm text-gray-400">Create your first invoice above</p>
+                  <p className="text-gray-500">No invoices submitted yet</p>
+                  <p className="text-sm text-gray-400">This teacher hasn&apos;t submitted any invoices</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1349,11 +1037,14 @@ export default function TeacherDetailPage({
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           invoice.status === "PAID" ? "bg-emerald-100" :
+                          invoice.status === "PENDING" ? "bg-amber-100" :
                           invoice.status === "SENT" ? "bg-blue-100" :
-                          invoice.status === "DRAFT" ? "bg-gray-200" : "bg-amber-100"
+                          invoice.status === "DRAFT" ? "bg-gray-200" : "bg-red-100"
                         }`}>
                           {invoice.status === "PAID" ? (
                             <CheckCircle className="h-5 w-5 text-emerald-600" />
+                          ) : invoice.status === "PENDING" ? (
+                            <AlertCircle className="h-5 w-5 text-amber-600" />
                           ) : invoice.status === "SENT" ? (
                             <Send className="h-5 w-5 text-blue-600" />
                           ) : (
@@ -1364,14 +1055,15 @@ export default function TeacherDetailPage({
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-gray-900">{invoice.invoiceNumber}</p>
                             <Badge
-                              variant={
-                                invoice.status === "PAID" ? "success" :
-                                invoice.status === "SENT" ? "default" :
-                                "secondary"
-                              }
-                              className="text-xs"
+                              className={`text-xs ${
+                                invoice.status === "PAID" ? "bg-emerald-100 text-emerald-700" :
+                                invoice.status === "PENDING" ? "bg-amber-100 text-amber-700" :
+                                invoice.status === "SENT" ? "bg-blue-100 text-blue-700" :
+                                invoice.status === "CANCELLED" ? "bg-red-100 text-red-700" :
+                                "bg-gray-100 text-gray-700"
+                              }`}
                             >
-                              {invoice.status}
+                              {invoice.status === "PENDING" ? "Pending Review" : invoice.status}
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-500">
@@ -1387,23 +1079,20 @@ export default function TeacherDetailPage({
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {invoice.status === "DRAFT" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => sendInvoice(invoice.id)}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          )}
                           {(invoice.status === "SENT" || invoice.status === "PENDING") && (
                             <Button
                               size="sm"
-                              variant="outline"
                               onClick={() => markInvoicePaid(invoice.id)}
+                              className="bg-emerald-600 hover:bg-emerald-700"
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Mark Paid
                             </Button>
+                          )}
+                          {invoice.status === "PAID" && invoice.paidAt && (
+                            <span className="text-xs text-emerald-600">
+                              Paid {new Date(invoice.paidAt).toLocaleDateString()}
+                            </span>
                           )}
                           <Button size="sm" variant="ghost">
                             <Eye className="h-4 w-4" />

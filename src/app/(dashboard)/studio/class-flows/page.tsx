@@ -32,8 +32,11 @@ import {
   Edit,
   ChevronRight,
   Award,
-  TrendingUp
+  TrendingUp,
+  File,
+  Image
 } from "lucide-react"
+import { useRef } from "react"
 
 interface Category {
   id: string
@@ -109,6 +112,79 @@ export default function ClassFlowsPage() {
     icon: "📚",
     color: "#7c3aed"
   })
+
+  // Upload state
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const [uploadMode, setUploadMode] = useState<"upload" | "link">("upload")
+  
+  // File input refs
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFileUpload(file: File, type: "video" | "pdf" | "thumbnail") {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("type", type)
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.url
+      } else {
+        const error = await res.json()
+        alert(error.error || "Upload failed")
+        return null
+      }
+    } catch (error) {
+      console.error("Upload error:", error)
+      alert("Upload failed")
+      return null
+    }
+  }
+
+  async function onVideoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploadingVideo(true)
+    const url = await handleFileUpload(file, "video")
+    if (url) {
+      setNewContent({ ...newContent, videoUrl: url })
+    }
+    setUploadingVideo(false)
+  }
+
+  async function onPdfFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploadingPdf(true)
+    const url = await handleFileUpload(file, "pdf")
+    if (url) {
+      setNewContent({ ...newContent, pdfUrl: url })
+    }
+    setUploadingPdf(false)
+  }
+
+  async function onThumbnailFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploadingThumbnail(true)
+    const url = await handleFileUpload(file, "thumbnail")
+    if (url) {
+      setNewContent({ ...newContent, thumbnailUrl: url })
+    }
+    setUploadingThumbnail(false)
+  }
 
   useEffect(() => {
     fetchData()
@@ -678,34 +754,235 @@ export default function ClassFlowsPage() {
                   </div>
 
                   {newContent.type === "VIDEO" && (
-                    <div className="space-y-2">
-                      <Label>Video URL</Label>
-                      <Input
-                        value={newContent.videoUrl}
-                        onChange={(e) => setNewContent({ ...newContent, videoUrl: e.target.value })}
-                        placeholder="https://youtube.com/watch?v=... or Vimeo URL"
-                      />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Video</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={uploadMode === "upload" ? "default" : "outline"}
+                            onClick={() => setUploadMode("upload")}
+                            className={uploadMode === "upload" ? "bg-violet-600" : ""}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Upload
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={uploadMode === "link" ? "default" : "outline"}
+                            onClick={() => setUploadMode("link")}
+                            className={uploadMode === "link" ? "bg-violet-600" : ""}
+                          >
+                            <LinkIcon className="h-3 w-3 mr-1" />
+                            Link
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {uploadMode === "upload" ? (
+                        <div>
+                          <input
+                            ref={videoInputRef}
+                            type="file"
+                            accept="video/mp4,video/webm,video/quicktime"
+                            onChange={onVideoFileChange}
+                            className="hidden"
+                          />
+                          {newContent.videoUrl && newContent.videoUrl.startsWith("/uploads") ? (
+                            <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg">
+                              <Video className="h-5 w-5 text-emerald-600" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-emerald-700">Video uploaded</p>
+                                <p className="text-xs text-emerald-600 truncate">{newContent.videoUrl}</p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setNewContent({ ...newContent, videoUrl: "" })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full h-24 border-dashed"
+                              onClick={() => videoInputRef.current?.click()}
+                              disabled={uploadingVideo}
+                            >
+                              {uploadingVideo ? (
+                                <div className="flex flex-col items-center">
+                                  <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                                  <span>Uploading...</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <Upload className="h-6 w-6 mb-2" />
+                                  <span>Click to upload video</span>
+                                  <span className="text-xs text-gray-400">MP4, WebM, MOV (max 500MB)</span>
+                                </div>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <Input
+                          value={newContent.videoUrl}
+                          onChange={(e) => setNewContent({ ...newContent, videoUrl: e.target.value })}
+                          placeholder="https://youtube.com/watch?v=... or Vimeo URL"
+                        />
+                      )}
                     </div>
                   )}
 
                   {newContent.type === "PDF" && (
-                    <div className="space-y-2">
-                      <Label>PDF URL</Label>
-                      <Input
-                        value={newContent.pdfUrl}
-                        onChange={(e) => setNewContent({ ...newContent, pdfUrl: e.target.value })}
-                        placeholder="https://... (link to PDF file)"
-                      />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>PDF Document</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={uploadMode === "upload" ? "default" : "outline"}
+                            onClick={() => setUploadMode("upload")}
+                            className={uploadMode === "upload" ? "bg-violet-600" : ""}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Upload
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={uploadMode === "link" ? "default" : "outline"}
+                            onClick={() => setUploadMode("link")}
+                            className={uploadMode === "link" ? "bg-violet-600" : ""}
+                          >
+                            <LinkIcon className="h-3 w-3 mr-1" />
+                            Link
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {uploadMode === "upload" ? (
+                        <div>
+                          <input
+                            ref={pdfInputRef}
+                            type="file"
+                            accept="application/pdf"
+                            onChange={onPdfFileChange}
+                            className="hidden"
+                          />
+                          {newContent.pdfUrl && newContent.pdfUrl.startsWith("/uploads") ? (
+                            <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                              <FileText className="h-5 w-5 text-red-600" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-red-700">PDF uploaded</p>
+                                <p className="text-xs text-red-600 truncate">{newContent.pdfUrl}</p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setNewContent({ ...newContent, pdfUrl: "" })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full h-24 border-dashed"
+                              onClick={() => pdfInputRef.current?.click()}
+                              disabled={uploadingPdf}
+                            >
+                              {uploadingPdf ? (
+                                <div className="flex flex-col items-center">
+                                  <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                                  <span>Uploading...</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <File className="h-6 w-6 mb-2" />
+                                  <span>Click to upload PDF</span>
+                                  <span className="text-xs text-gray-400">PDF files (max 50MB)</span>
+                                </div>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <Input
+                          value={newContent.pdfUrl}
+                          onChange={(e) => setNewContent({ ...newContent, pdfUrl: e.target.value })}
+                          placeholder="https://... (link to PDF file)"
+                        />
+                      )}
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label>Thumbnail URL (optional)</Label>
-                    <Input
-                      value={newContent.thumbnailUrl}
-                      onChange={(e) => setNewContent({ ...newContent, thumbnailUrl: e.target.value })}
-                      placeholder="https://... (preview image)"
-                    />
+                  {/* Thumbnail Upload */}
+                  <div className="space-y-3">
+                    <Label>Thumbnail (optional)</Label>
+                    <div>
+                      <input
+                        ref={thumbnailInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={onThumbnailFileChange}
+                        className="hidden"
+                      />
+                      {newContent.thumbnailUrl ? (
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                          {newContent.thumbnailUrl.startsWith("/uploads") ? (
+                            <img src={newContent.thumbnailUrl} alt="Thumbnail" className="w-16 h-10 object-cover rounded" />
+                          ) : (
+                            <Image className="h-5 w-5 text-blue-600" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-blue-700">
+                              {newContent.thumbnailUrl.startsWith("/uploads") ? "Thumbnail uploaded" : "Thumbnail URL set"}
+                            </p>
+                            <p className="text-xs text-blue-600 truncate">{newContent.thumbnailUrl}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setNewContent({ ...newContent, thumbnailUrl: "" })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => thumbnailInputRef.current?.click()}
+                            disabled={uploadingThumbnail}
+                          >
+                            {uploadingThumbnail ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-2" />
+                            )}
+                            Upload Image
+                          </Button>
+                          <Input
+                            className="flex-1"
+                            value={newContent.thumbnailUrl}
+                            onChange={(e) => setNewContent({ ...newContent, thumbnailUrl: e.target.value })}
+                            placeholder="Or paste URL..."
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -753,3 +1030,10 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
