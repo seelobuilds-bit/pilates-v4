@@ -5,13 +5,14 @@ import Link from "next/link"
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  useDroppable,
 } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -77,7 +78,7 @@ function DraggableLeadCard({
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: lead.id })
+  } = useSortable({ id: lead.id, data: { type: "lead", status: lead.status } })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -164,7 +165,6 @@ function DroppableColumn({
   formatDate,
   getPriorityColor,
   basePath,
-  isOver,
 }: {
   stage: PipelineStage
   leads: Lead[]
@@ -172,14 +172,23 @@ function DroppableColumn({
   formatDate: (date: string) => string
   getPriorityColor: (priority: string) => string
   basePath: string
-  isOver: boolean
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: stage.value,
+    data: { type: "column", status: stage.value }
+  })
+
   const stageValue = leads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0)
 
   return (
     <div className="flex-shrink-0 w-72">
       <div className={`h-2 ${stage.color} rounded-t-lg`} />
-      <Card className={`rounded-t-none border-t-0 transition-colors ${isOver ? "bg-violet-50 border-violet-300" : ""}`}>
+      <Card 
+        ref={setNodeRef}
+        className={`rounded-t-none border-t-0 transition-colors min-h-[450px] ${
+          isOver ? "bg-violet-50 border-violet-300 ring-2 ring-violet-400" : ""
+        }`}
+      >
         <CardHeader className="p-3 pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">{stage.label}</CardTitle>
@@ -187,12 +196,14 @@ function DroppableColumn({
           </div>
           <p className="text-xs text-gray-500">{formatCurrency(stageValue)}</p>
         </CardHeader>
-        <CardContent className="p-2 space-y-2 max-h-[400px] overflow-y-auto min-h-[100px]">
+        <CardContent className="p-2 space-y-2 max-h-[400px] overflow-y-auto">
           <SortableContext items={leads.map(l => l.id)} strategy={verticalListSortingStrategy}>
             {leads.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">
-                {isOver ? "Drop here!" : "No leads"}
-              </p>
+              <div className={`text-xs text-center py-8 rounded-lg border-2 border-dashed ${
+                isOver ? "border-violet-400 bg-violet-100 text-violet-600" : "border-gray-200 text-gray-400"
+              }`}>
+                {isOver ? "Drop here!" : "No leads in this stage"}
+              </div>
             ) : (
               leads.map(lead => (
                 <DraggableLeadCard
@@ -223,12 +234,11 @@ export function PipelineBoard({
   basePath,
 }: PipelineBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [overId, setOverId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
     useSensor(KeyboardSensor)
@@ -240,14 +250,9 @@ export function PipelineBoard({
     setActiveId(event.active.id as string)
   }
 
-  const handleDragOver = (event: { over: { id: string } | null }) => {
-    setOverId(event.over?.id as string || null)
-  }
-
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
-    setOverId(null)
 
     if (!over) return
 
@@ -255,43 +260,47 @@ export function PipelineBoard({
     const lead = leads.find(l => l.id === leadId)
     if (!lead) return
 
-    // Check if dropped on a column (stage)
-    const targetStage = stages.find(s => s.value === over.id)
-    if (targetStage && lead.status !== targetStage.value) {
-      await onLeadMove(leadId, targetStage.value)
-      return
+    // Get the target status from the over element
+    let targetStatus: string | null = null
+
+    // Check if dropped on a column
+    if (over.data?.current?.type === "column") {
+      targetStatus = over.data.current.status
+    }
+    // Check if dropped on another lead - use that lead's status
+    else {
+      const targetLead = leads.find(l => l.id === over.id)
+      if (targetLead) {
+        targetStatus = targetLead.status
+      }
     }
 
-    // Check if dropped on another lead - use that lead's status
-    const targetLead = leads.find(l => l.id === over.id)
-    if (targetLead && lead.status !== targetLead.status) {
-      await onLeadMove(leadId, targetLead.status)
+    // If we found a target status and it's different, move the lead
+    if (targetStatus && lead.status !== targetStatus) {
+      console.log(`Moving lead ${leadId} from ${lead.status} to ${targetStatus}`)
+      await onLeadMove(leadId, targetStatus)
     }
   }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {/* Renders columns inline - parent should be flex container */}
       {stages.map(stage => {
         const stageLeads = leads.filter(l => l.status === stage.value)
         return (
-          <SortableContext key={stage.value} id={stage.value} items={[stage.value]}>
-            <DroppableColumn
-              stage={stage}
-              leads={stageLeads}
-              formatCurrency={formatCurrency}
-              formatDate={formatDate}
-              getPriorityColor={getPriorityColor}
-              basePath={basePath}
-              isOver={overId === stage.value || stageLeads.some(l => l.id === overId)}
-            />
-          </SortableContext>
+          <DroppableColumn
+            key={stage.value}
+            stage={stage}
+            leads={stageLeads}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+            getPriorityColor={getPriorityColor}
+            basePath={basePath}
+          />
         )
       })}
 
