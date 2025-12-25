@@ -65,23 +65,6 @@ interface Activity {
   } | null
 }
 
-interface Task {
-  id: string
-  title: string
-  description: string | null
-  type: string
-  status: string
-  priority: string
-  dueDate: string
-  completedAt: string | null
-  assignedTo: {
-    user: {
-      firstName: string
-      lastName: string
-    }
-  } | null
-}
-
 interface CalendarEvent {
   id: string
   title: string
@@ -138,7 +121,6 @@ interface Lead {
     }
   } | null
   activities: Activity[]
-  tasks: Task[]
   calendarEvents: CalendarEvent[]
 }
 
@@ -173,7 +155,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showSmsModal, setShowSmsModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
-  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [showEventModal, setShowEventModal] = useState(false)
   
   // Activity forms
   const [activityContent, setActivityContent] = useState("")
@@ -181,13 +163,13 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   const [activityOutcome, setActivityOutcome] = useState("")
   const [callDuration, setCallDuration] = useState("")
   
-  // Task form
-  const [newTask, setNewTask] = useState({
+  // Event form
+  const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
-    type: "follow_up",
-    priority: "MEDIUM",
-    dueDate: ""
+    eventType: "call",
+    startTime: "",
+    endTime: ""
   })
 
   const fetchLead = useCallback(async () => {
@@ -261,40 +243,27 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     }
   }
 
-  const createTask = async () => {
+  const createEvent = async () => {
     try {
       setSaving(true)
-      const res = await fetch(`/api/sales/leads/${leadId}/tasks`, {
+      const res = await fetch("/api/sales/calendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTask)
+        body: JSON.stringify({
+          ...newEvent,
+          leadId: lead?.id // Attach this lead to the event
+        })
       })
 
       if (res.ok) {
-        setShowTaskModal(false)
-        setNewTask({ title: "", description: "", type: "follow_up", priority: "MEDIUM", dueDate: "" })
+        setShowEventModal(false)
+        setNewEvent({ title: "", description: "", eventType: "call", startTime: "", endTime: "" })
         fetchLead()
       }
     } catch (error) {
-      console.error("Failed to create task:", error)
+      console.error("Failed to create event:", error)
     } finally {
       setSaving(false)
-    }
-  }
-
-  const completeTask = async (taskId: string) => {
-    try {
-      const res = await fetch(`/api/sales/leads/${leadId}/tasks`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, status: "COMPLETED" })
-      })
-
-      if (res.ok) {
-        fetchLead()
-      }
-    } catch (error) {
-      console.error("Failed to complete task:", error)
     }
   }
 
@@ -448,11 +417,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             </CardContent>
           </Card>
 
-          {/* Activity, Tasks & Schedule Tabs */}
+          {/* Activity & Schedule Tabs */}
           <Tabs defaultValue="activity" className="space-y-4">
             <TabsList>
               <TabsTrigger value="activity">Activity ({lead.activities?.length || 0})</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks ({lead.tasks?.filter(t => t.status !== "COMPLETED").length || 0})</TabsTrigger>
               <TabsTrigger value="schedule">
                 <Calendar className="h-4 w-4 mr-1" />
                 Schedule ({lead.calendarEvents?.length || 0})
@@ -503,58 +471,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               </Card>
             </TabsContent>
 
-            <TabsContent value="tasks">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Tasks</CardTitle>
-                  <Button size="sm" onClick={() => setShowTaskModal(true)}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Task
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {!lead.tasks || lead.tasks.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No tasks yet</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {lead.tasks.map((task) => (
-                        <div 
-                          key={task.id} 
-                          className={`flex items-center gap-3 p-3 rounded-lg border ${
-                            task.status === "COMPLETED" ? "bg-gray-50 opacity-60" : "bg-white"
-                          }`}
-                        >
-                          <button
-                            onClick={() => task.status !== "COMPLETED" && completeTask(task.id)}
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              task.status === "COMPLETED" 
-                                ? "bg-green-500 border-green-500" 
-                                : "border-gray-300 hover:border-green-500"
-                            }`}
-                          >
-                            {task.status === "COMPLETED" && (
-                              <CheckCircle className="h-3 w-3 text-white" />
-                            )}
-                          </button>
-                          <div className="flex-1">
-                            <p className={`font-medium text-sm ${task.status === "COMPLETED" ? "line-through text-gray-500" : ""}`}>
-                              {task.title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-500">
-                                Due: {formatDate(task.dueDate)}
-                              </span>
-                              <Badge className="text-xs">{task.type}</Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="schedule">
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -562,23 +478,19 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                     <Calendar className="h-4 w-4" />
                     Upcoming Events
                   </CardTitle>
-                  <Link href="/sales/calendar">
-                    <Button size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Event
-                    </Button>
-                  </Link>
+                  <Button size="sm" onClick={() => setShowEventModal(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Schedule Event
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {!lead.calendarEvents || lead.calendarEvents.length === 0 ? (
                     <div className="text-center py-8">
                       <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">No upcoming events scheduled</p>
-                      <Link href="/sales/calendar">
-                        <Button variant="link" className="mt-2 text-violet-600">
-                          Go to Calendar to schedule
-                        </Button>
-                      </Link>
+                      <Button variant="link" className="mt-2 text-violet-600" onClick={() => setShowEventModal(true)}>
+                        Schedule an event
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -985,79 +897,76 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
         </DialogContent>
       </Dialog>
 
-      {/* Add Task Modal */}
-      <Dialog open={showTaskModal} onOpenChange={setShowTaskModal}>
+      {/* Schedule Event Modal */}
+      <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Task</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-violet-600" />
+              Schedule Event for {lead.studioName}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Task Title</Label>
+              <Label>Event Title *</Label>
               <Input
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                placeholder="e.g., Follow up call"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                placeholder="e.g., Follow up call with Chris"
               />
+            </div>
+            <div>
+              <Label>Event Type</Label>
+              <Select value={newEvent.eventType} onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call">📞 Call</SelectItem>
+                  <SelectItem value="demo">🎯 Demo</SelectItem>
+                  <SelectItem value="meeting">📅 Meeting</SelectItem>
+                  <SelectItem value="follow_up">🔄 Follow Up</SelectItem>
+                  <SelectItem value="other">📌 Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Start Time *</Label>
+                <Input
+                  type="datetime-local"
+                  value={newEvent.startTime}
+                  onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>End Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={newEvent.endTime}
+                  onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                />
+              </div>
             </div>
             <div>
               <Label>Description</Label>
               <Textarea
-                value={newTask.description}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                placeholder="Task details..."
+                value={newEvent.description}
+                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                placeholder="Add notes about this event..."
                 rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Type</Label>
-                <Select value={newTask.type} onValueChange={(v) => setNewTask({ ...newTask, type: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="follow_up">Follow Up</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="demo">Demo</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Priority</Label>
-                <Select value={newTask.priority} onValueChange={(v) => setNewTask({ ...newTask, priority: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITIES.map(p => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
               />
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowTaskModal(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowEventModal(false)}>Cancel</Button>
             <Button 
-              onClick={createTask}
-              disabled={saving || !newTask.title || !newTask.dueDate}
+              onClick={createEvent}
+              disabled={saving || !newEvent.title || !newEvent.startTime}
               className="bg-violet-600 hover:bg-violet-700"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Task
+              Schedule Event
             </Button>
           </div>
         </DialogContent>
