@@ -82,6 +82,22 @@ interface Task {
   } | null
 }
 
+interface CalendarEvent {
+  id: string
+  title: string
+  description: string | null
+  type: string
+  startTime: string
+  endTime: string
+  status: string
+  agent: {
+    user: {
+      firstName: string
+      lastName: string
+    }
+  } | null
+}
+
 interface Lead {
   id: string
   studioName: string
@@ -123,6 +139,7 @@ interface Lead {
   } | null
   activities: Activity[]
   tasks: Task[]
+  calendarEvents: CalendarEvent[]
 }
 
 const LEAD_STATUSES = [
@@ -431,11 +448,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             </CardContent>
           </Card>
 
-          {/* Activity & Tasks Tabs */}
+          {/* Activity, Tasks & Schedule Tabs */}
           <Tabs defaultValue="activity" className="space-y-4">
             <TabsList>
               <TabsTrigger value="activity">Activity ({lead.activities?.length || 0})</TabsTrigger>
               <TabsTrigger value="tasks">Tasks ({lead.tasks?.filter(t => t.status !== "COMPLETED").length || 0})</TabsTrigger>
+              <TabsTrigger value="schedule">
+                <Calendar className="h-4 w-4 mr-1" />
+                Schedule ({lead.calendarEvents?.length || 0})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="activity">
@@ -526,6 +547,75 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                               <Badge className="text-xs">{task.type}</Badge>
                             </div>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="schedule">
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Upcoming Events
+                  </CardTitle>
+                  <Link href="/sales/calendar">
+                    <Button size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Event
+                    </Button>
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {!lead.calendarEvents || lead.calendarEvents.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No upcoming events scheduled</p>
+                      <Link href="/sales/calendar">
+                        <Button variant="link" className="mt-2 text-violet-600">
+                          Go to Calendar to schedule
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {lead.calendarEvents.map((event) => (
+                        <div 
+                          key={event.id} 
+                          className="flex items-start gap-3 p-3 rounded-lg border bg-white hover:bg-gray-50"
+                        >
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            event.type === "call" ? "bg-blue-100" :
+                            event.type === "demo" ? "bg-purple-100" :
+                            event.type === "meeting" ? "bg-green-100" :
+                            "bg-gray-100"
+                          }`}>
+                            {event.type === "call" ? (
+                              <Phone className="h-5 w-5 text-blue-600" />
+                            ) : event.type === "demo" ? (
+                              <Target className="h-5 w-5 text-purple-600" />
+                            ) : (
+                              <Calendar className="h-5 w-5 text-green-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{event.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Clock className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {new Date(event.startTime).toLocaleDateString()} at {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            {event.description && (
+                              <p className="text-xs text-gray-500 mt-1 truncate">{event.description}</p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
+                            {event.type}
+                          </Badge>
                         </div>
                       ))}
                     </div>

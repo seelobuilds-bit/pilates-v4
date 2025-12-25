@@ -62,6 +62,25 @@ export async function GET(
         },
         demoBookings: {
           orderBy: { createdAt: "desc" }
+        },
+        calendarEvents: {
+          where: {
+            startTime: { gte: new Date() } // Only future events
+          },
+          orderBy: { startTime: "asc" },
+          take: 10,
+          include: {
+            agent: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              }
+            }
+          }
         }
       }
     })
