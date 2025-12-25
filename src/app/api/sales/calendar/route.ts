@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       data: {
         title: data.title,
         description: data.description || null,
-        eventType: data.eventType || "CALL",
+        type: data.eventType?.toLowerCase() || "call",
         startTime: new Date(data.startTime),
         endTime: data.endTime ? new Date(data.endTime) : new Date(data.startTime),
         leadId: data.leadId || null,
