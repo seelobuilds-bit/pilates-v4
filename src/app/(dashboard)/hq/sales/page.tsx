@@ -124,6 +124,7 @@ interface DemoBooking {
 const LEAD_STATUSES = [
   { value: "NEW", label: "New", color: "bg-blue-500" },
   { value: "CONTACTED", label: "Contacted", color: "bg-cyan-500" },
+  { value: "DEMO_REQUESTED", label: "Demo Requested", color: "bg-pink-500" },
   { value: "QUALIFIED", label: "Qualified", color: "bg-indigo-500" },
   { value: "DEMO_SCHEDULED", label: "Demo Scheduled", color: "bg-purple-500" },
   { value: "DEMO_COMPLETED", label: "Demo Completed", color: "bg-violet-500" },
@@ -132,7 +133,7 @@ const LEAD_STATUSES = [
 ]
 
 // Pipeline stages (active deals only - excludes won/lost)
-const PIPELINE_STAGES = LEAD_STATUSES.slice(0, 5)
+const PIPELINE_STAGES = LEAD_STATUSES.slice(0, 6)
 
 const LEAD_SOURCES = [
   { value: "INBOUND_WEBSITE", label: "Website" },

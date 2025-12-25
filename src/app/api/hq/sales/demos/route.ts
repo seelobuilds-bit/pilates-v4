@@ -95,6 +95,18 @@ export async function PATCH(request: Request) {
       }
     })
 
+    // If assigning demo to an agent, also assign the associated lead
+    if (data.assignedToId && demo.leadId) {
+      await db.lead.update({
+        where: { id: demo.leadId },
+        data: { 
+          assignedToId: data.assignedToId,
+          assignedAt: new Date(),
+          status: "DEMO_REQUESTED" // Move to demo requested stage
+        }
+      })
+    }
+
     // Update lead status if scheduling demo
     if (data.scheduledDate && demo.leadId) {
       await db.lead.update({

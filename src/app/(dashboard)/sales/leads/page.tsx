@@ -49,6 +49,7 @@ interface Lead {
 const LEAD_STATUSES = [
   { value: "NEW", label: "New", color: "bg-blue-100 text-blue-700" },
   { value: "CONTACTED", label: "Contacted", color: "bg-cyan-100 text-cyan-700" },
+  { value: "DEMO_REQUESTED", label: "Demo Requested", color: "bg-pink-100 text-pink-700" },
   { value: "QUALIFIED", label: "Qualified", color: "bg-indigo-100 text-indigo-700" },
   { value: "DEMO_SCHEDULED", label: "Demo Scheduled", color: "bg-purple-100 text-purple-700" },
   { value: "DEMO_COMPLETED", label: "Demo Completed", color: "bg-violet-100 text-violet-700" },

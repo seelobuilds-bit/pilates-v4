@@ -136,6 +136,7 @@ interface Agent {
 const LEAD_STATUSES = [
   { value: "NEW", label: "New" },
   { value: "CONTACTED", label: "Contacted" },
+  { value: "DEMO_REQUESTED", label: "Demo Requested" },
   { value: "QUALIFIED", label: "Qualified" },
   { value: "DEMO_SCHEDULED", label: "Demo Scheduled" },
   { value: "DEMO_COMPLETED", label: "Demo Completed" },
@@ -301,14 +302,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     const colors: Record<string, string> = {
       NEW: "bg-blue-100 text-blue-700",
       CONTACTED: "bg-cyan-100 text-cyan-700",
+      DEMO_REQUESTED: "bg-pink-100 text-pink-700",
       QUALIFIED: "bg-indigo-100 text-indigo-700",
       DEMO_SCHEDULED: "bg-purple-100 text-purple-700",
       DEMO_COMPLETED: "bg-violet-100 text-violet-700",
-      PROPOSAL_SENT: "bg-amber-100 text-amber-700",
-      NEGOTIATING: "bg-orange-100 text-orange-700",
       WON: "bg-green-100 text-green-700",
       LOST: "bg-red-100 text-red-700",
-      NURTURING: "bg-gray-100 text-gray-700"
     }
     return colors[status] || "bg-gray-100 text-gray-700"
   }
