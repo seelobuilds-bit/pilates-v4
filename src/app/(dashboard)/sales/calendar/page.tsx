@@ -300,7 +300,19 @@ export default function SalesCalendarPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={() => setShowAddEvent(true)} className="bg-violet-600 hover:bg-violet-700">
+          <Button 
+            onClick={() => {
+              const today = new Date()
+              const dateStr = today.toISOString().split("T")[0]
+              setNewEvent(prev => ({
+                ...prev,
+                startTime: `${dateStr}T09:00`,
+                endTime: `${dateStr}T10:00`
+              }))
+              setShowAddEvent(true)
+            }} 
+            className="bg-violet-600 hover:bg-violet-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Event
           </Button>

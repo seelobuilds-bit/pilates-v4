@@ -64,7 +64,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getSession()
+    console.log("Calendar POST - session:", session?.user?.email, session?.user?.role)
+    
     if (!session?.user || session.user.role !== "SALES_AGENT") {
+      console.log("Calendar POST - Unauthorized, role is:", session?.user?.role)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -73,6 +76,7 @@ export async function POST(request: Request) {
     })
 
     if (!agent) {
+      console.log("Calendar POST - Creating new agent for user:", session.user.id)
       agent = await db.salesAgent.create({
         data: {
           userId: session.user.id,
@@ -82,6 +86,7 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
+    console.log("Calendar POST - Creating event with data:", JSON.stringify(data))
 
     const event = await db.salesCalendarEvent.create({
       data: {
@@ -104,10 +109,11 @@ export async function POST(request: Request) {
       }
     })
 
+    console.log("Calendar POST - Event created:", event.id)
     return NextResponse.json({ event })
   } catch (error) {
     console.error("Failed to create event:", error)
-    return NextResponse.json({ error: "Failed to create event" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to create event", details: String(error) }, { status: 500 })
   }
 }
 
