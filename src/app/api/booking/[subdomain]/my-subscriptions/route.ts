@@ -56,7 +56,13 @@ export async function GET(
             monthlyPrice: true,
             yearlyPrice: true,
             features: true,
-            description: true
+            description: true,
+            communityChat: {
+              select: {
+                id: true,
+                isEnabled: true
+              }
+            }
           }
         }
       },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { loadStripe } from "@stripe/stripe-js"
@@ -39,7 +39,9 @@ import {
   Home,
   Zap,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Video,
+  Users
 } from "lucide-react"
 
 // Stripe Payment Wrapper for subscriptions
@@ -310,6 +312,157 @@ function SubscriptionPaymentForm({
   )
 }
 
+// Client Community Chat Component
+interface ChatMessage {
+  id: string
+  content: string
+  type: string
+  createdAt: string
+  member: {
+    role: string
+    subscriber: {
+      client?: { firstName: string; lastName: string } | null
+      teacher?: { user: { firstName: string; lastName: string } } | null
+      user?: { firstName: string; lastName: string } | null
+    }
+  }
+}
+
+function ClientCommunityChat({ planId, planName, subdomain }: { planId: string; planName: string; subdomain: string }) {
+  const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [memberCount, setMemberCount] = useState(0)
+  const [newMessage, setNewMessage] = useState("")
+  const [sending, setSending] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetchChat()
+    const interval = setInterval(fetchChat, 5000)
+    return () => clearInterval(interval)
+  }, [planId])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function fetchChat() {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/community-chat?planId=${planId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setMessages(data.messages || [])
+        setMemberCount(data.memberCount || 0)
+      }
+    } catch (err) {
+      console.error("Failed to fetch chat:", err)
+    }
+    setLoading(false)
+  }
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newMessage.trim() || sending) return
+
+    setSending(true)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/community-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          content: newMessage.trim(),
+          type: "text"
+        })
+      })
+
+      if (res.ok) {
+        const message = await res.json()
+        setMessages([...messages, message])
+        setNewMessage("")
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err)
+    }
+    setSending(false)
+  }
+
+  function getMessageAuthor(msg: ChatMessage) {
+    const sub = msg.member.subscriber
+    if (sub.teacher?.user) return `${sub.teacher.user.firstName} ${sub.teacher.user.lastName}`
+    if (sub.client) return `${sub.client.firstName} ${sub.client.lastName}`
+    if (sub.user) return `${sub.user.firstName} ${sub.user.lastName}`
+    return "Member"
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-600" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-[400px]">
+      {/* Chat Header */}
+      <div className="px-4 py-2 bg-white border-b flex items-center justify-between">
+        <span className="text-sm text-gray-500">{memberCount} members</span>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {messages.length === 0 ? (
+          <div className="text-center py-8">
+            <MessageSquare className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+            <p className="text-gray-500 text-sm">No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className="flex gap-3">
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarFallback className="text-xs bg-violet-100 text-violet-700">
+                  {getMessageAuthor(msg).split(" ").map(n => n[0]).join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm text-gray-900">{getMessageAuthor(msg)}</span>
+                  {msg.member.role === "admin" && (
+                    <Badge className="text-[10px] px-1.5 py-0 bg-violet-100 text-violet-700 border-0">Admin</Badge>
+                  )}
+                  {msg.member.role === "moderator" && (
+                    <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-0">Mod</Badge>
+                  )}
+                  <span className="text-xs text-gray-400">
+                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 mt-0.5">{msg.content}</p>
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Message Input */}
+      <form onSubmit={sendMessage} className="p-3 bg-white border-t flex gap-2">
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-1"
+          disabled={sending}
+        />
+        <Button type="submit" disabled={!newMessage.trim() || sending} size="sm">
+          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
+        </Button>
+      </form>
+    </div>
+  )
+}
+
 interface ClientInfo {
   id: string
   firstName: string
@@ -343,6 +496,10 @@ interface Subscription {
     audience: string
     monthlyPrice: number
     features: string[]
+    communityChat?: {
+      id: string
+      isEnabled: boolean
+    } | null
   }
 }
 
@@ -987,11 +1144,23 @@ export default function AccountPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="bg-white border shadow-sm p-1">
+          <TabsList className="bg-white border shadow-sm p-1 flex-wrap">
             <TabsTrigger value="bookings" className="gap-2">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Bookings</span>
             </TabsTrigger>
+            {studio.hasVault && (
+              <TabsTrigger value="vault" className="gap-2">
+                <Video className="h-4 w-4" />
+                <span className="hidden sm:inline">The Vault</span>
+              </TabsTrigger>
+            )}
+            {activeSubscriptions.some(s => s.plan.communityChat?.isEnabled) && (
+              <TabsTrigger value="community" className="gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Community</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="subscriptions" className="gap-2">
               <Crown className="h-4 w-4" />
               <span className="hidden sm:inline">Subscriptions</span>
@@ -1104,6 +1273,128 @@ export default function AccountPage() {
               </Card>
             )}
           </TabsContent>
+
+          {/* Vault Tab */}
+          {studio.hasVault && (
+            <TabsContent value="vault" className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Video className="h-5 w-5" style={{ color: primaryColor }} />
+                    The Vault
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {enrolledCourses.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-gray-600 mb-4">
+                        Access your courses and exclusive content
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {enrolledCourses.slice(0, 4).map(course => (
+                          <Link key={course.id} href={`/${subdomain}/vault/${course.slug}`}>
+                            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                {course.thumbnailUrl ? (
+                                  <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover rounded-lg" />
+                                ) : (
+                                  <Play className="h-6 w-6 text-white" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{course.title}</p>
+                                <p className="text-sm text-gray-500">{course._count.modules} modules</p>
+                                {course.progressPercent !== undefined && course.progressPercent > 0 && (
+                                  <div className="mt-2 h-1.5 bg-gray-200 rounded-full">
+                                    <div 
+                                      className="h-full bg-violet-600 rounded-full" 
+                                      style={{ width: `${course.progressPercent}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="pt-4">
+                        <Link href={`/${subdomain}/vault`}>
+                          <Button className="w-full" style={{ backgroundColor: primaryColor }}>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Browse All Content
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Video className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                      <h3 className="font-medium text-gray-900 mb-2">Unlock The Vault</h3>
+                      <p className="text-gray-500 mb-4">
+                        Subscribe to access exclusive courses, tutorials, and content
+                      </p>
+                      <Link href={`/${subdomain}/vault`}>
+                        <Button style={{ backgroundColor: primaryColor }}>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Explore The Vault
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Community Tab */}
+          {activeSubscriptions.some(s => s.plan.communityChat?.isEnabled) && (
+            <TabsContent value="community" className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5" style={{ color: primaryColor }} />
+                    Community
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-gray-600">
+                      Connect with other members in your subscription communities
+                    </p>
+                    
+                    {activeSubscriptions.filter(s => s.plan.communityChat?.isEnabled).map(sub => (
+                      <div key={sub.id} className="border rounded-xl overflow-hidden">
+                        <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: primaryColor }}
+                            >
+                              {sub.plan.audience === "TEACHERS" ? (
+                                <GraduationCap className="h-5 w-5 text-white" />
+                              ) : (
+                                <Home className="h-5 w-5 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{sub.plan.name}</p>
+                              <p className="text-sm text-gray-500">Community Chat</p>
+                            </div>
+                          </div>
+                          <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
+                        </div>
+                        <ClientCommunityChat 
+                          planId={sub.plan.id} 
+                          planName={sub.plan.name}
+                          subdomain={subdomain}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* Subscriptions Tab */}
           <TabsContent value="subscriptions" className="space-y-6">
