@@ -911,7 +911,7 @@ export default function AccountPage() {
                 </Link>
                 {studio.hasVault && (
                   <Link href={`/${subdomain}/vault`}>
-                    <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <Button className="bg-white/90 text-gray-900 hover:bg-white/20 hover:text-white border border-white/30">
                       <BookOpen className="h-4 w-4 mr-2" />
                       The Vault
                     </Button>
