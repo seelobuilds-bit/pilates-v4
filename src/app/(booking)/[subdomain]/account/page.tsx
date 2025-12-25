@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +20,6 @@ import {
   LogOut, 
   User, 
   CreditCard, 
-  Settings,
   BookOpen,
   MessageSquare,
   ShoppingBag,
@@ -27,7 +28,6 @@ import {
   Sparkles,
   Play,
   CheckCircle,
-  ArrowRight,
   Star,
   Loader2,
   Mail,
@@ -38,8 +38,277 @@ import {
   GraduationCap,
   Home,
   Zap,
-  Gift
+  Lock,
+  AlertCircle
 } from "lucide-react"
+
+// Stripe Payment Wrapper for subscriptions
+function SubscriptionPaymentWrapper({
+  clientSecret,
+  connectedAccountId,
+  subdomain,
+  paymentId,
+  amount,
+  planName,
+  interval,
+  onSuccess,
+  onCancel,
+}: {
+  clientSecret: string
+  connectedAccountId: string
+  subdomain: string
+  paymentId: string
+  amount: number
+  planName: string
+  interval: string
+  onSuccess: () => void
+  onCancel: () => void
+}) {
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
+
+  useEffect(() => {
+    const promise = loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
+      { stripeAccount: connectedAccountId }
+    )
+    setStripePromise(promise)
+  }, [connectedAccountId])
+
+  if (!stripePromise) {
+    return (
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
+        <p className="text-gray-500">Loading payment form...</p>
+      </div>
+    )
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#7c3aed',
+            borderRadius: '8px',
+          },
+        },
+      }}
+    >
+      <SubscriptionPaymentForm 
+        subdomain={subdomain}
+        paymentId={paymentId}
+        amount={amount}
+        planName={planName}
+        interval={interval}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+      />
+    </Elements>
+  )
+}
+
+// Subscription Payment Form Component
+function SubscriptionPaymentForm({ 
+  subdomain,
+  paymentId,
+  amount,
+  planName,
+  interval,
+  onSuccess,
+  onCancel,
+}: { 
+  subdomain: string
+  paymentId: string
+  amount: number
+  planName: string
+  interval: string
+  onSuccess: () => void
+  onCancel: () => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handlePaymentSuccess(paymentIntentId: string) {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/confirm-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentIntentId,
+          paymentId,
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to complete subscription")
+      }
+
+      onSuccess()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete subscription")
+      setProcessing(false)
+    }
+  }
+
+  async function handleExpressCheckoutConfirm() {
+    if (!stripe || !elements) return
+
+    setProcessing(true)
+    setError(null)
+
+    const { error: submitError } = await elements.submit()
+    if (submitError) {
+      setError(submitError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (confirmError) {
+      setError(confirmError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      await handlePaymentSuccess(paymentIntent.id)
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!stripe || !elements) {
+      return
+    }
+
+    setProcessing(true)
+    setError(null)
+
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (stripeError) {
+      setError(stripeError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      await handlePaymentSuccess(paymentIntent.id)
+    } else {
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Order Summary */}
+      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <h4 className="font-medium text-gray-900 mb-2">Order Summary</h4>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">{planName} ({interval})</span>
+          <span className="font-semibold text-gray-900">${(amount / 100).toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* Express Checkout */}
+      <div className="mb-4">
+        <ExpressCheckoutElement 
+          onConfirm={handleExpressCheckoutConfirm}
+          options={{
+            buttonType: {
+              applePay: "subscribe",
+              googlePay: "subscribe",
+            },
+            buttonTheme: {
+              applePay: "black",
+              googlePay: "black",
+            },
+            layout: {
+              maxColumns: 2,
+              maxRows: 1,
+            },
+          }}
+        />
+      </div>
+
+      {/* Divider */}
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-3 bg-white text-gray-500">Or pay with card</span>
+        </div>
+      </div>
+
+      {/* Card Form */}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <PaymentElement 
+            options={{
+              layout: "tabs",
+            }}
+          />
+        </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={processing}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={!stripe || processing}
+            className="flex-1 bg-violet-600 hover:bg-violet-700"
+          >
+            {processing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                Pay ${(amount / 100).toFixed(2)}
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <Lock className="w-3 h-3" />
+          <span>Secured by Stripe</span>
+        </div>
+      </form>
+    </div>
+  )
+}
 
 interface ClientInfo {
   id: string
@@ -104,6 +373,7 @@ interface Studio {
   primaryColor: string
   hasStore?: boolean
   hasVault?: boolean
+  stripeEnabled?: boolean
 }
 
 interface SubscriptionPlan {
@@ -142,10 +412,23 @@ export default function AccountPage() {
   const [profileForm, setProfileForm] = useState({ firstName: "", lastName: "", phone: "" })
   const [savingProfile, setSavingProfile] = useState(false)
 
-  // Subscription modal
+  // Subscription modal state
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null)
-  const [subscribing, setSubscribing] = useState(false)
+  const [selectedInterval, setSelectedInterval] = useState<"monthly" | "yearly">("monthly")
+  
+  // Stripe payment state
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [connectedAccountId, setConnectedAccountId] = useState<string | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState<number>(0)
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  // Cancel subscription state
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null)
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -290,22 +573,60 @@ export default function AccountPage() {
     }
   }
 
-  async function handleSubscribe(plan: SubscriptionPlan, interval: "monthly" | "yearly") {
-    setSubscribing(true)
+  async function handleSelectPlan(plan: SubscriptionPlan, interval: "monthly" | "yearly") {
+    setSelectedPlan(plan)
+    setSelectedInterval(interval)
+    setClientSecret(null)
+    setPaymentId(null)
+    setConnectedAccountId(null)
+    setPaymentError(null)
+    
+    // Check if studio has Stripe enabled
+    if (studio?.stripeEnabled) {
+      setCreatingPaymentIntent(true)
+      
+      try {
+        const res = await fetch(`/api/booking/${subdomain}/create-subscription-intent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId: plan.id, interval })
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || "Failed to initialize payment")
+        }
+
+        const data = await res.json()
+        setClientSecret(data.clientSecret)
+        setPaymentId(data.paymentId)
+        setConnectedAccountId(data.connectedAccountId)
+        setPaymentAmount(data.amount)
+      } catch (err) {
+        setPaymentError(err instanceof Error ? err.message : "Failed to initialize payment")
+      }
+      setCreatingPaymentIntent(false)
+    } else {
+      // No Stripe - free subscription (for testing)
+      setPaymentAmount(interval === "yearly" ? (plan.yearlyPrice || 0) * 100 : plan.monthlyPrice * 100)
+    }
+    
+    setShowSubscriptionModal(true)
+  }
+
+  async function handleFreeSubscribe() {
+    if (!selectedPlan) return
+    
+    setCreatingPaymentIntent(true)
     try {
       const res = await fetch(`/api/booking/${subdomain}/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: plan.id, interval })
+        body: JSON.stringify({ planId: selectedPlan.id, interval: selectedInterval })
       })
 
       if (res.ok) {
-        const data = await res.json()
-        setSubscriptions([...subscriptions, data.subscription])
-        setShowSubscriptionModal(false)
-        setSelectedPlan(null)
-        // Refresh courses
-        fetchData()
+        handleSubscriptionSuccess()
       } else {
         const error = await res.json()
         alert(error.error || "Failed to subscribe")
@@ -314,7 +635,57 @@ export default function AccountPage() {
       console.error("Subscribe error:", err)
       alert("Failed to subscribe")
     }
-    setSubscribing(false)
+    setCreatingPaymentIntent(false)
+  }
+
+  function handleSubscriptionSuccess() {
+    setShowSubscriptionModal(false)
+    setSelectedPlan(null)
+    setClientSecret(null)
+    setPaymentId(null)
+    setConnectedAccountId(null)
+    // Refresh data
+    fetchData()
+  }
+
+  function handleCancelPayment() {
+    setShowSubscriptionModal(false)
+    setSelectedPlan(null)
+    setClientSecret(null)
+    setPaymentId(null)
+    setConnectedAccountId(null)
+    setPaymentError(null)
+  }
+
+  async function handleCancelSubscription() {
+    if (!subscriptionToCancel) return
+    
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/cancel-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscriptionToCancel.id })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        alert(data.message)
+        setShowCancelModal(false)
+        setSubscriptionToCancel(null)
+        // Update local state
+        setSubscriptions(subscriptions.map(s => 
+          s.id === subscriptionToCancel.id ? { ...s, status: "cancelled" } : s
+        ))
+      } else {
+        const error = await res.json()
+        alert(error.error || "Failed to cancel subscription")
+      }
+    } catch (err) {
+      console.error("Cancel error:", err)
+      alert("Failed to cancel subscription")
+    }
+    setCancelling(false)
   }
 
   if (loading) {
@@ -480,7 +851,8 @@ export default function AccountPage() {
     b.status === "COMPLETED" || b.status === "CANCELLED" || new Date(b.classSession.startTime) <= new Date()
   )
 
-  const hasActiveSubscription = subscriptions.some(s => s.status === "active")
+  const activeSubscriptions = subscriptions.filter(s => s.status === "active")
+  const hasActiveSubscription = activeSubscriptions.length > 0
   const clientPlans = availablePlans.filter(p => p.audience === "CLIENTS")
   const teacherPlans = availablePlans.filter(p => p.audience === "TEACHERS")
 
@@ -601,7 +973,7 @@ export default function AccountPage() {
                   <Crown className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{subscriptions.filter(s => s.status === "active").length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{activeSubscriptions.length}</p>
                   <p className="text-xs text-gray-500">Subscriptions</p>
                 </div>
               </div>
@@ -732,10 +1104,10 @@ export default function AccountPage() {
           {/* Subscriptions Tab */}
           <TabsContent value="subscriptions" className="space-y-6">
             {/* Active Subscriptions */}
-            {subscriptions.filter(s => s.status === "active").length > 0 && (
+            {activeSubscriptions.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-gray-900">Your Active Subscriptions</h3>
-                {subscriptions.filter(s => s.status === "active").map(sub => (
+                {activeSubscriptions.map(sub => (
                   <Card key={sub.id} className="border-0 shadow-sm overflow-hidden">
                     <div className="p-6" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
                       <div className="flex items-start justify-between">
@@ -756,13 +1128,26 @@ export default function AccountPage() {
                         </div>
                         <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
                       </div>
-                      <div className="mt-4 flex items-center gap-6 text-sm">
-                        <span className="text-gray-600">
-                          <span className="font-medium">Renews:</span> {new Date(sub.currentPeriodEnd).toLocaleDateString()}
-                        </span>
-                        <span className="text-gray-600">
-                          <span className="font-medium">Price:</span> ${sub.plan.monthlyPrice}/{sub.interval === "yearly" ? "year" : "month"}
-                        </span>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-6 text-sm">
+                          <span className="text-gray-600">
+                            <span className="font-medium">Renews:</span> {new Date(sub.currentPeriodEnd).toLocaleDateString()}
+                          </span>
+                          <span className="text-gray-600">
+                            <span className="font-medium">Price:</span> ${sub.plan.monthlyPrice}/{sub.interval === "yearly" ? "year" : "month"}
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                          onClick={() => {
+                            setSubscriptionToCancel(sub)
+                            setShowCancelModal(true)
+                          }}
+                        >
+                          Cancel
+                        </Button>
                       </div>
                       {sub.plan.features && sub.plan.features.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -834,17 +1219,25 @@ export default function AccountPage() {
                               )}
                             </ul>
                             {!isSubscribed && (
-                              <Button 
-                                className="w-full"
-                                style={{ backgroundColor: primaryColor }}
-                                onClick={() => {
-                                  setSelectedPlan(plan)
-                                  setShowSubscriptionModal(true)
-                                }}
-                              >
-                                <Zap className="h-4 w-4 mr-2" />
-                                Subscribe Now
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  className="flex-1"
+                                  style={{ backgroundColor: primaryColor }}
+                                  onClick={() => handleSelectPlan(plan, "monthly")}
+                                >
+                                  <Zap className="h-4 w-4 mr-2" />
+                                  Monthly
+                                </Button>
+                                {plan.yearlyPrice && (
+                                  <Button 
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleSelectPlan(plan, "yearly")}
+                                  >
+                                    Yearly
+                                  </Button>
+                                )}
+                              </div>
                             )}
                           </CardContent>
                         </Card>
@@ -854,7 +1247,7 @@ export default function AccountPage() {
                 </div>
               )}
 
-              {/* Teacher Plans (if client wants to become a teacher) */}
+              {/* Teacher Plans */}
               {teacherPlans.length > 0 && (
                 <div className="space-y-3 pt-4">
                   <p className="text-sm text-gray-500 flex items-center gap-2">
@@ -889,16 +1282,24 @@ export default function AccountPage() {
                               ))}
                             </ul>
                             {!isSubscribed && (
-                              <Button 
-                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                onClick={() => {
-                                  setSelectedPlan(plan)
-                                  setShowSubscriptionModal(true)
-                                }}
-                              >
-                                <GraduationCap className="h-4 w-4 mr-2" />
-                                Join as Teacher
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => handleSelectPlan(plan, "monthly")}
+                                >
+                                  <GraduationCap className="h-4 w-4 mr-2" />
+                                  Monthly
+                                </Button>
+                                {plan.yearlyPrice && (
+                                  <Button 
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleSelectPlan(plan, "yearly")}
+                                  >
+                                    Yearly
+                                  </Button>
+                                )}
+                              </div>
                             )}
                           </CardContent>
                         </Card>
@@ -1126,63 +1527,139 @@ export default function AccountPage() {
         </Tabs>
       </div>
 
-      {/* Subscription Modal */}
-      <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
+      {/* Subscription Payment Modal */}
+      <Dialog open={showSubscriptionModal} onOpenChange={(open) => {
+        if (!open) handleCancelPayment()
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Subscribe to {selectedPlan?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" style={{ color: primaryColor }} />
+              Subscribe to {selectedPlan?.name}
+            </DialogTitle>
           </DialogHeader>
+          
           {selectedPlan && (
-            <div className="py-4">
-              <p className="text-gray-600 mb-6">{selectedPlan.description}</p>
-              
-              <div className="space-y-3">
-                <button
-                  className="w-full p-4 border-2 rounded-xl text-left hover:border-violet-500 transition-colors"
-                  onClick={() => handleSubscribe(selectedPlan, "monthly")}
-                  disabled={subscribing}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-900">Monthly</p>
-                      <p className="text-sm text-gray-500">Billed monthly</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold" style={{ color: primaryColor }}>${selectedPlan.monthlyPrice}</p>
-                      <p className="text-xs text-gray-500">/month</p>
+            <div className="py-2">
+              {creatingPaymentIntent ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
+                  <p className="text-gray-500">Initializing secure payment...</p>
+                </div>
+              ) : paymentError ? (
+                <div className="text-center py-4">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-3" />
+                  <p className="text-red-600 mb-4">{paymentError}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setPaymentError(null)
+                      handleSelectPlan(selectedPlan, selectedInterval)
+                    }}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : clientSecret && connectedAccountId ? (
+                <SubscriptionPaymentWrapper
+                  clientSecret={clientSecret}
+                  connectedAccountId={connectedAccountId}
+                  subdomain={subdomain}
+                  paymentId={paymentId!}
+                  amount={paymentAmount}
+                  planName={selectedPlan.name}
+                  interval={selectedInterval}
+                  onSuccess={handleSubscriptionSuccess}
+                  onCancel={handleCancelPayment}
+                />
+              ) : !studio?.stripeEnabled ? (
+                // Free subscription for testing when Stripe not enabled
+                <div className="space-y-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                    <p className="font-medium">Test Mode</p>
+                    <p>Payments are not enabled. Subscribe for free to test.</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">{selectedPlan.name} ({selectedInterval})</span>
+                      <span className="font-semibold text-gray-900">
+                        ${selectedInterval === "yearly" ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice}
+                      </span>
                     </div>
                   </div>
-                </button>
-
-                {selectedPlan.yearlyPrice && (
-                  <button
-                    className="w-full p-4 border-2 rounded-xl text-left hover:border-violet-500 transition-colors relative overflow-hidden"
-                    onClick={() => handleSubscribe(selectedPlan, "yearly")}
-                    disabled={subscribing}
-                  >
-                    <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-2 py-0.5 rounded-bl">
-                      Save ${(selectedPlan.monthlyPrice * 12 - selectedPlan.yearlyPrice).toFixed(0)}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-gray-900">Yearly</p>
-                        <p className="text-sm text-gray-500">Billed annually</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold" style={{ color: primaryColor }}>${selectedPlan.yearlyPrice}</p>
-                        <p className="text-xs text-gray-500">/year</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-              </div>
-
-              {subscribing && (
-                <div className="flex items-center justify-center mt-4">
-                  <Loader2 className="h-6 w-6 animate-spin" style={{ color: primaryColor }} />
-                  <span className="ml-2 text-gray-600">Processing...</span>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={handleCancelPayment} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleFreeSubscribe}
+                      disabled={creatingPaymentIntent}
+                      className="flex-1"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      {creatingPaymentIntent ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Zap className="h-4 w-4 mr-2" />
+                      )}
+                      Subscribe Free
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Lock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Preparing payment form...</p>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Subscription Modal */}
+      <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Cancel Subscription
+            </DialogTitle>
+          </DialogHeader>
+          
+          {subscriptionToCancel && (
+            <div className="py-4">
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to cancel your <strong>{subscriptionToCancel.plan.name}</strong> subscription?
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-amber-800">
+                  <strong>Note:</strong> You will retain access until <strong>{new Date(subscriptionToCancel.currentPeriodEnd).toLocaleDateString()}</strong>. After that, you will lose access to subscriber-only content and community features.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowCancelModal(false)
+                    setSubscriptionToCancel(null)
+                  }}
+                  className="flex-1"
+                >
+                  Keep Subscription
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={handleCancelSubscription}
+                  disabled={cancelling}
+                  className="flex-1"
+                >
+                  {cancelling ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Cancel Subscription
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
