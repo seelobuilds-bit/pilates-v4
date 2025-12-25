@@ -48,6 +48,17 @@ export async function GET(request: Request) {
       where,
       orderBy: { updatedAt: "desc" },
       include: {
+        assignedTo: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
         tasks: {
           where: { status: "PENDING" },
           orderBy: { dueDate: "asc" }
