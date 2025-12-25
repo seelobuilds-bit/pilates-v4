@@ -30,8 +30,12 @@ import {
   ExternalLink,
   MousePointer,
   ShoppingCart,
-  Wallet
+  Wallet,
+  MessageSquare,
+  GraduationCap,
+  Home
 } from "lucide-react"
+import { SubscriptionChat } from "@/components/vault/subscription-chat"
 
 interface Course {
   id: string
@@ -144,17 +148,29 @@ export default function TeacherVaultPage() {
     totalConversions: 0
   })
 
+  // Community state
+  interface SubscriptionPlan {
+    id: string
+    name: string
+    audience: "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS"
+    activeSubscribers: number
+    communityChat: { id: string; isEnabled: boolean } | null
+  }
+  const [communityPlans, setCommunityPlans] = useState<SubscriptionPlan[]>([])
+  const [selectedCommunityPlan, setSelectedCommunityPlan] = useState<SubscriptionPlan | null>(null)
+
   useEffect(() => {
     fetchData()
   }, [])
 
   async function fetchData() {
     try {
-      const [coursesRes, myCoursesRes, affiliatesRes, enrollmentsRes] = await Promise.all([
+      const [coursesRes, myCoursesRes, affiliatesRes, enrollmentsRes, communityRes] = await Promise.all([
         fetch("/api/vault/courses?published=true"),
         fetch("/api/vault/courses?myCreated=true"),
         fetch("/api/vault/affiliates?myLinks=true"),
-        fetch("/api/vault/enrollments?myEnrollments=true")
+        fetch("/api/vault/enrollments?myEnrollments=true"),
+        fetch("/api/vault/subscription")
       ])
 
       if (coursesRes.ok) {
@@ -184,6 +200,19 @@ export default function TeacherVaultPage() {
       if (enrollmentsRes.ok) {
         const data = await enrollmentsRes.json()
         setMyEnrollments(data.enrollments || [])
+      }
+
+      // Fetch community plans (Teachers have access to Teachers and Clients communities)
+      if (communityRes.ok) {
+        const data = await communityRes.json()
+        const plans = (data.plans || []).filter((p: SubscriptionPlan) => 
+          (p.audience === "TEACHERS" || p.audience === "CLIENTS") && p.communityChat?.isEnabled
+        )
+        setCommunityPlans(plans)
+        // Auto-select first plan
+        if (plans.length > 0) {
+          setSelectedCommunityPlan(plans[0])
+        }
       }
     } catch (err) {
       console.error("Failed to fetch vault data:", err)
@@ -349,6 +378,10 @@ export default function TeacherVaultPage() {
             <BookOpen className="h-4 w-4 mr-2" />
             My Courses
           </TabsTrigger>
+          <TabsTrigger value="community">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Community
+          </TabsTrigger>
           <TabsTrigger value="affiliates">
             <LinkIcon className="h-4 w-4 mr-2" />
             Affiliate Links
@@ -423,6 +456,91 @@ export default function TeacherVaultPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Community Tab */}
+        <TabsContent value="community">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ height: "calc(100vh - 350px)" }}>
+            {/* Community Selector */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Your Communities</h3>
+              
+              {communityPlans.map(plan => (
+                <Card 
+                  key={plan.id} 
+                  className={`border-0 shadow-sm cursor-pointer transition-all hover:shadow-md ${
+                    selectedCommunityPlan?.id === plan.id 
+                      ? "ring-2 ring-violet-500 bg-violet-50" 
+                      : "hover:bg-gray-50"
+                  }`}
+                  onClick={() => setSelectedCommunityPlan(plan)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        plan.audience === "TEACHERS" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+                      }`}>
+                        {plan.audience === "TEACHERS" ? (
+                          <GraduationCap className="h-5 w-5" />
+                        ) : (
+                          <Home className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 text-sm">{plan.name}</h4>
+                        <p className="text-xs text-gray-500">
+                          {plan.audience === "TEACHERS" ? "Teacher Community" : "Client (At-Home)"}
+                        </p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                          <Users className="h-3 w-3" />
+                          {plan.activeSubscribers} members
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {communityPlans.length === 0 && (
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-6 text-center">
+                    <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm font-medium text-gray-900">No communities available</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Contact HQ to set up community chats
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500">
+                  💡 <strong>Teacher Access:</strong> You have access to both teacher and client communities to connect and support.
+                </p>
+              </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className="lg:col-span-3 h-full min-h-[500px]">
+              {selectedCommunityPlan ? (
+                <SubscriptionChat 
+                  planId={selectedCommunityPlan.id} 
+                  planName={selectedCommunityPlan.name}
+                  audience={selectedCommunityPlan.audience}
+                />
+              ) : (
+                <Card className="border-0 shadow-sm h-full flex items-center justify-center">
+                  <CardContent className="text-center">
+                    <MessageSquare className="h-16 w-16 mx-auto mb-4 text-gray-200" />
+                    <h4 className="font-medium text-gray-900 mb-1">Select a Community</h4>
+                    <p className="text-sm text-gray-500">
+                      Choose a community from the left to join the conversation
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </TabsContent>
 
         {/* Affiliate Links Tab */}
