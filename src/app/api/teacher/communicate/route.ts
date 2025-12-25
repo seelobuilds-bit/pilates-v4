@@ -100,10 +100,16 @@ export async function POST(request: Request) {
       // Log the communication
       await db.message.create({
         data: {
+          channel: "EMAIL",
+          direction: "OUTBOUND",
+          status: "SENT",
           subject: subject || "Message from instructor",
-          content: message,
-          type: "email",
-          status: "sent",
+          body: message,
+          fromAddress: emailConfig.fromEmail,
+          toAddress: client.email,
+          fromName: teacherName,
+          toName: `${client.firstName} ${client.lastName}`,
+          sentAt: new Date(),
           studioId: client.studioId,
           clientId: client.id
         }
@@ -134,9 +140,15 @@ export async function POST(request: Request) {
       // Log the communication
       await db.message.create({
         data: {
-          content: message,
-          type: "sms",
-          status: "sent",
+          channel: "SMS",
+          direction: "OUTBOUND",
+          status: "SENT",
+          body: message,
+          fromAddress: smsConfig.twilioPhoneNumber,
+          toAddress: client.phone,
+          fromName: teacherName,
+          toName: `${client.firstName} ${client.lastName}`,
+          sentAt: new Date(),
           studioId: client.studioId,
           clientId: client.id
         }

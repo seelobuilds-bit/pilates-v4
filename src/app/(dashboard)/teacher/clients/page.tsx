@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +24,8 @@ import {
   Send,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronRight
 } from "lucide-react"
 
 interface Client {
@@ -242,20 +244,20 @@ export default function TeacherClientsPage() {
           ) : filteredClients.length > 0 ? (
             <div className="space-y-3">
               {filteredClients.map((client) => (
-                <div key={client.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-4">
+                <div key={client.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
+                  <Link href={`/teacher/clients/${client.id}`} className="flex items-center gap-4 flex-1">
                     <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
                       {client.firstName[0]}{client.lastName[0]}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 group-hover:text-violet-600 transition-colors">
+                        {client.firstName} {client.lastName}
+                      </p>
                       <p className="text-sm text-gray-500">{client.email}</p>
                       {client.phone && (
                         <p className="text-xs text-gray-400">{client.phone}</p>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
                     <div className="text-right mr-4">
                       <p className="font-medium text-gray-900">{client.bookingsCount} classes</p>
                       {client.lastBooking && (
@@ -264,25 +266,26 @@ export default function TeacherClientsPage() {
                         </p>
                       )}
                     </div>
-                    {/* Communication Buttons */}
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
+                  </Link>
+                  <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                    {/* Quick Communication Buttons */}
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openEmailModal(client)}
+                      onClick={(e) => { e.preventDefault(); openEmailModal(client) }}
                       className="gap-1"
                     >
                       <Mail className="h-4 w-4" />
-                      Email
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openSmsModal(client)}
+                      onClick={(e) => { e.preventDefault(); openSmsModal(client) }}
                       disabled={!client.phone}
                       className="gap-1"
                     >
                       <MessageSquare className="h-4 w-4" />
-                      SMS
                     </Button>
                   </div>
                 </div>
