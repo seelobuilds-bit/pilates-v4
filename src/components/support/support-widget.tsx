@@ -52,11 +52,6 @@ export function SupportWidget() {
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Don't render for HQ admins or Sales agents (internal staff)
-  if (session?.user?.role === "HQ_ADMIN" || session?.user?.role === "SALES_AGENT") {
-    return null
-  }
-
   const fetchConversations = useCallback(async () => {
     try {
       setLoading(true)
@@ -199,6 +194,11 @@ export function SupportWidget() {
   }
 
   const unreadCount = conversations.filter(c => c.unreadByUser).length
+
+  // Don't render for HQ admins or Sales agents (internal staff)
+  if (session?.user?.role === "HQ_ADMIN" || session?.user?.role === "SALES_AGENT") {
+    return null
+  }
 
   return (
     <>
