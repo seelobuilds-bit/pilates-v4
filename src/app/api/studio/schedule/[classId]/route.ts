@@ -29,9 +29,10 @@ export async function GET(
       },
       location: true,
       bookings: {
+        where: { status: "CONFIRMED" },
         include: {
           client: {
-            select: { id: true, firstName: true, lastName: true, email: true }
+            select: { id: true, firstName: true, lastName: true, email: true, phone: true }
           }
         }
       },

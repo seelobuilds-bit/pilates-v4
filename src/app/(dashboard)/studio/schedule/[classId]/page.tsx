@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   ArrowLeft, 
   Calendar, 
@@ -23,7 +24,11 @@ import {
   User,
   Repeat,
   Info,
-  Copy
+  Copy,
+  Mail,
+  MessageSquare,
+  Send,
+  X
 } from "lucide-react"
 
 const DAYS_OF_WEEK = [
@@ -44,7 +49,7 @@ interface ClassSession {
   classType: { id: string; name: string }
   teacher: { id: string; user: { firstName: string; lastName: string } }
   location: { id: string; name: string }
-  bookings: { id: string; client: { firstName: string; lastName: string; email: string } }[]
+  bookings: { id: string; client: { id: string; firstName: string; lastName: string; email: string; phone?: string | null } }[]
   _count: { bookings: number }
 }
 
@@ -85,6 +90,14 @@ export default function ClassSessionDetailPage({
   const [recurringEndDate, setRecurringEndDate] = useState("")
   const [creatingRecurring, setCreatingRecurring] = useState(false)
   const [recurringCreatedCount, setRecurringCreatedCount] = useState<number | null>(null)
+
+  // Message all state
+  const [showMessageModal, setShowMessageModal] = useState(false)
+  const [messageType, setMessageType] = useState<"email" | "sms">("email")
+  const [messageSubject, setMessageSubject] = useState("")
+  const [messageBody, setMessageBody] = useState("")
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const [messageSent, setMessageSent] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -250,6 +263,48 @@ export default function ClassSessionDetailPage({
     setSaving(false)
   }
 
+  const handleSendMessageToAll = async () => {
+    if (!classSession || !messageBody.trim()) return
+    if (messageType === "email" && !messageSubject.trim()) return
+
+    setSendingMessage(true)
+    try {
+      const clientIds = classSession.bookings.map(b => b.client.id)
+      const res = await fetch('/api/studio/messages/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientIds,
+          channel: messageType.toUpperCase(),
+          subject: messageType === "email" ? messageSubject : undefined,
+          message: messageBody,
+          classId: classSession.id
+        })
+      })
+
+      if (res.ok) {
+        setMessageSent(true)
+        setTimeout(() => {
+          setShowMessageModal(false)
+          setMessageSent(false)
+          setMessageSubject("")
+          setMessageBody("")
+        }, 2000)
+      }
+    } catch (error) {
+      console.error("Failed to send messages:", error)
+    } finally {
+      setSendingMessage(false)
+    }
+  }
+
+  const openMessageModal = () => {
+    if (classSession) {
+      setMessageSubject(`Update: ${classSession.classType.name} - ${new Date(classSession.startTime).toLocaleDateString()}`)
+    }
+    setShowMessageModal(true)
+  }
+
   if (loading) {
     return (
       <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
@@ -305,6 +360,142 @@ export default function ClassSessionDetailPage({
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel Class"}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Message All Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <Card className="w-[500px] shadow-xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <Send className="h-5 w-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-lg text-gray-900">Message All Attendees</h2>
+                    <p className="text-sm text-gray-500">
+                      Send to {classSession.bookings.length} client{classSession.bookings.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowMessageModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {messageSent ? (
+                <div className="py-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                    <Send className="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Messages Sent!</h3>
+                  <p className="text-gray-500">
+                    Successfully sent to {classSession.bookings.length} client{classSession.bookings.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Message Type Toggle */}
+                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-4">
+                    <button
+                      onClick={() => setMessageType("email")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                        messageType === "email" 
+                          ? "bg-white text-blue-600 shadow-sm font-medium" 
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>Email</span>
+                    </button>
+                    <button
+                      onClick={() => setMessageType("sms")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                        messageType === "sms" 
+                          ? "bg-white text-green-600 shadow-sm font-medium" 
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span>SMS</span>
+                    </button>
+                  </div>
+
+                  {/* Recipients Preview */}
+                  <div className="p-3 bg-gray-50 rounded-lg mb-4">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">Recipients:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {classSession.bookings.slice(0, 5).map(b => (
+                        <Badge key={b.id} variant="secondary" className="text-xs">
+                          {b.client.firstName} {b.client.lastName[0]}.
+                        </Badge>
+                      ))}
+                      {classSession.bookings.length > 5 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{classSession.bookings.length - 5} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Subject (email only) */}
+                  {messageType === "email" && (
+                    <div className="mb-4">
+                      <Label>Subject</Label>
+                      <Input
+                        value={messageSubject}
+                        onChange={(e) => setMessageSubject(e.target.value)}
+                        placeholder="Email subject..."
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
+
+                  {/* Message Body */}
+                  <div className="mb-4">
+                    <Label>Message</Label>
+                    <Textarea
+                      value={messageBody}
+                      onChange={(e) => setMessageBody(e.target.value)}
+                      placeholder={`Write your ${messageType === 'email' ? 'email' : 'SMS'} message...`}
+                      rows={5}
+                      className="mt-1"
+                    />
+                    {messageType === "sms" && (
+                      <p className="text-xs text-gray-400 mt-1">{messageBody.length}/160 characters</p>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setShowMessageModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      className={`flex-1 ${messageType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      onClick={handleSendMessageToAll}
+                      disabled={sendingMessage || !messageBody.trim() || (messageType === "email" && !messageSubject.trim())}
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send to All
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -549,9 +740,22 @@ export default function ClassSessionDetailPage({
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-900">Booked Clients</h2>
-                <Badge variant={classSession._count.bookings >= capacity ? "destructive" : "secondary"}>
-                  {classSession._count.bookings}/{capacity} spots
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {classSession.bookings.length > 0 && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={openMessageModal}
+                      className="text-violet-600 border-violet-200 hover:bg-violet-50"
+                    >
+                      <Send className="h-4 w-4 mr-1" />
+                      Message All
+                    </Button>
+                  )}
+                  <Badge variant={classSession._count.bookings >= capacity ? "destructive" : "secondary"}>
+                    {classSession._count.bookings}/{capacity} spots
+                  </Badge>
+                </div>
               </div>
               
               {classSession.bookings && classSession.bookings.length > 0 ? (

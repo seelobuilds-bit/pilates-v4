@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +20,8 @@ import {
   Trash2,
   Loader2,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Send
 } from "lucide-react"
 
 interface ClassSession {
@@ -382,23 +384,30 @@ export default function TeacherSchedulePage() {
                   {/* Classes */}
                   {classesByDay[dayIndex].length > 0 ? (
                     classesByDay[dayIndex].map((cls) => (
-                      <div key={cls.id} className="p-3 bg-violet-50 rounded-lg border-l-4 border-l-violet-500">
-                        <p className="font-medium text-sm text-gray-900">{cls.classType.name}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {cls.location.name}
-                        </p>
-                        <div className="flex items-center gap-1 mt-2">
-                          <Users className="h-3 w-3 text-gray-400" />
-                          <span className={`text-xs font-medium ${cls._count.bookings >= cls.capacity ? 'text-emerald-600' : 'text-gray-600'}`}>
-                            {cls._count.bookings}/{cls.capacity}
-                          </span>
+                      <Link key={cls.id} href={`/teacher/schedule/${cls.id}`}>
+                        <div className="p-3 bg-violet-50 rounded-lg border-l-4 border-l-violet-500 hover:bg-violet-100 hover:shadow-md transition-all cursor-pointer">
+                          <p className="font-medium text-sm text-gray-900">{cls.classType.name}</p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {cls.location.name}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3 text-gray-400" />
+                              <span className={`text-xs font-medium ${cls._count.bookings >= cls.capacity ? 'text-emerald-600' : 'text-gray-600'}`}>
+                                {cls._count.bookings}/{cls.capacity}
+                              </span>
+                            </div>
+                            {cls._count.bookings > 0 && (
+                              <Send className="h-3 w-3 text-violet-400" />
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     ))
                   ) : blockedByDay[dayIndex].length === 0 ? (
                     <div className="h-full flex items-center justify-center">
