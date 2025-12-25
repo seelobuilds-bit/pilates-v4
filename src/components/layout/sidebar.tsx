@@ -27,11 +27,16 @@ import {
   MessageSquare,
   ShoppingBag,
   Trophy,
+  Headphones,
+  Target,
+  Video,
 } from "lucide-react"
 
 const hqLinks = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hq/studios", label: "Studios", icon: Building2 },
+  { href: "/hq/sales", label: "Sales CRM", icon: Target },
+  { href: "/hq/support", label: "Support Inbox", icon: Headphones },
   { href: "/hq/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/hq/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/hq/settings", label: "Settings", icon: Settings },
@@ -71,6 +76,14 @@ const teacherLinks = [
   { href: "/teacher/settings", label: "Settings", icon: Settings },
 ]
 
+const salesAgentLinks = [
+  { href: "/sales", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/sales/leads", label: "My Leads", icon: Target },
+  { href: "/sales/demos", label: "Demo Requests", icon: Video },
+  { href: "/sales/calendar", label: "Calendar", icon: Calendar },
+  { href: "/sales/settings", label: "Settings", icon: Settings },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
@@ -84,6 +97,10 @@ export function Sidebar() {
     links = hqLinks
     title = "SOULFLOW HQ"
     subtitle = "Admin Portal"
+  } else if (role === "SALES_AGENT") {
+    links = salesAgentLinks
+    title = "SOULFLOW"
+    subtitle = "Sales Portal"
   } else if (role === "TEACHER") {
     links = teacherLinks
     title = session?.user?.studioName || "Studio"
@@ -108,7 +125,7 @@ export function Sidebar() {
         {links.map((link) => {
           const Icon = link.icon
           const isActive = pathname === link.href || 
-            (link.href !== "/studio" && link.href !== "/hq" && link.href !== "/teacher" && pathname.startsWith(link.href))
+            (link.href !== "/studio" && link.href !== "/hq" && link.href !== "/teacher" && link.href !== "/sales" && pathname.startsWith(link.href))
           return (
             <Link
               key={link.href}

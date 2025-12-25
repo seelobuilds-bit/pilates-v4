@@ -38,6 +38,8 @@ export default function LoginPage() {
       
       if (session?.user?.role === "HQ_ADMIN") {
         router.push("/hq")
+      } else if (session?.user?.role === "SALES_AGENT") {
+        router.push("/sales")
       } else if (session?.user?.role === "OWNER") {
         router.push("/studio")
       } else if (session?.user?.role === "TEACHER") {

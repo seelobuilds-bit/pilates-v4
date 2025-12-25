@@ -664,3 +664,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
     </div>
   )
 }
+
+
+

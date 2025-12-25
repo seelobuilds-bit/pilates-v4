@@ -8,7 +8,7 @@ async function main() {
 
   // Create HQ Admin
   const hqPassword = await bcrypt.hash("admin123", 10)
-  await prisma.user.upsert({
+  const hqAdmin = await prisma.user.upsert({
     where: { email: "admin@cadence.com" },
     update: {},
     create: {
@@ -17,6 +17,62 @@ async function main() {
       firstName: "Admin",
       lastName: "User",
       role: Role.HQ_ADMIN,
+    },
+  })
+
+  // Create Sales Agents
+  const salesAgent1 = await prisma.user.upsert({
+    where: { email: "alex@soulflow.com" },
+    update: {},
+    create: {
+      email: "alex@soulflow.com",
+      password: hqPassword,
+      firstName: "Alex",
+      lastName: "Turner",
+      role: Role.HQ_ADMIN,
+    },
+  })
+
+  const salesAgent2 = await prisma.user.upsert({
+    where: { email: "jamie@soulflow.com" },
+    update: {},
+    create: {
+      email: "jamie@soulflow.com",
+      password: hqPassword,
+      firstName: "Jamie",
+      lastName: "Rivera",
+      role: Role.HQ_ADMIN,
+    },
+  })
+
+  // Create SalesAgent profiles
+  await prisma.salesAgent.upsert({
+    where: { userId: hqAdmin.id },
+    update: {},
+    create: {
+      userId: hqAdmin.id,
+      title: "Sales Director",
+      phone: "(555) 100-0001",
+    },
+  })
+
+  await prisma.salesAgent.upsert({
+    where: { userId: salesAgent1.id },
+    update: {},
+    create: {
+      userId: salesAgent1.id,
+      title: "Account Executive",
+      phone: "(555) 100-0002",
+    },
+  })
+
+  await prisma.salesAgent.upsert({
+    where: { userId: salesAgent2.id },
+    update: {},
+    create: {
+      userId: salesAgent2.id,
+      title: "Sales Representative",
+      phone: "(555) 100-0003",
     },
   })
 

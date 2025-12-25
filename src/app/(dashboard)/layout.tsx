@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/session"
 import { Sidebar } from "@/components/layout/sidebar"
+import { SupportWidget } from "@/components/support/support-widget"
 
 export default async function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-auto">
         {children}
       </main>
+      <SupportWidget />
     </div>
   )
 }

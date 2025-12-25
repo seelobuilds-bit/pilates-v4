@@ -9,6 +9,7 @@ datasource db {
 
 enum Role {
   HQ_ADMIN
+  SALES_AGENT
   OWNER
   TEACHER
 }
@@ -34,6 +35,12 @@ model User {
   vaultBundleSubscriptions VaultBundleSubscription[]
   vaultReviews            VaultReview[]
   vaultSubscriptions      VaultSubscriber[] @relation("VaultUserSubscription")
+  
+  // Support conversations
+  supportConversations    SupportConversation[]
+  
+  // Sales CRM (for HQ staff)
+  salesAgent              SalesAgent?
 }
 
 model Studio {
@@ -2958,4 +2965,431 @@ model EarnedBadge {
   @@unique([badgeId, teacherId])
   @@index([studioId])
   @@index([teacherId])
+}
+
+// ==========================================
+// SUPPORT CHAT SYSTEM
+// ==========================================
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Support conversation/ticket
+model SupportConversation {
+  id              String   @id @default(cuid())
+  
+  subject         String   // Brief topic of the conversation
+  status          SupportTicketStatus @default(OPEN)
+  priority        SupportPriority @default(MEDIUM)
+  
+  // Who initiated (either studio owner via User or teacher)
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  teacherId       String?
+  // Note: Teacher relation handled manually to avoid circular ref issues
+  
+  // Studio context (for easy filtering)
+  studioId        String?
+  
+  // Assigned HQ agent
+  assignedToId    String?  // User ID of HQ admin
+  
+  // Metadata
+  category        String?  // e.g., "billing", "technical", "feature_request"
+  tags            String[]
+  
+  // Read status
+  lastMessageAt   DateTime @default(now())
+  unreadByHQ      Boolean  @default(true)
+  unreadByUser    Boolean  @default(false)
+  
+  // Resolution
+  resolvedAt      DateTime?
+  resolvedById    String?
+  satisfactionRating Int?  // 1-5
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  messages        SupportMessage[]
+  
+  @@index([status])
+  @@index([userId])
+  @@index([teacherId])
+  @@index([studioId])
+  @@index([assignedToId])
+  @@index([lastMessageAt])
+}
+
+// Individual support messages
+model SupportMessage {
+  id              String   @id @default(cuid())
+  
+  conversationId  String
+  conversation    SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  content         String   @db.Text
+  
+  // Who sent it
+  senderType      String   // "user", "teacher", "hq"
+  senderId        String   // User or Teacher ID
+  senderName      String   // Display name at time of sending
+  
+  // Attachments
+  attachments     String[] // URLs to attachments
+  
+  // Status
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  
+  // For system messages
+  isSystemMessage Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([conversationId, createdAt])
+}
+
+// ==========================================
+// SALES CRM SYSTEM
+// ==========================================
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  DEMO_SCHEDULED
+  DEMO_COMPLETED
+  PROPOSAL_SENT
+  NEGOTIATING
+  WON
+  LOST
+  NURTURING
+}
+
+enum LeadSource {
+  INBOUND_WEBSITE
+  INBOUND_DEMO
+  OUTBOUND_COLD
+  OUTBOUND_EMAIL
+  REFERRAL
+  SOCIAL_MEDIA
+  PARTNERSHIP
+  EVENT
+  OTHER
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  HOT
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  SMS
+  MEETING
+  DEMO
+  NOTE
+  STATUS_CHANGE
+  TASK_COMPLETED
+  SYSTEM
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Sales Agent - extends User for HQ staff doing sales
+model SalesAgent {
+  id              String   @id @default(cuid())
+  
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Agent info
+  title           String?  // e.g., "Sales Representative", "Account Executive"
+  phone           String?
+  calendarLink    String?  // Calendly or similar link
+  
+  // Settings
+  isActive        Boolean  @default(true)
+  canReceiveLeads Boolean  @default(true)
+  maxLeads        Int?     // Max leads they can handle
+  
+  // Stats (denormalized for performance)
+  totalLeads      Int      @default(0)
+  totalWon        Int      @default(0)
+  totalLost       Int      @default(0)
+  totalRevenue    Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  leads           Lead[]
+  activities      LeadActivity[]
+  tasks           LeadTask[]
+  calendarEvents  SalesCalendarEvent[]
+  demoBookings    DemoBooking[]
+  
+  @@index([isActive])
+}
+
+// Lead/Prospect
+model Lead {
+  id              String   @id @default(cuid())
+  
+  // Business info
+  studioName      String
+  website         String?
+  
+  // Contact person
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  contactRole     String?  // e.g., "Owner", "Manager"
+  
+  // Location
+  city            String?
+  state           String?
+  country         String   @default("US")
+  timezone        String?
+  
+  // Lead details
+  status          LeadStatus @default(NEW)
+  source          LeadSource @default(OTHER)
+  priority        LeadPriority @default(MEDIUM)
+  
+  // Business context
+  currentSoftware String?  // What they're using now
+  studioSize      String?  // e.g., "1-5 instructors", "6-15", "16+"
+  monthlyRevenue  String?  // Revenue range
+  painPoints      String?  @db.Text // What problems they have
+  notes           String?  @db.Text // General notes
+  
+  // Deal info
+  estimatedValue  Float?   // Estimated deal value
+  probability     Int?     // Win probability 0-100
+  expectedClose   DateTime? // Expected close date
+  
+  // Lost/Won tracking
+  lostReason      String?
+  wonDate         DateTime?
+  actualValue     Float?   // Actual deal value if won
+  
+  // Assignment
+  assignedToId    String?
+  assignedTo      SalesAgent? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?
+  
+  // Communication tracking
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
+  totalCalls      Int      @default(0)
+  totalEmails     Int      @default(0)
+  totalSms        Int      @default(0)
+  
+  // Tags for organization
+  tags            String[]
+  
+  // If converted to actual studio
+  convertedStudioId String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  activities      LeadActivity[]
+  tasks           LeadTask[]
+  demoBookings    DemoBooking[]
+  
+  @@index([status])
+  @@index([assignedToId])
+  @@index([source])
+  @@index([priority])
+  @@index([nextFollowUpAt])
+  @@index([createdAt])
+}
+
+// Activity/Communication log for leads
+model LeadActivity {
+  id              String   @id @default(cuid())
+  
+  leadId          String
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  type            ActivityType
+  
+  // Content
+  subject         String?  // For emails
+  content         String   @db.Text // The actual note, email body, call notes
+  
+  // Communication details
+  direction       String?  // "inbound" or "outbound"
+  duration        Int?     // Call duration in seconds
+  outcome         String?  // e.g., "Left voicemail", "Spoke with decision maker"
+  
+  // For emails/SMS
+  toAddress       String?
+  fromAddress     String?
+  externalId      String?  // Email/SMS provider message ID
+  
+  // Status change tracking
+  previousStatus  String?
+  newStatus       String?
+  
+  // Who performed the activity
+  agentId         String?
+  agent           SalesAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([leadId, createdAt])
+  @@index([agentId])
+  @@index([type])
+}
+
+// Tasks and follow-ups
+model LeadTask {
+  id              String   @id @default(cuid())
+  
+  leadId          String
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String?  @db.Text
+  
+  type            String   @default("follow_up") // follow_up, call, email, meeting, demo, other
+  status          TaskStatus @default(PENDING)
+  priority        TaskPriority @default(MEDIUM)
+  
+  dueDate         DateTime
+  reminderAt      DateTime?
+  completedAt     DateTime?
+  
+  // Assignment
+  assignedToId    String?
+  assignedTo      SalesAgent? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([leadId])
+  @@index([assignedToId])
+  @@index([status, dueDate])
+  @@index([dueDate])
+}
+
+// Demo bookings (inbound from website)
+model DemoBooking {
+  id              String   @id @default(cuid())
+  
+  // Contact info (from form)
+  studioName      String
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  
+  // Booking details
+  requestedDate   DateTime? // Preferred date/time
+  scheduledDate   DateTime? // Actual scheduled date
+  duration        Int      @default(30) // Duration in minutes
+  meetingLink     String?  // Zoom/Meet link
+  
+  // Context from form
+  studioSize      String?
+  currentSoftware String?
+  interests       String?  @db.Text // What they're interested in
+  referralSource  String?  // How they heard about us
+  
+  // Status
+  status          String   @default("pending") // pending, scheduled, completed, cancelled, no_show
+  
+  // Assignment
+  assignedToId    String?
+  assignedTo      SalesAgent? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  // Link to lead (created or existing)
+  leadId          String?
+  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  
+  // Notes
+  notes           String?  @db.Text
+  outcome         String?  // Post-demo outcome
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([status])
+  @@index([assignedToId])
+  @@index([scheduledDate])
+}
+
+// Sales agent calendar events
+model SalesCalendarEvent {
+  id              String   @id @default(cuid())
+  
+  agentId         String
+  agent           SalesAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String?  @db.Text
+  
+  // Time
+  startTime       DateTime
+  endTime         DateTime
+  allDay          Boolean  @default(false)
+  timezone        String   @default("America/New_York")
+  
+  // Type
+  type            String   @default("meeting") // meeting, call, demo, blocked, other
+  
+  // Related entities
+  leadId          String?
+  demoBookingId   String?
+  
+  // Meeting details
+  location        String?  // Physical location or video link
+  meetingLink     String?
+  
+  // Reminders
+  reminderMinutes Int?     // Minutes before to remind
+  
+  // Status
+  status          String   @default("scheduled") // scheduled, completed, cancelled
+  
+  // External calendar sync
+  externalCalendarId String?
+  externalEventId    String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([agentId, startTime])
+  @@index([startTime])
+  @@index([leadId])
 }

@@ -318,3 +318,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete course" }, { status: 500 })
   }
 }
+
+
+

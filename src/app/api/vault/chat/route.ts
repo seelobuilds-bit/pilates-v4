@@ -17,3 +17,6 @@ export async function POST() {
     redirect: "/api/vault/subscription/chat"
   }, { status: 410 })
 }
+
+
+
