@@ -95,16 +95,51 @@ export async function PATCH(request: Request) {
       }
     })
 
-    // If assigning demo to an agent, also assign the associated lead
-    if (data.assignedToId && demo.leadId) {
-      await db.lead.update({
-        where: { id: demo.leadId },
-        data: { 
-          assignedToId: data.assignedToId,
-          assignedAt: new Date(),
-          status: "DEMO_REQUESTED" // Move to demo requested stage
-        }
-      })
+    // If assigning demo to an agent, ensure there's an associated lead
+    if (data.assignedToId) {
+      if (demo.leadId) {
+        // Update existing lead
+        await db.lead.update({
+          where: { id: demo.leadId },
+          data: { 
+            assignedToId: data.assignedToId,
+            assignedAt: new Date(),
+            status: "DEMO_REQUESTED"
+          }
+        })
+      } else {
+        // Create a new lead from demo data
+        const newLead = await db.lead.create({
+          data: {
+            studioName: demo.studioName,
+            contactName: demo.contactName,
+            contactEmail: demo.contactEmail,
+            contactPhone: demo.contactPhone,
+            studioSize: demo.studioSize,
+            status: "DEMO_REQUESTED",
+            source: "INBOUND_DEMO",
+            priority: "HIGH",
+            assignedToId: data.assignedToId,
+            assignedAt: new Date(),
+            notes: demo.interests
+          }
+        })
+        
+        // Link demo to the new lead
+        await db.demoBooking.update({
+          where: { id: demo.id },
+          data: { leadId: newLead.id }
+        })
+        
+        // Create activity for the new lead
+        await db.leadActivity.create({
+          data: {
+            leadId: newLead.id,
+            type: "SYSTEM",
+            content: "Lead created from demo request"
+          }
+        })
+      }
     }
 
     // Update lead status if scheduling demo
