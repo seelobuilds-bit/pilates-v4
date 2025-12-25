@@ -4,11 +4,26 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { 
   Search, 
   Users,
   Calendar,
-  Clock
+  Clock,
+  Mail,
+  MessageSquare,
+  Send,
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react"
 
 interface Client {
@@ -25,6 +40,16 @@ export default function TeacherClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  
+  // Communication state
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [showSmsModal, setShowSmsModal] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [emailSubject, setEmailSubject] = useState("")
+  const [emailBody, setEmailBody] = useState("")
+  const [smsMessage, setSmsMessage] = useState("")
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
     async function fetchClients() {
@@ -48,12 +73,100 @@ export default function TeacherClientsPage() {
     client.email.toLowerCase().includes(search.toLowerCase())
   )
 
+  const openEmailModal = (client: Client) => {
+    setSelectedClient(client)
+    setEmailSubject("")
+    setEmailBody("")
+    setSendResult(null)
+    setShowEmailModal(true)
+  }
+
+  const openSmsModal = (client: Client) => {
+    if (!client.phone) {
+      alert("This client doesn't have a phone number on file.")
+      return
+    }
+    setSelectedClient(client)
+    setSmsMessage("")
+    setSendResult(null)
+    setShowSmsModal(true)
+  }
+
+  const sendEmail = async () => {
+    if (!selectedClient || !emailSubject || !emailBody) return
+    
+    setSending(true)
+    setSendResult(null)
+    
+    try {
+      const res = await fetch("/api/teacher/communicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "email",
+          clientId: selectedClient.id,
+          subject: emailSubject,
+          message: emailBody
+        })
+      })
+
+      if (res.ok) {
+        setSendResult({ success: true, message: "Email sent successfully!" })
+        setTimeout(() => {
+          setShowEmailModal(false)
+          setSendResult(null)
+        }, 2000)
+      } else {
+        const data = await res.json()
+        setSendResult({ success: false, message: data.error || "Failed to send email" })
+      }
+    } catch (error) {
+      setSendResult({ success: false, message: "Failed to send email" })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendSms = async () => {
+    if (!selectedClient || !smsMessage) return
+    
+    setSending(true)
+    setSendResult(null)
+    
+    try {
+      const res = await fetch("/api/teacher/communicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "sms",
+          clientId: selectedClient.id,
+          message: smsMessage
+        })
+      })
+
+      if (res.ok) {
+        setSendResult({ success: true, message: "SMS sent successfully!" })
+        setTimeout(() => {
+          setShowSmsModal(false)
+          setSendResult(null)
+        }, 2000)
+      } else {
+        const data = await res.json()
+        setSendResult({ success: false, message: data.error || "Failed to send SMS" })
+      }
+    } catch (error) {
+      setSendResult({ success: false, message: "Failed to send SMS" })
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Clients</h1>
-        <p className="text-gray-500 mt-1">Students who have taken classes with you</p>
+        <p className="text-gray-500 mt-1">Students who have taken classes with you - reach out via Email or SMS</p>
       </div>
 
       {/* Search */}
@@ -137,10 +250,13 @@ export default function TeacherClientsPage() {
                     <div>
                       <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
                       <p className="text-sm text-gray-500">{client.email}</p>
+                      {client.phone && (
+                        <p className="text-xs text-gray-400">{client.phone}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex items-center gap-3">
+                    <div className="text-right mr-4">
                       <p className="font-medium text-gray-900">{client.bookingsCount} classes</p>
                       {client.lastBooking && (
                         <p className="text-sm text-gray-500">
@@ -148,9 +264,26 @@ export default function TeacherClientsPage() {
                         </p>
                       )}
                     </div>
-                    <Badge className="bg-violet-100 text-violet-700 border-0">
-                      Regular
-                    </Badge>
+                    {/* Communication Buttons */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEmailModal(client)}
+                      className="gap-1"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Email
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openSmsModal(client)}
+                      disabled={!client.phone}
+                      className="gap-1"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      SMS
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -159,26 +292,129 @@ export default function TeacherClientsPage() {
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">
-                {search ? "No clients match your search" : "No clients yet"}
+                {search ? "No clients match your search" : "No clients yet - clients will appear here after they book your classes"}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Email Modal */}
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-emerald-600" />
+              Send Email to {selectedClient?.firstName} {selectedClient?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>To</Label>
+              <Input value={selectedClient?.email || ""} disabled className="bg-gray-50" />
+            </div>
+            <div>
+              <Label>Subject *</Label>
+              <Input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Enter email subject..."
+              />
+            </div>
+            <div>
+              <Label>Message *</Label>
+              <Textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                placeholder="Write your message..."
+                rows={6}
+              />
+            </div>
+            {sendResult && (
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                sendResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+              }`}>
+                {sendResult.success ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                {sendResult.message}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+            <Button 
+              onClick={sendEmail}
+              disabled={sending || !emailSubject || !emailBody}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send Email
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* SMS Modal */}
+      <Dialog open={showSmsModal} onOpenChange={setShowSmsModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-blue-600" />
+              Send SMS to {selectedClient?.firstName} {selectedClient?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>To</Label>
+              <Input value={selectedClient?.phone || ""} disabled className="bg-gray-50" />
+            </div>
+            <div>
+              <Label>Message * <span className="text-gray-400 text-xs">({smsMessage.length}/160 characters)</span></Label>
+              <Textarea
+                value={smsMessage}
+                onChange={(e) => setSmsMessage(e.target.value)}
+                placeholder="Write your SMS message..."
+                rows={4}
+                maxLength={320}
+              />
+            </div>
+            {sendResult && (
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                sendResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+              }`}>
+                {sendResult.success ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                {sendResult.message}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowSmsModal(false)}>Cancel</Button>
+            <Button 
+              onClick={sendSms}
+              disabled={sending || !smsMessage}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send SMS
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
