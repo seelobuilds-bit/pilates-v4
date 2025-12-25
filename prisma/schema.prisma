@@ -3225,6 +3225,7 @@ model Lead {
   activities      LeadActivity[]
   tasks           LeadTask[]
   demoBookings    DemoBooking[]
+  calendarEvents  SalesCalendarEvent[] @relation("CalendarEventLead")
   
   @@index([status])
   @@index([assignedToId])
@@ -3369,6 +3370,7 @@ model SalesCalendarEvent {
   
   // Related entities
   leadId          String?
+  lead            Lead?    @relation("CalendarEventLead", fields: [leadId], references: [id], onDelete: SetNull)
   demoBookingId   String?
   
   // Meeting details
