@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,7 +33,8 @@ import {
   Plus,
   X,
   Edit,
-  Trash2
+  Trash2,
+  ExternalLink
 } from "lucide-react"
 
 interface CalendarEvent {
@@ -566,6 +568,13 @@ export default function SalesCalendarPage() {
                   <p className="text-sm text-gray-500">Related Lead</p>
                   <p className="font-medium">{selectedEvent.lead.studioName}</p>
                   <p className="text-sm text-gray-600">{selectedEvent.lead.contactName}</p>
+                  <Link 
+                    href={`/sales/leads/${selectedEvent.lead.id}`}
+                    className="inline-flex items-center gap-1 mt-2 text-sm text-violet-600 hover:text-violet-700 font-medium"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    View Lead Profile
+                  </Link>
                 </div>
               )}
               {selectedEvent.description && (
