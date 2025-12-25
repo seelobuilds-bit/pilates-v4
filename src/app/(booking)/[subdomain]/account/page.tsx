@@ -910,10 +910,14 @@ export default function AccountPage() {
                   </Button>
                 </Link>
                 {studio.hasVault && (
-                  <Link href={`/${subdomain}/vault`}>
-                    <Button className="bg-transparent text-white border border-white/50 hover:bg-white hover:text-gray-900">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      The Vault
+                  <Link href={`/${subdomain}/vault`} className="group">
+                    <Button 
+                      className="bg-transparent text-white border border-white/50 group-hover:bg-white group-hover:border-transparent transition-all"
+                    >
+                      <span className="flex items-center group-hover:text-violet-600" style={{ transition: 'color 0.2s' }}>
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        The Vault
+                      </span>
                     </Button>
                   </Link>
                 )}
