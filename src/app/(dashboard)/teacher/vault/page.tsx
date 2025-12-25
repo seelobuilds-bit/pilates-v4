@@ -187,9 +187,13 @@ export default function TeacherVaultPage() {
       // Fetch subscription plans with courses (Teachers and Clients only)
       if (subscriptionRes.ok) {
         const data = await subscriptionRes.json()
+        console.log("[Vault] Raw subscription data:", data)
+        
         const plans = (data.plans || []).filter((p: SubscriptionPlan) => 
           p.audience === "TEACHERS" || p.audience === "CLIENTS"
         )
+        console.log("[Vault] Filtered plans (TEACHERS/CLIENTS):", plans.length, plans.map((p: SubscriptionPlan) => ({ name: p.name, audience: p.audience, hasChat: !!p.communityChat })))
+        
         setSubscriptionPlans(plans)
         
         // Combine all courses from TEACHERS and CLIENTS plans
@@ -207,10 +211,15 @@ export default function TeacherVaultPage() {
         
         // Set up community plans
         const communityEnabledPlans = plans.filter((p: SubscriptionPlan) => p.communityChat?.isEnabled)
+        console.log("[Vault] Community enabled plans:", communityEnabledPlans.length, communityEnabledPlans.map((p: SubscriptionPlan) => p.name))
+        
         setCommunityPlans(communityEnabledPlans)
         if (communityEnabledPlans.length > 0) {
           setSelectedCommunityPlan(communityEnabledPlans[0])
+          console.log("[Vault] Selected community plan:", communityEnabledPlans[0].name, communityEnabledPlans[0].id)
         }
+      } else {
+        console.log("[Vault] Subscription fetch failed:", subscriptionRes.status)
       }
     } catch (err) {
       console.error("Failed to fetch vault data:", err)

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { cookies } from "next/headers"
 
-export async function PUT(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ subdomain: string }> }
 ) {
@@ -26,28 +26,26 @@ export async function PUT(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    const body = await request.json()
-    const { firstName, lastName, phone } = body
-
-    const updatedClient = await db.client.update({
-      where: { id: client.id },
-      data: {
-        ...(firstName && { firstName }),
-        ...(lastName && { lastName }),
-        ...(phone !== undefined && { phone })
+    // Get client's merch orders
+    const orders = await db.merchOrder.findMany({
+      where: {
+        clientId: client.id
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true
-      }
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { name: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(updatedClient)
+    return NextResponse.json({ orders })
   } catch (error) {
-    console.error("Failed to update profile:", error)
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+    console.error("Failed to fetch orders:", error)
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }

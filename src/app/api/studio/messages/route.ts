@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import { sendEmail, sendSms } from "@/lib/communications"
+import { sendEmail, sendSMS } from "@/lib/communications"
 
 // GET - Fetch all messages/conversations for the studio
 export async function GET(request: NextRequest) {
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Client has no phone number" }, { status: 400 })
       }
       
-      result = await sendSms(studioId, {
+      result = await sendSMS(studioId, {
         to: client.phone,
         toName: `${client.firstName} ${client.lastName}`,
         body: messageBody,

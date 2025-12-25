@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { cookies } from "next/headers"
 
-export async function PUT(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ subdomain: string }> }
 ) {
@@ -26,28 +26,31 @@ export async function PUT(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    const body = await request.json()
-    const { firstName, lastName, phone } = body
-
-    const updatedClient = await db.client.update({
-      where: { id: client.id },
-      data: {
-        ...(firstName && { firstName }),
-        ...(lastName && { lastName }),
-        ...(phone !== undefined && { phone })
+    // Get client's vault subscriptions
+    const subscriptions = await db.vaultSubscriber.findMany({
+      where: {
+        clientId: client.id,
+        status: "active"
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true
-      }
+      include: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            audience: true,
+            monthlyPrice: true,
+            yearlyPrice: true,
+            features: true,
+            description: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(updatedClient)
+    return NextResponse.json({ subscriptions })
   } catch (error) {
-    console.error("Failed to update profile:", error)
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+    console.error("Failed to fetch subscriptions:", error)
+    return NextResponse.json({ error: "Failed to fetch subscriptions" }, { status: 500 })
   }
 }

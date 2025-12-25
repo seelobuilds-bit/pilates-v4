@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import { sendEmail, sendSms } from "@/lib/communications"
+import { sendEmail, sendSMS } from "@/lib/communications"
 
 // GET - Fetch a specific campaign
 export async function GET(
@@ -207,7 +207,7 @@ export async function POST(
         } else if (campaign.channel === "SMS") {
           if (!client.phone) continue
           
-          const result = await sendSms(studioId, {
+          const result = await sendSMS(studioId, {
             to: client.phone,
             toName: `${client.firstName} ${client.lastName}`,
             body: campaign.body,

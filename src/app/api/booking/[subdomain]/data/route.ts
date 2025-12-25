@@ -31,6 +31,13 @@ export async function GET(
               select: { firstName: true, lastName: true }
             }
           }
+        },
+        merchStore: {
+          select: { isEnabled: true }
+        },
+        vaultSubscriptionPlans: {
+          where: { isActive: true },
+          take: 1
         }
       }
     })
@@ -46,7 +53,9 @@ export async function GET(
       locations: studio.locations,
       classTypes: studio.classTypes,
       teachers: studio.teachers,
-      stripeEnabled: studio.stripeChargesEnabled && studio.stripeOnboardingComplete
+      stripeEnabled: studio.stripeChargesEnabled && studio.stripeOnboardingComplete,
+      hasStore: studio.merchStore?.isEnabled ?? false,
+      hasVault: studio.vaultSubscriptionPlans.length > 0
     })
   } catch (error) {
     console.error("Failed to fetch studio data:", error)

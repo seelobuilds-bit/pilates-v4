@@ -59,16 +59,22 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
   }
 
   async function fetchChat() {
+    console.log("[SubscriptionChat] Fetching chat for planId:", planId)
     try {
       const res = await fetch(`/api/vault/subscription/chat?planId=${planId}`)
+      console.log("[SubscriptionChat] Response status:", res.status)
       if (res.ok) {
         const data = await res.json()
+        console.log("[SubscriptionChat] Chat data:", { messagesCount: data.messages?.length, memberCount: data.memberCount, chatEnabled: data.chat?.isEnabled })
         setMessages(data.messages || [])
         setMemberCount(data.memberCount || 0)
         setChatEnabled(data.chat?.isEnabled ?? true)
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error("[SubscriptionChat] Failed to fetch chat:", res.status, errorData)
       }
     } catch (err) {
-      console.error("Failed to fetch chat:", err)
+      console.error("[SubscriptionChat] Failed to fetch chat:", err)
     }
     setLoading(false)
   }
@@ -93,9 +99,14 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
         const message = await res.json()
         setMessages([...messages, message])
         setNewMessage("")
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
+        console.error("Failed to send message:", res.status, errorData)
+        alert(`Failed to send message: ${errorData.error || "Unknown error"}`)
       }
     } catch (err) {
       console.error("Failed to send message:", err)
+      alert("Failed to send message. Please try again.")
     }
     setSending(false)
   }

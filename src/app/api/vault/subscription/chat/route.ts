@@ -7,19 +7,32 @@ async function ensureTeacherAccess(
   session: { user: { id: string; teacherId?: string; studioId?: string; role?: string } },
   plan: { id: string; audience: string; studioId: string; communityChat: { id: string } | null }
 ) {
-  if (!plan.communityChat) return null
+  if (!plan.communityChat) {
+    console.log("[ensureTeacherAccess] No community chat for plan")
+    return null
+  }
 
   const isTeacher = !!session.user.teacherId
   const isStudioAdmin = session.user.studioId === plan.studioId && 
     (session.user.role === "OWNER" || session.user.role === "ADMIN")
 
-  // Teachers get access to TEACHERS and CLIENTS communities
+  // Check if user belongs to the same studio as the plan
+  const isSameStudio = session.user.studioId === plan.studioId
+
+  console.log("[ensureTeacherAccess] isTeacher:", isTeacher, "isStudioAdmin:", isStudioAdmin, "isSameStudio:", isSameStudio)
+  console.log("[ensureTeacherAccess] User studioId:", session.user.studioId, "Plan studioId:", plan.studioId)
+  console.log("[ensureTeacherAccess] Plan audience:", plan.audience)
+
+  // Teachers get access to TEACHERS and CLIENTS communities (from their studio)
   // Studio admins get access to all communities
   const hasAutoAccess = 
-    (isTeacher && (plan.audience === "TEACHERS" || plan.audience === "CLIENTS")) ||
+    (isTeacher && isSameStudio && (plan.audience === "TEACHERS" || plan.audience === "CLIENTS")) ||
     isStudioAdmin
 
-  if (!hasAutoAccess) return null
+  if (!hasAutoAccess) {
+    console.log("[ensureTeacherAccess] No auto access")
+    return null
+  }
 
   // Check if subscription exists
   const existingSubscription = await db.vaultSubscriber.findFirst({
@@ -33,6 +46,8 @@ async function ensureTeacherAccess(
     include: { chatMembership: true }
   })
 
+  console.log("[ensureTeacherAccess] Existing subscription:", !!existingSubscription, "Has membership:", !!existingSubscription?.chatMembership)
+
   if (existingSubscription?.chatMembership) {
     return existingSubscription
   }
@@ -43,8 +58,7 @@ async function ensureTeacherAccess(
     interval: "yearly",
     currentPeriodStart: new Date(),
     currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    status: "active",
-    cancelAtPeriodEnd: false
+    status: "active"
   }
 
   if (session.user.teacherId) {
@@ -53,36 +67,53 @@ async function ensureTeacherAccess(
     subscriptionData.userId = session.user.id
   }
 
+  console.log("[ensureTeacherAccess] Creating subscription with:", subscriptionData)
+
   // Create or update subscription
   let subscription
-  if (existingSubscription) {
-    subscription = await db.vaultSubscriber.update({
-      where: { id: existingSubscription.id },
-      data: { status: "active" },
-      include: { chatMembership: true }
-    })
-  } else {
-    subscription = await db.vaultSubscriber.create({
-      data: subscriptionData as never,
-      include: { chatMembership: true }
-    })
+  try {
+    if (existingSubscription) {
+      subscription = await db.vaultSubscriber.update({
+        where: { id: existingSubscription.id },
+        data: { status: "active" },
+        include: { chatMembership: true }
+      })
+      console.log("[ensureTeacherAccess] Updated existing subscription")
+    } else {
+      subscription = await db.vaultSubscriber.create({
+        data: subscriptionData as never,
+        include: { chatMembership: true }
+      })
+      console.log("[ensureTeacherAccess] Created new subscription:", subscription.id)
+    }
+  } catch (createErr) {
+    console.error("[ensureTeacherAccess] Failed to create/update subscription:", createErr)
+    return null
   }
 
   // Create chat membership if needed
   if (!subscription.chatMembership) {
-    await db.vaultSubscriptionChatMember.create({
-      data: {
-        chatId: plan.communityChat.id,
-        subscriberId: subscription.id,
-        role: isStudioAdmin ? "admin" : (isTeacher ? "moderator" : "member")
-      }
-    })
+    try {
+      console.log("[ensureTeacherAccess] Creating chat membership for subscriberId:", subscription.id)
+      await db.vaultSubscriptionChatMember.create({
+        data: {
+          chatId: plan.communityChat.id,
+          subscriberId: subscription.id,
+          role: isStudioAdmin ? "admin" : (isTeacher ? "moderator" : "member")
+        }
+      })
+      console.log("[ensureTeacherAccess] Chat membership created")
 
-    // Re-fetch with membership
-    subscription = await db.vaultSubscriber.findUnique({
-      where: { id: subscription.id },
-      include: { chatMembership: true }
-    })
+      // Re-fetch with membership
+      subscription = await db.vaultSubscriber.findUnique({
+        where: { id: subscription.id },
+        include: { chatMembership: true }
+      })
+      console.log("[ensureTeacherAccess] Re-fetched subscription with membership:", !!subscription?.chatMembership)
+    } catch (memberErr) {
+      console.error("[ensureTeacherAccess] Failed to create chat membership:", memberErr)
+      return null
+    }
   }
 
   return subscription
@@ -219,12 +250,17 @@ export async function POST(request: NextRequest) {
   const session = await getSession()
 
   if (!session?.user) {
+    console.log("[Chat POST] No session")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  console.log("[Chat POST] User:", session.user.id, "teacherId:", session.user.teacherId, "studioId:", session.user.studioId)
 
   try {
     const body = await request.json()
     const { planId, content, type } = body
+
+    console.log("[Chat POST] planId:", planId, "content length:", content?.length)
 
     if (!content?.trim()) {
       return NextResponse.json({ error: "Message content required" }, { status: 400 })
@@ -235,6 +271,8 @@ export async function POST(request: NextRequest) {
       where: { id: planId },
       include: { communityChat: true }
     })
+
+    console.log("[Chat POST] Plan found:", !!plan, "Chat:", !!plan?.communityChat, "Enabled:", plan?.communityChat?.isEnabled)
 
     if (!plan || !plan.communityChat || !plan.communityChat.isEnabled) {
       return NextResponse.json({ error: "Chat not available" }, { status: 400 })
@@ -256,13 +294,18 @@ export async function POST(request: NextRequest) {
       include: { chatMembership: true }
     })
 
+    console.log("[Chat POST] Existing subscription:", !!subscription, "Has membership:", !!subscription?.chatMembership)
+
     // Auto-subscribe teachers/admins if they have access
     if (!subscription || !subscription.chatMembership) {
+      console.log("[Chat POST] Attempting auto-subscribe...")
       subscription = await ensureTeacherAccess(session as never, plan as never)
+      console.log("[Chat POST] Auto-subscribe result:", !!subscription, "Has membership:", !!subscription?.chatMembership)
     }
 
     if (!subscription || !subscription.chatMembership) {
       // Final check for studio owner without subscription
+      console.log("[Chat POST] No subscription. User studioId:", session.user.studioId, "Plan studioId:", plan.studioId)
       if (session.user.studioId !== plan.studioId) {
         return NextResponse.json({ error: "Not subscribed" }, { status: 403 })
       }
@@ -278,6 +321,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create message
+    console.log("[Chat POST] Creating message with memberId:", subscription.chatMembership.id)
     const message = await db.vaultSubscriptionChatMessage.create({
       data: {
         chatId: plan.communityChat.id,
@@ -303,9 +347,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log("[Chat POST] Message created:", message.id)
     return NextResponse.json(message)
   } catch (error) {
-    console.error("Failed to send message:", error)
+    console.error("[Chat POST] Failed to send message:", error)
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
