@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import { db } from "@/lib/db"
 
-// GET - List demos assigned to the current sales agent
+// GET - List demos for the current sales agent (assigned + unassigned)
 export async function GET() {
   try {
     const session = await getSession()
@@ -15,10 +15,11 @@ export async function GET() {
     })
 
     if (!agent) {
-      return NextResponse.json({ demos: [] })
+      return NextResponse.json({ demos: [], unassignedDemos: [] })
     }
 
-    const demos = await db.demoBooking.findMany({
+    // Get demos assigned to this agent
+    const assignedDemos = await db.demoBooking.findMany({
       where: { assignedToId: agent.id },
       orderBy: { createdAt: "desc" },
       include: {
@@ -32,14 +33,35 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ demos })
+    // Get unassigned demos (available to claim)
+    const unassignedDemos = await db.demoBooking.findMany({
+      where: { 
+        assignedToId: null,
+        status: "pending"
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        lead: {
+          select: {
+            id: true,
+            studioName: true,
+            status: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json({ 
+      demos: assignedDemos,
+      unassignedDemos 
+    })
   } catch (error) {
     console.error("Failed to fetch demos:", error)
     return NextResponse.json({ error: "Failed to fetch demos" }, { status: 500 })
   }
 }
 
-// PATCH - Update demo (schedule, complete, etc.)
+// PATCH - Update demo (schedule, complete, claim, etc.)
 export async function PATCH(request: Request) {
   try {
     const session = await getSession()
@@ -61,7 +83,36 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 })
     }
 
-    // Verify ownership
+    // Check if this is a claim action (claiming an unassigned demo)
+    if (data.action === "claim") {
+      const unassignedDemo = await db.demoBooking.findFirst({
+        where: { id: data.demoId, assignedToId: null }
+      })
+
+      if (!unassignedDemo) {
+        return NextResponse.json({ error: "Demo not found or already assigned" }, { status: 404 })
+      }
+
+      const claimedDemo = await db.demoBooking.update({
+        where: { id: data.demoId },
+        data: { assignedToId: agent.id }
+      })
+
+      // Also assign the associated lead if it exists and is unassigned
+      if (unassignedDemo.leadId) {
+        const lead = await db.lead.findUnique({ where: { id: unassignedDemo.leadId } })
+        if (lead && !lead.assignedToId) {
+          await db.lead.update({
+            where: { id: unassignedDemo.leadId },
+            data: { assignedToId: agent.id, assignedAt: new Date() }
+          })
+        }
+      }
+
+      return NextResponse.json({ demo: claimedDemo, message: "Demo claimed successfully" })
+    }
+
+    // Regular update - verify ownership
     const demo = await db.demoBooking.findFirst({
       where: { id: data.demoId, assignedToId: agent.id }
     })

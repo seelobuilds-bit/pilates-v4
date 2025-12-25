@@ -113,7 +113,7 @@ export default function SalesDashboardPage() {
       }
       if (demosRes.ok) {
         const data = await demosRes.json()
-        setDemos(data.demos || [])
+        setDemos([...(data.demos || []), ...(data.unassignedDemos || [])])
       }
     } catch (error) {
       console.error("Failed to fetch data:", error)
