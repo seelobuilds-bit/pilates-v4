@@ -1,76 +1,70 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Search,
   Send,
   RefreshCw,
-  X,
   Loader2,
-  Instagram,
-  Plus,
-  Edit3
+  Mail,
+  MessageSquare,
+  User,
+  ChevronRight,
+  Inbox
 } from "lucide-react"
 
-interface SocialAccount {
-  id: string
-  platform: "INSTAGRAM" | "TIKTOK"
-  username: string
-}
-
-interface SocialConversation {
-  platformUserId: string
-  platformUsername: string | null
-  profilePicture: string | null
+interface ClientConversation {
+  clientId: string
+  clientName: string
+  clientEmail: string
+  clientPhone: string | null
   lastMessage: {
-    content: string
+    channel: "EMAIL" | "SMS"
+    body: string
     createdAt: string
-    direction: string
-  }
+    direction: "INBOUND" | "OUTBOUND"
+  } | null
   unreadCount: number
-  account: SocialAccount | undefined
+  totalMessages: number
 }
 
-interface SocialMessage {
+interface Message {
   id: string
-  content: string
-  direction: string
+  channel: "EMAIL" | "SMS"
+  direction: "INBOUND" | "OUTBOUND"
+  subject: string | null
+  body: string
+  fromName: string | null
   createdAt: string
-  isRead: boolean
 }
 
 export default function TeacherInboxPage() {
   const [loading, setLoading] = useState(true)
-  const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([])
-  const [socialConversations, setSocialConversations] = useState<SocialConversation[]>([])
-  const [selectedConv, setSelectedConv] = useState<SocialConversation | null>(null)
-  const [messages, setMessages] = useState<SocialMessage[]>([])
-  const [newMessage, setNewMessage] = useState("")
-  const [sending, setSending] = useState(false)
+  const [conversations, setConversations] = useState<ClientConversation[]>([])
+  const [selectedClient, setSelectedClient] = useState<ClientConversation | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loadingMessages, setLoadingMessages] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   
-  // Compose state
-  const [composing, setComposing] = useState(false)
-  const [composeUsername, setComposeUsername] = useState("")
-  const [composeMessage, setComposeMessage] = useState("")
-  const [composePlatform, setComposePlatform] = useState<"INSTAGRAM" | "TIKTOK">("INSTAGRAM")
-  const [composeAccountId, setComposeAccountId] = useState("")
-  
-  // Platform filter
-  const [platformFilter, setPlatformFilter] = useState<"all" | "INSTAGRAM" | "TIKTOK">("all")
+  // Compose
+  const [messageType, setMessageType] = useState<"email" | "sms">("email")
+  const [emailSubject, setEmailSubject] = useState("")
+  const [messageBody, setMessageBody] = useState("")
+  const [sending, setSending] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetch('/api/social-media/messages')
+      const res = await fetch('/api/teacher/inbox')
       if (res.ok) {
         const data = await res.json()
-        setSocialAccounts(data.accounts || [])
-        setSocialConversations(data.conversations || [])
+        setConversations(data.conversations || [])
       }
     } catch (err) {
       console.error("Failed to fetch conversations:", err)
@@ -78,110 +72,68 @@ export default function TeacherInboxPage() {
     setLoading(false)
   }, [])
 
-  const fetchMessages = async (accountId: string, platformUserId: string) => {
+  const fetchMessages = async (clientId: string) => {
+    setLoadingMessages(true)
     try {
-      const res = await fetch(`/api/social-media/messages?accountId=${accountId}&platformUserId=${platformUserId}`)
+      const res = await fetch(`/api/teacher/inbox?clientId=${clientId}`)
       if (res.ok) {
         const data = await res.json()
         setMessages(data.messages || [])
-        // Mark as read
-        await fetch('/api/social-media/messages', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accountId, platformUserId })
-        })
       }
     } catch (err) {
       console.error("Failed to fetch messages:", err)
     }
-  }
-
-  const handleSendMessage = async () => {
-    if (!selectedConv || !newMessage.trim()) return
-    
-    setSending(true)
-    try {
-      const res = await fetch('/api/social-media/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: selectedConv.account?.id,
-          platformUserId: selectedConv.platformUserId,
-          platformUsername: selectedConv.platformUsername,
-          content: newMessage
-        })
-      })
-      if (res.ok) {
-        setNewMessage("")
-        if (selectedConv.account?.id) {
-          await fetchMessages(selectedConv.account.id, selectedConv.platformUserId)
-        }
-      }
-    } catch (err) {
-      console.error("Failed to send message:", err)
-    } finally {
-      setSending(false)
-    }
-  }
-
-  const handleStartCompose = () => {
-    setComposing(true)
-    setSelectedConv(null)
-    setComposeUsername("")
-    setComposeMessage("")
-    // Set default account if available
-    const defaultAccount = socialAccounts.find(a => a.platform === composePlatform) || socialAccounts[0]
-    if (defaultAccount) {
-      setComposeAccountId(defaultAccount.id)
-      setComposePlatform(defaultAccount.platform)
-    }
-  }
-
-  const handleSendNewMessage = async () => {
-    if (!composeAccountId || !composeUsername.trim() || !composeMessage.trim()) return
-    
-    setSending(true)
-    try {
-      // Generate a platform user ID from username
-      const platformUserId = `new_${composeUsername.replace('@', '')}_${Date.now()}`
-      
-      const res = await fetch('/api/social-media/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: composeAccountId,
-          platformUserId,
-          platformUsername: composeUsername.replace('@', ''),
-          content: composeMessage
-        })
-      })
-      if (res.ok) {
-        await fetchConversations()
-        setComposing(false)
-        setComposeUsername("")
-        setComposeMessage("")
-      }
-    } catch (err) {
-      console.error("Failed to send new message:", err)
-    } finally {
-      setSending(false)
-    }
+    setLoadingMessages(false)
   }
 
   useEffect(() => {
     fetchConversations()
   }, [fetchConversations])
 
-  // Filter conversations by search and platform
-  const filteredConversations = socialConversations.filter(conv => {
-    const matchesSearch = !searchQuery || 
-      conv.platformUsername?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conv.lastMessage?.content?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesPlatform = platformFilter === "all" || conv.account?.platform === platformFilter
-    return matchesSearch && matchesPlatform
-  })
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
-  const totalUnread = socialConversations.reduce((sum, c) => sum + c.unreadCount, 0)
+  const selectConversation = (conv: ClientConversation) => {
+    setSelectedClient(conv)
+    setMessageType(conv.clientPhone ? "email" : "email")
+    fetchMessages(conv.clientId)
+  }
+
+  const sendMessage = async () => {
+    if (!selectedClient || !messageBody.trim()) return
+    if (messageType === "email" && !emailSubject.trim()) return
+
+    setSending(true)
+    try {
+      const res = await fetch("/api/teacher/communicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: messageType,
+          clientId: selectedClient.clientId,
+          subject: emailSubject,
+          message: messageBody
+        })
+      })
+
+      if (res.ok) {
+        setEmailSubject("")
+        setMessageBody("")
+        fetchMessages(selectedClient.clientId)
+        fetchConversations()
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.clientEmail.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (loading) {
     return (
@@ -199,149 +151,92 @@ export default function TeacherInboxPage() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Social Inbox</h1>
-              {totalUnread > 0 && (
-                <p className="text-sm text-gray-500">{totalUnread} unread</p>
-              )}
+              <h1 className="text-xl font-bold text-gray-900">Client Inbox</h1>
+              <p className="text-sm text-gray-500">Email & SMS with your clients</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={fetchConversations}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleStartCompose}
-                disabled={socialAccounts.length === 0}
-                className="bg-pink-600 hover:bg-pink-700"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Compose
-              </Button>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={fetchConversations}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
 
-          {socialAccounts.length === 0 ? (
-            <div className="p-3 bg-pink-50 rounded-lg text-sm text-pink-700">
-              Connect your Instagram or TikTok in <a href="/teacher/social" className="underline font-medium">Social Media</a> to see DMs here.
-            </div>
-          ) : (
-            /* Search & Filter */
-            <div className="flex items-center gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search conversations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={platformFilter} onValueChange={(v) => setPlatformFilter(v as typeof platformFilter)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="INSTAGRAM">
-                    <div className="flex items-center gap-2">
-                      <Instagram className="h-3 w-3" />
-                      Instagram
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="TIKTOK">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs">TT</span>
-                      TikTok
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
           {filteredConversations.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Instagram className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No conversations yet</p>
-              <p className="text-sm mt-1">Start by composing a new message</p>
-              {socialAccounts.length > 0 && (
-                <Button 
-                  variant="outline" 
-                  className="mt-3"
-                  onClick={handleStartCompose}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start a conversation
+            <div className="text-center py-12 text-gray-500 px-4">
+              <Inbox className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="font-medium">No conversations yet</p>
+              <p className="text-sm mt-1">
+                Messages with your clients will appear here
+              </p>
+              <Link href="/teacher/clients">
+                <Button variant="outline" className="mt-4">
+                  View My Clients
                 </Button>
-              )}
+              </Link>
             </div>
           ) : (
             filteredConversations.map(conv => (
               <div
-                key={conv.platformUserId}
-                onClick={() => {
-                  setSelectedConv(conv)
-                  setComposing(false)
-                  if (conv.account?.id) {
-                    fetchMessages(conv.account.id, conv.platformUserId)
-                  }
-                }}
+                key={conv.clientId}
+                onClick={() => selectConversation(conv)}
                 className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedConv?.platformUserId === conv.platformUserId ? 'bg-pink-50 border-l-4 border-l-pink-500' : ''
-                } ${conv.unreadCount > 0 ? 'bg-pink-50/50' : ''}`}
+                  selectedClient?.clientId === conv.clientId ? 'bg-violet-50 border-l-4 border-l-violet-500' : ''
+                }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    conv.account?.platform === "INSTAGRAM" 
-                      ? "bg-gradient-to-br from-purple-500 to-pink-500" 
-                      : "bg-black"
-                  }`}>
-                    {conv.profilePicture ? (
-                      <img src={conv.profilePicture} alt="" className="w-full h-full rounded-full object-cover" />
-                    ) : conv.account?.platform === "INSTAGRAM" ? (
-                      <Instagram className="h-5 w-5 text-white" />
-                    ) : (
-                      <span className="text-white font-bold text-sm">TT</span>
-                    )}
+                  <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-violet-700">
+                      {conv.clientName.split(" ").map(n => n[0]).join("")}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className={`font-medium truncate ${conv.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
-                        @{conv.platformUsername || "Unknown"}
+                      <p className="font-medium truncate text-gray-900">
+                        {conv.clientName}
                       </p>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
-                        {conv.lastMessage?.createdAt && new Date(conv.lastMessage.createdAt).toLocaleDateString()}
-                      </span>
+                      {conv.lastMessage && (
+                        <span className="text-xs text-gray-500 flex-shrink-0">
+                          {new Date(conv.lastMessage.createdAt).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
-                    <p className={`text-sm truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                      {conv.lastMessage?.direction === "OUTBOUND" && "You: "}
-                      {conv.lastMessage?.content}
+                    <p className="text-sm text-gray-500 truncate">
+                      {conv.clientEmail}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {conv.account?.platform === "INSTAGRAM" ? (
-                        <Badge variant="secondary" className="text-xs bg-pink-50 text-pink-700">
-                          <Instagram className="h-3 w-3 mr-1" />
-                          Instagram
+                    {conv.lastMessage && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {conv.lastMessage.channel === "EMAIL" ? (
+                            <><Mail className="h-3 w-3 mr-1" /> Email</>
+                          ) : (
+                            <><MessageSquare className="h-3 w-3 mr-1" /> SMS</>
+                          )}
                         </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
-                          <span className="font-bold mr-1">TT</span>
-                          TikTok
-                        </Badge>
-                      )}
-                      {conv.unreadCount > 0 && (
-                        <Badge className="bg-pink-600 text-white text-xs">
-                          {conv.unreadCount} new
-                        </Badge>
-                      )}
-                    </div>
+                        <p className="text-xs text-gray-400 truncate flex-1">
+                          {conv.lastMessage.direction === "OUTBOUND" && "You: "}
+                          {conv.lastMessage.body.substring(0, 50)}...
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {conv.totalMessages} message{conv.totalMessages !== 1 ? "s" : ""}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -350,195 +245,153 @@ export default function TeacherInboxPage() {
         </div>
       </div>
 
-      {/* Message Thread or Compose */}
+      {/* Message Thread */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        {composing ? (
+        {selectedClient ? (
           <>
-            {/* Compose Header */}
+            {/* Header */}
             <div className="p-4 bg-white border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center">
-                    <Edit3 className="h-5 w-5" />
+                  <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                    <User className="h-5 w-5 text-violet-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">New Message</p>
-                    <p className="text-xs text-gray-500">Start a new conversation</p>
+                    <p className="font-medium text-gray-900">{selectedClient.clientName}</p>
+                    <p className="text-xs text-gray-500">{selectedClient.clientEmail}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setComposing(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <Link href={`/teacher/clients/${selectedClient.clientId}`}>
+                  <Button variant="outline" size="sm">
+                    View Profile
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
               </div>
             </div>
 
-            {/* Compose Form */}
-            <div className="flex-1 p-6 space-y-4 overflow-y-auto">
-              {/* Platform & Account Selection */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Platform</label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={composePlatform === "INSTAGRAM" ? "default" : "outline"}
-                      className={`flex-1 ${composePlatform === "INSTAGRAM" ? "bg-gradient-to-r from-purple-500 to-pink-500" : ""}`}
-                      onClick={() => {
-                        setComposePlatform("INSTAGRAM")
-                        const igAccount = socialAccounts.find(a => a.platform === "INSTAGRAM")
-                        if (igAccount) setComposeAccountId(igAccount.id)
-                      }}
-                    >
-                      <Instagram className="h-4 w-4 mr-2" />
-                      Instagram
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={composePlatform === "TIKTOK" ? "default" : "outline"}
-                      className={`flex-1 ${composePlatform === "TIKTOK" ? "bg-black" : ""}`}
-                      onClick={() => {
-                        setComposePlatform("TIKTOK")
-                        const ttAccount = socialAccounts.find(a => a.platform === "TIKTOK")
-                        if (ttAccount) setComposeAccountId(ttAccount.id)
-                      }}
-                    >
-                      <span className="font-bold mr-2">TT</span>
-                      TikTok
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Send From</label>
-                  <Select
-                    value={composeAccountId}
-                    onValueChange={setComposeAccountId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {socialAccounts
-                        .filter(a => a.platform === composePlatform)
-                        .map(account => (
-                          <SelectItem key={account.id} value={account.id}>
-                            @{account.username}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Recipient */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">To</label>
-                <Input
-                  placeholder="@username"
-                  value={composeUsername}
-                  onChange={(e) => setComposeUsername(e.target.value)}
-                />
-                <p className="text-xs text-gray-500">Enter the Instagram or TikTok username</p>
-              </div>
-
-              {/* Message */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Message</label>
-                <Textarea
-                  placeholder="Type your message..."
-                  value={composeMessage}
-                  onChange={(e) => setComposeMessage(e.target.value)}
-                  rows={6}
-                  className="resize-none"
-                />
-              </div>
-
-              {/* Note */}
-              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                <p><strong>Note:</strong> Messages are sent via the platform&apos;s messaging API. The recipient must follow your account or have messaging enabled for non-followers.</p>
-              </div>
-            </div>
-
-            {/* Send Button */}
-            <div className="p-4 bg-white border-t border-gray-200">
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setComposing(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSendNewMessage}
-                  disabled={!composeAccountId || !composeUsername.trim() || !composeMessage.trim() || sending}
-                  className="bg-pink-600 hover:bg-pink-700"
+            {/* Message Type Toggle */}
+            <div className="p-3 bg-white border-b flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-700">Send via:</span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={messageType === "email" ? "default" : "outline"}
+                  onClick={() => setMessageType("email")}
+                  className={messageType === "email" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                 >
-                  {sending ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</>
-                  ) : (
-                    <><Send className="h-4 w-4 mr-2" /> Send Message</>
-                  )}
+                  <Mail className="h-4 w-4 mr-1" />
+                  Email
+                </Button>
+                <Button
+                  size="sm"
+                  variant={messageType === "sms" ? "default" : "outline"}
+                  onClick={() => setMessageType("sms")}
+                  disabled={!selectedClient.clientPhone}
+                  className={messageType === "sms" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  SMS
                 </Button>
               </div>
-            </div>
-          </>
-        ) : selectedConv ? (
-          <>
-            {/* Conversation Header */}
-            <div className="p-4 bg-white border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    selectedConv.account?.platform === "INSTAGRAM" 
-                      ? "bg-pink-100 text-pink-700" 
-                      : "bg-gray-100 text-gray-700"
-                  }`}>
-                    {selectedConv.account?.platform === "INSTAGRAM" ? (
-                      <Instagram className="h-5 w-5" />
-                    ) : (
-                      <span className="font-bold">TT</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">@{selectedConv.platformUsername || "Unknown"}</p>
-                    <p className="text-xs text-gray-500">via {selectedConv.account?.platform || "Social"}</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedConv(null)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              {!selectedClient.clientPhone && (
+                <span className="text-xs text-gray-400">(No phone number)</span>
+              )}
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.direction === 'OUTBOUND' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                    msg.direction === 'OUTBOUND' 
-                      ? 'bg-pink-600 text-white rounded-br-md' 
-                      : 'bg-white shadow-sm rounded-bl-md'
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${msg.direction === 'OUTBOUND' ? 'text-white/70' : 'text-gray-400'}`}>
-                      {new Date(msg.createdAt).toLocaleString()}
-                    </p>
-                  </div>
+              {loadingMessages ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
                 </div>
-              ))}
+              ) : messages.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>No messages yet</p>
+                  <p className="text-sm">Start the conversation below</p>
+                </div>
+              ) : (
+                <>
+                  {messages.map(msg => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.direction === "OUTBOUND" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                          msg.direction === "OUTBOUND"
+                            ? msg.channel === "EMAIL"
+                              ? "bg-emerald-600 text-white rounded-br-md"
+                              : "bg-blue-600 text-white rounded-br-md"
+                            : "bg-white shadow-sm rounded-bl-md"
+                        }`}
+                      >
+                        {/* Channel Badge & Sender */}
+                        <div className={`flex items-center gap-2 mb-1 text-xs ${
+                          msg.direction === "OUTBOUND" ? "text-white/70" : "text-gray-500"
+                        }`}>
+                          <Badge variant="outline" className={`text-xs ${
+                            msg.direction === "OUTBOUND" ? "border-white/30 text-white/80" : ""
+                          }`}>
+                            {msg.channel === "EMAIL" ? (
+                              <><Mail className="h-3 w-3 mr-1" /> Email</>
+                            ) : (
+                              <><MessageSquare className="h-3 w-3 mr-1" /> SMS</>
+                            )}
+                          </Badge>
+                          {msg.fromName && msg.direction === "OUTBOUND" && (
+                            <span>by {msg.fromName}</span>
+                          )}
+                        </div>
+                        
+                        {/* Subject for emails */}
+                        {msg.channel === "EMAIL" && msg.subject && (
+                          <p className={`font-medium text-sm mb-1 ${
+                            msg.direction === "OUTBOUND" ? "text-white" : "text-gray-900"
+                          }`}>
+                            {msg.subject}
+                          </p>
+                        )}
+                        
+                        {/* Body */}
+                        <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+                        
+                        {/* Timestamp */}
+                        <p className={`text-xs mt-2 ${
+                          msg.direction === "OUTBOUND" ? "text-white/60" : "text-gray-400"
+                        }`}>
+                          {new Date(msg.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
             </div>
 
             {/* Compose */}
-            <div className="p-4 bg-white border-t border-gray-200">
+            <div className="p-4 bg-white border-t space-y-3">
+              {messageType === "email" && (
+                <Input
+                  placeholder="Subject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              )}
               <div className="flex items-end gap-3">
                 <Textarea
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  rows={2}
+                  placeholder={messageType === "email" ? "Write your email..." : "Write your SMS..."}
+                  value={messageBody}
+                  onChange={(e) => setMessageBody(e.target.value)}
+                  rows={3}
                   className="flex-1 resize-none"
                 />
-                <Button 
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim() || sending}
-                  className="bg-pink-600 hover:bg-pink-700"
+                <Button
+                  onClick={sendMessage}
+                  disabled={sending || !messageBody.trim() || (messageType === "email" && !emailSubject.trim())}
+                  className={messageType === "email" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -547,23 +400,17 @@ export default function TeacherInboxPage() {
                   )}
                 </Button>
               </div>
+              <p className="text-xs text-gray-400">
+                💡 This conversation is shared - HQ and other teachers can see all messages
+              </p>
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-500">
             <div className="text-center">
-              <Instagram className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <Inbox className="h-16 w-16 mx-auto mb-4 opacity-30" />
               <p className="text-lg font-medium">Select a conversation</p>
-              <p className="text-sm">Choose a conversation from the list to view messages</p>
-              {socialAccounts.length > 0 && (
-                <Button 
-                  className="mt-4 bg-pink-600 hover:bg-pink-700"
-                  onClick={handleStartCompose}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start New Conversation
-                </Button>
-              )}
+              <p className="text-sm">Choose a client from the list to view messages</p>
             </div>
           </div>
         )}
@@ -571,6 +418,3 @@ export default function TeacherInboxPage() {
     </div>
   )
 }
-
-
-
