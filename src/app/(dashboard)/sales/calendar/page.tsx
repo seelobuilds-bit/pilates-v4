@@ -485,12 +485,15 @@ export default function SalesCalendarPage() {
             </div>
             <div>
               <Label>Related Lead (optional)</Label>
-              <Select value={newEvent.leadId} onValueChange={(v) => setNewEvent({ ...newEvent, leadId: v })}>
+              <Select 
+                value={newEvent.leadId || "none"} 
+                onValueChange={(v) => setNewEvent({ ...newEvent, leadId: v === "none" ? "" : v })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a lead" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {leads.map(lead => (
                     <SelectItem key={lead.id} value={lead.id}>
                       {lead.studioName} - {lead.contactName}
