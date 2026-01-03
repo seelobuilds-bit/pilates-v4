@@ -34,11 +34,19 @@ export default async function DemoStorePage() {
     )
   }
 
+  // Get the studio store first
+  const studioStore = await db.studioStore.findFirst({
+    where: { studioId: studio.id }
+  })
+
   const [products, orders] = await Promise.all([
-    db.studioProduct.findMany({
-      where: { studioId: studio.id },
+    studioStore ? db.studioProduct.findMany({
+      where: { storeId: studioStore.id },
+      include: {
+        product: { select: { name: true, description: true, imageUrl: true, category: true } }
+      },
       orderBy: { createdAt: "desc" }
-    }),
+    }) : [],
     db.merchOrder.findMany({
       where: { studioId: studio.id },
       include: {
@@ -170,8 +178,8 @@ export default async function DemoStorePage() {
                 <Card key={product.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     <div className="aspect-square bg-gradient-to-br from-violet-100 to-purple-100 relative flex items-center justify-center">
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      {product.product.imageUrl ? (
+                        <img src={product.product.imageUrl} alt={product.customTitle || product.product.name} className="w-full h-full object-cover" />
                       ) : (
                         <Package className="h-12 w-12 text-violet-300" />
                       )}
@@ -182,11 +190,13 @@ export default async function DemoStorePage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.description}</p>
+                      <h3 className="font-semibold text-gray-900">{product.customTitle || product.product.name}</h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.customDescription || product.product.description}</p>
                       <div className="flex items-center justify-between mt-3">
                         <p className="font-bold text-violet-600">${Number(product.price).toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">{product.inventory} in stock</p>
+                        {product.compareAtPrice && (
+                          <p className="text-sm text-gray-400 line-through">${Number(product.compareAtPrice).toFixed(2)}</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
