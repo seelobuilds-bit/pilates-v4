@@ -32,10 +32,10 @@ export default async function DemoCommunityPage() {
   // Get community chats
   const communityChats = await db.vaultSubscriptionChat.findMany({
     where: { 
-      subscriptionPlan: { studioId: studio.id }
+      plan: { studioId: studio.id }
     },
     include: {
-      subscriptionPlan: true,
+      plan: true,
       _count: { select: { members: true, messages: true } }
     }
   })
@@ -80,7 +80,7 @@ export default async function DemoCommunityPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 text-sm truncate">
-                        {chat.subscriptionPlan.name}
+                        {chat.plan.name}
                       </h4>
                       <p className="text-xs text-gray-500 flex items-center gap-1">
                         <Users className="h-3 w-3" />
