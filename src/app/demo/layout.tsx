@@ -8,13 +8,11 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Calendar,
-  Users,
   GraduationCap,
   Megaphone,
   Settings,
   LogOut,
   ChevronLeft,
-  Zap,
   BarChart3,
   CreditCard,
   MapPin,
@@ -25,28 +23,31 @@ import {
   BookOpen,
   ShoppingBag,
   Trophy,
-  MessagesSquare,
   FileText,
-  Workflow,
+  PlayCircle,
+  Lock,
+  Inbox,
+  UserCircle,
 } from "lucide-react"
 
+// Matches exact order from studio sidebar
 const demoLinks = [
   { href: "/demo", label: "Dashboard", icon: LayoutDashboard },
   { href: "/demo/schedule", label: "Schedule", icon: Calendar },
-  { href: "/demo/classes", label: "Classes", icon: Calendar },
+  { href: "/demo/classes", label: "Classes", icon: BookOpen },
   { href: "/demo/teachers", label: "Teachers", icon: GraduationCap },
-  { href: "/demo/clients", label: "Clients", icon: Users },
-  { href: "/demo/locations", label: "Locations", icon: MapPin },
-  { href: "/demo/class-flows", label: "Class Flows", icon: Workflow },
-  { href: "/demo/vault", label: "The Vault", icon: BookOpen },
-  { href: "/demo/community", label: "Community", icon: MessagesSquare },
-  { href: "/demo/store", label: "Store", icon: ShoppingBag },
-  { href: "/demo/leaderboards", label: "Leaderboards", icon: Trophy },
-  { href: "/demo/marketing", label: "Marketing", icon: Megaphone },
-  { href: "/demo/inbox", label: "Inbox", icon: MessageSquare },
   { href: "/demo/invoices", label: "Invoices", icon: FileText },
-  { href: "/demo/reports", label: "Reports", icon: BarChart3 },
+  { href: "/demo/clients", label: "Clients", icon: UserCircle },
+  { href: "/demo/inbox", label: "Inbox", icon: Inbox },
+  { href: "/demo/community", label: "Community", icon: MessageSquare },
+  { href: "/demo/locations", label: "Locations", icon: MapPin },
   { href: "/demo/payments", label: "Payments", icon: CreditCard },
+  { href: "/demo/store", label: "Store", icon: ShoppingBag },
+  { href: "/demo/vault", label: "The Vault", icon: Lock },
+  { href: "/demo/class-flows", label: "Class Flows", icon: PlayCircle },
+  { href: "/demo/marketing", label: "Marketing", icon: Megaphone },
+  { href: "/demo/leaderboards", label: "Leaderboards", icon: Trophy },
+  { href: "/demo/reports", label: "Reports", icon: BarChart3 },
   { href: "/demo/settings", label: "Settings", icon: Settings },
 ]
 
@@ -84,18 +85,13 @@ export default function DemoLayout({
         </div>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Matches actual studio sidebar */}
       <div className={`flex flex-col h-full w-64 bg-white border-r border-gray-100 ${showBanner ? 'mt-[52px]' : ''}`}>
         {/* Header */}
-        <div className="p-4 pt-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900">Align Pilates</h1>
-              <p className="text-xs text-gray-500">Demo Studio</p>
-            </div>
+        <div className="p-4 flex items-center justify-between">
+          <div>
+            <h1 className="font-semibold text-gray-900">Align Pilates</h1>
+            <p className="text-xs text-gray-500">Studio Portal</p>
           </div>
           <button className="p-1 hover:bg-gray-100 rounded">
             <ChevronLeft className="h-4 w-4 text-gray-400" />
