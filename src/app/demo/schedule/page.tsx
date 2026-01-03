@@ -1,16 +1,11 @@
-// Demo Schedule Page - Mirrors /studio/schedule/page.tsx
-// Keep in sync with the real schedule page
-
-"use client"
-
-import { useState } from "react"
+import { db } from "@/lib/db"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users } from "lucide-react"
-import { demoScheduleClasses, demoLocations, demoTeachers, demoClassTypes } from "../_data/demo-data"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, Users } from "lucide-react"
+
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
 
 const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -29,6 +24,8 @@ const locationColors: Record<number, string> = {
   0: "bg-violet-100 text-violet-700",
   1: "bg-blue-100 text-blue-700",
   2: "bg-emerald-100 text-emerald-700",
+  3: "bg-amber-100 text-amber-700",
+  4: "bg-pink-100 text-pink-700",
 }
 
 function getClassColor(className: string): string {
@@ -55,44 +52,64 @@ function getWeekDates(offset: number = 0) {
   return dates
 }
 
-export default function DemoSchedulePage() {
-  const [weekOffset, setWeekOffset] = useState(0)
-  const [filterLocation, setFilterLocation] = useState<string>("all")
-  const [filterTeacher, setFilterTeacher] = useState<string>("all")
-  const [filterClassType, setFilterClassType] = useState<string>("all")
-  
-  const weekDates = getWeekDates(weekOffset)
+export default async function DemoSchedulePage() {
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const weekDates = getWeekDates(0)
+  const startDate = weekDates[0]
+  const endDate = new Date(weekDates[6])
+  endDate.setHours(23, 59, 59, 999)
+
+  const [locations, teachers, classTypes, classes] = await Promise.all([
+    db.location.findMany({ where: { studioId: studio.id, isActive: true } }),
+    db.teacher.findMany({ 
+      where: { studioId: studio.id, isActive: true },
+      include: { user: { select: { firstName: true, lastName: true } } }
+    }),
+    db.classType.findMany({ where: { studioId: studio.id } }),
+    db.classSession.findMany({
+      where: {
+        studioId: studio.id,
+        startTime: { gte: startDate, lte: endDate }
+      },
+      include: {
+        classType: true,
+        teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+        location: true,
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "asc" }
+    })
+  ])
 
   // Create location color map
   const locationColorMap: Record<string, string> = {}
-  demoLocations.forEach((loc, index) => {
+  locations.forEach((loc, index) => {
     locationColorMap[loc.id] = locationColors[index % Object.keys(locationColors).length]
   })
 
-  // Filter classes
-  const filteredClasses = demoScheduleClasses.filter(cls => {
-    if (filterLocation !== "all" && cls.location.name !== demoLocations.find(l => l.id === filterLocation)?.name) return false
-    if (filterTeacher !== "all" && `${cls.teacher.user.firstName} ${cls.teacher.user.lastName}` !== demoTeachers.find(t => t.id === filterTeacher)?.user.firstName + ' ' + demoTeachers.find(t => t.id === filterTeacher)?.user.lastName) return false
-    if (filterClassType !== "all" && cls.classType.name !== demoClassTypes.find(ct => ct.id === filterClassType)?.name) return false
-    return true
-  })
-
   // Group classes by day
-  const classesByDay: Record<number, typeof demoScheduleClasses> = {}
+  const classesByDay: Record<number, typeof classes> = {}
   for (let i = 0; i < 7; i++) {
     classesByDay[i] = []
   }
   
-  filteredClasses.forEach(cls => {
+  classes.forEach(cls => {
     const day = new Date(cls.startTime).getDay()
     classesByDay[day].push(cls)
-  })
-
-  // Sort classes by time within each day
-  Object.keys(classesByDay).forEach(day => {
-    classesByDay[parseInt(day)].sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    )
   })
 
   const formatDateRange = () => {
@@ -100,14 +117,7 @@ export default function DemoSchedulePage() {
     return `${weekDates[0].toLocaleDateString('en-US', options)} - ${weekDates[6].toLocaleDateString('en-US', options)}`
   }
 
-  const hasMultipleLocations = demoLocations.length > 1
-  const hasActiveFilters = filterLocation !== "all" || filterTeacher !== "all" || filterClassType !== "all"
-
-  const clearFilters = () => {
-    setFilterLocation("all")
-    setFilterTeacher("all")
-    setFilterClassType("all")
-  }
+  const hasMultipleLocations = locations.length > 1
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
@@ -132,66 +142,29 @@ export default function DemoSchedulePage() {
               <span className="font-medium">Filters:</span>
             </div>
             
-            {/* Location Filter */}
-            <Select value={filterLocation} onValueChange={setFilterLocation}>
-              <SelectTrigger className="w-40">
-                <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                {demoLocations.map(loc => (
-                  <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Button variant="outline" size="sm">
+              <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+              All Locations
+            </Button>
 
-            {/* Teacher Filter */}
-            <Select value={filterTeacher} onValueChange={setFilterTeacher}>
-              <SelectTrigger className="w-44">
-                <Users className="h-4 w-4 mr-2 text-gray-400" />
-                <SelectValue placeholder="All Teachers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teachers</SelectItem>
-                {demoTeachers.map(teacher => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.user.firstName} {teacher.user.lastName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Button variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2 text-gray-400" />
+              All Teachers
+            </Button>
 
-            {/* Class Type Filter */}
-            <Select value={filterClassType} onValueChange={setFilterClassType}>
-              <SelectTrigger className="w-40">
-                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {demoClassTypes.map(ct => (
-                  <SelectItem key={ct.id} value={ct.id}>{ct.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-gray-500">
-                <X className="h-4 w-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
+            <Button variant="outline" size="sm">
+              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+              All Classes
+            </Button>
 
             {/* Location Legend */}
-            {hasMultipleLocations && filterLocation === "all" && (
+            {hasMultipleLocations && (
               <div className="flex items-center gap-2 ml-auto">
-                {demoLocations.map((location, index) => (
+                {locations.map((location, index) => (
                   <Badge
                     key={location.id}
                     variant="secondary"
-                    className={`${locationColors[index]} border-0 cursor-pointer hover:opacity-80`}
-                    onClick={() => setFilterLocation(location.id)}
+                    className={`${locationColors[index % Object.keys(locationColors).length]} border-0`}
                   >
                     {location.name}
                   </Badge>
@@ -206,31 +179,16 @@ export default function DemoSchedulePage() {
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setWeekOffset(prev => prev - 1)}
-            >
+            <Button variant="ghost" size="sm">
               <ChevronLeft className="h-5 w-5" />
               Previous
             </Button>
             <div className="text-center">
               <p className="font-semibold text-gray-900">{formatDateRange()}</p>
-              <p className="text-sm text-gray-500">
-                {weekOffset === 0 ? "This Week" : weekOffset > 0 ? `${weekOffset} week${weekOffset > 1 ? 's' : ''} ahead` : `${Math.abs(weekOffset)} week${Math.abs(weekOffset) > 1 ? 's' : ''} ago`}
-              </p>
+              <p className="text-sm text-gray-500">This Week</p>
             </div>
             <div className="flex items-center gap-2">
-              {weekOffset !== 0 && (
-                <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)}>
-                  Today
-                </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setWeekOffset(prev => prev + 1)}
-              >
+              <Button variant="ghost" size="sm">
                 Next
                 <ChevronRight className="h-5 w-5" />
               </Button>
@@ -289,10 +247,10 @@ export default function DemoSchedulePage() {
                         <p className="text-xs text-gray-400 mt-1">
                           {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
                         </p>
-                        {hasMultipleLocations && filterLocation === "all" && (
+                        {hasMultipleLocations && (
                           <Badge 
                             variant="secondary" 
-                            className={`text-xs mt-1.5 ${locationColorMap[demoLocations.find(l => l.name === cls.location.name)?.id || '1']} border-0`}
+                            className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
                           >
                             <MapPin className="h-2.5 w-2.5 mr-1" />
                             {cls.location.name}
@@ -318,11 +276,10 @@ export default function DemoSchedulePage() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-6">
                 <span className="text-gray-500">
-                  Showing <strong className="text-gray-900">{filteredClasses.length}</strong> classes
-                  {hasActiveFilters && ` (filtered from ${demoScheduleClasses.length})`}
+                  Showing <strong className="text-gray-900">{classes.length}</strong> classes
                 </span>
                 <span className="text-gray-500">
-                  Total bookings: <strong className="text-gray-900">{filteredClasses.reduce((sum, c) => sum + c._count.bookings, 0)}</strong>
+                  Total bookings: <strong className="text-gray-900">{classes.reduce((sum, c) => sum + c._count.bookings, 0)}</strong>
                 </span>
               </div>
             </div>
@@ -331,22 +288,19 @@ export default function DemoSchedulePage() {
       </Card>
 
       {/* Location Stats */}
-      {hasMultipleLocations && filterLocation === "all" && (
+      {hasMultipleLocations && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {demoLocations.map((location, index) => {
-            const locationClasses = filteredClasses.filter(c => c.location.name === location.name)
+          {locations.map((location, index) => {
+            const locationClasses = classes.filter(c => c.locationId === location.id)
             const totalBookings = locationClasses.reduce((acc, c) => acc + c._count.bookings, 0)
             return (
               <Card 
                 key={location.id} 
-                className={`border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                  filterLocation === location.id ? 'ring-2 ring-violet-500' : ''
-                }`}
-                onClick={() => setFilterLocation(filterLocation === location.id ? "all" : location.id)}
+                className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${locationColors[index]}`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${locationColors[index % Object.keys(locationColors).length]}`}>
                       <MapPin className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
@@ -365,26 +319,3 @@ export default function DemoSchedulePage() {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

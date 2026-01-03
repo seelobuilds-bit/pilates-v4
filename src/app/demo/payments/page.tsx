@@ -1,316 +1,210 @@
-// Demo Payments Page - Mirrors /studio/payments/page.tsx
-// Shows a connected Stripe state with mock payment data
-
-"use client"
-
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { db } from "@/lib/db"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  DollarSign, 
-  TrendingUp, 
-  CreditCard, 
+  Search, 
+  CreditCard,
+  DollarSign,
+  TrendingUp,
+  Clock,
   CheckCircle,
-  Settings,
-  Banknote,
-  Wallet
+  ArrowUpRight,
+  RefreshCw,
+  Package
 } from "lucide-react"
-import { demoPayments, demoStats } from "../_data/demo-data"
 
-export default function DemoPaymentsPage() {
-  const [activeTab, setActiveTab] = useState<"overview" | "payments" | "payouts">("overview")
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
+
+export default async function DemoPaymentsPage() {
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Mock payment data since real payments would need Stripe integration
+  const mockPayments = [
+    { id: "1", type: "Class Pack", client: "Sarah Johnson", amount: 150, status: "COMPLETED", date: new Date() },
+    { id: "2", type: "Monthly Membership", client: "Mike Chen", amount: 99, status: "COMPLETED", date: new Date(Date.now() - 86400000) },
+    { id: "3", type: "Drop-in Class", client: "Emily Davis", amount: 35, status: "COMPLETED", date: new Date(Date.now() - 172800000) },
+    { id: "4", type: "Private Session", client: "James Wilson", amount: 120, status: "COMPLETED", date: new Date(Date.now() - 259200000) },
+    { id: "5", type: "Monthly Membership", client: "Lisa Park", amount: 99, status: "PENDING", date: new Date(Date.now() - 345600000) },
+  ]
+
+  const totalRevenue = mockPayments.filter(p => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0)
+  const pendingPayments = mockPayments.filter(p => p.status === "PENDING").length
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
-      <div className="flex items-center justify-between mb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-500 mt-1">Manage your payments and payouts</p>
+          <p className="text-gray-500 mt-1">Track revenue and manage transactions</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge className="bg-emerald-100 text-emerald-700">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Connected
-          </Badge>
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
-        </div>
+        <Button className="bg-violet-600 hover:bg-violet-700">
+          <ArrowUpRight className="h-4 w-4 mr-2" />
+          Open Stripe Dashboard
+        </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "overview" 
-              ? "bg-violet-600 text-white" 
-              : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <Wallet className="h-4 w-4 inline mr-2" />
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveTab("payments")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "payments" 
-              ? "bg-violet-600 text-white" 
-              : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <CreditCard className="h-4 w-4 inline mr-2" />
-          Payments
-        </button>
-        <button
-          onClick={() => setActiveTab("payouts")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "payouts" 
-              ? "bg-violet-600 text-white" 
-              : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <Banknote className="h-4 w-4 inline mr-2" />
-          Payouts
-        </button>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">${totalRevenue}</p>
+                <p className="text-sm text-gray-500">This Month</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{mockPayments.length}</p>
+                <p className="text-sm text-gray-500">Transactions</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{pendingPayments}</p>
+                <p className="text-sm text-gray-500">Pending</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">+12%</p>
+                <p className="text-sm text-gray-500">vs Last Month</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {activeTab === "overview" && (
-        <div className="space-y-6">
-          {/* Balance Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Available Balance</p>
-                    <p className="text-3xl font-bold text-gray-900">$4,250.00</p>
-                    <p className="text-sm text-emerald-500 mt-2 flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4" /> Ready to payout
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Wallet className="h-6 w-6 text-emerald-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <Tabs defaultValue="transactions" className="space-y-6">
+        <TabsList className="bg-white border">
+          <TabsTrigger value="transactions">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Transactions
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Subscriptions
+          </TabsTrigger>
+          <TabsTrigger value="packs">
+            <Package className="h-4 w-4 mr-2" />
+            Class Packs
+          </TabsTrigger>
+        </TabsList>
 
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Pending</p>
-                    <p className="text-3xl font-bold text-gray-900">$1,850.00</p>
-                    <p className="text-sm text-gray-400 mt-2">Processing...</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <CreditCard className="h-6 w-6 text-amber-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">This Month</p>
-                    <p className="text-3xl font-bold text-gray-900">${demoStats.monthlyRevenue.toLocaleString()}</p>
-                    <p className="text-sm text-emerald-500 mt-2 flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4" /> +{demoStats.revenueChange}% vs last month
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center">
-                    <DollarSign className="h-6 w-6 text-violet-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Payments */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-gray-400" />
-                Recent Payments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {demoPayments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
-                        {payment.client.firstName[0]}{payment.client.lastName[0]}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {payment.client.firstName} {payment.client.lastName}
-                        </p>
-                        <p className="text-sm text-gray-500">{payment.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">${payment.amount}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(payment.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                        Paid
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+        {/* Transactions Tab */}
+        <TabsContent value="transactions">
+          <Card className="border-0 shadow-sm mb-4">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input placeholder="Search transactions..." className="pl-9" />
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
 
-      {activeTab === "payments" && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-gray-400" />
-              All Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {demoPayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
-                      {payment.client.firstName[0]}{payment.client.lastName[0]}
+          <div className="space-y-3">
+            {mockPayments.map(payment => (
+              <Card key={payment.id} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        payment.status === "COMPLETED" ? "bg-green-100" : "bg-amber-100"
+                      }`}>
+                        {payment.status === "COMPLETED" ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-amber-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{payment.type}</p>
+                        <p className="text-sm text-gray-500">
+                          {payment.client} • {payment.date.toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {payment.client.firstName} {payment.client.lastName}
-                      </p>
-                      <p className="text-sm text-gray-500">{payment.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">${payment.amount}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(payment.createdAt).toLocaleDateString()}
-                      </p>
+                      <p className="font-bold text-gray-900">${payment.amount}</p>
+                      <Badge className={
+                        payment.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                      }>
+                        {payment.status.toLowerCase()}
+                      </Badge>
                     </div>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                      Paid
-                    </Badge>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-      {activeTab === "payouts" && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Banknote className="h-5 w-5 text-gray-400" />
-              Payouts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Banknote className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Bank Transfer</p>
-                    <p className="text-sm text-gray-500">Chase ****4521</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">$3,250.00</p>
-                    <p className="text-xs text-gray-500">Dec 15, 2024</p>
-                  </div>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                    Completed
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Banknote className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Bank Transfer</p>
-                    <p className="text-sm text-gray-500">Chase ****4521</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">$2,890.00</p>
-                    <p className="text-xs text-gray-500">Dec 8, 2024</p>
-                  </div>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                    Completed
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Banknote className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Bank Transfer</p>
-                    <p className="text-sm text-gray-500">Chase ****4521</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">$4,120.00</p>
-                    <p className="text-xs text-gray-500">Dec 1, 2024</p>
-                  </div>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                    Completed
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Subscriptions Tab */}
+        <TabsContent value="subscriptions">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-12 text-center">
+              <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">Subscription management coming soon</p>
+              <p className="text-sm text-gray-400 mt-1">View and manage recurring memberships</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Class Packs Tab */}
+        <TabsContent value="packs">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-12 text-center">
+              <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">Class pack management coming soon</p>
+              <p className="text-sm text-gray-400 mt-1">Create and manage class packages</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

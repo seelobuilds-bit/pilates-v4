@@ -1,18 +1,76 @@
-// Demo Teachers Page - Mirrors /studio/teachers/page.tsx
-// Keep in sync with the real teachers page
-
+import { db } from "@/lib/db"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Mail, Calendar, ChevronRight } from "lucide-react"
-import { demoTeachers } from "../_data/demo-data"
+import { Input } from "@/components/ui/input"
+import { 
+  Plus, 
+  Search, 
+  Mail, 
+  Phone,
+  Calendar,
+  Users,
+  Star,
+  Clock,
+  MapPin
+} from "lucide-react"
 
-export default function DemoTeachersPage() {
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
+
+export default async function DemoTeachersPage() {
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const teachers = await db.teacher.findMany({
+    where: { studioId: studio.id },
+    include: {
+      user: { select: { firstName: true, lastName: true, email: true } },
+      _count: {
+        select: {
+          classSessions: true
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  })
+
+  // Get this month's classes for each teacher
+  const monthlyClassCounts = await Promise.all(
+    teachers.map(async (teacher) => {
+      const count = await db.classSession.count({
+        where: {
+          teacherId: teacher.id,
+          startTime: { gte: startOfMonth }
+        }
+      })
+      return { teacherId: teacher.id, count }
+    })
+  )
+
+  const monthlyClassMap = new Map(monthlyClassCounts.map(m => [m.teacherId, m.count]))
+
+  const activeTeachers = teachers.filter(t => t.isActive).length
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
           <p className="text-gray-500 mt-1">Manage your teaching staff</p>
@@ -23,89 +81,151 @@ export default function DemoTeachersPage() {
         </Button>
       </div>
 
-      {/* Teachers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {demoTeachers.map((teacher) => (
-          <Link key={teacher.id} href={`/demo/teachers/${teacher.id}`}>
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-violet-100 rounded-full flex items-center justify-center text-lg font-semibold text-violet-700">
-                    {teacher.user.firstName[0]}{teacher.user.lastName[0]}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 group-hover:text-violet-600 transition-colors">
-                        {teacher.user.firstName} {teacher.user.lastName}
-                      </h3>
-                      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-violet-500 transition-colors" />
-                    </div>
-                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                      <Mail className="h-3 w-3" />
-                      {teacher.user.email}
-                    </p>
-                  </div>
-                </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                <Users className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{teachers.length}</p>
+                <p className="text-sm text-gray-500">Total Teachers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Classes scheduled
-                    </span>
-                    <span className="font-medium text-gray-900">{teacher._count.classSessions}</span>
-                  </div>
-                </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Star className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{activeTeachers}</p>
+                <p className="text-sm text-gray-500">Active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                <div className="mt-3 flex items-center justify-between">
-                  {teacher.specialties && teacher.specialties.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {teacher.specialties.slice(0, 3).map((specialty, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {specialty}
-                        </Badge>
-                      ))}
-                      {teacher.specialties.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{teacher.specialties.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-                  <Badge className={teacher.isActive ? "bg-emerald-100 text-emerald-700 border-0" : "bg-gray-100 text-gray-700 border-0"}>
-                    {teacher.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {teachers.reduce((sum, t) => sum + (monthlyClassMap.get(t.id) || 0), 0)}
+                </p>
+                <p className="text-sm text-gray-500">Classes This Month</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Search */}
+      <Card className="border-0 shadow-sm mb-6">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search teachers..."
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Teachers Grid */}
+      {teachers.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-12 text-center">
+            <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+            <p className="text-gray-500">No teachers found</p>
+            <Button className="mt-4 bg-violet-600 hover:bg-violet-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Invite your first teacher
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {teachers.map(teacher => {
+            const monthlyClasses = monthlyClassMap.get(teacher.id) || 0
+            
+            return (
+              <Link key={teacher.id} href={`/demo/teachers/${teacher.id}`}>
+                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-lg font-semibold">
+                        {teacher.user.firstName[0]}{teacher.user.lastName[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {teacher.user.firstName} {teacher.user.lastName}
+                          </h3>
+                          {teacher.isActive ? (
+                            <Badge className="bg-green-100 text-green-700 text-xs">Active</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 flex items-center gap-1 mt-1 truncate">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          {teacher.user.email}
+                        </p>
+                        {teacher.phone && (
+                          <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                            <Phone className="h-3 w-3" />
+                            {teacher.phone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {monthlyClasses} this month
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {teacher._count.classSessions} total
+                        </span>
+                      </div>
+                    </div>
+
+                    {teacher.specialties && (teacher.specialties as string[]).length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {(teacher.specialties as string[]).slice(0, 3).map((specialty, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {specialty}
+                          </Badge>
+                        ))}
+                        {(teacher.specialties as string[]).length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{(teacher.specialties as string[]).length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
