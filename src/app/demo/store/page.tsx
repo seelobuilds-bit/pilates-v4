@@ -43,7 +43,7 @@ export default async function DemoStorePage() {
     studioStore ? db.studioProduct.findMany({
       where: { storeId: studioStore.id },
       include: {
-        product: { select: { name: true, description: true, imageUrl: true, category: true } }
+        product: { select: { name: true, description: true, images: true, category: true } }
       },
       orderBy: { createdAt: "desc" }
     }) : [],
@@ -178,8 +178,8 @@ export default async function DemoStorePage() {
                 <Card key={product.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     <div className="aspect-square bg-gradient-to-br from-violet-100 to-purple-100 relative flex items-center justify-center">
-                      {product.product.imageUrl ? (
-                        <img src={product.product.imageUrl} alt={product.customTitle || product.product.name} className="w-full h-full object-cover" />
+                      {product.product.images && (product.product.images as string[])[0] ? (
+                        <img src={(product.product.images as string[])[0]} alt={product.customTitle || product.product.name} className="w-full h-full object-cover" />
                       ) : (
                         <Package className="h-12 w-12 text-violet-300" />
                       )}
