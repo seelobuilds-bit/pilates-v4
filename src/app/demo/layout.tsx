@@ -22,6 +22,12 @@ import {
   Play,
   ArrowRight,
   X,
+  BookOpen,
+  ShoppingBag,
+  Trophy,
+  MessagesSquare,
+  FileText,
+  Workflow,
 } from "lucide-react"
 
 const demoLinks = [
@@ -31,8 +37,14 @@ const demoLinks = [
   { href: "/demo/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/demo/clients", label: "Clients", icon: Users },
   { href: "/demo/locations", label: "Locations", icon: MapPin },
+  { href: "/demo/class-flows", label: "Class Flows", icon: Workflow },
+  { href: "/demo/vault", label: "The Vault", icon: BookOpen },
+  { href: "/demo/community", label: "Community", icon: MessagesSquare },
+  { href: "/demo/store", label: "Store", icon: ShoppingBag },
+  { href: "/demo/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/demo/marketing", label: "Marketing", icon: Megaphone },
   { href: "/demo/inbox", label: "Inbox", icon: MessageSquare },
+  { href: "/demo/invoices", label: "Invoices", icon: FileText },
   { href: "/demo/reports", label: "Reports", icon: BarChart3 },
   { href: "/demo/payments", label: "Payments", icon: CreditCard },
   { href: "/demo/settings", label: "Settings", icon: Settings },
