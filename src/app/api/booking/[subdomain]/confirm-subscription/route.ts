@@ -168,3 +168,12 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm subscription" }, { status: 500 })
   }
 }
+
+
+
+
+
+
+
+
+

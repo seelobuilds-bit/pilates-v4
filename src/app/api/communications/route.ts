@@ -133,3 +133,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send communication" }, { status: 500 })
   }
 }
+
+
+
+
+
+
+
+
+

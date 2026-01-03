@@ -395,3 +395,12 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
+
+
+
+
+
+
+
+
+

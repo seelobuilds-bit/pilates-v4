@@ -1004,3 +1004,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     </div>
   )
 }
+
+
+
+
+
+
+
+
+

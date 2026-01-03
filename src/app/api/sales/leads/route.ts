@@ -78,3 +78,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch leads" }, { status: 500 })
   }
 }
+
+
+
+
+
+
+
+
+

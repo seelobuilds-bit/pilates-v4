@@ -86,3 +86,12 @@ export async function POST(
     return NextResponse.json({ error: "Failed to cancel subscription" }, { status: 500 })
   }
 }
+
+
+
+
+
+
+
+
+

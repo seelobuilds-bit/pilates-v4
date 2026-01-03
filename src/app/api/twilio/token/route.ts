@@ -26,3 +26,12 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to generate token" }, { status: 500 })
   }
 }
+
+
+
+
+
+
+
+
+
