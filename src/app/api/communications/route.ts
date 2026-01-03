@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import { db } from "@/lib/db"
 import { sendSMS, sendEmail, initiateCall, getServiceStatus } from "@/lib/communications"
+import { ActivityType } from "@prisma/client"
 
 // GET - Check service status
 export async function GET() {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     })
 
     let result
-    let activityType: string
+    let activityType: ActivityType
 
     switch (type) {
       case "email":
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
           from: from || undefined,
           replyTo: session.user.email || undefined,
         })
-        activityType = "EMAIL"
+        activityType = ActivityType.EMAIL
         break
 
       case "sms":
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
           from: from || undefined,
           message: content,
         })
-        activityType = "SMS"
+        activityType = ActivityType.SMS
         break
 
       case "call":
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
           from: from || undefined,
           recordCall: recordCall ?? true,
         })
-        activityType = "CALL"
+        activityType = ActivityType.CALL
         break
 
       default:
@@ -116,17 +117,18 @@ export async function POST(request: Request) {
       })
     }
 
+    const serviceKey = type === "call" ? "voice" : type as "sms" | "email"
     if (!result.success) {
       return NextResponse.json({ 
         error: result.error || "Failed to send", 
-        simulated: !getServiceStatus()[type === "call" ? "voice" : type]
+        simulated: !getServiceStatus()[serviceKey]
       }, { status: 500 })
     }
 
     return NextResponse.json({ 
       success: true, 
-      messageId: result.messageId || result.callSid,
-      simulated: !getServiceStatus()[type === "call" ? "voice" : type]
+      messageId: (result as { messageId?: string; callSid?: string }).messageId || (result as { callSid?: string }).callSid,
+      simulated: !getServiceStatus()[serviceKey]
     })
   } catch (error) {
     console.error("Failed to send communication:", error)

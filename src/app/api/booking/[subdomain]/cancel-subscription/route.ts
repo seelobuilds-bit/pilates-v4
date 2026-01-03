@@ -26,7 +26,7 @@ export async function POST(
 
     // Authenticate client
     const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${studio.subdomain}`)?.value
+    const token = cookieStore.get(`client_token_${subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

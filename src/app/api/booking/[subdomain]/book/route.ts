@@ -21,7 +21,7 @@ export async function POST(
     }
 
     const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${studio.subdomain}`)?.value
+    const token = cookieStore.get(`client_token_${subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Please sign in to book" }, { status: 401 })

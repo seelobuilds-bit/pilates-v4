@@ -696,7 +696,7 @@ export default function TeacherDetailPage({
                 const startOfWeek = new Date(today)
                 startOfWeek.setDate(today.getDate() - currentDay + (scheduleWeekOffset * 7))
                 
-                const weekDates = []
+                const weekDates: Date[] = []
                 for (let i = 0; i < 7; i++) {
                   const date = new Date(startOfWeek)
                   date.setDate(startOfWeek.getDate() + i)

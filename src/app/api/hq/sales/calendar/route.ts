@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate")
 
     // Get agent for current user if not specified
-    let targetAgentId = agentId
+    let targetAgentId: string | null | undefined = agentId
     if (!targetAgentId) {
       const agent = await db.salesAgent.findUnique({
         where: { userId: session.user.id }

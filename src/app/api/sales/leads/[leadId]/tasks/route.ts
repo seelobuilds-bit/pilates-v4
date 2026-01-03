@@ -38,7 +38,7 @@ export async function POST(
 
     const data = await request.json()
 
-    const task = await db.salesTask.create({
+    const task = await db.leadTask.create({
       data: {
         leadId,
         assignedToId: agent.id,
@@ -94,7 +94,7 @@ export async function PATCH(
     }
 
     // Verify the task belongs to this lead
-    const existingTask = await db.salesTask.findFirst({
+    const existingTask = await db.leadTask.findFirst({
       where: {
         id: data.taskId,
         leadId
@@ -105,7 +105,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Task not found" }, { status: 404 })
     }
 
-    const task = await db.salesTask.update({
+    const task = await db.leadTask.update({
       where: { id: data.taskId },
       data: {
         status: data.status,

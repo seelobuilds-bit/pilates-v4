@@ -192,14 +192,10 @@ export async function POST(
         if (campaign.channel === "EMAIL") {
           if (!client.email) continue
           
-          const result = await sendEmail(studioId, {
+          const result = await sendEmail({
             to: client.email,
-            toName: `${client.firstName} ${client.lastName}`,
             subject: campaign.subject || "Message from your studio",
-            body: campaign.body,
-            htmlBody: campaign.htmlBody || undefined,
-            clientId: client.id,
-            campaignId: campaign.id,
+            body: campaign.htmlBody || campaign.body,
           })
           
           if (result.success) sentCount++

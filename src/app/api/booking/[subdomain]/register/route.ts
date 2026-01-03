@@ -55,7 +55,7 @@ export async function POST(
     )
 
     const cookieStore = await cookies()
-    cookieStore.set(`client_token_${studio.subdomain}`, token, {
+    cookieStore.set(`client_token_${subdomain}`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

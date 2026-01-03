@@ -40,7 +40,7 @@ export async function POST(
 
     // Authenticate client
     const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${studio.subdomain}`)?.value
+    const token = cookieStore.get(`client_token_${subdomain}`)?.value
 
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -109,6 +109,9 @@ export async function POST(
 
     // Calculate amount based on interval
     const price = interval === "yearly" ? plan.yearlyPrice : plan.monthlyPrice
+    if (!price) {
+      return NextResponse.json({ error: "Plan price not configured" }, { status: 400 })
+    }
     const amountInCents = Math.round(price * 100)
     const platformFee = calculatePlatformFee(amountInCents)
 

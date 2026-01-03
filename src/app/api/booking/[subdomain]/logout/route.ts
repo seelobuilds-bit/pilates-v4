@@ -14,7 +14,7 @@ export async function POST(
 
   if (studio) {
     const cookieStore = await cookies()
-    cookieStore.delete(`client_token_${studio.subdomain}`)
+    cookieStore.delete(`client_token_${subdomain}`)
   }
 
   return NextResponse.json({ success: true })

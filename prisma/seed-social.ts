@@ -236,33 +236,35 @@ async function seedSocialMedia() {
     console.log(`Created category: ${category.name}`)
 
     for (const mod of cat.modules) {
+      const moduleData = mod as Record<string, unknown>
       const module = await prisma.socialTrainingModule.create({
         data: {
           categoryId: category.id,
           title: mod.title,
           description: mod.description,
-          videoUrl: mod.videoUrl || null,
-          thumbnailUrl: mod.thumbnailUrl || null,
-          duration: mod.duration || null,
-          isLive: mod.isLive || false,
-          liveDate: mod.liveDate || null,
-          liveUrl: mod.liveUrl || null,
-          isInPerson: mod.isInPerson || false,
-          eventLocation: mod.eventLocation || null,
-          eventAddress: mod.eventAddress || null,
-          maxAttendees: mod.maxAttendees || null,
+          videoUrl: (moduleData.videoUrl as string) || null,
+          thumbnailUrl: (moduleData.thumbnailUrl as string) || null,
+          duration: (moduleData.duration as number) || null,
+          isLive: (moduleData.isLive as boolean) || false,
+          liveDate: (moduleData.liveDate as Date) || null,
+          liveUrl: (moduleData.liveUrl as string) || null,
+          isInPerson: (moduleData.isInPerson as boolean) || false,
+          eventLocation: (moduleData.eventLocation as string) || null,
+          eventAddress: (moduleData.eventAddress as string) || null,
+          maxAttendees: (moduleData.maxAttendees as number) || null,
           order: mod.order
         }
       })
 
-      if (mod.homework) {
+      const homework = moduleData.homework as { title: string; description: string; requirements: string; points: number } | undefined
+      if (homework) {
         await prisma.socialTrainingHomework.create({
           data: {
             moduleId: module.id,
-            title: mod.homework.title,
-            description: mod.homework.description,
-            requirements: mod.homework.requirements,
-            points: mod.homework.points
+            title: homework.title,
+            description: homework.description,
+            requirements: homework.requirements,
+            points: homework.points
           }
         })
       }

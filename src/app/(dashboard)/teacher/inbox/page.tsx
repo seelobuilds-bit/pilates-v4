@@ -813,7 +813,7 @@ export default function TeacherInboxPage() {
                     </button>
                     <button
                       onClick={() => setComposeType("sms")}
-                      disabled={selectedClient && !selectedClient.phone}
+                      disabled={!!(selectedClient && !selectedClient.phone)}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
                         composeType === "sms" 
                           ? "bg-white text-green-600 shadow-sm font-medium" 
