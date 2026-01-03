@@ -175,7 +175,7 @@ export default async function StudioDashboardPage() {
       startTime: c.startTime,
       endTime: c.endTime,
       capacity: c.capacity,
-      classType: { id: c.classType.id, name: c.classType.name, color: c.classType.color },
+      classType: { id: c.classType.id, name: c.classType.name, color: null },
       teacher: { user: { firstName: c.teacher.user.firstName, lastName: c.teacher.user.lastName } },
       location: { id: c.location.id, name: c.location.name },
       _count: { bookings: c._count.bookings }
@@ -185,7 +185,7 @@ export default async function StudioDashboardPage() {
       startTime: c.startTime,
       endTime: c.endTime,
       capacity: c.capacity,
-      classType: { id: c.classType.id, name: c.classType.name, color: c.classType.color },
+      classType: { id: c.classType.id, name: c.classType.name, color: null },
       teacher: { user: { firstName: c.teacher.user.firstName, lastName: c.teacher.user.lastName } },
       location: { id: c.location.id, name: c.location.name },
       _count: { bookings: c._count.bookings }

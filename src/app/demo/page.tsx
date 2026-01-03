@@ -1,144 +1,233 @@
-"use client"
-
+import { db } from "@/lib/db"
 import { DashboardView } from "@/components/studio"
 import type { DashboardData } from "@/components/studio"
 
-// Demo data that mirrors what the studio dashboard would show
-const demoDashboardData: DashboardData = {
-  greeting: "Good morning",
-  currentDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-  stats: {
-    monthlyRevenue: 12450,
-    revenueChange: 8.5,
-    activeClients: 156,
-    newClientsThisWeek: 12,
-    weekBookings: 89,
-    todayBookings: 24,
-    atRiskClientsCount: 8,
-    churnRate: "5.2"
-  },
-  todayOverview: {
-    classCount: 6,
-    bookingsCount: 42,
-    fillRate: 78
-  },
-  todayClasses: [
-    {
-      id: "1",
-      startTime: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
-      endTime: new Date(new Date().setHours(10, 0, 0, 0)).toISOString(),
-      capacity: 12,
-      classType: { id: "ct1", name: "Morning Flow", color: "#8b5cf6" },
-      teacher: { user: { firstName: "Sarah", lastName: "Chen" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 10 }
-    },
-    {
-      id: "2",
-      startTime: new Date(new Date().setHours(10, 30, 0, 0)).toISOString(),
-      endTime: new Date(new Date().setHours(11, 30, 0, 0)).toISOString(),
-      capacity: 8,
-      classType: { id: "ct2", name: "Reformer Basics", color: "#06b6d4" },
-      teacher: { user: { firstName: "Mike", lastName: "Johnson" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 8 }
-    },
-    {
-      id: "3",
-      startTime: new Date(new Date().setHours(12, 0, 0, 0)).toISOString(),
-      endTime: new Date(new Date().setHours(13, 0, 0, 0)).toISOString(),
-      capacity: 10,
-      classType: { id: "ct3", name: "Power Pilates", color: "#f59e0b" },
-      teacher: { user: { firstName: "Emily", lastName: "Davis" } },
-      location: { id: "loc2", name: "Downtown Studio" },
-      _count: { bookings: 6 }
-    },
-    {
-      id: "4",
-      startTime: new Date(new Date().setHours(17, 0, 0, 0)).toISOString(),
-      endTime: new Date(new Date().setHours(18, 0, 0, 0)).toISOString(),
-      capacity: 12,
-      classType: { id: "ct4", name: "Evening Restore", color: "#10b981" },
-      teacher: { user: { firstName: "Lisa", lastName: "Park" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 9 }
-    },
-    {
-      id: "5",
-      startTime: new Date(new Date().setHours(18, 30, 0, 0)).toISOString(),
-      endTime: new Date(new Date().setHours(19, 30, 0, 0)).toISOString(),
-      capacity: 8,
-      classType: { id: "ct2", name: "Reformer Basics", color: "#06b6d4" },
-      teacher: { user: { firstName: "Sarah", lastName: "Chen" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 7 }
-    },
-  ],
-  upcomingClasses: [
-    {
-      id: "6",
-      startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
-      capacity: 12,
-      classType: { id: "ct1", name: "Morning Flow", color: "#8b5cf6" },
-      teacher: { user: { firstName: "Sarah", lastName: "Chen" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 5 }
-    },
-    {
-      id: "7",
-      startTime: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 49 * 60 * 60 * 1000).toISOString(),
-      capacity: 10,
-      classType: { id: "ct3", name: "Power Pilates", color: "#f59e0b" },
-      teacher: { user: { firstName: "Emily", lastName: "Davis" } },
-      location: { id: "loc2", name: "Downtown Studio" },
-      _count: { bookings: 8 }
-    },
-    {
-      id: "8",
-      startTime: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 73 * 60 * 60 * 1000).toISOString(),
-      capacity: 8,
-      classType: { id: "ct5", name: "Prenatal Pilates", color: "#ec4899" },
-      teacher: { user: { firstName: "Lisa", lastName: "Park" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 3 }
-    },
-    {
-      id: "9",
-      startTime: new Date(Date.now() + 96 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 97 * 60 * 60 * 1000).toISOString(),
-      capacity: 12,
-      classType: { id: "ct4", name: "Evening Restore", color: "#10b981" },
-      teacher: { user: { firstName: "Mike", lastName: "Johnson" } },
-      location: { id: "loc1", name: "Main Studio" },
-      _count: { bookings: 6 }
-    },
-  ],
-  recentBookings: [
-    { id: "b1", status: "CONFIRMED", createdAt: new Date().toISOString(), client: { firstName: "Anna", lastName: "Smith" }, classSession: { classType: { name: "Morning Flow" }, location: { name: "Main Studio" } } },
-    { id: "b2", status: "CONFIRMED", createdAt: new Date().toISOString(), client: { firstName: "John", lastName: "Doe" }, classSession: { classType: { name: "Reformer Basics" }, location: { name: "Main Studio" } } },
-    { id: "b3", status: "CONFIRMED", createdAt: new Date().toISOString(), client: { firstName: "Maria", lastName: "Garcia" }, classSession: { classType: { name: "Power Pilates" }, location: { name: "Downtown Studio" } } },
-    { id: "b4", status: "CANCELLED", createdAt: new Date().toISOString(), client: { firstName: "James", lastName: "Wilson" }, classSession: { classType: { name: "Evening Restore" }, location: { name: "Main Studio" } } },
-    { id: "b5", status: "CONFIRMED", createdAt: new Date().toISOString(), client: { firstName: "Sophie", lastName: "Brown" }, classSession: { classType: { name: "Morning Flow" }, location: { name: "Main Studio" } } },
-  ],
-  atRiskClients: [
-    { id: "c1", firstName: "Jennifer", lastName: "Taylor", email: "jennifer@example.com", phone: null, isActive: true, createdAt: new Date().toISOString() },
-    { id: "c2", firstName: "Robert", lastName: "Anderson", email: "robert@example.com", phone: null, isActive: true, createdAt: new Date().toISOString() },
-    { id: "c3", firstName: "Michelle", lastName: "Thomas", email: "michelle@example.com", phone: null, isActive: true, createdAt: new Date().toISOString() },
-    { id: "c4", firstName: "David", lastName: "Jackson", email: "david@example.com", phone: null, isActive: true, createdAt: new Date().toISOString() },
-    { id: "c5", firstName: "Karen", lastName: "White", email: "karen@example.com", phone: null, isActive: true, createdAt: new Date().toISOString() },
-  ],
-  studioStats: {
-    locations: 2,
-    teachers: 6,
-    classTypes: 8,
-    totalClients: 203,
-    totalBookings: 1456
-  }
-}
+// Demo uses data from a real studio (Zenith) to always reflect the current state
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
 
-export default function DemoDashboardPage() {
-  return <DashboardView data={demoDashboardData} linkPrefix="/demo" />
+export default async function DemoDashboardPage() {
+  // Find the demo studio
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const studioId = studio.id
+
+  // Get current date info
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  const [
+    clientCount, 
+    totalClients, 
+    bookingCount, 
+    weekBookings, 
+    todayBookings,
+    upcomingClasses,
+    todayClasses,
+    recentBookings,
+    newClientsThisWeek,
+    locations,
+    teachers,
+    classTypes
+  ] = await Promise.all([
+    db.client.count({ where: { studioId, isActive: true } }),
+    db.client.count({ where: { studioId } }),
+    db.booking.count({ where: { studioId } }),
+    db.booking.count({ 
+      where: { 
+        studioId,
+        createdAt: { gte: sevenDaysAgo }
+      } 
+    }),
+    db.booking.count({
+      where: {
+        studioId,
+        createdAt: { gte: startOfToday, lte: endOfToday }
+      }
+    }),
+    db.classSession.findMany({
+      where: { 
+        studioId,
+        startTime: { gte: now }
+      },
+      include: {
+        classType: true,
+        teacher: { include: { user: true } },
+        location: true,
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "asc" },
+      take: 5
+    }),
+    db.classSession.findMany({
+      where: {
+        studioId,
+        startTime: { gte: startOfToday, lte: endOfToday }
+      },
+      include: {
+        classType: true,
+        teacher: { include: { user: true } },
+        location: true,
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "asc" }
+    }),
+    db.booking.findMany({
+      where: { studioId },
+      include: {
+        client: true,
+        classSession: { include: { classType: true, location: true } }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8
+    }),
+    db.client.count({
+      where: {
+        studioId,
+        createdAt: { gte: sevenDaysAgo }
+      }
+    }),
+    db.location.findMany({ where: { studioId, isActive: true } }),
+    db.teacher.findMany({ 
+      where: { studioId, isActive: true },
+      include: { user: true }
+    }),
+    db.classType.findMany({ where: { studioId } })
+  ])
+
+  // Calculate churn (clients who haven't booked in 30 days)
+  const activeClientsWithRecentBookings = await db.client.count({
+    where: {
+      studioId,
+      bookings: {
+        some: {
+          createdAt: { gte: thirtyDaysAgo }
+        }
+      }
+    }
+  })
+  const churnRate = totalClients > 0 
+    ? ((totalClients - activeClientsWithRecentBookings) / totalClients * 100).toFixed(1)
+    : "0.0"
+
+  // Calculate today's stats
+  const todayTotalCapacity = todayClasses.reduce((sum, c) => sum + c.capacity, 0)
+  const todayTotalBookings = todayClasses.reduce((sum, c) => sum + c._count.bookings, 0)
+  const todayFillRate = todayTotalCapacity > 0 ? Math.round((todayTotalBookings / todayTotalCapacity) * 100) : 0
+
+  // Get at-risk clients (haven't booked in 21+ days but were active before)
+  const atRiskClients = await db.client.findMany({
+    where: {
+      studioId,
+      isActive: true,
+      bookings: {
+        some: {},
+        none: {
+          createdAt: { gte: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000) }
+        }
+      }
+    },
+    take: 5,
+    orderBy: { createdAt: "desc" }
+  })
+
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = now.getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 17) return "Good afternoon"
+    return "Good evening"
+  }
+
+  // Mock revenue data (in production this would come from payments)
+  const mockRevenue = {
+    today: 450,
+    thisWeek: 2850,
+    thisMonth: 12450,
+    percentChange: 8.5
+  }
+
+  // Build the dashboard data object
+  const dashboardData: DashboardData = {
+    greeting: getGreeting(),
+    currentDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+    stats: {
+      monthlyRevenue: mockRevenue.thisMonth,
+      revenueChange: mockRevenue.percentChange,
+      activeClients: clientCount,
+      newClientsThisWeek: newClientsThisWeek,
+      weekBookings: weekBookings,
+      todayBookings: todayBookings,
+      atRiskClientsCount: atRiskClients.length,
+      churnRate: churnRate
+    },
+    todayOverview: {
+      classCount: todayClasses.length,
+      bookingsCount: todayTotalBookings,
+      fillRate: todayFillRate
+    },
+    todayClasses: todayClasses.map(c => ({
+      id: c.id,
+      startTime: c.startTime,
+      endTime: c.endTime,
+      capacity: c.capacity,
+      classType: { id: c.classType.id, name: c.classType.name, color: null },
+      teacher: { user: { firstName: c.teacher.user.firstName, lastName: c.teacher.user.lastName } },
+      location: { id: c.location.id, name: c.location.name },
+      _count: { bookings: c._count.bookings }
+    })),
+    upcomingClasses: upcomingClasses.map(c => ({
+      id: c.id,
+      startTime: c.startTime,
+      endTime: c.endTime,
+      capacity: c.capacity,
+      classType: { id: c.classType.id, name: c.classType.name, color: null },
+      teacher: { user: { firstName: c.teacher.user.firstName, lastName: c.teacher.user.lastName } },
+      location: { id: c.location.id, name: c.location.name },
+      _count: { bookings: c._count.bookings }
+    })),
+    recentBookings: recentBookings.map(b => ({
+      id: b.id,
+      status: b.status,
+      createdAt: b.createdAt,
+      client: { firstName: b.client.firstName, lastName: b.client.lastName },
+      classSession: { 
+        classType: { name: b.classSession.classType.name },
+        location: { name: b.classSession.location.name }
+      }
+    })),
+    atRiskClients: atRiskClients.map(c => ({
+      id: c.id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      email: c.email,
+      phone: c.phone,
+      isActive: c.isActive,
+      createdAt: c.createdAt
+    })),
+    studioStats: {
+      locations: locations.length,
+      teachers: teachers.length,
+      classTypes: classTypes.length,
+      totalClients: totalClients,
+      totalBookings: bookingCount
+    }
+  }
+
+  return <DashboardView data={dashboardData} linkPrefix="/demo" />
 }

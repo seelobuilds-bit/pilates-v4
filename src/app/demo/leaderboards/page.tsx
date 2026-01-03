@@ -1,178 +1,170 @@
-"use client"
-
+import { db } from "@/lib/db"
 import { LeaderboardsView } from "@/components/studio"
-import type { LeaderboardData } from "@/components/studio"
+import type { LeaderboardData, Leaderboard as LeaderboardType, LeaderboardEntry } from "@/components/studio"
 
-// Demo leaderboards data
-const demoLeaderboardsData: LeaderboardData = {
-  studioLeaderboards: [
-    {
-      id: "1",
-      name: "Content Champion",
-      slug: "content-champion",
-      description: "Studios creating the most engaging social content",
-      category: "SOCIAL_MEDIA",
-      participantType: "STUDIO",
-      timeframe: "MONTHLY",
-      metricName: "Posts Created",
-      metricUnit: null,
-      icon: "Share2",
-      color: "#ec4899",
-      isFeatured: true,
-      prizes: [
-        { id: "p1", position: 1, name: "$500 Marketing Credit", description: null, prizeType: "CASH", prizeValue: 500 },
-        { id: "p2", position: 2, name: "$250 Marketing Credit", description: null, prizeType: "CASH", prizeValue: 250 },
-        { id: "p3", position: 3, name: "$100 Marketing Credit", description: null, prizeType: "CASH", prizeValue: 100 }
-      ],
-      entries: [
-        { id: "e1", rank: 1, previousRank: 2, score: 156, participantName: "Zenith Pilates" },
-        { id: "e2", rank: 2, previousRank: 1, score: 142, participantName: "Harmony Studio" },
-        { id: "e3", rank: 3, previousRank: 3, score: 128, participantName: "Balance & Flow" },
-        { id: "e4", rank: 4, previousRank: 5, score: 115, participantName: "Core Strength" },
-        { id: "e5", rank: 5, previousRank: 4, score: 98, participantName: "Pure Motion" }
-      ],
-      totalEntries: 89
-    },
-    {
-      id: "2",
-      name: "Client Magnet",
-      slug: "client-magnet",
-      description: "Studios attracting the most new clients",
-      category: "GROWTH",
-      participantType: "STUDIO",
-      timeframe: "MONTHLY",
-      metricName: "New Signups",
-      metricUnit: null,
-      icon: "TrendingUp",
-      color: "#8b5cf6",
-      isFeatured: true,
-      prizes: [
-        { id: "p4", position: 1, name: "Featured Studio Spotlight", description: null, prizeType: "FEATURE_SPOTLIGHT", prizeValue: null },
-        { id: "p5", position: 2, name: "Premium Badge", description: null, prizeType: "BADGE", prizeValue: null },
-        { id: "p6", position: 3, name: "Community Shoutout", description: null, prizeType: "FEATURE_SPOTLIGHT", prizeValue: null }
-      ],
-      entries: [
-        { id: "e6", rank: 1, previousRank: 1, score: 89, participantName: "Core Strength" },
-        { id: "e7", rank: 2, previousRank: 3, score: 76, participantName: "Zenith Pilates" },
-        { id: "e8", rank: 3, previousRank: 2, score: 64, participantName: "Pure Motion" },
-        { id: "e9", rank: 4, previousRank: 4, score: 52, participantName: "Harmony Studio" },
-        { id: "e10", rank: 5, previousRank: 6, score: 41, participantName: "Balance & Flow" }
-      ],
-      totalEntries: 89
-    },
-    {
-      id: "3",
-      name: "Booking Bonanza",
-      slug: "booking-bonanza",
-      description: "Studios with the most class bookings",
-      category: "CLASSES",
-      participantType: "STUDIO",
-      timeframe: "MONTHLY",
-      metricName: "Total Bookings",
-      metricUnit: null,
-      icon: "Calendar",
-      color: "#06b6d4",
-      isFeatured: false,
-      prizes: [],
-      entries: [
-        { id: "e11", rank: 1, previousRank: 2, score: 1245, participantName: "Harmony Studio" },
-        { id: "e12", rank: 2, previousRank: 1, score: 1189, participantName: "Zenith Pilates" },
-        { id: "e13", rank: 3, previousRank: 3, score: 987, participantName: "Core Strength" }
-      ],
-      totalEntries: 89
-    }
-  ],
-  teacherLeaderboards: [
-    {
-      id: "4",
-      name: "Class King/Queen",
-      slug: "class-king",
-      description: "Teachers with the most classes taught",
-      category: "CLASSES",
-      participantType: "TEACHER",
-      timeframe: "MONTHLY",
-      metricName: "Classes Taught",
-      metricUnit: null,
-      icon: "BookOpen",
-      color: "#22c55e",
-      isFeatured: true,
-      prizes: [
-        { id: "p7", position: 1, name: "Spa Day Package", description: null, prizeType: "GIFT_CARD", prizeValue: 300 },
-        { id: "p8", position: 2, name: "$150 Gift Card", description: null, prizeType: "GIFT_CARD", prizeValue: 150 },
-        { id: "p9", position: 3, name: "$75 Gift Card", description: null, prizeType: "GIFT_CARD", prizeValue: 75 }
-      ],
-      entries: [
-        { id: "e14", rank: 1, previousRank: 1, score: 48, participantName: "Sarah Chen" },
-        { id: "e15", rank: 2, previousRank: 3, score: 42, participantName: "Mike Johnson" },
-        { id: "e16", rank: 3, previousRank: 2, score: 38, participantName: "Emily Davis" },
-        { id: "e17", rank: 4, previousRank: 4, score: 35, participantName: "Lisa Park" },
-        { id: "e18", rank: 5, previousRank: 5, score: 32, participantName: "James Wilson" }
-      ],
-      totalEntries: 156
-    },
-    {
-      id: "5",
-      name: "Top Rated Instructor",
-      slug: "top-rated",
-      description: "Highest average client ratings",
-      category: "RATINGS",
-      participantType: "TEACHER",
-      timeframe: "MONTHLY",
-      metricName: "Average Rating",
-      metricUnit: null,
-      icon: "Star",
-      color: "#f59e0b",
-      isFeatured: true,
-      prizes: [
-        { id: "p10", position: 1, name: "Professional Development Course", description: null, prizeType: "SUBSCRIPTION", prizeValue: 500 },
-        { id: "p11", position: 2, name: "Online Workshop Access", description: null, prizeType: "SUBSCRIPTION", prizeValue: 250 }
-      ],
-      entries: [
-        { id: "e19", rank: 1, previousRank: 1, score: 4.98, participantName: "Lisa Park" },
-        { id: "e20", rank: 2, previousRank: 2, score: 4.95, participantName: "James Wilson" },
-        { id: "e21", rank: 3, previousRank: 4, score: 4.92, participantName: "Sarah Chen" },
-        { id: "e22", rank: 4, previousRank: 3, score: 4.89, participantName: "Emily Davis" },
-        { id: "e23", rank: 5, previousRank: 5, score: 4.85, participantName: "Mike Johnson" }
-      ],
-      totalEntries: 156
-    },
-    {
-      id: "6",
-      name: "Client Champion",
-      slug: "client-champion",
-      description: "Teachers with most repeat bookings",
-      category: "RETENTION",
-      participantType: "TEACHER",
-      timeframe: "MONTHLY",
-      metricName: "Repeat Bookings",
-      metricUnit: "%",
-      icon: "Heart",
-      color: "#ef4444",
-      isFeatured: false,
-      prizes: [],
-      entries: [
-        { id: "e24", rank: 1, previousRank: 2, score: 94.5, participantName: "Emily Davis" },
-        { id: "e25", rank: 2, previousRank: 1, score: 91.2, participantName: "Sarah Chen" },
-        { id: "e26", rank: 3, previousRank: 3, score: 88.7, participantName: "Lisa Park" }
-      ],
-      totalEntries: 156
-    }
-  ],
-  myRanks: {
-    "1": { rank: 3, score: 128 },
-    "2": { rank: 5, score: 41 },
-    "4": { rank: 2, score: 42 }
-  },
-  badges: [
-    { id: "b1", name: "First Win", description: "Won your first leaderboard", icon: "🏆", earnedCount: 45 },
-    { id: "b2", name: "Triple Threat", description: "Top 3 in three different leaderboards", icon: "🎯", earnedCount: 12 },
-    { id: "b3", name: "Champion", description: "Won 5 leaderboards", icon: "👑", earnedCount: 8 },
-    { id: "b4", name: "Consistency King", description: "Maintained top 10 for 3 months", icon: "⚡", earnedCount: 15 },
-    { id: "b5", name: "Rising Star", description: "Improved rank by 10+ positions", icon: "🌟", earnedCount: 34 },
-    { id: "b6", name: "Social Butterfly", description: "Created 50+ social posts", icon: "🦋", earnedCount: 28 }
-  ]
-}
+// Demo uses data from a real studio (Zenith) to always reflect the current state
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
 
-export default function DemoLeaderboardsPage() {
-  return <LeaderboardsView data={demoLeaderboardsData} linkPrefix="/demo" />
+export default async function DemoLeaderboardsPage() {
+  // Find the demo studio (to show their rankings)
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Fetch all leaderboards with their current period and entries
+  const allLeaderboards = await db.leaderboard.findMany({
+    where: { isActive: true },
+    include: {
+      prizes: {
+        orderBy: { position: "asc" }
+      },
+      periods: {
+        where: { status: "ACTIVE" },
+        take: 1,
+        orderBy: { startDate: "desc" },
+        include: {
+          entries: {
+            orderBy: { rank: "asc" },
+            take: 10,
+            include: {
+              // Note: These are optional, they might be null
+            }
+          }
+        }
+      }
+    },
+    orderBy: [
+      { isFeatured: "desc" },
+      { createdAt: "desc" }
+    ]
+  })
+
+  // Fetch studio names and teacher names separately for entry lookups
+  const studioIds = new Set<string>()
+  const teacherIds = new Set<string>()
+  
+  allLeaderboards.forEach(lb => {
+    lb.periods[0]?.entries.forEach(e => {
+      if (e.studioId) studioIds.add(e.studioId)
+      if (e.teacherId) teacherIds.add(e.teacherId)
+    })
+  })
+
+  const [studios, teacherUsers] = await Promise.all([
+    studioIds.size > 0 
+      ? db.studio.findMany({ where: { id: { in: Array.from(studioIds) } }, select: { id: true, name: true } })
+      : [],
+    teacherIds.size > 0
+      ? db.teacher.findMany({ 
+          where: { id: { in: Array.from(teacherIds) } },
+          include: { user: { select: { firstName: true, lastName: true } } }
+        })
+      : []
+  ])
+
+  const studioMap = new Map(studios.map(s => [s.id, s.name]))
+  const teacherMap = new Map(teacherUsers.map(t => [t.id, `${t.user.firstName} ${t.user.lastName}`]))
+
+  // Fetch badges
+  const badges = await db.leaderboardBadge.findMany({
+    include: {
+      _count: {
+        select: { earnedBadges: true }
+      }
+    }
+  })
+
+  // Get my rankings (for the demo studio) - need to get from all active periods
+  const activePeriodIds = allLeaderboards
+    .filter(lb => lb.periods[0])
+    .map(lb => lb.periods[0]!.id)
+
+  const myEntries = activePeriodIds.length > 0 
+    ? await db.leaderboardEntry.findMany({
+        where: {
+          studioId: studio.id,
+          periodId: { in: activePeriodIds }
+        },
+        include: {
+          period: { select: { leaderboardId: true } }
+        }
+      })
+    : []
+
+  const myRanks: Record<string, { rank: number; score: number }> = {}
+  myEntries.forEach(e => {
+    if (e.rank !== null) {
+      myRanks[e.period.leaderboardId] = { rank: e.rank, score: Number(e.score) }
+    }
+  })
+
+  // Separate studio and teacher leaderboards
+  const studioLeaderboards = allLeaderboards.filter(lb => lb.participantType === "STUDIO")
+  const teacherLeaderboards = allLeaderboards.filter(lb => lb.participantType === "TEACHER")
+
+  const mapLeaderboard = (lb: typeof allLeaderboards[0]): LeaderboardType => {
+    const currentPeriod = lb.periods[0]
+    const entries: LeaderboardEntry[] = currentPeriod?.entries.map(e => ({
+      id: e.id,
+      rank: e.rank ?? 0,
+      previousRank: e.previousRank,
+      score: Number(e.score),
+      participantName: e.studioId 
+        ? (studioMap.get(e.studioId) || "Unknown Studio")
+        : e.teacherId 
+          ? (teacherMap.get(e.teacherId) || "Unknown Teacher")
+          : "Unknown"
+    })) || []
+
+    return {
+      id: lb.id,
+      name: lb.name,
+      slug: lb.slug,
+      description: lb.description,
+      category: lb.category,
+      participantType: lb.participantType,
+      timeframe: lb.timeframe,
+      metricName: lb.metricName,
+      metricUnit: lb.metricUnit,
+      icon: lb.icon,
+      color: lb.color,
+      isFeatured: lb.isFeatured,
+      prizes: lb.prizes.map(p => ({
+        id: p.id,
+        position: p.position,
+        name: p.name,
+        description: p.description,
+        prizeType: p.prizeType,
+        prizeValue: p.prizeValue ? Number(p.prizeValue) : null
+      })),
+      entries,
+      totalEntries: currentPeriod?.entries.length || 0
+    }
+  }
+
+  const leaderboardData: LeaderboardData = {
+    studioLeaderboards: studioLeaderboards.map(mapLeaderboard),
+    teacherLeaderboards: teacherLeaderboards.map(mapLeaderboard),
+    myRanks,
+    badges: badges.map(b => ({
+      id: b.id,
+      name: b.name,
+      description: b.description || "",
+      icon: b.imageUrl || "🏆", // Use imageUrl as fallback for icon display
+      earnedCount: b._count.earnedBadges
+    }))
+  }
+
+  return <LeaderboardsView data={leaderboardData} linkPrefix="/demo" />
 }

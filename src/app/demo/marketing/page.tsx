@@ -1,47 +1,107 @@
-"use client"
-
+import { db } from "@/lib/db"
 import { MarketingView } from "@/components/studio"
-import type { MarketingData } from "@/components/studio"
+import type { MarketingData, Automation, Campaign, Template } from "@/components/studio"
 
-// Demo marketing data
-const demoMarketingData: MarketingData = {
-  stats: {
-    emailSubscribers: 156,
-    smsSubscribers: 89,
-    activeAutomations: 5,
-    totalAutomations: 7,
-    campaignsCount: 3,
-    campaignsSent: 1
-  },
-  automations: [
-    { id: "1", name: "Win-back 30 Days", trigger: "CLIENT_INACTIVE", channel: "EMAIL", status: "ACTIVE", totalSent: 234, totalOpened: 156, location: null },
-    { id: "2", name: "Birthday Greeting", trigger: "BIRTHDAY", channel: "SMS", status: "ACTIVE", totalSent: 89, totalOpened: 0, location: null },
-    { id: "3", name: "Class Reminder", trigger: "CLASS_REMINDER", channel: "EMAIL", status: "ACTIVE", totalSent: 1456, totalOpened: 1234, location: null },
-    { id: "4", name: "Welcome Series", trigger: "WELCOME", channel: "EMAIL", status: "ACTIVE", totalSent: 312, totalOpened: 287, location: null },
-    { id: "5", name: "Post-Class Thank You", trigger: "CLASS_FOLLOWUP", channel: "EMAIL", status: "ACTIVE", totalSent: 978, totalOpened: 654, location: null },
-    { id: "6", name: "Booking Confirmed", trigger: "BOOKING_CONFIRMED", channel: "EMAIL", status: "PAUSED", totalSent: 2345, totalOpened: 1890, location: null },
-    { id: "7", name: "Membership Expiring", trigger: "MEMBERSHIP_EXPIRING", channel: "EMAIL", status: "DRAFT", totalSent: 0, totalOpened: 0, location: null },
-  ],
-  campaigns: [
-    { id: "1", name: "December Holiday Special", channel: "EMAIL", status: "SENT", totalRecipients: 156, sentCount: 156, openedCount: 89, clickedCount: 34, sentAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), scheduledAt: null },
-    { id: "2", name: "New Year Classes Promo", channel: "EMAIL", status: "SCHEDULED", totalRecipients: 203, sentCount: 0, openedCount: 0, clickedCount: 0, scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), sentAt: null },
-    { id: "3", name: "Flash Sale Weekend", channel: "SMS", status: "DRAFT", totalRecipients: 89, sentCount: 0, openedCount: 0, clickedCount: 0, scheduledAt: null, sentAt: null },
-  ],
-  templates: [
-    { id: "1", name: "Welcome Email", type: "EMAIL", subject: "Welcome to Align Pilates! 🎉", body: "Hi {{firstName}}, welcome to our studio!", variables: ["firstName", "lastName"] },
-    { id: "2", name: "Class Reminder", type: "EMAIL", subject: "Your class is tomorrow!", body: "Hi {{firstName}}, just a reminder about your upcoming class...", variables: ["firstName", "className", "classTime"] },
-    { id: "3", name: "Win-back Message", type: "EMAIL", subject: "We miss you!", body: "Hi {{firstName}}, it's been a while since we've seen you...", variables: ["firstName", "daysSinceLastVisit"] },
-    { id: "4", name: "Birthday Greeting", type: "SMS", subject: null, body: "Happy Birthday {{firstName}}! 🎂 Here's 20% off your next class!", variables: ["firstName"] },
-    { id: "5", name: "Post-Class Thank You", type: "EMAIL", subject: "Thanks for coming!", body: "Hi {{firstName}}, thank you for attending {{className}}!", variables: ["firstName", "className"] },
-  ],
-  segments: []
-}
+// Demo uses data from a real studio (Zenith) to always reflect the current state
+const DEMO_STUDIO_SUBDOMAIN = "zenith"
 
-export default function DemoMarketingPage() {
-  return (
-    <MarketingView 
-      data={demoMarketingData} 
-      linkPrefix="/demo"
-    />
-  )
+export default async function DemoMarketingPage() {
+  // Find the demo studio
+  const studio = await db.studio.findFirst({
+    where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
+  })
+
+  if (!studio) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
+          <p className="text-gray-500">The demo studio has not been set up yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const studioId = studio.id
+
+  // Fetch all marketing data
+  const [
+    emailSubscribers,
+    smsSubscribers,
+    automations,
+    campaigns,
+    templates
+  ] = await Promise.all([
+    // Count clients with email (all clients have email, so count all)
+    db.client.count({
+      where: { studioId }
+    }),
+    // Count clients with phone
+    db.client.count({
+      where: { studioId, phone: { not: null } }
+    }),
+    // Fetch automations
+    db.automation.findMany({
+      where: { studioId },
+      include: { location: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "desc" }
+    }),
+    // Fetch campaigns
+    db.campaign.findMany({
+      where: { studioId },
+      orderBy: { createdAt: "desc" },
+      take: 20
+    }),
+    // Fetch templates
+    db.messageTemplate.findMany({
+      where: { studioId },
+      orderBy: { createdAt: "desc" }
+    })
+  ])
+
+  const activeAutomations = automations.filter(a => a.status === "ACTIVE").length
+
+  const marketingData: MarketingData = {
+    stats: {
+      emailSubscribers,
+      smsSubscribers,
+      activeAutomations,
+      totalAutomations: automations.length,
+      campaignsCount: campaigns.length,
+      campaignsSent: campaigns.filter(c => c.status === "SENT").length
+    },
+    automations: automations.map((a): Automation => ({
+      id: a.id,
+      name: a.name,
+      trigger: a.trigger,
+      channel: a.channel as "EMAIL" | "SMS",
+      status: a.status as "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED",
+      totalSent: a.totalSent,
+      totalOpened: a.totalOpened,
+      location: a.location
+    })),
+    campaigns: campaigns.map((c): Campaign => ({
+      id: c.id,
+      name: c.name,
+      channel: c.channel as "EMAIL" | "SMS",
+      status: c.status as "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "PAUSED" | "CANCELLED",
+      totalRecipients: c.totalRecipients,
+      sentCount: c.sentCount,
+      openedCount: c.openedCount,
+      clickedCount: c.clickedCount,
+      scheduledAt: c.scheduledAt?.toISOString() || null,
+      sentAt: c.sentAt?.toISOString() || null
+    })),
+    templates: templates.map((t): Template => ({
+      id: t.id,
+      name: t.name,
+      type: t.type as "EMAIL" | "SMS",
+      subject: t.subject,
+      body: t.body,
+      variables: (t.variables as string[]) || []
+    })),
+    segments: [] // Segments are dynamically generated
+  }
+
+  return <MarketingView data={marketingData} linkPrefix="/demo" />
 }
