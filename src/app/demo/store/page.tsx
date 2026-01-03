@@ -47,15 +47,15 @@ export default async function DemoStorePage() {
       },
       orderBy: { createdAt: "desc" }
     }) : [],
-    db.merchOrder.findMany({
-      where: { studioId: studio.id },
+    studioStore ? db.merchOrder.findMany({
+      where: { storeId: studioStore.id },
       include: {
         client: { select: { firstName: true, lastName: true } },
         _count: { select: { items: true } }
       },
       orderBy: { createdAt: "desc" },
       take: 20
-    })
+    }) : []
   ])
 
   const activeProducts = products.filter(p => p.isActive).length
@@ -235,7 +235,7 @@ export default async function DemoStorePage() {
                         <div>
                           <p className="font-medium text-gray-900">Order #{order.orderNumber}</p>
                           <p className="text-sm text-gray-500">
-                            {order.client.firstName} {order.client.lastName} • {order._count.items} items
+                            {order.client ? `${order.client.firstName} ${order.client.lastName}` : order.customerName} • {order._count.items} items
                           </p>
                         </div>
                       </div>
