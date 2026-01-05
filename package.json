@@ -48,6 +48,7 @@
     "react-day-picker": "^9.12.0",
     "react-dom": "19.2.1",
     "react-hook-form": "^7.68.0",
+    "resend": "^6.6.0",
     "stripe": "^20.1.0",
     "tailwind-merge": "^3.4.0",
     "twilio": "^5.11.1",

@@ -23,6 +23,10 @@ model User {
   role      Role     @default(OWNER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Password reset
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
 
   ownedStudio Studio?
   teacher     Teacher?
@@ -108,22 +112,21 @@ model Studio {
 // Email configuration per studio
 model StudioEmailConfig {
   id                String   @id @default(cuid())
-  provider          String   @default("sendgrid") // sendgrid, mailgun, ses, smtp
-  apiKey            String?  // encrypted
-  fromEmail         String   // sender email address
-  fromName          String   // sender display name
-  replyToEmail      String?  // reply-to address
   
-  // SMTP settings (if provider is smtp)
-  smtpHost          String?
-  smtpPort          Int?
-  smtpUser          String?
-  smtpPassword      String?  // encrypted
-  smtpSecure        Boolean  @default(true)
+  // Sender settings
+  fromName          String   // Display name (e.g., "Zenith Pilates")
+  fromEmail         String?  // Custom from address (e.g., "hello") - combined with domain
+  replyToEmail      String?  // Reply-to address (optional)
   
-  // Verification status
-  isVerified        Boolean  @default(false)
+  // Domain verification (via Resend)
+  domain            String?  // e.g., "zenithpilates.com"
+  resendDomainId    String?  // Resend's domain ID
+  domainStatus      String   @default("not_started") // not_started, pending, verified, failed
+  dnsRecords        Json?    // DNS records to display to user
   verifiedAt        DateTime?
+  
+  // Fallback - if domain not verified, use platform email
+  useFallback       Boolean  @default(true)
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -614,6 +617,10 @@ model Client {
   stripeCustomerId    String?  // Stripe customer ID for this client at this studio
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  
+  // Password reset
+  resetToken          String?
+  resetTokenExpiry    DateTime?
 
   studioId String
   studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
