@@ -67,7 +67,7 @@ export default function DemoLayout({
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Play className="w-5 h-5" />
-              <span className="font-medium">You&apos;re viewing a demo of SOULFLOW</span>
+              <span className="font-medium">You&apos;re viewing a demo of CURRENT</span>
               <span className="text-white/70 hidden sm:inline">— Explore the dashboard with sample data</span>
             </div>
             <div className="flex items-center gap-3">
@@ -150,6 +150,8 @@ export default function DemoLayout({
     </div>
   )
 }
+
+
 
 
 

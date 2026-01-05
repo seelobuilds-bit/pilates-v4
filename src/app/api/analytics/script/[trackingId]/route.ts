@@ -26,7 +26,7 @@ export async function GET(
 (function() {
   'use strict';
   
-  // SOULFLOW Analytics Script
+  // CURRENT Analytics Script
   var SF = window.SF = window.SF || {};
   SF.trackingId = '${trackingId}';
   SF.endpoint = '${baseUrl}/api/analytics/track';
@@ -241,6 +241,8 @@ export async function GET(
     }
   })
 }
+
+
 
 
 

@@ -231,3 +231,5 @@ export default async function DemoDashboardPage() {
 
   return <DashboardView data={dashboardData} linkPrefix="/demo" />
 }
+
+

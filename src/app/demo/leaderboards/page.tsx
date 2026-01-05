@@ -168,3 +168,5 @@ export default async function DemoLeaderboardsPage() {
 
   return <LeaderboardsView data={leaderboardData} linkPrefix="/demo" />
 }
+
+

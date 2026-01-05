@@ -188,3 +188,5 @@ export default async function DemoVaultPage() {
 
   return <VaultView data={vaultData} linkPrefix="/demo" />
 }
+
+

@@ -242,7 +242,7 @@ export function SupportWidget() {
                 {view === "list" && (
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5" />
-                    <span className="font-semibold">Soulflow Support</span>
+                    <span className="font-semibold">Current Support</span>
                   </div>
                 )}
                 {view === "new" && <span className="font-semibold">New Conversation</span>}
@@ -460,6 +460,8 @@ export function SupportWidget() {
     </>
   )
 }
+
+
 
 
 

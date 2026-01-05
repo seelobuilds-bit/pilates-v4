@@ -78,7 +78,7 @@ const ugcVideos = [
 // Written testimonials
 const testimonials = [
   {
-    quote: "We reduced no-shows by 40% with automated reminders. That alone pays for SOULFLOW twice over.",
+    quote: "We reduced no-shows by 40% with automated reminders. That alone pays for CURRENT twice over.",
     author: "Sarah Chen",
     role: "Owner",
     studio: "Align Pilates, SF",
@@ -139,7 +139,7 @@ const faqs = [
   },
   {
     question: "I'm not technical. Will I be able to use this?",
-    answer: "If you can scroll Instagram, you can use SOULFLOW. It's designed for studio owners, not engineers. And our support team is available 24/7 via chat if you ever get stuck."
+    answer: "If you can scroll Instagram, you can use CURRENT. It's designed for studio owners, not engineers. And our support team is available 24/7 via chat if you ever get stuck."
   },
   {
     question: "What does it cost?",
@@ -159,7 +159,7 @@ const faqs = [
   },
   {
     question: "Can I see it before I commit?",
-    answer: "Absolutely. Book a demo and we'll show you SOULFLOW with your actual use case. No pressure, no commitment — just a real look at how it would work for your studio."
+    answer: "Absolutely. Book a demo and we'll show you CURRENT with your actual use case. No pressure, no commitment — just a real look at how it would work for your studio."
   },
 ]
 
@@ -196,14 +196,13 @@ export default function HomePage() {
             {/* Logo */}
             <Link href="/" className="flex items-center select-none" style={{ WebkitTapHighlightColor: 'transparent' }}>
               <span className="text-2xl font-bold tracking-tight">
-                <span className="text-gray-900">SOUL</span>
-                <span className="bg-gradient-to-r from-pink-500 to-violet-600 bg-clip-text text-transparent">FLOW</span>
+                <span className="bg-gradient-to-r from-pink-500 to-violet-600 bg-clip-text text-transparent">CURRENT</span>
               </span>
             </Link>
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#why" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Why SOULFLOW</a>
+              <a href="#why" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Why CURRENT</a>
               <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#testimonials" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Stories</a>
               <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
@@ -234,7 +233,7 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-xl">
             <nav className="flex flex-col gap-4">
-              <a href="#why" className="text-gray-600 py-2">Why SOULFLOW</a>
+              <a href="#why" className="text-gray-600 py-2">Why CURRENT</a>
               <a href="#features" className="text-gray-600 py-2">Features</a>
               <a href="#testimonials" className="text-gray-600 py-2">Stories</a>
               <a href="#faq" className="text-gray-600 py-2">FAQ</a>
@@ -407,12 +406,12 @@ export default function HomePage() {
       </section>
 
       {/* ============================================ */}
-      {/* WHY SOULFLOW WORKS */}
+      {/* WHY CURRENT WORKS */}
       {/* ============================================ */}
       <section id="why" className="pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="bg-pink-100 text-pink-700 mb-4 px-4 py-1">Why SOULFLOW</Badge>
+            <Badge className="bg-pink-100 text-pink-700 mb-4 px-4 py-1">Why CURRENT</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               Built for studios. <br className="sm:hidden" />Not for software companies.
             </h2>
@@ -537,7 +536,7 @@ export default function HomePage() {
               </h2>
               <p className="text-lg text-gray-600 mb-8">
                 Most studios lose 20-30% of clients each year to simple neglect. 
-                Not anymore. SOULFLOW brings them back automatically.
+                Not anymore. CURRENT brings them back automatically.
               </p>
 
               <div className="space-y-4">
@@ -894,8 +893,7 @@ export default function HomePage() {
             <div className="md:col-span-2">
               <Link href="/" className="flex items-center mb-4 select-none" style={{ WebkitTapHighlightColor: 'transparent' }}>
                 <span className="text-2xl font-bold tracking-tight">
-                  <span className="text-white">SOUL</span>
-                  <span className="bg-gradient-to-r from-pink-500 to-violet-600 bg-clip-text text-transparent">FLOW</span>
+                  <span className="bg-gradient-to-r from-pink-500 to-violet-600 bg-clip-text text-transparent">CURRENT</span>
                 </span>
               </Link>
               <p className="text-gray-400 text-sm max-w-sm mb-6">
@@ -933,7 +931,7 @@ export default function HomePage() {
 
           <div className="border-t border-gray-800 pt-8">
             <p className="text-sm text-gray-500 text-center">
-              © 2025 SOULFLOW. All rights reserved.
+              © 2025 CURRENT. All rights reserved.
             </p>
           </div>
         </div>
@@ -964,7 +962,7 @@ export default function HomePage() {
                 <div className="bg-gradient-to-r from-pink-500 to-violet-600 px-6 py-8 text-white">
                   <h3 className="text-2xl font-bold mb-2">Book Your Demo</h3>
                   <p className="text-white/80">
-                    See how SOULFLOW can transform your studio in a free 30-minute call.
+                    See how CURRENT can transform your studio in a free 30-minute call.
                   </p>
                 </div>
 
@@ -1032,7 +1030,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re all set!</h3>
                 <p className="text-gray-600 mb-6">
-                  Thanks for your interest in SOULFLOW. We&apos;ll reach out within 24 hours to schedule your personalized demo.
+                  Thanks for your interest in CURRENT. We&apos;ll reach out within 24 hours to schedule your personalized demo.
                 </p>
                 <Button 
                   className="bg-gradient-to-r from-pink-500 to-violet-600"

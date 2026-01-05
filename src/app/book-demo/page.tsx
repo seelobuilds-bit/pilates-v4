@@ -75,11 +75,11 @@ export default function BookDemoPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Request Received!</h1>
             <p className="text-gray-600 mb-6">
-              Thank you for your interest in Soulflow! One of our team members will reach out within 24 hours to schedule your personalized demo.
+              Thank you for your interest in Current! One of our team members will reach out within 24 hours to schedule your personalized demo.
             </p>
             <div className="bg-violet-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-violet-700">
-                <strong>What to expect:</strong> A 30-minute personalized walkthrough of how Soulflow can transform your pilates studio operations.
+                <strong>What to expect:</strong> A 30-minute personalized walkthrough of how Current can transform your pilates studio operations.
               </p>
             </div>
             <Link href="/">
@@ -100,7 +100,7 @@ export default function BookDemoPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-violet-600" />
-            <span className="text-2xl font-bold text-gray-900">SOULFLOW</span>
+            <span className="text-2xl font-bold text-gray-900">CURRENT</span>
           </Link>
           <Link href="/login">
             <Button variant="ghost">Sign In</Button>
@@ -113,10 +113,10 @@ export default function BookDemoPage() {
           {/* Left - Info */}
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              See Soulflow in Action
+              See Current in Action
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              Schedule a free, personalized demo and discover how Soulflow can help you grow your pilates studio.
+              Schedule a free, personalized demo and discover how Current can help you grow your pilates studio.
             </p>
 
             <div className="space-y-6 mb-8">
@@ -158,7 +158,7 @@ export default function BookDemoPage() {
                   ))}
                 </div>
                 <p className="text-gray-700 italic mb-4">
-                  "Switching to Soulflow was the best decision we made. Our bookings increased by 40% in the first month, and the social media tools have been a game-changer."
+                  "Switching to Current was the best decision we made. Our bookings increased by 40% in the first month, and the social media tools have been a game-changer."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center text-violet-700 font-semibold">
@@ -303,12 +303,14 @@ export default function BookDemoPage() {
       {/* Footer */}
       <footer className="py-8 px-8 border-t mt-12">
         <div className="max-w-6xl mx-auto text-center text-gray-500 text-sm">
-          © {new Date().getFullYear()} Soulflow. All rights reserved.
+          © {new Date().getFullYear()} Current. All rights reserved.
         </div>
       </footer>
     </div>
   )
 }
+
+
 
 
 

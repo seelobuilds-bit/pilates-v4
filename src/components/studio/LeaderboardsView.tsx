@@ -114,7 +114,7 @@ export function LeaderboardsView({
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Leaderboards</h1>
             </div>
-            <p className="text-gray-500">Compete across Soulflow and win amazing prizes!</p>
+            <p className="text-gray-500">Compete across Current and win amazing prizes!</p>
           </div>
           
           {/* Studio vs Teacher Toggle */}
@@ -166,7 +166,7 @@ export function LeaderboardsView({
                 </h2>
                 <p className={activeTab === "studio" ? "text-violet-200 text-sm" : "text-emerald-200 text-sm"}>
                   {activeTab === "studio" 
-                    ? "Compete with other studios across Soulflow!" 
+                    ? "Compete with other studios across Current!" 
                     : "Compete with instructors across all studios!"}
                 </p>
               </div>
@@ -529,3 +529,5 @@ export function LeaderboardsView({
     </div>
   )
 }
+
+

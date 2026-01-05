@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SOULFLOW - Studio Management",
+  title: "CURRENT - Studio Management",
   description: "Complete studio management platform for Pilates, Yoga, and Fitness studios",
 }
 

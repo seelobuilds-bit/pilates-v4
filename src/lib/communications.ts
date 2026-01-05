@@ -93,7 +93,7 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
 
   try {
     const info = await emailTransporter.sendMail({
-      from: params.from || process.env.SMTP_FROM || "noreply@soulflow.com",
+      from: params.from || process.env.SMTP_FROM || "noreply@current.com",
       to: params.to,
       subject: params.subject,
       html: params.body.replace(/\n/g, "<br>"),

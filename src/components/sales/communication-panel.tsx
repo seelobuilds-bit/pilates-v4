@@ -103,25 +103,25 @@ export function CommunicationPanel({
   const emailTemplates = [
     {
       name: "Introduction",
-      subject: "Discover How Soulflow Can Transform Your Studio",
-      body: `Hi ${contactName},\n\nI hope this message finds you well. I noticed your interest in Soulflow and wanted to reach out personally.\n\nSoulflow is an all-in-one platform designed specifically for Pilates and fitness studios. We help studio owners like yourself:\n\n• Streamline booking and scheduling\n• Manage payments and memberships\n• Grow your client base with built-in marketing tools\n• Track instructor performance and payroll\n\nWould you have 15 minutes this week for a quick call? I'd love to learn more about your studio and show you how we can help.\n\nBest regards`
+      subject: "Discover How Current Can Transform Your Studio",
+      body: `Hi ${contactName},\n\nI hope this message finds you well. I noticed your interest in Current and wanted to reach out personally.\n\nCurrent is an all-in-one platform designed specifically for Pilates and fitness studios. We help studio owners like yourself:\n\n• Streamline booking and scheduling\n• Manage payments and memberships\n• Grow your client base with built-in marketing tools\n• Track instructor performance and payroll\n\nWould you have 15 minutes this week for a quick call? I'd love to learn more about your studio and show you how we can help.\n\nBest regards`
     },
     {
       name: "Follow Up",
-      subject: "Following Up - Soulflow Demo",
-      body: `Hi ${contactName},\n\nI wanted to follow up on my previous message about Soulflow.\n\nI understand you're busy running your studio, but I believe a quick 15-minute demo could show you exactly how Soulflow can save you hours each week.\n\nWould any of these times work for a brief call?\n• Tomorrow at 10 AM\n• Wednesday at 2 PM\n• Thursday at 11 AM\n\nLooking forward to connecting!\n\nBest regards`
+      subject: "Following Up - Current Demo",
+      body: `Hi ${contactName},\n\nI wanted to follow up on my previous message about Current.\n\nI understand you're busy running your studio, but I believe a quick 15-minute demo could show you exactly how Current can save you hours each week.\n\nWould any of these times work for a brief call?\n• Tomorrow at 10 AM\n• Wednesday at 2 PM\n• Thursday at 11 AM\n\nLooking forward to connecting!\n\nBest regards`
     },
     {
       name: "Post Demo",
       subject: "Great Meeting Today! - Next Steps",
-      body: `Hi ${contactName},\n\nThank you for taking the time to see Soulflow in action today!\n\nAs we discussed, Soulflow can help you:\n[Customize based on pain points discussed]\n\nI've attached our pricing guide for your review. Let me know if you have any questions or if you'd like to discuss anything further.\n\nLooking forward to welcoming you to the Soulflow family!\n\nBest regards`
+      body: `Hi ${contactName},\n\nThank you for taking the time to see Current in action today!\n\nAs we discussed, Current can help you:\n[Customize based on pain points discussed]\n\nI've attached our pricing guide for your review. Let me know if you have any questions or if you'd like to discuss anything further.\n\nLooking forward to welcoming you to the Current family!\n\nBest regards`
     }
   ]
 
   // SMS templates
   const smsTemplates = [
-    { name: "Quick Intro", text: `Hi ${contactName}! This is [Your Name] from Soulflow. I'd love to show you how we can help your studio. Do you have 15 mins this week for a quick call?` },
-    { name: "Follow Up", text: `Hi ${contactName}! Just following up on Soulflow. Any questions I can answer? Happy to schedule a quick demo whenever works for you.` },
+    { name: "Quick Intro", text: `Hi ${contactName}! This is [Your Name] from Current. I'd love to show you how we can help your studio. Do you have 15 mins this week for a quick call?` },
+    { name: "Follow Up", text: `Hi ${contactName}! Just following up on Current. Any questions I can answer? Happy to schedule a quick demo whenever works for you.` },
     { name: "Demo Reminder", text: `Hi ${contactName}! Just a friendly reminder about our demo call [TIME]. Looking forward to speaking with you!` }
   ]
 
@@ -559,6 +559,8 @@ export function CommunicationPanel({
     </Card>
   )
 }
+
+
 
 
 

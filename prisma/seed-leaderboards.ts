@@ -258,7 +258,7 @@ async function main() {
       prizes: [
         { position: 1, name: "$200 Lululemon Card", prizeType: "GIFT_CARD", prizeValue: 200, sponsorName: "Lululemon" },
         { position: 2, name: "$100 Lululemon Card", prizeType: "GIFT_CARD", prizeValue: 100, sponsorName: "Lululemon" },
-        { position: 3, name: "Soulflow Swag Pack", prizeType: "MERCHANDISE", prizeValue: 50 }
+        { position: 3, name: "Current Swag Pack", prizeType: "MERCHANDISE", prizeValue: 50 }
       ]
     },
     {
@@ -274,7 +274,7 @@ async function main() {
       isFeatured: false,
       prizes: [
         { position: 1, name: "$100 Cash", prizeType: "CASH", prizeValue: 100 },
-        { position: 2, name: "Featured on Soulflow", prizeType: "FEATURE_SPOTLIGHT", prizeValue: 50 }
+        { position: 2, name: "Featured on Current", prizeType: "FEATURE_SPOTLIGHT", prizeValue: 50 }
       ]
     },
     {
@@ -615,6 +615,8 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect())
+
+
 
 
 

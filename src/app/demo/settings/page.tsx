@@ -87,7 +87,7 @@ export default async function DemoSettingsPage() {
                     <div className="flex items-center">
                       <Input value={studio.subdomain} disabled className="rounded-r-none" />
                       <span className="px-3 py-2 bg-gray-100 border border-l-0 rounded-r-md text-sm text-gray-500">
-                        .soulflow.app
+                        .current.app
                       </span>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export default async function DemoSettingsPage() {
                 </p>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <code className="text-sm text-gray-600">
-                    {`<script src="https://soulflow.app/embed/${studio.subdomain}"></script>`}
+                    {`<script src="https://current.app/embed/${studio.subdomain}"></script>`}
                   </code>
                 </div>
               </div>
@@ -343,3 +343,5 @@ export default async function DemoSettingsPage() {
     </div>
   )
 }
+
+

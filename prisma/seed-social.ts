@@ -469,7 +469,7 @@ async function seedSocialMedia() {
         { direction: "INBOUND", content: "Hi! I saw your reel about the intro offer. Is that still available?" },
         { direction: "OUTBOUND", content: "Hey Sarah! Yes absolutely! 🙌 The intro offer is still running. You get 50% off your first class!", isAutomated: true },
         { direction: "INBOUND", content: "Amazing! How do I book?" },
-        { direction: "OUTBOUND", content: "Super easy! Just click here to pick a time: zenith-studio.soulflow.com/book\n\nLet me know if you have any questions about which class to start with!" },
+        { direction: "OUTBOUND", content: "Super easy! Just click here to pick a time: zenith-studio.current.com/book\n\nLet me know if you have any questions about which class to start with!" },
         { direction: "INBOUND", content: "Thanks! Just booked for tomorrow at 9am 🎉" }
       ]
     },
@@ -587,6 +587,8 @@ seedSocialMedia()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
+
 
 
 

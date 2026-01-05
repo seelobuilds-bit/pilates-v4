@@ -22,10 +22,10 @@ async function main() {
 
   // Create Sales Agents
   const salesAgent1 = await prisma.user.upsert({
-    where: { email: "alex@soulflow.com" },
+    where: { email: "alex@current.com" },
     update: {},
     create: {
-      email: "alex@soulflow.com",
+      email: "alex@current.com",
       password: hqPassword,
       firstName: "Alex",
       lastName: "Turner",
@@ -34,10 +34,10 @@ async function main() {
   })
 
   const salesAgent2 = await prisma.user.upsert({
-    where: { email: "jamie@soulflow.com" },
+    where: { email: "jamie@current.com" },
     update: {},
     create: {
-      email: "jamie@soulflow.com",
+      email: "jamie@current.com",
       password: hqPassword,
       firstName: "Jamie",
       lastName: "Rivera",

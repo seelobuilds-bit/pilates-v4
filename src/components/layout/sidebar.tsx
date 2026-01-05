@@ -95,11 +95,11 @@ export function Sidebar() {
 
   if (role === "HQ_ADMIN") {
     links = hqLinks
-    title = "SOULFLOW HQ"
+    title = "CURRENT HQ"
     subtitle = "Admin Portal"
   } else if (role === "SALES_AGENT") {
     links = salesAgentLinks
-    title = "SOULFLOW"
+    title = "CURRENT"
     subtitle = "Sales Portal"
   } else if (role === "TEACHER") {
     links = teacherLinks

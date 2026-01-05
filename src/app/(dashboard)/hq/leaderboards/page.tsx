@@ -310,7 +310,7 @@ export default function HQLeaderboardsPage() {
             <Trophy className="h-7 w-7 text-amber-500" />
             Leaderboards Management
           </h1>
-          <p className="text-gray-500 mt-1">Create and manage competitions across Soulflow</p>
+          <p className="text-gray-500 mt-1">Create and manage competitions across Current</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -828,6 +828,8 @@ export default function HQLeaderboardsPage() {
     </div>
   )
 }
+
+
 
 
 

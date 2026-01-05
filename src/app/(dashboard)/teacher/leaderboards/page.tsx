@@ -202,7 +202,7 @@ export default function TeacherLeaderboardsPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Leaderboards</h1>
             </div>
-            <p className="text-gray-500">Compete across Soulflow and win amazing prizes!</p>
+            <p className="text-gray-500">Compete across Current and win amazing prizes!</p>
           </div>
           
           {/* Studio vs Teacher Toggle */}
@@ -257,7 +257,7 @@ export default function TeacherLeaderboardsPage() {
               </h2>
               <p className="opacity-80">
                 {activeTab === "studio" 
-                  ? "See how studios are performing across Soulflow" 
+                  ? "See how studios are performing across Current" 
                   : "Compete with instructors and win amazing prizes!"}
               </p>
             </div>
@@ -630,6 +630,8 @@ export default function TeacherLeaderboardsPage() {
     </div>
   )
 }
+
+
 
 
 
