@@ -101,6 +101,8 @@ export default function StudioDetailPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
+  const [deleting, setDeleting] = useState(false)
+  const [suspending, setSuspending] = useState(false)
   
   // Communication configs
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
@@ -190,6 +192,67 @@ export default function StudioDetailPage({
       alert("Failed to save settings")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteStudio = async () => {
+    if (!confirm(`Are you sure you want to DELETE "${studio?.name}"? This will permanently delete all studio data including clients, bookings, and classes. This action CANNOT be undone.`)) {
+      return
+    }
+
+    // Double confirm for safety
+    if (!confirm(`FINAL WARNING: Type "delete" mentally and click OK to permanently delete ${studio?.name}.`)) {
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/hq/studios/${studioId}`, {
+        method: "DELETE",
+        credentials: 'include'
+      })
+
+      if (res.ok) {
+        alert("Studio deleted successfully")
+        window.location.href = "/hq/studios"
+      } else {
+        const data = await res.json()
+        alert(`Failed to delete studio: ${data.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error("Error deleting studio:", error)
+      alert("Failed to delete studio")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleSuspendStudio = async () => {
+    if (!confirm(`Are you sure you want to SUSPEND "${studio?.name}"? The studio owner will not be able to access their account until you unsuspend it.`)) {
+      return
+    }
+
+    setSuspending(true)
+    try {
+      const res = await fetch(`/api/hq/studios/${studioId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: false })
+      })
+
+      if (res.ok) {
+        alert("Studio suspended successfully")
+        await fetchStudio()
+      } else {
+        const data = await res.json()
+        alert(`Failed to suspend studio: ${data.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error("Error suspending studio:", error)
+      alert("Failed to suspend studio")
+    } finally {
+      setSuspending(false)
     }
   }
 
@@ -884,8 +947,14 @@ export default function StudioDetailPage({
                   <p className="font-medium text-gray-900">Suspend Studio</p>
                   <p className="text-sm text-gray-500">Temporarily disable this studio</p>
                 </div>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                  Suspend
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={handleSuspendStudio}
+                  disabled={suspending}
+                >
+                  {suspending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Suspending...</> : "Suspend"}
                 </Button>
               </div>
               <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
@@ -893,8 +962,13 @@ export default function StudioDetailPage({
                   <p className="font-medium text-gray-900">Delete Studio</p>
                   <p className="text-sm text-gray-500">Permanently delete this studio and all data</p>
                 </div>
-                <Button variant="destructive" size="sm">
-                  Delete
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleDeleteStudio}
+                  disabled={deleting}
+                >
+                  {deleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Deleting...</> : "Delete"}
                 </Button>
               </div>
             </CardContent>

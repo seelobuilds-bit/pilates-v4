@@ -9,7 +9,7 @@ const resend = process.env.RESEND_API_KEY
 // Platform email config (for emails TO studio owners/teachers)
 const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "hello@notify.thecurrent.app"
 const PLATFORM_FROM_NAME = process.env.PLATFORM_FROM_NAME || "Current"
-// No separate reply-to - replies go to the trackable address
+const PLATFORM_REPLY_TO = process.env.PLATFORM_REPLY_TO || "support@notify.thecurrent.app"
 
 // Fallback domain for studios without verified domain
 const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "notify.thecurrent.app"
@@ -107,7 +107,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       // Studio email - use their config
       const studioFrom = await getStudioFromAddress(studioId)
       fromAddress = studioFrom.from
-      finalReplyTo = replyTo || studioFrom.replyTo
+      finalReplyTo = replyTo || studioFrom.staticReplyTo
     } else {
       // Platform email
       fromAddress = `${PLATFORM_FROM_NAME} <${PLATFORM_FROM_EMAIL}>`

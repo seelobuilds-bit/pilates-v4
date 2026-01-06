@@ -115,8 +115,24 @@ export async function DELETE(
 
     const { studioId } = await params
 
+    // Get the studio first to find the owner
+    const studio = await db.studio.findUnique({
+      where: { id: studioId },
+      select: { ownerId: true }
+    })
+
+    if (!studio) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 404 })
+    }
+
+    // Delete the studio (cascades to related data)
     await db.studio.delete({
       where: { id: studioId },
+    })
+
+    // Also delete the owner user so the email can be reused
+    await db.user.delete({
+      where: { id: studio.ownerId }
     })
 
     return NextResponse.json({ success: true })
