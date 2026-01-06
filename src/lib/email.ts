@@ -14,6 +14,17 @@ const PLATFORM_REPLY_TO = process.env.PLATFORM_REPLY_TO || "support@thecurrent.a
 // Fallback domain for studios without verified domain
 const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "notify.thecurrent.app"
 
+// Reply domain for inbound processing
+const REPLY_DOMAIN = process.env.REPLY_EMAIL_DOMAIN || "notify.thecurrent.app"
+
+/**
+ * Generate a trackable reply-to address
+ * Format: reply+{threadId}@notify.thecurrent.app
+ */
+function generateReplyAddress(threadId: string): string {
+  return `reply+${threadId}@${REPLY_DOMAIN}`
+}
+
 export interface SendEmailParams {
   to: string | string[]
   subject: string
@@ -34,7 +45,7 @@ export interface SendEmailResult {
  * Get the from address for a studio
  * Uses verified domain if available, otherwise fallback
  */
-async function getStudioFromAddress(studioId: string): Promise<{
+export async function getStudioFromAddress(studioId: string): Promise<{
   from: string
   replyTo?: string
 }> {
@@ -138,6 +149,145 @@ export async function sendStudioEmail(
   params: Omit<SendEmailParams, "studioId">
 ): Promise<SendEmailResult> {
   return sendEmail({ ...params, studioId })
+}
+
+/**
+ * Send studio email to client AND store in inbox
+ * This enables two-way communication with trackable replies
+ */
+export async function sendStudioEmailToClient(params: {
+  studioId: string
+  clientId: string
+  clientEmail: string
+  clientName?: string
+  subject: string
+  body: string
+  htmlBody?: string
+}): Promise<SendEmailResult & { messageId?: string; dbMessageId?: string }> {
+  const { studioId, clientId, clientEmail, clientName, subject, body, htmlBody } = params
+
+  // Generate unique message ID for thread tracking
+  const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const threadId = `s_${studioId}_c_${clientId}_${messageId}`
+  
+  // Get studio config for from address
+  const studioFrom = await getStudioFromAddress(studioId)
+  
+  // Create trackable reply-to address
+  const replyTo = generateReplyAddress(threadId)
+
+  // Send the email
+  const result = await sendEmail({
+    studioId,
+    to: clientEmail,
+    subject,
+    html: htmlBody || `<p>${body.replace(/\n/g, "<br>")}</p>`,
+    text: body,
+    replyTo
+  })
+
+  if (!result.success) {
+    return result
+  }
+
+  // Store in database
+  try {
+    const dbMessage = await db.message.create({
+      data: {
+        channel: "EMAIL",
+        direction: "OUTBOUND",
+        status: "SENT",
+        subject,
+        body,
+        htmlBody: htmlBody || null,
+        fromAddress: studioFrom.from,
+        toAddress: clientEmail,
+        toName: clientName || null,
+        threadId: `s_${studioId}_c_${clientId}`,
+        externalId: result.messageId,
+        sentAt: new Date(),
+        studioId,
+        clientId
+      }
+    })
+
+    return { ...result, dbMessageId: dbMessage.id }
+  } catch (error) {
+    console.error("Failed to store message in database:", error)
+    return result
+  }
+}
+
+/**
+ * Send HQ email to studio owner AND store in inbox
+ * This enables two-way communication between HQ and studios
+ */
+export async function sendHQEmailToStudio(params: {
+  studioId: string
+  subject: string
+  body: string
+  htmlBody?: string
+  senderId?: string // HQ admin user ID
+}): Promise<SendEmailResult & { dbMessageId?: string }> {
+  const { studioId, subject, body, htmlBody, senderId } = params
+
+  // Get studio with owner info
+  const studio = await db.studio.findUnique({
+    where: { id: studioId },
+    include: { owner: true }
+  })
+
+  if (!studio) {
+    return { success: false, error: "Studio not found" }
+  }
+
+  // Generate unique message ID for thread tracking
+  const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const threadId = `hq_${studioId}_${messageId}`
+  
+  // Create trackable reply-to address
+  const replyTo = generateReplyAddress(threadId)
+
+  // Send the email from platform
+  const result = await sendPlatformEmail({
+    to: studio.owner.email,
+    subject,
+    html: htmlBody || `<p>${body.replace(/\n/g, "<br>")}</p>`,
+    text: body,
+    replyTo
+  })
+
+  if (!result.success) {
+    return result
+  }
+
+  // Store in HQ messages
+  try {
+    const dbMessage = await db.hQMessage.create({
+      data: {
+        channel: "EMAIL",
+        direction: "OUTBOUND",
+        status: "SENT",
+        subject,
+        body,
+        htmlBody: htmlBody || null,
+        fromAddress: PLATFORM_FROM_EMAIL,
+        fromName: PLATFORM_FROM_NAME,
+        toAddress: studio.owner.email,
+        toName: `${studio.owner.firstName} ${studio.owner.lastName}`,
+        threadId: `hq_${studioId}`,
+        externalId: result.messageId,
+        sentAt: new Date(),
+        studioId,
+        senderId
+      }
+    })
+
+    return { ...result, dbMessageId: dbMessage.id }
+  } catch (error) {
+    console.error("Failed to store HQ message in database:", error)
+    return result
+  }
 }
 
 // ======================

@@ -83,6 +83,7 @@ model Studio {
   segments      Segment[]
   templates     MessageTemplate[]
   systemEmails  SystemEmailTemplate[]
+  hqMessages    HQMessage[]
   
   // Website Analytics
   websiteConfig   WebsiteAnalyticsConfig?
@@ -198,6 +199,10 @@ model Message {
   fromName      String?
   toName        String?
   
+  // Thread tracking for replies
+  threadId      String?          // Unique ID for conversation thread
+  replyToId     String?          // ID of message this is replying to
+  
   // Tracking
   sentAt        DateTime?
   deliveredAt   DateTime?
@@ -226,6 +231,51 @@ model Message {
 
   @@index([studioId, clientId])
   @@index([studioId, createdAt])
+  @@index([threadId])
+}
+
+// HQ Communications with Studios
+model HQMessage {
+  id            String           @id @default(cuid())
+  channel       MessageChannel   @default(EMAIL)
+  direction     MessageDirection
+  status        MessageStatus    @default(QUEUED)
+  
+  // Content
+  subject       String?
+  body          String           @db.Text
+  htmlBody      String?          @db.Text
+  
+  // Sender/Recipient
+  fromAddress   String
+  toAddress     String
+  fromName      String?
+  toName        String?
+  
+  // Thread tracking
+  threadId      String?
+  replyToId     String?
+  
+  // Tracking
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  openedAt      DateTime?
+  failedReason  String?
+  
+  externalId    String?
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  // Link to studio (recipient)
+  studioId      String
+  studio        Studio           @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  // Sender (HQ admin)
+  senderId      String?          // User ID of HQ admin who sent
+  
+  @@index([studioId, createdAt])
+  @@index([threadId])
 }
 
 // Marketing Campaigns

@@ -35,6 +35,7 @@ import {
 const hqLinks = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hq/studios", label: "Studios", icon: Building2 },
+  { href: "/hq/inbox", label: "Studio Comms", icon: Inbox },
   { href: "/hq/sales", label: "Sales CRM", icon: Target },
   { href: "/hq/support", label: "Support Inbox", icon: Headphones },
   { href: "/hq/leaderboards", label: "Leaderboards", icon: Trophy },
