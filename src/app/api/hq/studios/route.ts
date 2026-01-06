@@ -85,14 +85,22 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
     const setupUrl = `${baseUrl}/setup-account?token=${setupToken}`
 
-    await sendStudioWelcomeEmail({
+    const emailResult = await sendStudioWelcomeEmail({
       ownerEmail,
       ownerName: ownerFirstName,
       studioName: name,
       setupUrl
     })
 
-    return NextResponse.json(studio)
+    if (!emailResult.success) {
+      console.error("Failed to send welcome email:", emailResult.error)
+    }
+
+    return NextResponse.json({ 
+      ...studio, 
+      emailSent: emailResult.success,
+      setupUrl: emailResult.success ? undefined : setupUrl // Include URL if email failed
+    })
   } catch (error) {
     console.error("Failed to create studio:", error)
     return NextResponse.json({ error: "Failed to create studio" }, { status: 500 })
