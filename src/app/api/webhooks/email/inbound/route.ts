@@ -28,15 +28,23 @@ const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
 interface ResendInboundEmail {
   from: string
   to: string | string[]
-  subject: string
-  text: string
+  subject?: string
+  text?: string
   html?: string
-  headers: Record<string, string>
+  // Resend might use different field names
+  plain_text?: string
+  text_body?: string
+  headers?: Record<string, string>
   attachments?: Array<{
     filename: string
     content: string
     content_type: string
   }>
+}
+
+// Helper to get text content from various possible field names
+function getTextContent(body: ResendInboundEmail): string {
+  return body.text || body.plain_text || body.text_body || body.html || ""
 }
 
 // Extract email address from "Name <email@domain.com>" format
@@ -168,13 +176,21 @@ export async function POST(request: NextRequest) {
     const body: ResendInboundEmail = payload.data || payload
     
     console.log("[Inbound Email] Event type:", payload.type)
+    console.log("[Inbound Email] Full payload keys:", Object.keys(payload))
+    console.log("[Inbound Email] Body keys:", body ? Object.keys(body) : "no body")
     console.log("[Inbound Email] Parsed email:", {
-      from: body.from,
-      to: body.to,
-      subject: body.subject,
-      hasText: !!body.text,
-      hasHtml: !!body.html
+      from: body?.from,
+      to: body?.to,
+      subject: body?.subject,
+      hasText: !!(body?.text || body?.plain_text || body?.text_body),
+      hasHtml: !!body?.html
     })
+    
+    // Validate we have required fields
+    if (!body?.from || !body?.to) {
+      console.error("[Inbound Email] Missing required fields - from:", body?.from, "to:", body?.to)
+      return NextResponse.json({ error: "Missing required email fields" }, { status: 400 })
+    }
     
     console.log("[Inbound Email]", {
       from: body.from,
@@ -194,7 +210,7 @@ export async function POST(request: NextRequest) {
       // Try to find existing conversation by sender email
       const fromEmail = extractEmail(body.from).toLowerCase()
       const fromName = extractName(body.from)
-      const cleanBody = cleanReplyText(body.text)
+      const cleanBody = cleanReplyText(getTextContent(body))
       
       // Check if sender is a lead
       const lead = await db.lead.findFirst({
@@ -425,6 +441,10 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error("[Inbound Email] Error:", error)
-    return NextResponse.json({ error: "Processing failed" }, { status: 500 })
+    console.error("[Inbound Email] Error stack:", error instanceof Error ? error.stack : "no stack")
+    return NextResponse.json({ 
+      error: "Processing failed", 
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
