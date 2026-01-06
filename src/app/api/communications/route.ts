@@ -4,6 +4,11 @@ import { db } from "@/lib/db"
 import { sendSMS, sendEmail, initiateCall, getServiceStatus } from "@/lib/communications"
 import { ActivityType } from "@prisma/client"
 
+// Platform email settings
+const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "hello@notify.thecurrent.app"
+const PLATFORM_FROM_NAME = process.env.PLATFORM_FROM_NAME || "Current"
+const REPLY_DOMAIN = process.env.REPLY_EMAIL_DOMAIN || "notify.thecurrent.app"
+
 // GET - Check service status
 export async function GET() {
   try {
@@ -48,14 +53,52 @@ export async function POST(request: Request) {
         if (!subject || !content) {
           return NextResponse.json({ error: "Subject and content required for email" }, { status: 400 })
         }
+        
+        // Generate trackable thread ID for lead emails
+        let replyTo = session.user.email || undefined
+        let threadId: string | undefined
+        
+        if (leadId) {
+          // Create trackable reply-to for lead conversations
+          const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          threadId = `lead_${leadId}_${messageId}`
+          replyTo = `reply+${threadId}@${REPLY_DOMAIN}`
+        }
+        
         result = await sendEmail({
           to,
           subject,
           body: content,
           from: from || undefined,
-          replyTo: session.user.email || undefined,
+          replyTo,
         })
         activityType = ActivityType.EMAIL
+        
+        // Store email in HQMessage for lead inbox
+        if (leadId && result.success) {
+          const lead = await db.lead.findUnique({ where: { id: leadId } })
+          if (lead) {
+            await db.hQMessage.create({
+              data: {
+                channel: "EMAIL",
+                direction: "OUTBOUND",
+                status: "SENT",
+                subject,
+                body: content,
+                htmlBody: `<p>${content.replace(/\n/g, "<br>")}</p>`,
+                fromAddress: `${PLATFORM_FROM_NAME} <${PLATFORM_FROM_EMAIL}>`,
+                fromName: PLATFORM_FROM_NAME,
+                toAddress: to,
+                toName: lead.contactName,
+                threadId: `lead_${leadId}`,
+                externalId: result.messageId,
+                sentAt: new Date(),
+                leadId,
+                senderId: session.user.id
+              }
+            })
+          }
+        }
         break
 
       case "sms":

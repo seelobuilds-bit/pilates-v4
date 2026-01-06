@@ -5,18 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Search,
   Mail,
   Send,
   Building2,
-  User,
-  RefreshCw,
-  ArrowLeft,
+  Users,
   Loader2,
   MessageSquare,
-  Clock
+  ArrowLeft
 } from "lucide-react"
 
 interface Message {
@@ -29,10 +27,11 @@ interface Message {
 }
 
 interface Conversation {
-  studioId: string
-  studioName: string
-  ownerName: string
-  ownerEmail: string
+  id: string
+  name: string
+  contactName: string
+  contactEmail: string
+  status?: string // For leads
   lastMessage: {
     direction: string
     subject: string | null
@@ -43,16 +42,19 @@ interface Conversation {
   unreadCount: number
 }
 
-interface StudioDetails {
+interface ContactDetails {
   id: string
   name: string
-  ownerName: string
-  ownerEmail: string
+  contactName: string
+  contactEmail: string
+  type: "studio" | "lead"
+  status?: string
 }
 
 export default function HQInboxPage() {
+  const [activeTab, setActiveTab] = useState<"studios" | "leads">("studios")
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selectedStudio, setSelectedStudio] = useState<StudioDetails | null>(null)
+  const [selectedContact, setSelectedContact] = useState<ContactDetails | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -65,11 +67,14 @@ export default function HQInboxPage() {
 
   useEffect(() => {
     fetchConversations()
-  }, [])
+  }, [activeTab])
 
   const fetchConversations = async () => {
+    setLoading(true)
+    setSelectedContact(null)
+    setMessages([])
     try {
-      const res = await fetch("/api/hq/inbox")
+      const res = await fetch(`/api/hq/inbox?type=${activeTab}`)
       const data = await res.json()
       if (data.conversations) {
         setConversations(data.conversations)
@@ -81,20 +86,39 @@ export default function HQInboxPage() {
     }
   }
 
-  const selectStudio = async (studioId: string) => {
+  const selectContact = async (id: string, type: "studio" | "lead") => {
     setLoadingMessages(true)
     try {
-      const res = await fetch(`/api/hq/inbox?studioId=${studioId}`)
+      const param = type === "studio" ? "studioId" : "leadId"
+      const res = await fetch(`/api/hq/inbox?type=${activeTab}&${param}=${id}`)
       const data = await res.json()
-      if (data.studio) {
-        setSelectedStudio(data.studio)
+      
+      if (type === "studio" && data.studio) {
+        setSelectedContact({
+          id: data.studio.id,
+          name: data.studio.name,
+          contactName: data.studio.ownerName,
+          contactEmail: data.studio.ownerEmail,
+          type: "studio"
+        })
         setMessages(data.messages || [])
-        // Pre-fill subject if replying
-        if (data.messages?.length > 0) {
-          const lastMsg = data.messages[data.messages.length - 1]
-          if (lastMsg.subject && !lastMsg.subject.startsWith("Re:")) {
-            setNewSubject(`Re: ${lastMsg.subject}`)
-          }
+      } else if (type === "lead" && data.lead) {
+        setSelectedContact({
+          id: data.lead.id,
+          name: data.lead.studioName,
+          contactName: data.lead.contactName,
+          contactEmail: data.lead.contactEmail,
+          type: "lead",
+          status: data.lead.status
+        })
+        setMessages(data.messages || [])
+      }
+      
+      // Pre-fill subject if replying
+      if (data.messages?.length > 0) {
+        const lastMsg = data.messages[data.messages.length - 1]
+        if (lastMsg.subject && !lastMsg.subject.startsWith("Re:")) {
+          setNewSubject(`Re: ${lastMsg.subject}`)
         }
       }
     } catch (error) {
@@ -105,28 +129,30 @@ export default function HQInboxPage() {
   }
 
   const sendMessage = async () => {
-    if (!selectedStudio || !newSubject.trim() || !newMessage.trim()) return
+    if (!selectedContact || !newSubject.trim() || !newMessage.trim()) return
 
     setSending(true)
     try {
+      const body = selectedContact.type === "studio" 
+        ? { studioId: selectedContact.id, subject: newSubject, message: newMessage }
+        : { leadId: selectedContact.id, subject: newSubject, message: newMessage }
+
       const res = await fetch("/api/hq/inbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studioId: selectedStudio.id,
-          subject: newSubject,
-          message: newMessage
-        })
+        body: JSON.stringify(body)
       })
 
       if (res.ok) {
         // Refresh messages
-        await selectStudio(selectedStudio.id)
+        await selectContact(selectedContact.id, selectedContact.type)
         setNewMessage("")
         // Keep subject for follow-up
         if (!newSubject.startsWith("Re:")) {
           setNewSubject(`Re: ${newSubject}`)
         }
+        // Refresh conversations list
+        fetchConversations()
       }
     } catch (error) {
       console.error("Failed to send message:", error)
@@ -136,9 +162,9 @@ export default function HQInboxPage() {
   }
 
   const filteredConversations = conversations.filter(conv =>
-    conv.studioName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.ownerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const formatDate = (dateString: string) => {
@@ -158,16 +184,51 @@ export default function HQInboxPage() {
     }
   }
 
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null
+    const colors: Record<string, string> = {
+      NEW: "bg-blue-100 text-blue-700",
+      CONTACTED: "bg-yellow-100 text-yellow-700",
+      QUALIFIED: "bg-green-100 text-green-700",
+      DEMO_SCHEDULED: "bg-purple-100 text-purple-700",
+      DEMO_COMPLETED: "bg-indigo-100 text-indigo-700",
+      PROPOSAL_SENT: "bg-orange-100 text-orange-700",
+      NEGOTIATING: "bg-pink-100 text-pink-700",
+      WON: "bg-emerald-100 text-emerald-700",
+      LOST: "bg-red-100 text-red-700",
+    }
+    return (
+      <Badge className={colors[status] || "bg-gray-100 text-gray-700"}>
+        {status.replace(/_/g, " ")}
+      </Badge>
+    )
+  }
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
       {/* Sidebar - Conversations List */}
       <div className="w-96 border-r bg-white flex flex-col">
         <div className="p-4 border-b">
-          <h1 className="text-xl font-bold text-gray-900 mb-4">Studio Communications</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-4">Communications</h1>
+          
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "studios" | "leads")} className="mb-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="studios" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Active Studios
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Leads
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search studios..."
+              placeholder={`Search ${activeTab}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -183,25 +244,34 @@ export default function HQInboxPage() {
           ) : filteredConversations.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No studios found</p>
+              <p>{activeTab === "studios" ? "No studio conversations" : "No lead conversations"}</p>
+              {activeTab === "leads" && (
+                <p className="text-sm mt-1">Send an email to a lead to start a conversation</p>
+              )}
             </div>
           ) : (
             filteredConversations.map((conv) => (
               <button
-                key={conv.studioId}
-                onClick={() => selectStudio(conv.studioId)}
+                key={conv.id}
+                onClick={() => selectContact(conv.id, activeTab === "studios" ? "studio" : "lead")}
                 className={`w-full p-4 border-b text-left hover:bg-gray-50 transition-colors ${
-                  selectedStudio?.id === conv.studioId ? "bg-violet-50 border-l-4 border-l-violet-600" : ""
+                  selectedContact?.id === conv.id ? "bg-violet-50 border-l-4 border-l-violet-600" : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-violet-600" />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      activeTab === "studios" ? "bg-violet-100" : "bg-blue-100"
+                    }`}>
+                      {activeTab === "studios" ? (
+                        <Building2 className="h-5 w-5 text-violet-600" />
+                      ) : (
+                        <Users className="h-5 w-5 text-blue-600" />
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{conv.studioName}</p>
-                      <p className="text-sm text-gray-500 truncate">{conv.ownerName}</p>
+                      <p className="font-medium text-gray-900 truncate">{conv.name}</p>
+                      <p className="text-sm text-gray-500 truncate">{conv.contactName}</p>
                     </div>
                   </div>
                   {conv.lastMessage && (
@@ -210,6 +280,11 @@ export default function HQInboxPage() {
                     </span>
                   )}
                 </div>
+                {conv.status && (
+                  <div className="mt-2 pl-13">
+                    {getStatusBadge(conv.status)}
+                  </div>
+                )}
                 {conv.lastMessage && (
                   <p className="text-sm text-gray-600 mt-2 line-clamp-2 pl-13">
                     {conv.lastMessage.direction === "INBOUND" ? "↩️ " : "→ "}
@@ -229,12 +304,12 @@ export default function HQInboxPage() {
 
       {/* Main - Messages Panel */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        {!selectedStudio ? (
+        {!selectedContact ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500">
               <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">Select a studio</p>
-              <p className="text-sm">Choose a studio from the list to view or send messages</p>
+              <p className="text-lg font-medium">Select a conversation</p>
+              <p className="text-sm">Choose a {activeTab === "studios" ? "studio" : "lead"} from the list to view messages</p>
             </div>
           </div>
         ) : (
@@ -243,20 +318,37 @@ export default function HQInboxPage() {
             <div className="bg-white border-b p-4">
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => setSelectedStudio(null)}
+                  onClick={() => setSelectedContact(null)}
                   className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <div className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-violet-600" />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  selectedContact.type === "studio" ? "bg-violet-100" : "bg-blue-100"
+                }`}>
+                  {selectedContact.type === "studio" ? (
+                    <Building2 className="h-6 w-6 text-violet-600" />
+                  ) : (
+                    <Users className="h-6 w-6 text-blue-600" />
+                  )}
                 </div>
-                <div>
-                  <h2 className="font-semibold text-gray-900">{selectedStudio.name}</h2>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-900">{selectedContact.name}</h2>
+                    {selectedContact.status && getStatusBadge(selectedContact.status)}
+                  </div>
                   <p className="text-sm text-gray-500">
-                    {selectedStudio.ownerName} • {selectedStudio.ownerEmail}
+                    {selectedContact.contactName} • {selectedContact.contactEmail}
                   </p>
                 </div>
+                {selectedContact.type === "lead" && (
+                  <a 
+                    href={`/hq/sales/leads/${selectedContact.id}`}
+                    className="text-sm text-violet-600 hover:underline"
+                  >
+                    View Lead →
+                  </a>
+                )}
               </div>
             </div>
 
@@ -270,7 +362,7 @@ export default function HQInboxPage() {
                 <div className="text-center text-gray-500 py-8">
                   <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No messages yet</p>
-                  <p className="text-sm">Send the first message to this studio</p>
+                  <p className="text-sm">Send the first message below</p>
                 </div>
               ) : (
                 messages.map((msg) => (

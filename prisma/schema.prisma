@@ -267,14 +267,18 @@ model HQMessage {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  // Link to studio (recipient)
-  studioId      String
-  studio        Studio           @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  // Link to studio OR lead (one must be set)
+  studioId      String?
+  studio        Studio?          @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  
+  leadId        String?
+  lead          Lead?            @relation(fields: [leadId], references: [id], onDelete: Cascade)
   
   // Sender (HQ admin)
   senderId      String?          // User ID of HQ admin who sent
   
   @@index([studioId, createdAt])
+  @@index([leadId, createdAt])
   @@index([threadId])
 }
 
@@ -3283,6 +3287,7 @@ model Lead {
   tasks           LeadTask[]
   demoBookings    DemoBooking[]
   calendarEvents  SalesCalendarEvent[] @relation("CalendarEventLead")
+  hqMessages      HQMessage[]
   
   @@index([status])
   @@index([assignedToId])

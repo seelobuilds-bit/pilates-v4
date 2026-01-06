@@ -44,14 +44,15 @@ function extractName(address: string): string | null {
 
 // Parse the thread ID from reply address
 function parseThreadId(toAddress: string): {
-  type: "studio" | "hq" | null
+  type: "studio" | "hq" | "lead" | null
   studioId?: string
   clientId?: string
+  leadId?: string
   messageId?: string
 } {
   const email = extractEmail(toAddress).toLowerCase()
   
-  // Match reply+{threadId}@notify.thecurrent.app
+  // Match reply+{threadId}@notify.thecurrent.app (or custom domain)
   const match = email.match(/^reply\+(.+?)@/)
   if (!match) return { type: null }
   
@@ -75,6 +76,16 @@ function parseThreadId(toAddress: string): {
       type: "hq",
       studioId: hqMatch[1],
       messageId: hqMatch[2]
+    }
+  }
+  
+  // HQ to Lead: lead_{leadId}_{messageId}
+  const leadMatch = threadId.match(/^lead_([^_]+)_(.+)$/)
+  if (leadMatch) {
+    return {
+      type: "lead",
+      leadId: leadMatch[1],
+      messageId: leadMatch[2]
     }
   }
   
@@ -236,6 +247,64 @@ export async function POST(request: NextRequest) {
       })
       
       console.log("[Inbound Email] Created HQ message from studio:", studio.name)
+      
+    } else if (parsed.type === "lead" && parsed.leadId) {
+      // This is a lead (potential studio) replying to an HQ email
+      
+      // Verify the lead exists
+      const lead = await db.lead.findUnique({
+        where: { id: parsed.leadId }
+      })
+      
+      if (!lead) {
+        console.log("[Inbound Email] Lead not found")
+        return NextResponse.json({ message: "Lead not found" }, { status: 200 })
+      }
+      
+      // Verify the sender is the lead contact
+      if (lead.contactEmail.toLowerCase() !== fromEmail.toLowerCase()) {
+        console.log("[Inbound Email] Sender is not lead contact")
+        return NextResponse.json({ message: "Unauthorized sender" }, { status: 200 })
+      }
+      
+      // Create INBOUND HQ message for lead
+      await db.hQMessage.create({
+        data: {
+          channel: "EMAIL",
+          direction: "INBOUND",
+          status: "DELIVERED",
+          subject: body.subject,
+          body: cleanBody,
+          htmlBody: body.html || null,
+          fromAddress: fromEmail,
+          toAddress: toAddress,
+          fromName: fromName || lead.contactName,
+          threadId: `lead_${parsed.leadId}`,
+          replyToId: parsed.messageId,
+          sentAt: new Date(),
+          leadId: parsed.leadId
+        }
+      })
+      
+      // Also log as activity
+      await db.leadActivity.create({
+        data: {
+          leadId: parsed.leadId,
+          type: "EMAIL",
+          subject: body.subject,
+          content: cleanBody,
+          direction: "inbound",
+          fromAddress: fromEmail
+        }
+      })
+      
+      // Update lead last contacted
+      await db.lead.update({
+        where: { id: parsed.leadId },
+        data: { lastContactedAt: new Date() }
+      })
+      
+      console.log("[Inbound Email] Created HQ message from lead:", lead.studioName)
     }
     
     return NextResponse.json({ message: "Email processed" })
