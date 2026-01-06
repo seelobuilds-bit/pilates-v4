@@ -46,8 +46,9 @@ interface ResendEmailContent {
 // Fetch actual email content from Resend API using email_id
 async function fetchEmailContent(emailId: string): Promise<ResendEmailContent> {
   try {
-    // Use Resend's API to get the email content
-    const response = await fetch(`https://api.resend.com/emails/${emailId}`, {
+    // Use Resend's RECEIVING API to get the email content
+    // Note: The endpoint is /emails/receiving/:id for inbound emails
+    const response = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
       headers: {
         "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
         "Content-Type": "application/json"
