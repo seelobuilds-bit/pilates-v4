@@ -111,25 +111,44 @@ function parseThreadId(toAddress: string): {
 
 // Clean up reply text (remove quoted original message)
 function cleanReplyText(text: string): string {
+  if (!text) return ""
+  
   // Remove common reply patterns
   const lines = text.split('\n')
   const cleanLines: string[] = []
+  let foundQuoteMarker = false
   
   for (const line of lines) {
-    // Stop at common reply markers
-    if (
-      line.startsWith('On ') && line.includes(' wrote:') ||
-      line.startsWith('>') ||
-      line.match(/^-{3,}/) ||
-      line.match(/^_{3,}/) ||
-      line.includes('Original Message')
-    ) {
-      break
+    // Stop at common reply markers (but only if we have some content already)
+    if (cleanLines.length > 0) {
+      if (
+        (line.startsWith('On ') && line.includes(' wrote:')) ||
+        line.match(/^-{3,}\s*Original Message\s*-{3,}/i) ||
+        line.match(/^_{3,}/) ||
+        line.includes('Original Message') ||
+        line.match(/^From:.*@/)
+      ) {
+        foundQuoteMarker = true
+        break
+      }
     }
+    
+    // Skip lines that start with > (quoted text) but don't break
+    if (line.startsWith('>')) {
+      continue
+    }
+    
     cleanLines.push(line)
   }
   
-  return cleanLines.join('\n').trim()
+  const result = cleanLines.join('\n').trim()
+  
+  // If we got nothing useful, return the original (trimmed)
+  if (!result && text) {
+    return text.substring(0, 5000).trim() // Limit length but keep content
+  }
+  
+  return result
 }
 
 export async function POST(request: NextRequest) {

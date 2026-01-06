@@ -64,15 +64,18 @@ export default function HQInboxPage() {
   // Compose state
   const [newSubject, setNewSubject] = useState("")
   const [newMessage, setNewMessage] = useState("")
+  const [isReply, setIsReply] = useState(true) // true = reply mode, false = new email
 
   useEffect(() => {
     fetchConversations()
   }, [activeTab])
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (preserveSelection = false) => {
     setLoading(true)
-    setSelectedContact(null)
-    setMessages([])
+    if (!preserveSelection) {
+      setSelectedContact(null)
+      setMessages([])
+    }
     try {
       const res = await fetch(`/api/hq/inbox?type=${activeTab}`)
       const data = await res.json()
@@ -119,7 +122,13 @@ export default function HQInboxPage() {
         const lastMsg = data.messages[data.messages.length - 1]
         if (lastMsg.subject && !lastMsg.subject.startsWith("Re:")) {
           setNewSubject(`Re: ${lastMsg.subject}`)
+        } else if (lastMsg.subject) {
+          setNewSubject(lastMsg.subject)
         }
+        setIsReply(true)
+      } else {
+        setNewSubject("")
+        setIsReply(false)
       }
     } catch (error) {
       console.error("Failed to fetch messages:", error)
@@ -144,21 +153,45 @@ export default function HQInboxPage() {
       })
 
       if (res.ok) {
-        // Refresh messages
-        await selectContact(selectedContact.id, selectedContact.type)
+        // Clear message but keep subject for reply
         setNewMessage("")
-        // Keep subject for follow-up
-        if (!newSubject.startsWith("Re:")) {
+        
+        // Keep subject for follow-up if in reply mode
+        if (isReply && !newSubject.startsWith("Re:")) {
           setNewSubject(`Re: ${newSubject}`)
         }
-        // Refresh conversations list
-        fetchConversations()
+        
+        // Refresh messages without losing selection
+        await selectContact(selectedContact.id, selectedContact.type)
+        
+        // Refresh conversations list but preserve selection
+        await fetchConversations(true)
       }
     } catch (error) {
       console.error("Failed to send message:", error)
     } finally {
       setSending(false)
     }
+  }
+
+  const startNewEmail = () => {
+    setIsReply(false)
+    setNewSubject("")
+    setNewMessage("")
+  }
+
+  const startReply = () => {
+    setIsReply(true)
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1]
+      const subject = lastMsg.subject || ""
+      if (subject && !subject.startsWith("Re:")) {
+        setNewSubject(`Re: ${subject}`)
+      } else {
+        setNewSubject(subject)
+      }
+    }
+    setNewMessage("")
   }
 
   const filteredConversations = conversations.filter(conv =>
@@ -399,6 +432,30 @@ export default function HQInboxPage() {
             {/* Compose */}
             <div className="bg-white border-t p-4">
               <div className="space-y-3">
+                {/* Reply/New Email Toggle */}
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <Button
+                    variant={isReply ? "default" : "outline"}
+                    size="sm"
+                    onClick={startReply}
+                    className={isReply ? "bg-violet-600 hover:bg-violet-700" : ""}
+                    disabled={messages.length === 0}
+                  >
+                    Reply
+                  </Button>
+                  <Button
+                    variant={!isReply ? "default" : "outline"}
+                    size="sm"
+                    onClick={startNewEmail}
+                    className={!isReply ? "bg-violet-600 hover:bg-violet-700" : ""}
+                  >
+                    New Email
+                  </Button>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {isReply ? "Continuing conversation thread" : "Starting a new conversation"}
+                  </span>
+                </div>
+                
                 <Input
                   placeholder="Subject"
                   value={newSubject}
@@ -424,7 +481,7 @@ export default function HQInboxPage() {
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
-                        Send Email
+                        {isReply ? "Send Reply" : "Send Email"}
                       </>
                     )}
                   </Button>
