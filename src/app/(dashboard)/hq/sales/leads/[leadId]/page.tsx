@@ -182,6 +182,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     dueDate: ""
   })
 
+  // Convert to studio
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const [convertSubdomain, setConvertSubdomain] = useState("")
+  const [converting, setConverting] = useState(false)
+  const [convertError, setConvertError] = useState("")
+
   const fetchLead = useCallback(async () => {
     try {
       const [leadRes, agentsRes] = await Promise.all([
@@ -295,6 +301,46 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
       }
     } catch (error) {
       console.error("Failed to complete task:", error)
+    }
+  }
+
+  const convertToStudio = async () => {
+    if (!convertSubdomain.trim()) {
+      setConvertError("Subdomain is required")
+      return
+    }
+
+    // Validate subdomain format
+    if (!/^[a-z0-9-]+$/.test(convertSubdomain.toLowerCase())) {
+      setConvertError("Subdomain can only contain lowercase letters, numbers, and hyphens")
+      return
+    }
+
+    setConverting(true)
+    setConvertError("")
+
+    try {
+      const res = await fetch(`/api/hq/sales/leads/${leadId}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subdomain: convertSubdomain.toLowerCase() })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert(`🎉 Studio created successfully!\n\nStudio: ${data.studioName}\nSubdomain: ${data.subdomain}\n\n${data.emailSent ? "Welcome email sent!" : "Note: Email failed to send. Setup URL: " + data.setupUrl}`)
+        setShowConvertModal(false)
+        setConvertSubdomain("")
+        fetchLead()
+      } else {
+        setConvertError(data.error || "Failed to convert lead")
+      }
+    } catch (error) {
+      console.error("Failed to convert lead:", error)
+      setConvertError("Failed to convert lead")
+    } finally {
+      setConverting(false)
     }
   }
 
@@ -455,7 +501,36 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                     ))}
                   </SelectContent>
                 </Select>
-                {saving && <Loader2 className="h-4 w-4 animate-spin text-violet-600" />}
+                
+                {/* Convert to Studio button - show when status allows */}
+                {!lead.convertedStudioId && (lead.status === "WON" || lead.status === "DEMO_COMPLETED" || lead.status === "NEGOTIATING") && (
+                  <Button 
+                    onClick={() => {
+                      // Suggest subdomain from studio name
+                      const suggested = lead.studioName
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-|-$/g, "")
+                      setConvertSubdomain(suggested)
+                      setShowConvertModal(true)
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 ml-auto"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Convert to Studio
+                  </Button>
+                )}
+                
+                {lead.convertedStudioId && (
+                  <Link href={`/hq/studios/${lead.convertedStudioId}`} className="ml-auto">
+                    <Button variant="outline" className="text-emerald-600 border-emerald-200">
+                      <Building2 className="h-4 w-4 mr-2" />
+                      View Studio
+                    </Button>
+                  </Link>
+                )}
+                
+                {saving && <Loader2 className="h-4 w-4 animate-spin text-violet-600 ml-2" />}
               </div>
             </CardContent>
           </Card>
@@ -997,6 +1072,81 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Task
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert to Studio Modal */}
+      <Dialog open={showConvertModal} onOpenChange={setShowConvertModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convert Lead to Active Studio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <p className="text-sm text-emerald-700">
+                <strong>🎉 Congratulations on closing this deal!</strong><br />
+                This will create an active studio account and send the owner a welcome email with login setup instructions.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Studio Name</Label>
+              <Input value={lead?.studioName || ""} disabled className="bg-gray-50" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Owner Email</Label>
+              <Input value={lead?.contactEmail || ""} disabled className="bg-gray-50" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="subdomain">Studio Subdomain *</Label>
+              <div className="flex">
+                <Input
+                  id="subdomain"
+                  value={convertSubdomain}
+                  onChange={(e) => {
+                    setConvertSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                    setConvertError("")
+                  }}
+                  placeholder="zenith-pilates"
+                  className="rounded-r-none"
+                />
+                <span className="flex items-center px-3 bg-gray-100 border border-l-0 rounded-r-md text-sm text-gray-500">
+                  .thecurrent.app
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                This will be their booking URL: {convertSubdomain || "subdomain"}.thecurrent.app
+              </p>
+            </div>
+            
+            {convertError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                {convertError}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowConvertModal(false)}>Cancel</Button>
+            <Button 
+              onClick={convertToStudio}
+              disabled={converting || !convertSubdomain.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {converting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Studio...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Create Studio & Send Welcome
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

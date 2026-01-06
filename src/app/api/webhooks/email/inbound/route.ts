@@ -159,8 +159,92 @@ export async function POST(request: NextRequest) {
     const parsed = parseThreadId(toAddress)
     
     if (!parsed.type) {
-      console.log("[Inbound Email] Unknown thread format:", toAddress)
-      return NextResponse.json({ message: "Unknown thread format" }, { status: 200 })
+      console.log("[Inbound Email] Unknown thread format, trying to match by sender:", toAddress)
+      
+      // Try to find existing conversation by sender email
+      const fromEmail = extractEmail(body.from).toLowerCase()
+      const fromName = extractName(body.from)
+      const cleanBody = cleanReplyText(body.text)
+      
+      // Check if sender is a lead
+      const lead = await db.lead.findFirst({
+        where: { contactEmail: { equals: fromEmail, mode: "insensitive" } }
+      })
+      
+      if (lead) {
+        // Create message for this lead
+        await db.hQMessage.create({
+          data: {
+            channel: "EMAIL",
+            direction: "INBOUND",
+            status: "DELIVERED",
+            subject: body.subject,
+            body: cleanBody,
+            htmlBody: body.html || null,
+            fromAddress: fromEmail,
+            toAddress: toAddress,
+            fromName: fromName || lead.contactName,
+            threadId: `lead_${lead.id}`,
+            sentAt: new Date(),
+            leadId: lead.id
+          }
+        })
+        
+        await db.leadActivity.create({
+          data: {
+            leadId: lead.id,
+            type: "EMAIL",
+            subject: body.subject,
+            content: cleanBody,
+            direction: "inbound",
+            fromAddress: fromEmail
+          }
+        })
+        
+        await db.lead.update({
+          where: { id: lead.id },
+          data: { lastContactedAt: new Date() }
+        })
+        
+        console.log("[Inbound Email] Matched to lead by sender email:", lead.studioName)
+        return NextResponse.json({ message: "Email matched to lead" })
+      }
+      
+      // Check if sender is a studio owner
+      const studioOwner = await db.user.findFirst({
+        where: { 
+          email: { equals: fromEmail, mode: "insensitive" },
+          role: "OWNER"
+        },
+        include: { ownedStudios: true }
+      })
+      
+      if (studioOwner && studioOwner.ownedStudios.length > 0) {
+        const studio = studioOwner.ownedStudios[0]
+        
+        await db.hQMessage.create({
+          data: {
+            channel: "EMAIL",
+            direction: "INBOUND",
+            status: "DELIVERED",
+            subject: body.subject,
+            body: cleanBody,
+            htmlBody: body.html || null,
+            fromAddress: fromEmail,
+            toAddress: toAddress,
+            fromName: fromName || `${studioOwner.firstName} ${studioOwner.lastName}`,
+            threadId: `hq_${studio.id}`,
+            sentAt: new Date(),
+            studioId: studio.id
+          }
+        })
+        
+        console.log("[Inbound Email] Matched to studio owner by sender email:", studio.name)
+        return NextResponse.json({ message: "Email matched to studio" })
+      }
+      
+      console.log("[Inbound Email] Could not match sender to any lead or studio:", fromEmail)
+      return NextResponse.json({ message: "Unknown sender" }, { status: 200 })
     }
     
     const fromEmail = extractEmail(body.from)
