@@ -1,5 +1,6 @@
 import twilio from "twilio"
-import nodemailer from "nodemailer"
+import { Resend } from "resend"
+import { db } from "@/lib/db"
 
 /**
  * Communications Service
@@ -16,31 +17,31 @@ const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_T
   ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
   : null
 
-// Email transporter
-const emailTransporter = process.env.SMTP_HOST
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
+// Resend client for emails
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
   : null
+
+// Fallback email domain for studios without verified domain
+const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "notify.thecurrent.app"
 
 export interface SendSMSParams {
   to: string
-  message: string
+  toName?: string
+  body: string
   from?: string
+  clientId?: string
 }
 
 export interface SendEmailParams {
   to: string
+  toName?: string
   subject: string
   body: string
+  htmlBody?: string
   from?: string
   replyTo?: string
+  clientId?: string
 }
 
 export interface MakeCallParams {
@@ -55,26 +56,62 @@ export function getServiceStatus() {
   return {
     sms: !!twilioClient,
     voice: !!twilioClient,
-    email: !!emailTransporter,
+    email: !!resend,
     twilioConfigured: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
-    emailConfigured: !!process.env.SMTP_HOST,
+    emailConfigured: !!process.env.RESEND_API_KEY,
   }
 }
 
-// Send SMS
-export async function sendSMS(params: SendSMSParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
+// Send SMS - supports both HQ/sales (no studioId) and studio-to-client (with studioId)
+export async function sendSMS(
+  studioIdOrParams: string | (SendSMSParams & { message?: string }),
+  params?: SendSMSParams
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Handle both calling patterns
+  let studioId: string | undefined
+  let smsParams: SendSMSParams & { message?: string }
+  
+  if (typeof studioIdOrParams === "string") {
+    studioId = studioIdOrParams
+    smsParams = params!
+  } else {
+    smsParams = studioIdOrParams
+  }
+
+  // Support legacy 'message' field
+  const messageBody = smsParams.body || smsParams.message || ""
+
   if (!twilioClient) {
     // Log instead of actually sending when not configured
-    console.log("[SMS SIMULATION]", params)
+    console.log("[SMS SIMULATION]", { studioId, ...smsParams })
     return { success: true, messageId: "simulated-" + Date.now() }
   }
 
   try {
     const message = await twilioClient.messages.create({
-      to: params.to,
-      from: params.from || process.env.TWILIO_PHONE_NUMBER,
-      body: params.message,
+      to: smsParams.to,
+      from: smsParams.from || process.env.TWILIO_PHONE_NUMBER,
+      body: messageBody,
     })
+
+    // Store message in database if studio context
+    if (studioId && smsParams.clientId) {
+      await db.message.create({
+        data: {
+          channel: "SMS",
+          direction: "OUTBOUND",
+          status: "SENT",
+          body: messageBody,
+          toAddress: smsParams.to,
+          toName: smsParams.toName || null,
+          externalId: message.sid,
+          sentAt: new Date(),
+          studioId,
+          clientId: smsParams.clientId
+        }
+      })
+    }
+
     return { success: true, messageId: message.sid }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
@@ -83,24 +120,114 @@ export async function sendSMS(params: SendSMSParams): Promise<{ success: boolean
   }
 }
 
-// Send Email
-export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!emailTransporter) {
+// Platform email settings (for HQ/sales communications)
+const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "hello@notify.thecurrent.app"
+const PLATFORM_FROM_NAME = process.env.PLATFORM_FROM_NAME || "Current"
+
+// Send Email - supports both HQ/sales (no studioId) and studio-to-client (with studioId)
+export async function sendEmail(
+  studioIdOrParams: string | SendEmailParams,
+  params?: SendEmailParams
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Handle both calling patterns
+  let studioId: string | undefined
+  let emailParams: SendEmailParams
+  
+  if (typeof studioIdOrParams === "string") {
+    studioId = studioIdOrParams
+    emailParams = params!
+  } else {
+    emailParams = studioIdOrParams
+  }
+
+  if (!resend) {
     // Log instead of actually sending when not configured
-    console.log("[EMAIL SIMULATION]", params)
+    console.log("[EMAIL SIMULATION]", { studioId, ...emailParams })
     return { success: true, messageId: "simulated-" + Date.now() }
   }
 
   try {
-    const info = await emailTransporter.sendMail({
-      from: params.from || process.env.SMTP_FROM || "noreply@current.com",
-      to: params.to,
-      subject: params.subject,
-      html: params.body.replace(/\n/g, "<br>"),
-      text: params.body,
-      replyTo: params.replyTo,
+    let fromAddress: string
+    let replyDomain = FALLBACK_DOMAIN
+    let replyTo: string
+
+    if (studioId) {
+      // Studio email - get studio config
+      const studio = await db.studio.findUnique({
+        where: { id: studioId },
+        include: { emailConfig: true }
+      })
+
+      if (!studio) {
+        return { success: false, error: "Studio not found" }
+      }
+
+      // Build from address - use studio's verified domain or fallback
+      if (studio.emailConfig?.domainStatus === "verified" && studio.emailConfig.domain) {
+        // Use studio's verified domain
+        const fromEmail = studio.emailConfig.fromEmail 
+          ? `${studio.emailConfig.fromEmail}@${studio.emailConfig.domain}` 
+          : `hello@${studio.emailConfig.domain}`
+        fromAddress = `${studio.emailConfig.fromName || studio.name} <${fromEmail}>`
+        replyDomain = studio.emailConfig.domain
+      } else {
+        // Fallback: subdomain@notify.thecurrent.app
+        fromAddress = `${studio.name} <${studio.subdomain}@${FALLBACK_DOMAIN}>`
+      }
+
+      // Generate thread ID for tracking replies
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const threadId = emailParams.clientId 
+        ? `s_${studioId}_c_${emailParams.clientId}_${messageId}`
+        : `s_${studioId}_${messageId}`
+
+      // Create trackable reply-to address
+      replyTo = emailParams.replyTo || `reply+${threadId}@${replyDomain}`
+    } else {
+      // HQ/Sales email - use platform from address
+      fromAddress = emailParams.from || `${PLATFORM_FROM_NAME} <${PLATFORM_FROM_EMAIL}>`
+      replyTo = emailParams.replyTo || PLATFORM_FROM_EMAIL
+    }
+
+    const htmlContent = emailParams.htmlBody || `<p>${emailParams.body.replace(/\n/g, "<br>")}</p>`
+
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: [emailParams.to],
+      subject: emailParams.subject,
+      html: htmlContent,
+      text: emailParams.body,
+      reply_to: replyTo
     })
-    return { success: true, messageId: info.messageId }
+
+    if (error) {
+      console.error("Resend error:", error)
+      return { success: false, error: error.message }
+    }
+
+    // Store message in database if studio context
+    if (studioId && emailParams.clientId) {
+      await db.message.create({
+        data: {
+          channel: "EMAIL",
+          direction: "OUTBOUND",
+          status: "SENT",
+          subject: emailParams.subject,
+          body: emailParams.body,
+          htmlBody: htmlContent,
+          fromAddress,
+          toAddress: emailParams.to,
+          toName: emailParams.toName || null,
+          threadId: `s_${studioId}_c_${emailParams.clientId}`,
+          externalId: data?.id,
+          sentAt: new Date(),
+          studioId,
+          clientId: emailParams.clientId
+        }
+      })
+    }
+
+    return { success: true, messageId: data?.id }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     console.error("Email Error:", errorMessage)

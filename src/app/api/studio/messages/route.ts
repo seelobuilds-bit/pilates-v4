@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         toName: `${client.firstName} ${client.lastName}`,
         subject: subject || "Message from your studio",
         body: messageBody,
-        clientId: client.id,
+        clientId: client.id
       })
     } else if (channel === "SMS") {
       if (!client.phone) {
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
         to: client.phone,
         toName: `${client.firstName} ${client.lastName}`,
         body: messageBody,
-        clientId: client.id,
+        clientId: client.id
       })
     } else {
       return NextResponse.json({ error: "Invalid channel" }, { status: 400 })
