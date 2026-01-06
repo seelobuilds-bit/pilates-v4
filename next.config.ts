@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     // TODO: Fix all lint errors and remove this
     ignoreDuringBuilds: true,
   },
+  // Prevent trailing slash redirects that break webhooks
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
 };
 
 export default nextConfig;
