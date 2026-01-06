@@ -25,7 +25,13 @@ import {
   Building,
   Settings,
   BarChart3,
-  MessageSquare
+  MessageSquare,
+  Globe,
+  Clock,
+  Copy,
+  RefreshCw,
+  Check,
+  X
 } from "lucide-react"
 
 interface Studio {
@@ -66,17 +72,19 @@ interface Studio {
 
 interface EmailConfig {
   id?: string
-  provider: string
-  apiKey: string
-  fromEmail: string
   fromName: string
+  fromEmail: string
   replyToEmail: string
-  smtpHost: string
-  smtpPort: number | null
-  smtpUser: string
-  smtpPassword: string
-  smtpSecure: boolean
-  isVerified: boolean
+  domain: string | null
+  domainStatus: string
+  dnsRecords: Array<{
+    type: string
+    name: string
+    value: string
+    priority?: number
+    status: "pending" | "verified" | "failed"
+  }> | null
+  verifiedAt: string | null
 }
 
 interface SmsConfig {
@@ -106,18 +114,18 @@ export default function StudioDetailPage({
   
   // Communication configs
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    provider: "sendgrid",
-    apiKey: "",
-    fromEmail: "",
     fromName: "",
+    fromEmail: "",
     replyToEmail: "",
-    smtpHost: "",
-    smtpPort: null,
-    smtpUser: "",
-    smtpPassword: "",
-    smtpSecure: true,
-    isVerified: false,
+    domain: null,
+    domainStatus: "not_started",
+    dnsRecords: null,
+    verifiedAt: null,
   })
+  const [savingEmail, setSavingEmail] = useState(false)
+  const [verifyingDomain, setVerifyingDomain] = useState(false)
+  const [emailMessage, setEmailMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [copiedRecord, setCopiedRecord] = useState<string | null>(null)
   
   const [smsConfig, setSmsConfig] = useState<SmsConfig>({
     provider: "twilio",
@@ -156,12 +164,28 @@ export default function StudioDetailPage({
 
   const fetchCommunicationSettings = async () => {
     try {
-      const res = await fetch(`/api/hq/studios/${studioId}/communications`)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.emailConfig) {
-          setEmailConfig(data.emailConfig)
+      // Fetch email config
+      const emailRes = await fetch(`/api/hq/studios/${studioId}/email-config`)
+      if (emailRes.ok) {
+        const data = await emailRes.json()
+        if (data.config) {
+          setEmailConfig({
+            ...data.config,
+            dnsRecords: data.config.dnsRecords || null
+          })
+        } else {
+          // Set default from name from studio
+          setEmailConfig(prev => ({
+            ...prev,
+            fromName: studio?.name || ""
+          }))
         }
+      }
+
+      // Fetch SMS config (legacy)
+      const smsRes = await fetch(`/api/hq/studios/${studioId}/communications`)
+      if (smsRes.ok) {
+        const data = await smsRes.json()
         if (data.smsConfig) {
           setSmsConfig(data.smsConfig)
         }
@@ -169,6 +193,98 @@ export default function StudioDetailPage({
     } catch (error) {
       console.error("Error fetching communication settings:", error)
     }
+  }
+
+  const handleSaveEmailConfig = async () => {
+    if (!emailConfig.replyToEmail) {
+      setEmailMessage({ type: "error", text: "Reply-To email is required" })
+      return
+    }
+
+    setSavingEmail(true)
+    setEmailMessage(null)
+
+    try {
+      const res = await fetch(`/api/hq/studios/${studioId}/email-config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromName: emailConfig.fromName,
+          fromEmail: emailConfig.fromEmail || null,
+          replyToEmail: emailConfig.replyToEmail,
+          domain: emailConfig.domain || null
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setEmailConfig(data.config)
+        setEmailMessage({ type: "success", text: data.message || "Settings saved!" })
+      } else {
+        setEmailMessage({ type: "error", text: data.error || "Failed to save" })
+      }
+    } catch (error) {
+      setEmailMessage({ type: "error", text: "Failed to save settings" })
+    } finally {
+      setSavingEmail(false)
+    }
+  }
+
+  const handleVerifyDomain = async () => {
+    setVerifyingDomain(true)
+    setEmailMessage(null)
+
+    try {
+      const res = await fetch(`/api/hq/studios/${studioId}/email-config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify" })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setEmailConfig(data.config)
+        if (data.status === "verified") {
+          setEmailMessage({ type: "success", text: "Domain verified successfully! 🎉" })
+        } else {
+          setEmailMessage({ type: "error", text: "DNS records not yet propagated. Please wait a few minutes and try again." })
+        }
+      } else {
+        setEmailMessage({ type: "error", text: data.error || "Verification failed" })
+      }
+    } catch (error) {
+      setEmailMessage({ type: "error", text: "Verification check failed" })
+    } finally {
+      setVerifyingDomain(false)
+    }
+  }
+
+  const copyToClipboard = (text: string, recordName: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedRecord(recordName)
+    setTimeout(() => setCopiedRecord(null), 2000)
+  }
+
+  const getEmailStatusBadge = (status: string) => {
+    switch (status) {
+      case "verified":
+        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> Verified</Badge>
+      case "pending":
+        return <Badge className="bg-amber-100 text-amber-700"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>
+      case "failed":
+        return <Badge className="bg-red-100 text-red-700"><AlertCircle className="w-3 h-3 mr-1" /> Failed</Badge>
+      default:
+        return <Badge variant="secondary">Not Started</Badge>
+    }
+  }
+
+  const getPreviewEmail = () => {
+    if (emailConfig.domainStatus === "verified" && emailConfig.domain) {
+      return `${emailConfig.fromEmail || "hello"}@${emailConfig.domain}`
+    }
+    return `${studio?.subdomain}@notify.thecurrent.app`
   }
 
   const saveCommunicationSettings = async () => {
@@ -513,208 +629,236 @@ export default function StudioDetailPage({
             </Button>
           </div>
 
-          {/* Email Configuration */}
+          {/* Email Message */}
+          {emailMessage && (
+            <div className={`p-4 rounded-lg flex items-center gap-2 ${
+              emailMessage.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+            }`}>
+              {emailMessage.type === "success" ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              <span>{emailMessage.text}</span>
+            </div>
+          )}
+
+          {/* Email Preview Card */}
           <Card className="border-0 shadow-sm">
-            <CardHeader>
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                    <Mail className="h-5 w-5 text-violet-600" />
                   </div>
                   <div>
-                    <CardTitle>Email Configuration</CardTitle>
-                    <CardDescription>Setup email sending for marketing and communications</CardDescription>
+                    <CardTitle className="text-lg">Email Preview</CardTitle>
+                    <CardDescription>How emails will appear to clients</CardDescription>
                   </div>
                 </div>
-                {emailConfig.isVerified ? (
-                  <Badge className="bg-emerald-100 text-emerald-700">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Verified
-                  </Badge>
-                ) : emailConfig.fromEmail ? (
-                  <Badge className="bg-amber-100 text-amber-700">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Pending Verification
-                  </Badge>
-                ) : null}
+                {getEmailStatusBadge(emailConfig.domainStatus)}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {(emailConfig.fromName || studio?.name || "S").charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{emailConfig.fromName || studio?.name}</p>
+                    <p className="text-sm text-gray-500">&lt;{getPreviewEmail()}&gt;</p>
+                  </div>
+                </div>
+              </div>
+              
+              {emailConfig.domainStatus !== "verified" && (
+                <div className="mt-4 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <p>
+                    Without a verified domain, emails are sent from <strong>{studio?.subdomain}@notify.thecurrent.app</strong>. 
+                    Add a custom domain below for branded emails.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Sender Details Card */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle>Sender Details</CardTitle>
+              <CardDescription>Basic information shown on outgoing emails</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fromName">From Name *</Label>
+                  <Input
+                    id="fromName"
+                    value={emailConfig.fromName}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, fromName: e.target.value })}
+                    placeholder="Zenith Pilates"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="replyToEmail">Reply-To Email *</Label>
+                  <Input
+                    id="replyToEmail"
+                    type="email"
+                    value={emailConfig.replyToEmail}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, replyToEmail: e.target.value })}
+                    placeholder="hello@zenithpilates.com"
+                  />
+                  <p className="text-xs text-gray-500">Where client replies are sent (e.g., their Gmail)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Custom Domain Card */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <CardTitle>Custom Domain</CardTitle>
+                  <CardDescription>Send emails from the studio&apos;s own domain for better branding</CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Email Provider</Label>
-                  <Select
-                    value={emailConfig.provider}
-                    onValueChange={(value) => setEmailConfig({ ...emailConfig, provider: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sendgrid">SendGrid (Recommended)</SelectItem>
-                      <SelectItem value="mailgun">Mailgun</SelectItem>
-                      <SelectItem value="ses">Amazon SES</SelectItem>
-                      <SelectItem value="smtp">Custom SMTP / Google Workspace</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="domain">Domain</Label>
+                  <Input
+                    id="domain"
+                    value={emailConfig.domain || ""}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, domain: e.target.value })}
+                    placeholder="notify.zenithpilates.com"
+                    disabled={emailConfig.domainStatus === "verified"}
+                  />
+                  <p className="text-xs text-gray-500">Usually a subdomain like notify.theirdomain.com</p>
                 </div>
-
-                {emailConfig.provider !== "smtp" && (
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="fromEmail">From Address</Label>
+                  <div className="flex">
                     <Input
-                      type="password"
-                      placeholder="Enter API key"
-                      value={emailConfig.apiKey}
-                      onChange={(e) => setEmailConfig({ ...emailConfig, apiKey: e.target.value })}
+                      id="fromEmail"
+                      value={emailConfig.fromEmail}
+                      onChange={(e) => setEmailConfig({ ...emailConfig, fromEmail: e.target.value })}
+                      placeholder="hello"
+                      className="rounded-r-none"
                     />
+                    <span className="flex items-center px-3 bg-gray-100 border border-l-0 rounded-r-md text-sm text-gray-500">
+                      @{emailConfig.domain || "domain.com"}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Provider-specific setup instructions */}
-              {emailConfig.provider === "sendgrid" && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <p className="text-sm font-medium text-blue-800 mb-2">📧 SendGrid Setup</p>
-                  <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                    <li>Go to <span className="font-mono">sendgrid.com</span> and create an account</li>
-                    <li>Verify the studio&apos;s domain (Settings → Sender Authentication)</li>
-                    <li>Create an API key (Settings → API Keys → Create API Key)</li>
-                    <li>Paste the API key above</li>
-                  </ol>
-                  <p className="text-xs text-blue-600 mt-2">Free tier: 100 emails/day</p>
-                </div>
-              )}
-
-              {emailConfig.provider === "mailgun" && (
-                <div className="p-4 bg-orange-50 rounded-lg border border-orange-100">
-                  <p className="text-sm font-medium text-orange-800 mb-2">📧 Mailgun Setup</p>
-                  <ol className="text-sm text-orange-700 space-y-1 list-decimal list-inside">
-                    <li>Go to <span className="font-mono">mailgun.com</span> and create an account</li>
-                    <li>Add and verify the studio&apos;s domain</li>
-                    <li>Copy the Private API Key from Settings</li>
-                    <li>Paste the API key above</li>
-                  </ol>
-                </div>
-              )}
-
-              {emailConfig.provider === "ses" && (
-                <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                  <p className="text-sm font-medium text-amber-800 mb-2">📧 Amazon SES Setup</p>
-                  <ol className="text-sm text-amber-700 space-y-1 list-decimal list-inside">
-                    <li>Create an AWS account if needed</li>
-                    <li>Go to SES console and verify the domain</li>
-                    <li>Request production access (to exit sandbox)</li>
-                    <li>Create SMTP credentials in SES</li>
-                  </ol>
-                  <p className="text-xs text-amber-600 mt-2">Cheapest option for high volume</p>
-                </div>
-              )}
-
-              {emailConfig.provider === "smtp" && (
+              {/* DNS Records */}
+              {emailConfig.dnsRecords && emailConfig.dnsRecords.length > 0 && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-violet-50 rounded-lg border border-violet-100">
-                    <p className="text-sm font-medium text-violet-800 mb-2">📧 Google Workspace / Gmail Setup</p>
-                    <div className="text-sm text-violet-700 space-y-1">
-                      <p><strong>Host:</strong> smtp.gmail.com</p>
-                      <p><strong>Port:</strong> 587</p>
-                      <p><strong>Username:</strong> Their full email (hello@studio.com)</p>
-                      <p><strong>Password:</strong> App Password (not regular password)</p>
-                    </div>
-                    <p className="text-xs text-violet-600 mt-2">
-                      ⚠️ Client must enable 2FA, then generate an App Password at: 
-                      Google Account → Security → App Passwords
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900">DNS Records to Add</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleVerifyDomain}
+                      disabled={verifyingDomain}
+                    >
+                      {verifyingDomain ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Verify Records
+                        </>
+                      )}
+                    </Button>
                   </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Add these records to the studio&apos;s DNS settings. Takes 5-10 minutes to propagate.
+                  </p>
 
-                  <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-                    <p className="text-sm font-medium text-gray-700">SMTP Settings</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>SMTP Host</Label>
-                        <Input
-                          placeholder="smtp.gmail.com"
-                          value={emailConfig.smtpHost}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>SMTP Port</Label>
-                        <Input
-                          type="number"
-                          placeholder="587"
-                          value={emailConfig.smtpPort || ""}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) || null })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>SMTP Username</Label>
-                        <Input
-                          placeholder="hello@studio.com"
-                          value={emailConfig.smtpUser}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>SMTP Password / App Password</Label>
-                        <Input
-                          type="password"
-                          placeholder="xxxx xxxx xxxx xxxx"
-                          value={emailConfig.smtpPassword}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, smtpPassword: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={emailConfig.smtpSecure}
-                        onCheckedChange={(checked) => setEmailConfig({ ...emailConfig, smtpSecure: checked })}
-                      />
-                      <Label>Use TLS/SSL</Label>
-                    </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500">Value</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+                          <th className="px-4 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {emailConfig.dnsRecords.map((record, index) => (
+                          <tr key={index}>
+                            <td className="px-4 py-3">
+                              <Badge variant="secondary">{record.type}</Badge>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs break-all max-w-[200px]">
+                              {record.name}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs break-all max-w-[300px]">
+                              {record.value.substring(0, 50)}...
+                            </td>
+                            <td className="px-4 py-3">
+                              {record.status === "verified" ? (
+                                <Check className="h-5 w-5 text-green-600" />
+                              ) : record.status === "failed" ? (
+                                <X className="h-5 w-5 text-red-600" />
+                              ) : (
+                                <Clock className="h-5 w-5 text-amber-600" />
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(record.value, record.name)}
+                              >
+                                {copiedRecord === record.name ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>From Email Address</Label>
-                  <Input
-                    type="email"
-                    placeholder="noreply@studio.com"
-                    value={emailConfig.fromEmail}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, fromEmail: e.target.value })}
-                  />
-                  <p className="text-xs text-gray-500">The email address that appears as the sender</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>From Name</Label>
-                  <Input
-                    placeholder="Studio Name"
-                    value={emailConfig.fromName}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, fromName: e.target.value })}
-                  />
-                  <p className="text-xs text-gray-500">The name that appears as the sender</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Reply-To Email (Optional)</Label>
-                <Input
-                  type="email"
-                  placeholder="hello@studio.com"
-                  value={emailConfig.replyToEmail}
-                  onChange={(e) => setEmailConfig({ ...emailConfig, replyToEmail: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">Where replies should be sent (defaults to from email)</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  Send Test Email
-                </Button>
-                <Button variant="outline" size="sm">
-                  Verify Domain
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveEmailConfig}
+                  disabled={savingEmail || !emailConfig.fromName}
+                  className="bg-violet-600 hover:bg-violet-700"
+                >
+                  {savingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Email Settings
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
