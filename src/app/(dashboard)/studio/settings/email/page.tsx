@@ -87,6 +87,12 @@ export default function EmailSettingsPage() {
   }
 
   const handleSave = async () => {
+    // Validate reply-to is set (required for client replies)
+    if (!replyToEmail) {
+      setMessage({ type: "error", text: "Reply-To email is required so clients can respond to your emails" })
+      return
+    }
+
     setSaving(true)
     setMessage(null)
 
@@ -97,7 +103,7 @@ export default function EmailSettingsPage() {
         body: JSON.stringify({
           fromName,
           fromEmail: fromEmail || null,
-          replyToEmail: replyToEmail || null,
+          replyToEmail,
           domain: domain || null
         })
       })
@@ -266,15 +272,18 @@ export default function EmailSettingsPage() {
               <p className="text-xs text-gray-500">The name that appears in the "From" field</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="replyToEmail">Reply-To Email</Label>
+              <Label htmlFor="replyToEmail">Reply-To Email *</Label>
               <Input
                 id="replyToEmail"
                 type="email"
                 value={replyToEmail}
                 onChange={(e) => setReplyToEmail(e.target.value)}
                 placeholder="hello@zenithpilates.com"
+                required
               />
-              <p className="text-xs text-gray-500">Where replies will be sent</p>
+              <p className="text-xs text-gray-500">
+                <strong>Required:</strong> When clients reply to your emails, it goes to this inbox (e.g., your Gmail or studio email)
+              </p>
             </div>
           </div>
         </CardContent>
@@ -435,6 +444,9 @@ export default function EmailSettingsPage() {
           <h4 className="font-medium text-gray-900 mb-3">💡 How does this work?</h4>
           <div className="space-y-2 text-sm text-gray-600">
             <p>
+              <strong>Reply-To (Required):</strong> When clients reply to your emails, it goes to your Reply-To address (your Gmail, studio inbox, etc.). This is essential so you don't miss any client responses!
+            </p>
+            <p>
               <strong>Without a custom domain:</strong> Emails are sent from <code className="bg-gray-200 px-1 rounded">{subdomain}@notify.thecurrent.app</code>. 
               This works fine, but may not look as professional.
             </p>
@@ -443,8 +455,8 @@ export default function EmailSettingsPage() {
               This looks more professional and improves deliverability.
             </p>
             <p>
-              <strong>Google Workspace users:</strong> Adding these DNS records does NOT affect your existing email. 
-              You'll continue receiving emails in Gmail normally.
+              <strong>Google Workspace users:</strong> Adding DNS records does NOT affect your existing email. 
+              You'll continue receiving emails in Gmail normally, and client replies still go to your Reply-To address.
             </p>
           </div>
         </CardContent>
