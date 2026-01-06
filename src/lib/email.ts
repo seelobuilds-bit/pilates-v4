@@ -595,3 +595,53 @@ export async function sendClientWelcomeEmail(
   })
 }
 
+/**
+ * Send welcome email to new studio owner (from HQ)
+ * Includes link to set up their account/password
+ */
+export async function sendStudioWelcomeEmail(params: {
+  ownerEmail: string
+  ownerName: string
+  studioName: string
+  setupUrl: string
+}): Promise<SendEmailResult> {
+  const { ownerEmail, ownerName, studioName, setupUrl } = params
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to Current! 🎉</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi ${ownerName},</p>
+    <p style="color: #374151; font-size: 16px;">Great news! Your studio <strong>${studioName}</strong> has been set up on Current.</p>
+    <p style="color: #374151; font-size: 16px;">To get started, click the button below to set up your password and access your dashboard:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${setupUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Set Up My Account</a>
+    </div>
+    <p style="color: #374151; font-size: 16px;">Once you're in, you can:</p>
+    <ul style="color: #374151; font-size: 16px;">
+      <li>Set up your class schedule</li>
+      <li>Add your teachers</li>
+      <li>Configure your booking page</li>
+      <li>Start accepting clients!</li>
+    </ul>
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">This link will expire in 7 days. If you need a new link, please contact support.</p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    <p style="color: #9ca3af; font-size: 12px;">Can't click the button? Copy and paste this link into your browser:</p>
+    <p style="color: #7c3aed; font-size: 12px; word-break: break-all;">${setupUrl}</p>
+  </div>
+</body>
+</html>
+`
+
+  return sendPlatformEmail({
+    to: ownerEmail,
+    subject: `Welcome to Current - Set up your ${studioName} account`,
+    html
+  })
+}
+

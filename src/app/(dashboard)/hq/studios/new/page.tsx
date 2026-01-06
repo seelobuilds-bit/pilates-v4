@@ -24,7 +24,6 @@ export default function NewStudioPage() {
       ownerEmail: formData.get("ownerEmail") as string,
       ownerFirstName: formData.get("ownerFirstName") as string,
       ownerLastName: formData.get("ownerLastName") as string,
-      ownerPassword: formData.get("ownerPassword") as string,
     }
 
     try {
@@ -92,10 +91,9 @@ export default function NewStudioPage() {
               <div className="space-y-2">
                 <Label htmlFor="ownerEmail">Email</Label>
                 <Input id="ownerEmail" name="ownerEmail" type="email" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ownerPassword">Password</Label>
-                <Input id="ownerPassword" name="ownerPassword" type="password" required />
+                <p className="text-xs text-gray-500">
+                  A welcome email will be sent with a link to set their password
+                </p>
               </div>
             </div>
 
