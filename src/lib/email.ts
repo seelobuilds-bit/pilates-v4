@@ -7,22 +7,23 @@ const resend = process.env.RESEND_API_KEY
   : null
 
 // Platform email config (for emails TO studio owners/teachers)
-const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "noreply@notify.thecurrent.app"
+const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "hello@notify.thecurrent.app"
 const PLATFORM_FROM_NAME = process.env.PLATFORM_FROM_NAME || "Current"
-const PLATFORM_REPLY_TO = process.env.PLATFORM_REPLY_TO || "support@thecurrent.app"
+// No separate reply-to - replies go to the trackable address
 
 // Fallback domain for studios without verified domain
 const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "notify.thecurrent.app"
 
-// Reply domain for inbound processing
+// Reply domain for inbound processing (fallback for unverified studios)
 const REPLY_DOMAIN = process.env.REPLY_EMAIL_DOMAIN || "notify.thecurrent.app"
 
 /**
  * Generate a trackable reply-to address
- * Format: reply+{threadId}@notify.thecurrent.app
+ * Uses studio's verified domain if available, otherwise falls back to platform domain
  */
-function generateReplyAddress(threadId: string): string {
-  return `reply+${threadId}@${REPLY_DOMAIN}`
+function generateReplyAddress(threadId: string, customDomain?: string): string {
+  const domain = customDomain || REPLY_DOMAIN
+  return `reply+${threadId}@${domain}`
 }
 
 export interface SendEmailParams {
@@ -47,7 +48,8 @@ export interface SendEmailResult {
  */
 export async function getStudioFromAddress(studioId: string): Promise<{
   from: string
-  replyTo?: string
+  replyDomain?: string  // Domain to use for trackable reply-to
+  staticReplyTo?: string  // Static reply-to (fallback if no inbound configured)
 }> {
   const studio = await db.studio.findUnique({
     where: { id: studioId },
@@ -66,18 +68,20 @@ export async function getStudioFromAddress(studioId: string): Promise<{
     const fallbackEmail = `${studio.subdomain}@${FALLBACK_DOMAIN}`
     return {
       from: `${config?.fromName || studio.name} <${fallbackEmail}>`,
-      replyTo: config?.replyToEmail || undefined
+      replyDomain: FALLBACK_DOMAIN,  // Replies go through our domain
+      staticReplyTo: config?.replyToEmail || undefined
     }
   }
 
-  // Use verified domain
+  // Use verified domain - replies also go through their domain
   const fromEmail = config.fromEmail 
     ? `${config.fromEmail}@${config.domain}` 
     : `hello@${config.domain}`
     
   return {
     from: `${config.fromName} <${fromEmail}>`,
-    replyTo: config.replyToEmail || undefined
+    replyDomain: config.domain!,  // Replies go through their domain
+    staticReplyTo: config.replyToEmail || undefined
   }
 }
 
@@ -173,8 +177,8 @@ export async function sendStudioEmailToClient(params: {
   // Get studio config for from address
   const studioFrom = await getStudioFromAddress(studioId)
   
-  // Create trackable reply-to address
-  const replyTo = generateReplyAddress(threadId)
+  // Create trackable reply-to address using studio's domain if verified
+  const replyTo = generateReplyAddress(threadId, studioFrom.replyDomain)
 
   // Send the email
   const result = await sendEmail({
