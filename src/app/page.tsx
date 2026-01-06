@@ -181,10 +181,36 @@ export default function HomePage() {
   const handleDemoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setDemoLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setDemoLoading(false)
-    setDemoSubmitted(true)
+    
+    const formData = new FormData(e.currentTarget)
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    
+    try {
+      const res = await fetch("/api/demo-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studioName: formData.get("studioName"),
+          contactName: `${firstName} ${lastName}`,
+          contactEmail: formData.get("email"),
+          interests: formData.get("message"),
+          referralSource: "website"
+        })
+      })
+
+      if (res.ok) {
+        setDemoSubmitted(true)
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to submit. Please try again.")
+      }
+    } catch (error) {
+      console.error("Demo submission error:", error)
+      alert("Failed to submit. Please try again.")
+    } finally {
+      setDemoLoading(false)
+    }
   }
 
   return (
