@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { headers } from "next/headers"
+import { Webhook } from "svix"
 
 /**
  * Resend Inbound Email Webhook
@@ -12,6 +13,8 @@ import { headers } from "next/headers"
  * - Studio to Client: s_{studioId}_c_{clientId}_{messageId}
  * - HQ to Studio: hq_{studioId}_{messageId}
  */
+
+const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
 
 interface ResendInboundEmail {
   from: string
@@ -103,14 +106,34 @@ function cleanReplyText(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify webhook signature (optional but recommended)
+    const rawBody = await request.text()
     const headersList = await headers()
-    const signature = headersList.get("svix-signature")
     
-    // In production, verify the signature with Resend's webhook secret
-    // For now, we'll process the request
+    // Verify webhook signature if secret is configured
+    if (webhookSecret) {
+      const svixId = headersList.get("svix-id")
+      const svixTimestamp = headersList.get("svix-timestamp")
+      const svixSignature = headersList.get("svix-signature")
+      
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        console.error("[Inbound Email] Missing Svix headers")
+        return NextResponse.json({ error: "Missing headers" }, { status: 400 })
+      }
+      
+      try {
+        const wh = new Webhook(webhookSecret)
+        wh.verify(rawBody, {
+          "svix-id": svixId,
+          "svix-timestamp": svixTimestamp,
+          "svix-signature": svixSignature
+        })
+      } catch (err) {
+        console.error("[Inbound Email] Invalid signature:", err)
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+      }
+    }
     
-    const body: ResendInboundEmail = await request.json()
+    const body: ResendInboundEmail = JSON.parse(rawBody)
     
     console.log("[Inbound Email]", {
       from: body.from,
