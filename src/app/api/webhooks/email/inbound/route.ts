@@ -25,26 +25,56 @@ export async function GET() {
 
 const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
 
-interface ResendInboundEmail {
-  from: string
-  to: string | string[]
-  subject?: string
-  text?: string
-  html?: string
-  // Resend might use different field names
-  plain_text?: string
-  text_body?: string
-  headers?: Record<string, string>
-  attachments?: Array<{
-    filename: string
-    content: string
-    content_type: string
-  }>
+interface ResendWebhookPayload {
+  type: string
+  created_at: string
+  data: {
+    email_id: string
+    from: string
+    to: string | string[]
+    subject?: string
+    created_at: string
+    // Note: Resend webhooks don't include body - need to fetch via API
+  }
 }
 
-// Helper to get text content from various possible field names
-function getTextContent(body: ResendInboundEmail): string {
-  return body.text || body.plain_text || body.text_body || body.html || ""
+interface ResendEmailContent {
+  text?: string
+  html?: string
+}
+
+// Fetch actual email content from Resend API using email_id
+async function fetchEmailContent(emailId: string): Promise<ResendEmailContent> {
+  try {
+    // Use Resend's API to get the email content
+    const response = await fetch(`https://api.resend.com/emails/${emailId}`, {
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      }
+    })
+    
+    if (!response.ok) {
+      console.error("[Inbound Email] Failed to fetch email content:", response.status)
+      return {}
+    }
+    
+    const data = await response.json()
+    console.log("[Inbound Email] Fetched email content:", { 
+      hasText: !!data.text, 
+      hasHtml: !!data.html,
+      textLength: data.text?.length,
+      htmlLength: data.html?.length
+    })
+    
+    return {
+      text: data.text || "",
+      html: data.html || ""
+    }
+  } catch (error) {
+    console.error("[Inbound Email] Error fetching email content:", error)
+    return {}
+  }
 }
 
 // Extract email address from "Name <email@domain.com>" format
@@ -188,28 +218,52 @@ export async function POST(request: NextRequest) {
       console.log("[Inbound Email] No webhook secret configured, skipping verification")
     }
     
-    const payload = JSON.parse(rawBody)
-    
-    // Resend wraps the email in a "data" object for webhooks
-    // The structure is: { type: "email.received", data: { ... email fields ... } }
-    const body: ResendInboundEmail = payload.data || payload
+    const payload: ResendWebhookPayload = JSON.parse(rawBody)
     
     console.log("[Inbound Email] Event type:", payload.type)
     console.log("[Inbound Email] Full payload keys:", Object.keys(payload))
-    console.log("[Inbound Email] Body keys:", body ? Object.keys(body) : "no body")
+    console.log("[Inbound Email] Data keys:", payload.data ? Object.keys(payload.data) : "no data")
+    
+    const emailData = payload.data
+    
+    if (!emailData) {
+      console.error("[Inbound Email] No data in payload")
+      return NextResponse.json({ error: "No email data" }, { status: 400 })
+    }
+    
     console.log("[Inbound Email] Parsed email:", {
-      from: body?.from,
-      to: body?.to,
-      subject: body?.subject,
-      hasText: !!(body?.text || body?.plain_text || body?.text_body),
-      hasHtml: !!body?.html
+      email_id: emailData.email_id,
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject
     })
     
     // Validate we have required fields
-    if (!body?.from || !body?.to) {
-      console.error("[Inbound Email] Missing required fields - from:", body?.from, "to:", body?.to)
+    if (!emailData.from || !emailData.to) {
+      console.error("[Inbound Email] Missing required fields - from:", emailData.from, "to:", emailData.to)
       return NextResponse.json({ error: "Missing required email fields" }, { status: 400 })
     }
+    
+    // Fetch the actual email content from Resend API
+    let emailContent: ResendEmailContent = {}
+    if (emailData.email_id) {
+      emailContent = await fetchEmailContent(emailData.email_id)
+    }
+    
+    // Build a combined body object for processing
+    const body = {
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject || "",
+      text: emailContent.text || "",
+      html: emailContent.html || ""
+    }
+    
+    console.log("[Inbound Email] Email content:", {
+      subject: body.subject,
+      textLength: body.text?.length || 0,
+      textPreview: body.text?.substring(0, 200)
+    })
     
     console.log("[Inbound Email]", {
       from: body.from,
@@ -229,7 +283,7 @@ export async function POST(request: NextRequest) {
       // Try to find existing conversation by sender email
       const fromEmail = extractEmail(body.from).toLowerCase()
       const fromName = extractName(body.from)
-      const cleanBody = cleanReplyText(getTextContent(body))
+      const cleanBody = cleanReplyText(body.text || body.html || "")
       
       // Check if sender is a lead
       const lead = await db.lead.findFirst({
@@ -314,7 +368,7 @@ export async function POST(request: NextRequest) {
     
     const fromEmail = extractEmail(body.from)
     const fromName = extractName(body.from)
-    const cleanBody = cleanReplyText(body.text)
+    const cleanBody = cleanReplyText(body.text || body.html || "")
     
     if (parsed.type === "studio" && parsed.studioId && parsed.clientId) {
       // This is a client replying to a studio email
