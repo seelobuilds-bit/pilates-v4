@@ -3,6 +3,15 @@ import { db } from "@/lib/db"
 import { headers } from "next/headers"
 import { Webhook } from "svix"
 
+// GET - Test endpoint to verify webhook is reachable
+export async function GET() {
+  return NextResponse.json({ 
+    status: "ok", 
+    message: "Inbound email webhook is active",
+    webhookSecretConfigured: !!process.env.RESEND_WEBHOOK_SECRET
+  })
+}
+
 /**
  * Resend Inbound Email Webhook
  * 
@@ -120,11 +129,16 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text()
     const headersList = await headers()
     
+    console.log("[Inbound Email] Webhook received")
+    console.log("[Inbound Email] Raw body preview:", rawBody.substring(0, 500))
+    
     // Verify webhook signature if secret is configured
     if (webhookSecret) {
       const svixId = headersList.get("svix-id")
       const svixTimestamp = headersList.get("svix-timestamp")
       const svixSignature = headersList.get("svix-signature")
+      
+      console.log("[Inbound Email] Svix headers present:", { svixId: !!svixId, svixTimestamp: !!svixTimestamp, svixSignature: !!svixSignature })
       
       if (!svixId || !svixTimestamp || !svixSignature) {
         console.error("[Inbound Email] Missing Svix headers")
@@ -138,13 +152,29 @@ export async function POST(request: NextRequest) {
           "svix-timestamp": svixTimestamp,
           "svix-signature": svixSignature
         })
+        console.log("[Inbound Email] Signature verified successfully")
       } catch (err) {
         console.error("[Inbound Email] Invalid signature:", err)
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
       }
+    } else {
+      console.log("[Inbound Email] No webhook secret configured, skipping verification")
     }
     
-    const body: ResendInboundEmail = JSON.parse(rawBody)
+    const payload = JSON.parse(rawBody)
+    
+    // Resend wraps the email in a "data" object for webhooks
+    // The structure is: { type: "email.received", data: { ... email fields ... } }
+    const body: ResendInboundEmail = payload.data || payload
+    
+    console.log("[Inbound Email] Event type:", payload.type)
+    console.log("[Inbound Email] Parsed email:", {
+      from: body.from,
+      to: body.to,
+      subject: body.subject,
+      hasText: !!body.text,
+      hasHtml: !!body.html
+    })
     
     console.log("[Inbound Email]", {
       from: body.from,
