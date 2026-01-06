@@ -7,12 +7,12 @@ const resend = process.env.RESEND_API_KEY
   : null
 
 // Platform email config (for emails TO studio owners/teachers)
-const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "noreply@current.com"
+const PLATFORM_FROM_EMAIL = process.env.PLATFORM_FROM_EMAIL || "noreply@notify.thecurrent.app"
 const PLATFORM_FROM_NAME = process.env.PLATFORM_FROM_NAME || "Current"
-const PLATFORM_REPLY_TO = process.env.PLATFORM_REPLY_TO || "support@current.com"
+const PLATFORM_REPLY_TO = process.env.PLATFORM_REPLY_TO || "support@thecurrent.app"
 
 // Fallback domain for studios without verified domain
-const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "mail.current.com"
+const FALLBACK_DOMAIN = process.env.FALLBACK_EMAIL_DOMAIN || "notify.thecurrent.app"
 
 export interface SendEmailParams {
   to: string | string[]
@@ -51,7 +51,7 @@ async function getStudioFromAddress(studioId: string): Promise<{
 
   // If no config or domain not verified, use fallback
   if (!config || config.domainStatus !== "verified") {
-    // Fallback: zenith@mail.current.com
+    // Fallback: zenith@notify.thecurrent.app
     const fallbackEmail = `${studio.subdomain}@${FALLBACK_DOMAIN}`
     return {
       from: `${config?.fromName || studio.name} <${fallbackEmail}>`,
@@ -440,3 +440,4 @@ export async function sendClientWelcomeEmail(
     html
   })
 }
+

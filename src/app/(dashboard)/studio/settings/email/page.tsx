@@ -170,7 +170,7 @@ export default function EmailSettingsPage() {
     if (config?.domainStatus === "verified" && config.domain) {
       return `${fromEmail || "hello"}@${config.domain}`
     }
-    return `${subdomain}@mail.current.com`
+    return `${subdomain}@notify.thecurrent.app`
   }
 
   if (loading) {
@@ -239,7 +239,7 @@ export default function EmailSettingsPage() {
             <div className="mt-4 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
               <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <p>
-                Without a verified domain, emails will be sent from <strong>{subdomain}@mail.current.com</strong>. 
+                Without a verified domain, emails will be sent from <strong>{subdomain}@notify.thecurrent.app</strong>. 
                 Add your domain below for fully branded emails.
               </p>
             </div>
@@ -435,7 +435,7 @@ export default function EmailSettingsPage() {
           <h4 className="font-medium text-gray-900 mb-3">💡 How does this work?</h4>
           <div className="space-y-2 text-sm text-gray-600">
             <p>
-              <strong>Without a custom domain:</strong> Emails are sent from <code className="bg-gray-200 px-1 rounded">{subdomain}@mail.current.com</code>. 
+              <strong>Without a custom domain:</strong> Emails are sent from <code className="bg-gray-200 px-1 rounded">{subdomain}@notify.thecurrent.app</code>. 
               This works fine, but may not look as professional.
             </p>
             <p>
@@ -452,3 +452,4 @@ export default function EmailSettingsPage() {
     </div>
   )
 }
+
