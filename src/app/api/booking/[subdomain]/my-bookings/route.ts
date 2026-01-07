@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 export async function GET(
   request: NextRequest,
@@ -20,14 +17,15 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
+    const decoded = await verifyClientToken(subdomain)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
+    if (decoded.studioId !== studio.id) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
 
     const bookings = await db.booking.findMany({
       where: {
@@ -46,7 +44,39 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(bookings)
+    // Add cancellation policy info to each booking
+    const bookingsWithPolicy = bookings.map(booking => {
+      const classStartTime = new Date(booking.classSession.startTime)
+      const now = new Date()
+      const hoursUntilClass = (classStartTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+      
+      let canCancel = false
+      let cancellationInfo = ""
+      
+      if (booking.status === "CANCELLED") {
+        cancellationInfo = "Already cancelled"
+      } else if (classStartTime < now) {
+        cancellationInfo = "Class has passed"
+      } else if (hoursUntilClass >= 24) {
+        canCancel = true
+        cancellationInfo = "Free cancellation available"
+      } else if (hoursUntilClass >= 12) {
+        canCancel = true
+        cancellationInfo = "Late cancellation - 50% fee applies"
+      } else {
+        canCancel = true
+        cancellationInfo = "No refund available"
+      }
+
+      return {
+        ...booking,
+        canCancel,
+        cancellationInfo,
+        hoursUntilClass: Math.round(hoursUntilClass * 10) / 10
+      }
+    })
+
+    return NextResponse.json(bookingsWithPolicy)
   } catch {
     return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 })
   }

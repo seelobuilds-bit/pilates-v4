@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { sign } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { createClientToken, isJWTConfigured } from "@/lib/client-auth"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ subdomain: string }> }
 ) {
   try {
+    // Security check
+    if (!isJWTConfigured()) {
+      console.error("JWT_SECRET not configured")
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+    }
+
     const { subdomain } = await params
     
     const studio = await db.studio.findUnique({
@@ -42,11 +46,15 @@ export async function POST(
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
-    const token = sign(
-      { clientId: client.id, studioId: studio.id },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    )
+    const token = createClientToken({
+      clientId: client.id,
+      studioId: studio.id,
+      email: client.email
+    })
+
+    if (!token) {
+      return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+    }
 
     const cookieStore = await cookies()
     cookieStore.set(`client_token_${subdomain}`, token, {

@@ -742,6 +742,15 @@ model Booking {
   // Payment
   paymentId      String?
   payment        Payment?     @relation(fields: [paymentId], references: [id])
+  
+  // Cancellation tracking
+  cancelledAt        DateTime?
+  cancellationReason String?
+  
+  // Prevent same client booking same class twice
+  @@unique([clientId, classSessionId])
+  @@index([studioId, status])
+  @@index([classSessionId, status])
 }
 
 // Payment tracking
