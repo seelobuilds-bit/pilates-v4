@@ -143,12 +143,10 @@ export default async function StudioDashboardPage() {
     return "Good evening"
   }
 
-  // Mock revenue data (in production this would come from payments)
-  const mockRevenue = {
-    today: 450,
-    thisWeek: 2850,
-    thisMonth: 12450,
-    percentChange: 8.5
+  // Revenue will be $0 for new studios - TODO: integrate with real payment data
+  const revenue = {
+    thisMonth: 0,
+    percentChange: 0
   }
 
   // Build the dashboard data object
@@ -156,8 +154,8 @@ export default async function StudioDashboardPage() {
     greeting: getGreeting(),
     currentDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
     stats: {
-      monthlyRevenue: mockRevenue.thisMonth,
-      revenueChange: mockRevenue.percentChange,
+      monthlyRevenue: revenue.thisMonth,
+      revenueChange: revenue.percentChange,
       activeClients: clientCount,
       newClientsThisWeek: newClientsThisWeek,
       weekBookings: weekBookings,

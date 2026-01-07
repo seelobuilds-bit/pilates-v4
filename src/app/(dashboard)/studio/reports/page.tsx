@@ -49,173 +49,76 @@ import {
   MessageCircle
 } from "lucide-react"
 
-// Mock data - in production this would come from API
-const mockData = {
-  // Revenue & Business Health
+// Empty default data - real data will be fetched from API
+const defaultData = {
+  // Revenue & Business Health - starts at $0
   revenue: {
-    total: 45890,
-    previousPeriod: 42150,
-    trend: "up",
-    percentChange: 8.9,
-    bySource: [
-      { name: "Memberships", amount: 28500, percent: 62, trend: "up", change: 12 },
-      { name: "Class Packs", amount: 12400, percent: 27, trend: "up", change: 5 },
-      { name: "Drop-ins", amount: 4990, percent: 11, trend: "down", change: -8 }
-    ],
-    monthly: [
-      { month: "Jul", amount: 38200, target: 40000 },
-      { month: "Aug", amount: 41500, target: 40000 },
-      { month: "Sep", amount: 39800, target: 42000 },
-      { month: "Oct", amount: 44200, target: 42000 },
-      { month: "Nov", amount: 42150, target: 45000 },
-      { month: "Dec", amount: 45890, target: 45000 }
-    ],
-    insights: [
-      { type: "positive", message: "Membership revenue up 12% - highest growth in 6 months" },
-      { type: "warning", message: "Drop-in revenue declining - consider promotional offers" }
-    ]
+    total: 0,
+    previousPeriod: 0,
+    trend: "neutral",
+    percentChange: 0,
+    bySource: [] as { name: string; amount: number; percent: number; trend: string; change: number }[],
+    monthly: [] as { month: string; amount: number; target: number }[],
+    insights: [] as { type: string; message: string }[]
   },
   
-  // Class Utilisation
+  // Class Utilisation - starts empty
   utilisation: {
-    averageFill: 72,
-    previousPeriod: 68,
-    totalClasses: 342,
-    totalAttendance: 2467,
-    peakUtilisation: 94,
-    lowestUtilisation: 45,
-    byTimeSlot: [
-      { time: "6:00 AM", fill: 58, classes: 28 },
-      { time: "8:00 AM", fill: 85, classes: 42 },
-      { time: "9:30 AM", fill: 92, classes: 56 },
-      { time: "11:00 AM", fill: 68, classes: 35 },
-      { time: "1:00 PM", fill: 45, classes: 21 },
-      { time: "5:00 PM", fill: 88, classes: 48 },
-      { time: "6:30 PM", fill: 94, classes: 62 },
-      { time: "8:00 PM", fill: 72, classes: 50 }
-    ],
-    byDay: [
-      { day: "Monday", fill: 78, classes: 52 },
-      { day: "Tuesday", fill: 82, classes: 56 },
-      { day: "Wednesday", fill: 75, classes: 48 },
-      { day: "Thursday", fill: 80, classes: 54 },
-      { day: "Friday", fill: 65, classes: 42 },
-      { day: "Saturday", fill: 88, classes: 58 },
-      { day: "Sunday", fill: 62, classes: 32 }
-    ],
-    topClasses: [
-      { id: "cls-1", name: "9:30 AM Reformer (Sat)", fill: 100, waitlist: 4 },
-      { id: "cls-2", name: "6:30 PM Mat Pilates (Tue)", fill: 100, waitlist: 2 },
-      { id: "cls-3", name: "8:00 AM Tower (Wed)", fill: 95, waitlist: 0 }
-    ],
-    underperforming: [
-      { id: "cls-4", name: "1:00 PM Beginner (Mon)", fill: 35, avgFill: 38 },
-      { id: "cls-5", name: "8:00 PM Advanced (Fri)", fill: 42, avgFill: 45 },
-      { id: "cls-6", name: "6:00 AM Mat (Sun)", fill: 40, avgFill: 42 }
-    ],
-    insights: [
-      { type: "positive", message: "Weekend mornings are your peak time - consider adding capacity" },
-      { type: "warning", message: "Friday evenings underperforming by 20% vs other weeknights" }
-    ]
+    averageFill: 0,
+    previousPeriod: 0,
+    totalClasses: 0,
+    totalAttendance: 0,
+    peakUtilisation: 0,
+    lowestUtilisation: 0,
+    byTimeSlot: [] as { time: string; fill: number; classes: number }[],
+    byDay: [] as { day: string; fill: number; classes: number }[],
+    topClasses: [] as { id: string; name: string; fill: number; waitlist: number }[],
+    underperforming: [] as { id: string; name: string; fill: number; avgFill: number }[],
+    insights: [] as { type: string; message: string }[]
   },
   
-  // Instructor Performance - Use placeholder IDs that work with teacher detail pages
-  instructors: [
-    { 
-      id: "teacher-1",
-      name: "Sarah Johnson", 
-      classes: 45, 
-      avgFill: 89, 
-      revenue: 8450, 
-      rating: 4.9,
-      retention: 92,
-      trend: "up",
-      specialties: ["Reformer", "Mat"]
-    },
-    { 
-      id: "teacher-2",
-      name: "Mike Chen", 
-      classes: 38, 
-      avgFill: 82, 
-      revenue: 7120, 
-      rating: 4.8,
-      retention: 88,
-      trend: "up",
-      specialties: ["Tower", "Mat"]
-    },
-    { 
-      id: "teacher-3",
-      name: "Emily Davis", 
-      classes: 32, 
-      avgFill: 78, 
-      revenue: 5980, 
-      rating: 4.7,
-      retention: 85,
-      trend: "stable",
-      specialties: ["Beginner", "Reformer"]
-    }
-  ],
+  // Instructor Performance - empty, will be populated from real teachers
+  instructors: [] as {
+    id: string;
+    name: string;
+    classes: number;
+    avgFill: number;
+    revenue: number;
+    rating: number;
+    retention: number;
+    trend: string;
+    specialties: string[];
+  }[],
   
-  // Customer Retention & Churn
+  // Customer Retention & Churn - starts empty
   retention: {
-    totalClients: 248,
-    activeClients: 186,
-    newClients: 24,
-    churnedClients: 12,
-    churnRate: 4.8,
-    previousChurnRate: 5.2,
-    avgLifetimeValue: 1240,
-    atRiskClients: 18,
-    membershipBreakdown: [
-      { type: "Active Members", count: 142, percent: 57 },
-      { type: "Pack Holders", count: 68, percent: 27 },
-      { type: "Drop-in Only", count: 38, percent: 16 }
-    ],
-    churnReasons: [
-      { reason: "Moved away", count: 4 },
-      { reason: "Financial", count: 3 },
-      { reason: "Schedule conflict", count: 3 },
-      { reason: "Unknown", count: 2 }
-    ],
-    atRiskList: [
-      { id: "client-1", name: "Alex Brown", email: "alex@email.com", lastVisit: "18 days ago", visits: 2, status: "high-risk" },
-      { id: "client-2", name: "Lisa Park", email: "lisa@email.com", lastVisit: "21 days ago", visits: 5, status: "high-risk" },
-      { id: "client-3", name: "Tom Wilson", email: "tom@email.com", lastVisit: "14 days ago", visits: 8, status: "medium-risk" }
-    ],
-    cohortRetention: [
-      { cohort: "6+ months", retained: 94 },
-      { cohort: "3-6 months", retained: 82 },
-      { cohort: "1-3 months", retained: 68 },
-      { cohort: "0-1 month", retained: 45 }
-    ],
-    insights: [
-      { type: "positive", message: "Churn rate down 0.4% from last month" },
-      { type: "warning", message: "18 clients at risk - no booking in 14+ days" },
-      { type: "info", message: "First-month retention is lowest - improve onboarding" }
-    ]
+    totalClients: 0,
+    activeClients: 0,
+    newClients: 0,
+    churnedClients: 0,
+    churnRate: 0,
+    previousChurnRate: 0,
+    avgLifetimeValue: 0,
+    atRiskClients: 0,
+    membershipBreakdown: [] as { type: string; count: number; percent: number }[],
+    churnReasons: [] as { reason: string; count: number }[],
+    atRiskList: [] as { id: string; name: string; email: string; lastVisit: string; visits: number; status: string }[],
+    cohortRetention: [] as { cohort: string; retained: number }[],
+    insights: [] as { type: string; message: string }[]
   },
   
-  // Marketing Impact
+  // Marketing Impact - starts empty
   marketing: {
-    emailsSent: 1245,
-    emailOpenRate: 42,
-    emailClickRate: 8.5,
-    bookingsFromEmail: 87,
-    remindersSent: 892,
-    noShowRate: 4.2,
-    previousNoShowRate: 6.8,
-    winbackSuccess: 12,
-    campaigns: [
-      { id: "welcome", name: "Welcome Series", sent: 24, opened: 21, clicked: 8, bookings: 12 },
-      { id: "reminder-24h", name: "Class Reminder (24h)", sent: 892, opened: 756, clicked: 0, bookings: 0 },
-      { id: "winback-30", name: "Win-back 30 Days", sent: 42, opened: 18, clicked: 6, bookings: 8 },
-      { id: "birthday", name: "Birthday Offer", sent: 8, opened: 7, clicked: 4, bookings: 4 }
-    ],
-    insights: [
-      { type: "positive", message: "24h reminders reduced no-shows by 38%" },
-      { type: "positive", message: "Win-back campaign recovering 19% of inactive clients" },
-      { type: "info", message: "Birthday emails have highest conversion rate (50%)" }
-    ]
+    emailsSent: 0,
+    emailOpenRate: 0,
+    emailClickRate: 0,
+    bookingsFromEmail: 0,
+    remindersSent: 0,
+    noShowRate: 0,
+    previousNoShowRate: 0,
+    winbackSuccess: 0,
+    campaigns: [] as { id: string; name: string; sent: number; opened: number; clicked: number; bookings: number }[],
+    insights: [] as { type: string; message: string }[]
   }
 }
 
@@ -271,7 +174,7 @@ export default function ReportsPage() {
       } catch (error) {
         console.error('Failed to fetch teachers:', error)
         // Fall back to mock data
-        setTeachers(mockData.instructors as Teacher[])
+        setTeachers([])
       } finally {
         setLoadingTeachers(false)
       }
@@ -449,7 +352,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="text-gray-500 text-sm font-medium">Revenue Growth</p>
-                <p className="text-gray-900 font-bold text-2xl">+{mockData.revenue.percentChange}%</p>
+                <p className="text-gray-900 font-bold text-2xl">+{defaultData.revenue.percentChange}%</p>
                 <p className="text-gray-400 text-xs">vs last period</p>
               </div>
             </div>
@@ -465,7 +368,7 @@ export default function ReportsPage() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">At Risk Clients</p>
-                  <p className="text-gray-900 font-bold text-2xl">{mockData.retention.atRiskClients}</p>
+                  <p className="text-gray-900 font-bold text-2xl">{defaultData.retention.atRiskClients}</p>
                   <p className="text-gray-400 text-xs">Need attention</p>
                 </div>
               </div>
@@ -540,10 +443,10 @@ export default function ReportsPage() {
                   </div>
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
                     <ArrowUpRight className="h-3 w-3 mr-1" />
-                    {mockData.revenue.percentChange}%
+                    {defaultData.revenue.percentChange}%
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">${mockData.revenue.total.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${defaultData.revenue.total.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">Revenue</p>
               </CardContent>
             </Card>
@@ -558,7 +461,7 @@ export default function ReportsPage() {
                     +4%
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{mockData.utilisation.averageFill}%</p>
+                <p className="text-2xl font-bold text-gray-900">{defaultData.utilisation.averageFill}%</p>
                 <p className="text-sm text-gray-500">Avg. Class Fill</p>
               </CardContent>
             </Card>
@@ -571,10 +474,10 @@ export default function ReportsPage() {
                       <UserPlus className="h-5 w-5 text-blue-600" />
                     </div>
                     <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                      +{mockData.retention.newClients}
+                      +{defaultData.retention.newClients}
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{mockData.retention.activeClients}</p>
+                  <p className="text-2xl font-bold text-gray-900">{defaultData.retention.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
                 </CardContent>
               </Card>
@@ -591,7 +494,7 @@ export default function ReportsPage() {
                     0.4%
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{mockData.retention.churnRate}%</p>
+                <p className="text-2xl font-bold text-gray-900">{defaultData.retention.churnRate}%</p>
                 <p className="text-sm text-gray-500">Churn Rate</p>
               </CardContent>
             </Card>
@@ -607,8 +510,8 @@ export default function ReportsPage() {
                   <span className="text-sm text-gray-500">vs Target</span>
                 </div>
                 <div className="flex items-end justify-between h-40 gap-2">
-                  {mockData.revenue.monthly.map((month, i) => {
-                    const maxAmount = Math.max(...mockData.revenue.monthly.map(m => Math.max(m.amount, m.target)))
+                  {defaultData.revenue.monthly.map((month, i) => {
+                    const maxAmount = Math.max(...defaultData.revenue.monthly.map(m => Math.max(m.amount, m.target)))
                     const height = (month.amount / maxAmount) * 100
                     const targetHeight = (month.target / maxAmount) * 100
                     const hitTarget = month.amount >= month.target
@@ -646,9 +549,9 @@ export default function ReportsPage() {
                   </Link>
                 </div>
                 <div className="flex items-end justify-between h-40 gap-2">
-                  {mockData.utilisation.byDay.map((day, i) => {
+                  {defaultData.utilisation.byDay.map((day, i) => {
                     const height = day.fill
-                    const isAboveAvg = day.fill >= mockData.utilisation.averageFill
+                    const isAboveAvg = day.fill >= defaultData.utilisation.averageFill
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         <span className="text-xs font-medium text-gray-900">{day.fill}%</span>
@@ -676,11 +579,11 @@ export default function ReportsPage() {
                     <h3 className="font-semibold text-gray-900">Clients at Risk</h3>
                   </div>
                   <Badge variant="secondary" className="bg-amber-50 text-amber-700">
-                    {mockData.retention.atRiskClients} clients
+                    {defaultData.retention.atRiskClients} clients
                   </Badge>
                 </div>
                 <div className="space-y-3">
-                  {mockData.retention.atRiskList.map((client) => (
+                  {defaultData.retention.atRiskList.map((client) => (
                     <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity">
                         <div className={`w-2 h-2 rounded-full ${
@@ -717,9 +620,9 @@ export default function ReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Suggested Actions</h3>
                 <div className="space-y-3">
                   {[
-                    ...mockData.revenue.insights,
-                    ...mockData.utilisation.insights.slice(0, 1),
-                    ...mockData.retention.insights.slice(0, 1)
+                    ...defaultData.revenue.insights,
+                    ...defaultData.utilisation.insights.slice(0, 1),
+                    ...defaultData.retention.insights.slice(0, 1)
                   ].map((insight, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                       {getInsightIcon(insight.type)}
@@ -753,11 +656,11 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">This Period</p>
-                <p className="text-3xl font-bold text-gray-900">${mockData.revenue.total.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">${defaultData.revenue.total.toLocaleString()}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
                     <ArrowUpRight className="h-3 w-3 mr-1" />
-                    {mockData.revenue.percentChange}%
+                    {defaultData.revenue.percentChange}%
                   </Badge>
                   <span className="text-sm text-gray-500">vs last period</span>
                 </div>
@@ -767,7 +670,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">Previous Period</p>
-                <p className="text-3xl font-bold text-gray-900">${mockData.revenue.previousPeriod.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">${defaultData.revenue.previousPeriod.toLocaleString()}</p>
                 <p className="text-sm text-gray-500 mt-2">Comparison baseline</p>
               </CardContent>
             </Card>
@@ -775,7 +678,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">Avg. Per Client</p>
-                <p className="text-3xl font-bold text-gray-900">${Math.round(mockData.revenue.total / mockData.retention.activeClients)}</p>
+                <p className="text-3xl font-bold text-gray-900">${Math.round(defaultData.revenue.total / defaultData.retention.activeClients)}</p>
                 <p className="text-sm text-gray-500 mt-2">Revenue per active client</p>
               </CardContent>
             </Card>
@@ -788,7 +691,7 @@ export default function ReportsPage() {
               <p className="text-sm text-gray-500 mb-6">Where is your revenue coming from?</p>
               
               <div className="space-y-4">
-                {mockData.revenue.bySource.map((source, i) => (
+                {defaultData.revenue.bySource.map((source, i) => (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -821,7 +724,7 @@ export default function ReportsPage() {
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Revenue Insights</h3>
               <div className="space-y-3">
-                {mockData.revenue.insights.map((insight, i) => (
+                {defaultData.revenue.insights.map((insight, i) => (
                   <div key={i} className="flex items-start gap-3">
                     {getInsightIcon(insight.type)}
                     <p className="text-sm text-gray-700">{insight.message}</p>
@@ -839,7 +742,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Average Fill Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{mockData.utilisation.averageFill}%</p>
+                <p className="text-2xl font-bold text-gray-900">{defaultData.utilisation.averageFill}%</p>
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 mt-2">
                   +4% vs last period
                 </Badge>
@@ -850,7 +753,7 @@ export default function ReportsPage() {
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <p className="text-sm text-gray-500 mb-1">Total Classes</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockData.utilisation.totalClasses}</p>
+                  <p className="text-2xl font-bold text-gray-900">{defaultData.utilisation.totalClasses}</p>
                   <p className="text-sm text-gray-500 mt-2">This period</p>
                 </CardContent>
               </Card>
@@ -859,7 +762,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Peak Utilisation</p>
-                <p className="text-2xl font-bold text-emerald-600">{mockData.utilisation.peakUtilisation}%</p>
+                <p className="text-2xl font-bold text-emerald-600">{defaultData.utilisation.peakUtilisation}%</p>
                 <p className="text-sm text-gray-500 mt-2">Sat 6:30 PM</p>
               </CardContent>
             </Card>
@@ -867,7 +770,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Lowest Utilisation</p>
-                <p className="text-2xl font-bold text-amber-600">{mockData.utilisation.lowestUtilisation}%</p>
+                <p className="text-2xl font-bold text-amber-600">{defaultData.utilisation.lowestUtilisation}%</p>
                 <p className="text-sm text-gray-500 mt-2">Mon 1:00 PM</p>
               </CardContent>
             </Card>
@@ -890,7 +793,7 @@ export default function ReportsPage() {
               </div>
               
               <div className="space-y-3">
-                {mockData.utilisation.byTimeSlot.map((slot, i) => {
+                {defaultData.utilisation.byTimeSlot.map((slot, i) => {
                   const isGood = slot.fill >= 80
                   const isBad = slot.fill < 60
                   return (
@@ -924,7 +827,7 @@ export default function ReportsPage() {
                   <h3 className="font-semibold text-gray-900">Top Performing Classes</h3>
                 </div>
                 <div className="space-y-3">
-                  {mockData.utilisation.topClasses.map((cls) => (
+                  {defaultData.utilisation.topClasses.map((cls) => (
                     <Link key={cls.id} href="/studio/schedule">
                       <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer">
                         <div>
@@ -951,7 +854,7 @@ export default function ReportsPage() {
                   <h3 className="font-semibold text-gray-900">Underperforming Classes</h3>
                 </div>
                 <div className="space-y-3">
-                  {mockData.utilisation.underperforming.map((cls) => (
+                  {defaultData.utilisation.underperforming.map((cls) => (
                     <Link key={cls.id} href="/studio/schedule">
                       <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer">
                         <div>
@@ -978,7 +881,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Instructors</p>
-                <p className="text-2xl font-bold text-gray-900">{teachers.length || mockData.instructors.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{teachers.length || defaultData.instructors.length}</p>
                 <p className="text-sm text-gray-500 mt-2">Active teachers</p>
               </CardContent>
             </Card>
@@ -1054,7 +957,7 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(teachers.length > 0 ? teachers : mockData.instructors).map((instructor) => (
+                      {(teachers.length > 0 ? teachers : defaultData.instructors).map((instructor) => (
                         <tr 
                           key={instructor.id} 
                           className="border-b border-gray-100 hover:bg-violet-50 cursor-pointer transition-colors"
@@ -1133,7 +1036,7 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-5 w-5 text-blue-500" />
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{mockData.retention.activeClients}</p>
+                  <p className="text-2xl font-bold text-gray-900">{defaultData.retention.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
                 </CardContent>
               </Card>
@@ -1145,7 +1048,7 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <UserPlus className="h-5 w-5 text-emerald-500" />
                   </div>
-                  <p className="text-2xl font-bold text-emerald-600">+{mockData.retention.newClients}</p>
+                  <p className="text-2xl font-bold text-emerald-600">+{defaultData.retention.newClients}</p>
                   <p className="text-sm text-gray-500">New This Period</p>
                 </CardContent>
               </Card>
@@ -1156,7 +1059,7 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <UserMinus className="h-5 w-5 text-red-500" />
                 </div>
-                <p className="text-2xl font-bold text-red-600">{mockData.retention.churnedClients}</p>
+                <p className="text-2xl font-bold text-red-600">{defaultData.retention.churnedClients}</p>
                 <p className="text-sm text-gray-500">Churned</p>
               </CardContent>
             </Card>
@@ -1167,7 +1070,7 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="h-5 w-5 text-amber-500" />
                   </div>
-                  <p className="text-2xl font-bold text-amber-600">{mockData.retention.atRiskClients}</p>
+                  <p className="text-2xl font-bold text-amber-600">{defaultData.retention.atRiskClients}</p>
                   <p className="text-sm text-gray-500">At Risk</p>
                 </CardContent>
               </Card>
@@ -1182,7 +1085,7 @@ export default function ReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Retention by Tenure</h3>
                 <p className="text-sm text-gray-500 mb-4">How long do clients stay?</p>
                 <div className="space-y-3">
-                  {mockData.retention.cohortRetention.map((cohort, i) => (
+                  {defaultData.retention.cohortRetention.map((cohort, i) => (
                     <div key={i}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700">{cohort.cohort}</span>
@@ -1215,7 +1118,7 @@ export default function ReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Why Clients Leave</h3>
                 <p className="text-sm text-gray-500 mb-4">Understanding churn reasons</p>
                 <div className="space-y-3">
-                  {mockData.retention.churnReasons.map((reason, i) => (
+                  {defaultData.retention.churnReasons.map((reason, i) => (
                     <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <span className="text-gray-700">{reason.reason}</span>
                       <Badge variant="secondary">{reason.count} clients</Badge>
@@ -1237,7 +1140,7 @@ export default function ReportsPage() {
                 <span className="text-sm text-gray-500">No booking in 14+ days</span>
               </div>
               <div className="space-y-3">
-                {mockData.retention.atRiskList.map((client) => (
+                {defaultData.retention.atRiskList.map((client) => (
                   <div key={client.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
                     <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1">
                       <div className={`w-3 h-3 rounded-full ${
@@ -1268,7 +1171,7 @@ export default function ReportsPage() {
               </div>
               <Link href="/studio/clients?filter=at-risk">
                 <Button variant="ghost" className="w-full mt-4 text-amber-600">
-                  View All At-Risk Clients ({mockData.retention.atRiskClients})
+                  View All At-Risk Clients ({defaultData.retention.atRiskClients})
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
@@ -1280,7 +1183,7 @@ export default function ReportsPage() {
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Retention Insights</h3>
               <div className="space-y-3">
-                {mockData.retention.insights.map((insight, i) => (
+                {defaultData.retention.insights.map((insight, i) => (
                   <div key={i} className="flex items-start gap-3">
                     {getInsightIcon(insight.type)}
                     <p className="text-sm text-gray-700">{insight.message}</p>
@@ -1299,8 +1202,8 @@ export default function ReportsPage() {
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <p className="text-sm text-gray-500 mb-1">Emails Sent</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockData.marketing.emailsSent.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500 mt-2">{mockData.marketing.emailOpenRate}% open rate</p>
+                  <p className="text-2xl font-bold text-gray-900">{defaultData.marketing.emailsSent.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500 mt-2">{defaultData.marketing.emailOpenRate}% open rate</p>
                 </CardContent>
               </Card>
             </Link>
@@ -1308,17 +1211,17 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Bookings from Email</p>
-                <p className="text-2xl font-bold text-emerald-600">{mockData.marketing.bookingsFromEmail}</p>
-                <p className="text-sm text-gray-500 mt-2">{mockData.marketing.emailClickRate}% click rate</p>
+                <p className="text-2xl font-bold text-emerald-600">{defaultData.marketing.bookingsFromEmail}</p>
+                <p className="text-sm text-gray-500 mt-2">{defaultData.marketing.emailClickRate}% click rate</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">No-Show Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{mockData.marketing.noShowRate}%</p>
+                <p className="text-2xl font-bold text-gray-900">{defaultData.marketing.noShowRate}%</p>
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 mt-2">
-                  Down from {mockData.marketing.previousNoShowRate}%
+                  Down from {defaultData.marketing.previousNoShowRate}%
                 </Badge>
               </CardContent>
             </Card>
@@ -1326,7 +1229,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Win-backs Recovered</p>
-                <p className="text-2xl font-bold text-violet-600">{mockData.marketing.winbackSuccess}</p>
+                <p className="text-2xl font-bold text-violet-600">{defaultData.marketing.winbackSuccess}</p>
                 <p className="text-sm text-gray-500 mt-2">Inactive clients returned</p>
               </CardContent>
             </Card>
@@ -1361,7 +1264,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockData.marketing.campaigns.map((campaign) => {
+                    {defaultData.marketing.campaigns.map((campaign) => {
                       const openRate = campaign.sent > 0 ? Math.round((campaign.opened / campaign.sent) * 100) : 0
                       return (
                         <tr key={campaign.id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -1411,7 +1314,7 @@ export default function ReportsPage() {
                 </Link>
               </div>
               <div className="space-y-3">
-                {mockData.marketing.insights.map((insight, i) => (
+                {defaultData.marketing.insights.map((insight, i) => (
                   <div key={i} className="flex items-start gap-3">
                     {getInsightIcon(insight.type)}
                     <p className="text-sm text-gray-700">{insight.message}</p>
