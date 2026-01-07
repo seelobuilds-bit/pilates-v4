@@ -155,6 +155,15 @@ export default function HQTrainingPage() {
   const [showAddIdea, setShowAddIdea] = useState(false)
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   
+  // Edit modals
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [editingModule, setEditingModule] = useState<{ module: Module; categoryId: string } | null>(null)
+  
+  // Delete confirmations
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null)
+  const [deletingModule, setDeletingModule] = useState<Module | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  
   // Forms
   const [newCategory, setNewCategory] = useState({ name: "", description: "", icon: "BookOpen" })
   const [newModule, setNewModule] = useState({
@@ -438,6 +447,108 @@ export default function HQTrainingPage() {
     }
   }
 
+  // UPDATE functions
+  const updateCategory = async () => {
+    if (!editingCategory) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/social-media/admin/training", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "category",
+          id: editingCategory.id,
+          name: editingCategory.name,
+          description: editingCategory.description,
+          icon: editingCategory.icon
+        })
+      })
+      if (res.ok) {
+        setEditingCategory(null)
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to update category:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateModule = async () => {
+    if (!editingModule) return
+    setSaving(true)
+    try {
+      const module = editingModule.module
+      const resources = module.resources ? JSON.parse(module.resources) : []
+      const res = await fetch("/api/social-media/admin/training", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "module",
+          id: module.id,
+          title: module.title,
+          description: module.description,
+          videoUrl: module.videoUrl,
+          thumbnailUrl: module.thumbnailUrl,
+          duration: module.duration,
+          isLive: module.isLive,
+          liveDate: module.liveDate,
+          liveUrl: module.liveUrl,
+          isInPerson: module.isInPerson,
+          eventLocation: module.eventLocation,
+          eventAddress: module.eventAddress,
+          maxAttendees: module.maxAttendees,
+          resources: resources.length > 0 ? resources : null
+        })
+      })
+      if (res.ok) {
+        setEditingModule(null)
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to update module:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // DELETE functions
+  const deleteCategory = async () => {
+    if (!deletingCategory) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/social-media/admin/training?type=category&id=${deletingCategory.id}`, {
+        method: "DELETE"
+      })
+      if (res.ok) {
+        setDeletingCategory(null)
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to delete category:", error)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const deleteModule = async () => {
+    if (!deletingModule) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/social-media/admin/training?type=module&id=${deletingModule.id}`, {
+        method: "DELETE"
+      })
+      if (res.ok) {
+        setDeletingModule(null)
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to delete module:", error)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const getFileIcon = (type: string) => {
     switch (type) {
       case "pdf": return <FileText className="h-4 w-4 text-red-500" />
@@ -512,7 +623,25 @@ export default function HQTrainingPage() {
                           <BookOpen className="h-5 w-5 text-violet-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg">{category.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-lg">{category.name}</CardTitle>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => setEditingCategory(category)}
+                            >
+                              <Edit className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => setDeletingCategory(category)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
+                            </Button>
+                          </div>
                           {category.description && (
                             <p className="text-sm text-gray-500">{category.description}</p>
                           )}
@@ -602,13 +731,31 @@ export default function HQTrainingPage() {
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1">
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSelectedModule(module)}
+                                    title="Preview"
                                   >
                                     <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingModule({ module, categoryId: category.id })}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setDeletingModule(module)}
+                                    title="Delete"
+                                    className="text-gray-400 hover:text-red-500"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="outline"
@@ -1311,6 +1458,270 @@ export default function HQTrainingPage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Modal */}
+      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          {editingCategory && (
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Category Name *</Label>
+                <Input
+                  value={editingCategory.name}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                  placeholder="e.g., Instagram Mastery"
+                />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={editingCategory.description || ""}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                  placeholder="What teachers will learn..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
+            <Button onClick={updateCategory} disabled={saving || !editingCategory?.name.trim()}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Module Modal */}
+      <Dialog open={!!editingModule} onOpenChange={(open) => !open && setEditingModule(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Module</DialogTitle>
+          </DialogHeader>
+          {editingModule && (
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Title *</Label>
+                <Input
+                  value={editingModule.module.title}
+                  onChange={(e) => setEditingModule({
+                    ...editingModule,
+                    module: { ...editingModule.module, title: e.target.value }
+                  })}
+                  placeholder="e.g., Creating Viral Reels"
+                />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={editingModule.module.description || ""}
+                  onChange={(e) => setEditingModule({
+                    ...editingModule,
+                    module: { ...editingModule.module, description: e.target.value }
+                  })}
+                  placeholder="What this module covers..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label>Video URL</Label>
+                <Input
+                  value={editingModule.module.videoUrl || ""}
+                  onChange={(e) => setEditingModule({
+                    ...editingModule,
+                    module: { ...editingModule.module, videoUrl: e.target.value }
+                  })}
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <Label>Thumbnail URL</Label>
+                <Input
+                  value={editingModule.module.thumbnailUrl || ""}
+                  onChange={(e) => setEditingModule({
+                    ...editingModule,
+                    module: { ...editingModule.module, thumbnailUrl: e.target.value }
+                  })}
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <Label>Duration (minutes)</Label>
+                <Input
+                  type="number"
+                  value={editingModule.module.duration || ""}
+                  onChange={(e) => setEditingModule({
+                    ...editingModule,
+                    module: { ...editingModule.module, duration: parseInt(e.target.value) || null }
+                  })}
+                  placeholder="15"
+                  className="w-32"
+                />
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={editingModule.module.isLive}
+                    onCheckedChange={(checked) => setEditingModule({
+                      ...editingModule,
+                      module: { ...editingModule.module, isLive: checked, isInPerson: checked ? false : editingModule.module.isInPerson }
+                    })}
+                  />
+                  <Label>Live Webinar</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={editingModule.module.isInPerson}
+                    onCheckedChange={(checked) => setEditingModule({
+                      ...editingModule,
+                      module: { ...editingModule.module, isInPerson: checked, isLive: checked ? false : editingModule.module.isLive }
+                    })}
+                  />
+                  <Label>In-Person Event</Label>
+                </div>
+              </div>
+              {editingModule.module.isLive && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg">
+                  <div>
+                    <Label>Live Date & Time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={editingModule.module.liveDate?.slice(0, 16) || ""}
+                      onChange={(e) => setEditingModule({
+                        ...editingModule,
+                        module: { ...editingModule.module, liveDate: e.target.value }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Webinar Link</Label>
+                    <Input
+                      value={editingModule.module.liveUrl || ""}
+                      onChange={(e) => setEditingModule({
+                        ...editingModule,
+                        module: { ...editingModule.module, liveUrl: e.target.value }
+                      })}
+                      placeholder="https://zoom.us/..."
+                    />
+                  </div>
+                </div>
+              )}
+              {editingModule.module.isInPerson && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+                  <div>
+                    <Label>Venue Name</Label>
+                    <Input
+                      value={editingModule.module.eventLocation || ""}
+                      onChange={(e) => setEditingModule({
+                        ...editingModule,
+                        module: { ...editingModule.module, eventLocation: e.target.value }
+                      })}
+                      placeholder="e.g., Dublin Training Center"
+                    />
+                  </div>
+                  <div>
+                    <Label>Full Address</Label>
+                    <Input
+                      value={editingModule.module.eventAddress || ""}
+                      onChange={(e) => setEditingModule({
+                        ...editingModule,
+                        module: { ...editingModule.module, eventAddress: e.target.value }
+                      })}
+                      placeholder="123 Main St, Dublin"
+                    />
+                  </div>
+                  <div>
+                    <Label>Max Attendees</Label>
+                    <Input
+                      type="number"
+                      value={editingModule.module.maxAttendees || ""}
+                      onChange={(e) => setEditingModule({
+                        ...editingModule,
+                        module: { ...editingModule.module, maxAttendees: parseInt(e.target.value) || null }
+                      })}
+                      placeholder="50"
+                      className="w-32"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEditingModule(null)}>Cancel</Button>
+            <Button onClick={updateModule} disabled={saving || !editingModule?.module.title.trim()}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation */}
+      <Dialog open={!!deletingCategory} onOpenChange={(open) => !open && setDeletingCategory(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Category</DialogTitle>
+          </DialogHeader>
+          {deletingCategory && (
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to delete <strong>{deletingCategory.name}</strong>?
+              </p>
+              <p className="text-sm text-red-500 mt-2">
+                ⚠️ This will also delete {deletingCategory.modules.length} module{deletingCategory.modules.length !== 1 ? "s" : ""} and all associated homework.
+              </p>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setDeletingCategory(null)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteCategory} 
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Category
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Module Confirmation */}
+      <Dialog open={!!deletingModule} onOpenChange={(open) => !open && setDeletingModule(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Module</DialogTitle>
+          </DialogHeader>
+          {deletingModule && (
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to delete <strong>{deletingModule.title}</strong>?
+              </p>
+              {deletingModule.homework.length > 0 && (
+                <p className="text-sm text-red-500 mt-2">
+                  ⚠️ This will also delete {deletingModule.homework.length} homework assignment{deletingModule.homework.length !== 1 ? "s" : ""}.
+                </p>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setDeletingModule(null)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteModule} 
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Module
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

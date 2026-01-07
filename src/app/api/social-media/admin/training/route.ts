@@ -123,6 +123,125 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT - Update category or module
+export async function PUT(request: NextRequest) {
+  const session = await getSession()
+
+  if (!session?.user || session.user.role !== "HQ_ADMIN") {
+    return NextResponse.json({ error: "Unauthorized - HQ Admin only" }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { type, id, ...data } = body
+
+    if (!id) {
+      return NextResponse.json({ error: "ID required" }, { status: 400 })
+    }
+
+    if (type === "category") {
+      const category = await db.socialTrainingCategory.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description,
+          icon: data.icon,
+          order: data.order
+        }
+      })
+      return NextResponse.json(category)
+    }
+
+    if (type === "module") {
+      const module = await db.socialTrainingModule.update({
+        where: { id },
+        data: {
+          title: data.title,
+          description: data.description,
+          videoUrl: data.videoUrl,
+          thumbnailUrl: data.thumbnailUrl,
+          duration: data.duration,
+          isLive: data.isLive || false,
+          liveDate: data.liveDate ? new Date(data.liveDate) : null,
+          liveUrl: data.liveUrl,
+          isInPerson: data.isInPerson || false,
+          eventLocation: data.eventLocation,
+          eventAddress: data.eventAddress,
+          maxAttendees: data.maxAttendees,
+          resources: data.resources ? JSON.stringify(data.resources) : null,
+          order: data.order
+        }
+      })
+      return NextResponse.json(module)
+    }
+
+    if (type === "homework") {
+      const homework = await db.socialTrainingHomework.update({
+        where: { id },
+        data: {
+          title: data.title,
+          description: data.description,
+          requirements: JSON.stringify(data.requirements),
+          points: data.points,
+          dueInDays: data.dueInDays
+        }
+      })
+      return NextResponse.json(homework)
+    }
+
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 })
+  } catch (error) {
+    console.error("Failed to update:", error)
+    return NextResponse.json({ error: "Failed to update" }, { status: 500 })
+  }
+}
+
+// DELETE - Delete category, module, or homework
+export async function DELETE(request: NextRequest) {
+  const session = await getSession()
+
+  if (!session?.user || session.user.role !== "HQ_ADMIN") {
+    return NextResponse.json({ error: "Unauthorized - HQ Admin only" }, { status: 401 })
+  }
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type")
+    const id = searchParams.get("id")
+
+    if (!type || !id) {
+      return NextResponse.json({ error: "Type and ID required" }, { status: 400 })
+    }
+
+    if (type === "category") {
+      // This will cascade delete all modules and homework
+      await db.socialTrainingCategory.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === "module") {
+      // This will cascade delete all homework
+      await db.socialTrainingModule.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === "homework") {
+      await db.socialTrainingHomework.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === "content_idea") {
+      await db.socialContentIdea.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 })
+  } catch (error) {
+    console.error("Failed to delete:", error)
+    return NextResponse.json({ error: "Failed to delete" }, { status: 500 })
+  }
+}
+
 
 
 
