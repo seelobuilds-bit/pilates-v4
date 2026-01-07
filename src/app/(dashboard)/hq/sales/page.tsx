@@ -189,6 +189,17 @@ export default function HQSalesCRMPage() {
 
   // Import data
   const [importData, setImportData] = useState("")
+  
+  // Add agent modal
+  const [showAddAgent, setShowAddAgent] = useState(false)
+  const [newAgent, setNewAgent] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    title: "",
+    phone: "",
+    calendarLink: ""
+  })
 
   const fetchData = useCallback(async () => {
     try {
@@ -290,6 +301,83 @@ export default function HQSalesCRMPage() {
     } catch (error) {
       console.error("Failed to move lead:", error)
       fetchData()
+    }
+  }
+
+  const createAgent = async () => {
+    if (!newAgent.email || !newAgent.firstName || !newAgent.lastName) {
+      alert("Please fill in email, first name, and last name")
+      return
+    }
+
+    try {
+      setSaving(true)
+      
+      // First create the user
+      const userRes = await fetch("/api/hq/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: newAgent.email,
+          firstName: newAgent.firstName,
+          lastName: newAgent.lastName,
+          role: "SALES_AGENT"
+        })
+      })
+
+      if (!userRes.ok) {
+        const data = await userRes.json()
+        alert(data.error || "Failed to create user")
+        return
+      }
+
+      const { user } = await userRes.json()
+
+      // Then create the sales agent profile
+      const agentRes = await fetch("/api/hq/sales/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          title: newAgent.title || "Sales Agent",
+          phone: newAgent.phone,
+          calendarLink: newAgent.calendarLink
+        })
+      })
+
+      if (agentRes.ok) {
+        setShowAddAgent(false)
+        setNewAgent({ email: "", firstName: "", lastName: "", title: "", phone: "", calendarLink: "" })
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to create agent:", error)
+      alert("Failed to create agent")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const makeCurrentUserAgent = async () => {
+    try {
+      setSaving(true)
+      const res = await fetch("/api/hq/sales/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Admin",
+          canReceiveLeads: true,
+          isActive: true
+        })
+      })
+
+      if (res.ok) {
+        fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to create agent profile:", error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -824,6 +912,43 @@ export default function HQSalesCRMPage() {
 
         {/* Sales Team View */}
         <TabsContent value="agents">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">Sales Team</h2>
+            <div className="flex gap-2">
+              {/* Show "Add Yourself" button if current user isn't an agent */}
+              {agents.length === 0 && (
+                <Button 
+                  onClick={makeCurrentUserAgent}
+                  disabled={saving}
+                  variant="outline"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <User className="h-4 w-4 mr-2" />}
+                  Add Yourself as Agent
+                </Button>
+              )}
+              <Button 
+                onClick={() => setShowAddAgent(true)}
+                className="bg-violet-600 hover:bg-violet-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Sales Agent
+              </Button>
+            </div>
+          </div>
+          
+          {agents.length === 0 ? (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-12 text-center">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="font-medium text-gray-900 mb-2">No Sales Agents Yet</h3>
+                <p className="text-gray-500 mb-4">Add yourself or create new sales agent profiles to assign leads and demos.</p>
+                <Button onClick={makeCurrentUserAgent} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                  Add Yourself as Agent
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
           <div className="grid grid-cols-3 gap-6">
             {agents.map(agent => (
               <Card key={agent.id} className="border-0 shadow-sm">
@@ -857,8 +982,91 @@ export default function HQSalesCRMPage() {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Add Agent Modal */}
+      <Dialog open={showAddAgent} onOpenChange={setShowAddAgent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Sales Agent</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>First Name *</Label>
+                <Input
+                  value={newAgent.firstName}
+                  onChange={(e) => setNewAgent({ ...newAgent, firstName: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <Label>Last Name *</Label>
+                <Input
+                  value={newAgent.lastName}
+                  onChange={(e) => setNewAgent({ ...newAgent, lastName: e.target.value })}
+                  placeholder="Smith"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Email *</Label>
+              <Input
+                type="email"
+                value={newAgent.email}
+                onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+                placeholder="john@example.com"
+              />
+            </div>
+            <div>
+              <Label>Title</Label>
+              <Input
+                value={newAgent.title}
+                onChange={(e) => setNewAgent({ ...newAgent, title: e.target.value })}
+                placeholder="Sales Manager"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                value={newAgent.phone}
+                onChange={(e) => setNewAgent({ ...newAgent, phone: e.target.value })}
+                placeholder="+1 555 123 4567"
+              />
+            </div>
+            <div>
+              <Label>Calendar Link</Label>
+              <Input
+                value={newAgent.calendarLink}
+                onChange={(e) => setNewAgent({ ...newAgent, calendarLink: e.target.value })}
+                placeholder="https://calendly.com/..."
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowAddAgent(false)}>Cancel</Button>
+            <Button 
+              onClick={createAgent}
+              disabled={saving || !newAgent.email || !newAgent.firstName || !newAgent.lastName}
+              className="bg-violet-600 hover:bg-violet-700"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Agent
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Lead Modal */}
       <Dialog open={showAddLead} onOpenChange={setShowAddLead}>

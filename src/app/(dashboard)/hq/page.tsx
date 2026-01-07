@@ -2,24 +2,41 @@ import { db } from "@/lib/db"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Users, Calendar, DollarSign, Plus, ArrowRight } from "lucide-react"
+import { Building2, Users, Calendar, DollarSign, Plus, ArrowRight, Target } from "lucide-react"
 
 export default async function HQDashboardPage() {
-  const [studioCount, userCount, classCount, recentStudios] = await Promise.all([
-    db.studio.count(),
-    db.user.count(),
-    db.classSession.count(),
-    db.studio.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: {
-        owner: true,
-        _count: {
-          select: { clients: true, teachers: true, locations: true }
-        }
+  // Count only real studios (exclude demo)
+  const studioCount = await db.studio.count({
+    where: { subdomain: { not: "zenith" } }
+  })
+  
+  // Count total clients across all real studios
+  const clientCount = await db.client.count({
+    where: { studio: { subdomain: { not: "zenith" } } }
+  })
+  
+  // Count active leads
+  const leadCount = await db.lead.count({
+    where: { status: { notIn: ["WON", "LOST"] } }
+  })
+  
+  // Count class sessions
+  const classCount = await db.classSession.count({
+    where: { studio: { subdomain: { not: "zenith" } } }
+  })
+  
+  // Get recent studios
+  const recentStudios = await db.studio.findMany({
+    where: { subdomain: { not: "zenith" } },
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    include: {
+      owner: true,
+      _count: {
+        select: { clients: true, teachers: true, locations: true }
       }
-    })
-  ])
+    }
+  })
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
@@ -57,11 +74,25 @@ export default async function HQDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900">{userCount}</p>
+                <p className="text-sm text-gray-500 mb-1">Total Clients</p>
+                <p className="text-3xl font-bold text-gray-900">{clientCount}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
                 <Users className="h-6 w-6 text-blue-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Active Leads</p>
+                <p className="text-3xl font-bold text-gray-900">{leadCount}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
+                <Target className="h-6 w-6 text-orange-500" />
               </div>
             </div>
           </CardContent>
@@ -81,19 +112,6 @@ export default async function HQDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">$0</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-emerald-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Recent Studios */}
