@@ -404,3 +404,4 @@ export function CourseChat({ courseId, courseName }: CourseChatProps) {
 
 
 
+
