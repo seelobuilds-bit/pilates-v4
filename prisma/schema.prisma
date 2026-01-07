@@ -73,6 +73,7 @@ model Studio {
   classSessions ClassSession[]
   bookings      Booking[]
   payments      Payment[]
+  waitlists     Waitlist[]
   
   // Communication settings
   emailConfig   StudioEmailConfig?
@@ -691,6 +692,9 @@ model Client {
   
   // E-commerce Orders
   merchOrders             MerchOrder[]
+  
+  // Waitlist entries
+  waitlists               Waitlist[]
 
   @@unique([email, studioId])
 }
@@ -713,7 +717,8 @@ model ClassSession {
   locationId  String
   location    Location  @relation(fields: [locationId], references: [id])
 
-  bookings Booking[]
+  bookings  Booking[]
+  waitlists Waitlist[]
 }
 
 enum BookingStatus {
@@ -751,6 +756,37 @@ model Booking {
   @@unique([clientId, classSessionId])
   @@index([studioId, status])
   @@index([classSessionId, status])
+}
+
+// Waitlist for full classes
+model Waitlist {
+  id        String   @id @default(cuid())
+  position  Int      // Position in the waitlist queue
+  status    WaitlistStatus @default(WAITING)
+  notifiedAt DateTime? // When they were notified of an opening
+  expiresAt  DateTime? // Deadline to claim the spot
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studioId       String
+  studio         Studio       @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id])
+  classSessionId String
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id])
+
+  // Prevent same client joining waitlist for same class twice
+  @@unique([clientId, classSessionId])
+  @@index([classSessionId, status])
+  @@index([classSessionId, position])
+}
+
+enum WaitlistStatus {
+  WAITING    // In queue
+  NOTIFIED   // Spot opened, client notified
+  CLAIMED    // Client claimed the spot (booking created)
+  EXPIRED    // Notification expired, moved to next person
+  CANCELLED  // Client removed themselves
 }
 
 // Payment tracking

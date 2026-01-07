@@ -645,4 +645,345 @@ export async function sendStudioWelcomeEmail(params: {
   })
 }
 
+// ======================
+// Booking & Class Emails
+// ======================
+
+interface BookingDetails {
+  bookingId: string
+  className: string
+  teacherName: string
+  locationName: string
+  locationAddress?: string
+  startTime: Date
+  endTime: Date
+  amount?: number
+  status: string
+}
+
+/**
+ * Send booking confirmation email to client
+ */
+export async function sendBookingConfirmationEmail(params: {
+  studioId: string
+  studioName: string
+  clientEmail: string
+  clientName: string
+  booking: BookingDetails
+  manageBookingUrl: string
+}): Promise<SendEmailResult> {
+  const { studioId, studioName, clientEmail, clientName, booking, manageBookingUrl } = params
+
+  const dateStr = booking.startTime.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+  const timeStr = booking.startTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+  const endTimeStr = booking.endTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Booking Confirmed! ✓</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
+    <p style="color: #374151; font-size: 16px;">Your class has been booked at <strong>${studioName}</strong>!</p>
+    
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+      <h2 style="color: #7c3aed; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📅 Date</td>
+          <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 600;">${dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">⏰ Time</td>
+          <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 600;">${timeStr} - ${endTimeStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">👤 Teacher</td>
+          <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 600;">${booking.teacherName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📍 Location</td>
+          <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 600;">${booking.locationName}</td>
+        </tr>
+        ${booking.locationAddress ? `<tr>
+          <td style="padding: 8px 0;"></td>
+          <td style="padding: 0 0 8px 0; color: #6b7280; font-size: 12px;">${booking.locationAddress}</td>
+        </tr>` : ''}
+        ${booking.amount ? `<tr>
+          <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">💳 Amount</td>
+          <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 600;">$${booking.amount.toFixed(2)}</td>
+        </tr>` : ''}
+      </table>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View or Manage Booking</a>
+    </div>
+
+    <div style="background: #fef3c7; border-radius: 8px; padding: 15px; margin-top: 20px;">
+      <p style="color: #92400e; font-size: 14px; margin: 0;">
+        <strong>Cancellation Policy:</strong> Free cancellation up to 24 hours before class. Late cancellations (12-24 hours) incur a 50% fee. No refunds within 12 hours of class time.
+      </p>
+    </div>
+
+    <p style="color: #374151; font-size: 16px; margin-top: 30px;">See you in class! 🧘</p>
+    <p style="color: #374151; font-size: 16px;">${studioName}</p>
+  </div>
+</body>
+</html>
+`
+
+  return sendStudioEmail(studioId, {
+    to: clientEmail,
+    subject: `Booking Confirmed: ${booking.className} - ${dateStr}`,
+    html
+  })
+}
+
+/**
+ * Send class reminder email (typically 24hr or 1hr before)
+ */
+export async function sendClassReminderEmail(params: {
+  studioId: string
+  studioName: string
+  clientEmail: string
+  clientName: string
+  booking: BookingDetails
+  reminderType: '24hr' | '1hr'
+  manageBookingUrl: string
+}): Promise<SendEmailResult> {
+  const { studioId, studioName, clientEmail, clientName, booking, reminderType, manageBookingUrl } = params
+
+  const dateStr = booking.startTime.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+  const timeStr = booking.startTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+
+  const reminderText = reminderType === '24hr' 
+    ? "Your class is coming up tomorrow!"
+    : "Your class starts in 1 hour!"
+
+  const emoji = reminderType === '24hr' ? '📅' : '⏰'
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">${emoji} Class Reminder</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
+    <p style="color: #374151; font-size: 18px; font-weight: 600;">${reminderText}</p>
+    
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+      <h2 style="color: #7c3aed; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
+      <p style="color: #374151; font-size: 16px; margin: 5px 0;"><strong>${dateStr}</strong></p>
+      <p style="color: #374151; font-size: 16px; margin: 5px 0;">${timeStr} with ${booking.teacherName}</p>
+      <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">📍 ${booking.locationName}</p>
+    </div>
+
+    <div style="background: #ecfdf5; border-radius: 8px; padding: 15px; margin: 20px 0;">
+      <p style="color: #065f46; font-size: 14px; margin: 0;">
+        <strong>What to bring:</strong> Water bottle, towel, comfortable clothing. Please arrive 5-10 minutes early.
+      </p>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View Booking Details</a>
+    </div>
+
+    ${reminderType === '24hr' ? `
+    <p style="color: #6b7280; font-size: 14px;">
+      Need to cancel? You can still cancel for free until ${new Date(booking.startTime.getTime() - 24*60*60*1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} today.
+    </p>
+    ` : ''}
+
+    <p style="color: #374151; font-size: 16px; margin-top: 30px;">See you soon! 🧘</p>
+    <p style="color: #374151; font-size: 16px;">${studioName}</p>
+  </div>
+</body>
+</html>
+`
+
+  const subjectPrefix = reminderType === '24hr' ? 'Tomorrow' : 'Starting Soon'
+
+  return sendStudioEmail(studioId, {
+    to: clientEmail,
+    subject: `${subjectPrefix}: ${booking.className} at ${timeStr}`,
+    html
+  })
+}
+
+/**
+ * Send waitlist notification email when a spot opens up
+ */
+export async function sendWaitlistNotificationEmail(params: {
+  studioId: string
+  studioName: string
+  clientEmail: string
+  clientName: string
+  className: string
+  teacherName: string
+  locationName: string
+  startTime: Date
+  position: number
+  claimUrl: string
+  expiresAt: Date
+}): Promise<SendEmailResult> {
+  const { studioId, studioName, clientEmail, clientName, className, teacherName, locationName, startTime, position, claimUrl, expiresAt } = params
+
+  const dateStr = startTime.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+  const timeStr = startTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+  const expiresStr = expiresAt.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 A Spot Opened Up!</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
+    <p style="color: #374151; font-size: 18px; font-weight: 600;">Great news! A spot just opened up in the class you were waiting for!</p>
+    
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981;">
+      <h2 style="color: #059669; margin: 0 0 15px 0; font-size: 20px;">${className}</h2>
+      <p style="color: #374151; font-size: 16px; margin: 5px 0;"><strong>${dateStr}</strong></p>
+      <p style="color: #374151; font-size: 16px; margin: 5px 0;">${timeStr} with ${teacherName}</p>
+      <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">📍 ${locationName}</p>
+    </div>
+
+    <div style="background: #fef3c7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+      <p style="color: #92400e; font-size: 14px; margin: 0;">
+        <strong>⏰ Act Fast!</strong> You were #${position} on the waitlist. Claim your spot before <strong>${expiresStr}</strong> or it will go to the next person.
+      </p>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${claimUrl}" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block; font-size: 18px;">Claim My Spot</a>
+    </div>
+
+    <p style="color: #6b7280; font-size: 14px;">If you no longer want this spot, no action is needed - it will automatically be offered to the next person on the waitlist.</p>
+
+    <p style="color: #374151; font-size: 16px; margin-top: 30px;">Hope to see you there! 🧘</p>
+    <p style="color: #374151; font-size: 16px;">${studioName}</p>
+  </div>
+</body>
+</html>
+`
+
+  return sendStudioEmail(studioId, {
+    to: clientEmail,
+    subject: `🎉 Spot Available! ${className} - ${dateStr}`,
+    html
+  })
+}
+
+/**
+ * Send booking cancellation confirmation email
+ */
+export async function sendBookingCancellationEmail(params: {
+  studioId: string
+  studioName: string
+  clientEmail: string
+  clientName: string
+  booking: BookingDetails
+  refundAmount?: number
+  cancellationType: 'FREE' | 'LATE' | 'NO_REFUND'
+}): Promise<SendEmailResult> {
+  const { studioId, studioName, clientEmail, clientName, booking, refundAmount, cancellationType } = params
+
+  const dateStr = booking.startTime.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+  const timeStr = booking.startTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  })
+
+  let refundMessage = ''
+  if (cancellationType === 'FREE' && refundAmount && refundAmount > 0) {
+    refundMessage = `<p style="color: #059669; font-size: 16px; font-weight: 600;">A full refund of $${refundAmount.toFixed(2)} will be processed within 5-10 business days.</p>`
+  } else if (cancellationType === 'LATE' && refundAmount && refundAmount > 0) {
+    refundMessage = `<p style="color: #d97706; font-size: 16px;">Due to late cancellation (within 24 hours), a 50% fee applies. You will be refunded $${refundAmount.toFixed(2)}.</p>`
+  } else if (cancellationType === 'NO_REFUND') {
+    refundMessage = `<p style="color: #dc2626; font-size: 16px;">Due to cancellation within 12 hours of class time, no refund is available per our cancellation policy.</p>`
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #f3f4f6; padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #374151; margin: 0; font-size: 24px;">Booking Cancelled</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
+    <p style="color: #374151; font-size: 16px;">Your booking has been cancelled:</p>
+    
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #9ca3af; opacity: 0.8;">
+      <h2 style="color: #6b7280; margin: 0 0 15px 0; font-size: 20px; text-decoration: line-through;">${booking.className}</h2>
+      <p style="color: #6b7280; font-size: 16px; margin: 5px 0;">${dateStr}</p>
+      <p style="color: #6b7280; font-size: 16px; margin: 5px 0;">${timeStr} with ${booking.teacherName}</p>
+      <p style="color: #9ca3af; font-size: 14px; margin: 5px 0;">📍 ${booking.locationName}</p>
+    </div>
+
+    ${refundMessage}
+
+    <p style="color: #374151; font-size: 16px; margin-top: 20px;">We hope to see you in another class soon!</p>
+    <p style="color: #374151; font-size: 16px;">${studioName}</p>
+  </div>
+</body>
+</html>
+`
+
+  return sendStudioEmail(studioId, {
+    to: clientEmail,
+    subject: `Booking Cancelled: ${booking.className} - ${dateStr}`,
+    html
+  })
+}
+
 

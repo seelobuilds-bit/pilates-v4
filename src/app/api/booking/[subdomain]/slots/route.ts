@@ -47,22 +47,39 @@ export async function GET(
         },
         classType: true,
         location: true,
-        _count: { select: { bookings: true } }
+        _count: { 
+          select: { 
+            bookings: {
+              where: { status: { in: ["CONFIRMED", "PENDING"] } }
+            },
+            waitlists: {
+              where: { status: "WAITING" }
+            }
+          } 
+        }
       },
       orderBy: { startTime: "asc" },
       take: 20
     })
 
     return NextResponse.json(
-      sessions.map((s) => ({
-        id: s.id,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        teacher: s.teacher,
-        classType: s.classType,
-        location: s.location,
-        spotsLeft: s.capacity - s._count.bookings
-      }))
+      sessions.map((s) => {
+        const spotsLeft = s.capacity - s._count.bookings
+        const isFull = spotsLeft <= 0
+        return {
+          id: s.id,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          teacher: s.teacher,
+          classType: s.classType,
+          location: s.location,
+          capacity: s.capacity,
+          spotsLeft: Math.max(0, spotsLeft),
+          isFull,
+          waitlistCount: s._count.waitlists,
+          canJoinWaitlist: isFull
+        }
+      })
     )
   } catch (error) {
     console.error("Failed to fetch slots:", error)

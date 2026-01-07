@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
+import { sendBookingConfirmationEmail } from "@/lib/email"
 
 export async function POST(
   request: NextRequest,
@@ -108,6 +109,7 @@ export async function POST(
         paidAmount: isFreeClass ? 0 : null // Set after payment
       },
       include: {
+        client: true,
         classSession: {
           include: {
             classType: true,
@@ -117,6 +119,26 @@ export async function POST(
         }
       }
     })
+
+    // Send booking confirmation email (don't await to avoid slowing down response)
+    sendBookingConfirmationEmail({
+      studioId: studio.id,
+      studioName: studio.name,
+      clientEmail: booking.client.email,
+      clientName: booking.client.firstName,
+      booking: {
+        bookingId: booking.id,
+        className: booking.classSession.classType.name,
+        teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
+        locationName: booking.classSession.location.name,
+        locationAddress: booking.classSession.location.address || undefined,
+        startTime: booking.classSession.startTime,
+        endTime: booking.classSession.endTime,
+        amount: isFreeClass ? undefined : amount,
+        status: booking.status
+      },
+      manageBookingUrl: `https://${subdomain}.thecurrent.app/account`
+    }).catch(err => console.error('Failed to send booking confirmation:', err))
 
     return NextResponse.json({ 
       success: true, 

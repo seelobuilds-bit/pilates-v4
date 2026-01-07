@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
+import { sendBookingCancellationEmail, sendWaitlistNotificationEmail } from "@/lib/email"
 
 // Cancellation policy defaults (in hours)
 const DEFAULT_FREE_CANCELLATION_WINDOW = 24 // hours before class
@@ -106,15 +107,91 @@ export async function DELETE(
     }
 
     // Update booking status
-    await db.booking.update({
+    const updatedBooking = await db.booking.update({
       where: { id: booking.id },
       data: { 
         status: "CANCELLED",
         cancelledAt: new Date(),
-        // Store cancellation details for reporting
         cancellationReason: `Client cancelled (${cancellationType})`,
+      },
+      include: {
+        client: true,
+        classSession: {
+          include: {
+            classType: true,
+            teacher: { include: { user: true } },
+            location: true
+          }
+        }
       }
     })
+
+    // Send cancellation confirmation email (don't await)
+    sendBookingCancellationEmail({
+      studioId: studio.id,
+      studioName: studio.name,
+      clientEmail: updatedBooking.client.email,
+      clientName: updatedBooking.client.firstName,
+      booking: {
+        bookingId: updatedBooking.id,
+        className: updatedBooking.classSession.classType.name,
+        teacherName: `${updatedBooking.classSession.teacher.user.firstName} ${updatedBooking.classSession.teacher.user.lastName}`,
+        locationName: updatedBooking.classSession.location.name,
+        startTime: updatedBooking.classSession.startTime,
+        endTime: updatedBooking.classSession.endTime,
+        status: updatedBooking.status
+      },
+      refundAmount,
+      cancellationType
+    }).catch(err => console.error('Failed to send cancellation email:', err))
+
+    // Process waitlist - notify next person in line
+    const nextInWaitlist = await db.waitlist.findFirst({
+      where: {
+        classSessionId: booking.classSessionId,
+        status: "WAITING"
+      },
+      orderBy: { position: "asc" },
+      include: {
+        client: true,
+        classSession: {
+          include: {
+            classType: true,
+            teacher: { include: { user: true } },
+            location: true
+          }
+        }
+      }
+    })
+
+    if (nextInWaitlist) {
+      // Set expiration (e.g., 2 hours to claim)
+      const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000)
+      
+      await db.waitlist.update({
+        where: { id: nextInWaitlist.id },
+        data: {
+          status: "NOTIFIED",
+          notifiedAt: new Date(),
+          expiresAt
+        }
+      })
+
+      // Send notification email
+      sendWaitlistNotificationEmail({
+        studioId: studio.id,
+        studioName: studio.name,
+        clientEmail: nextInWaitlist.client.email,
+        clientName: nextInWaitlist.client.firstName,
+        className: nextInWaitlist.classSession.classType.name,
+        teacherName: `${nextInWaitlist.classSession.teacher.user.firstName} ${nextInWaitlist.classSession.teacher.user.lastName}`,
+        locationName: nextInWaitlist.classSession.location.name,
+        startTime: nextInWaitlist.classSession.startTime,
+        position: nextInWaitlist.position,
+        claimUrl: `https://${subdomain}.thecurrent.app/book?claim=${nextInWaitlist.id}`,
+        expiresAt
+      }).catch(err => console.error('Failed to send waitlist notification:', err))
+    }
 
     // TODO: Process refund via Stripe if applicable
     // if (refundAmount > 0 && booking.paymentId) {
@@ -128,7 +205,8 @@ export async function DELETE(
       originalAmount: booking.paidAmount || 0,
       refundAmount,
       lateFeePercent,
-      message
+      message,
+      waitlistNotified: !!nextInWaitlist
     })
   } catch (error) {
     console.error("Cancellation error:", error)

@@ -143,10 +143,73 @@ export default async function StudioDashboardPage() {
     return "Good evening"
   }
 
-  // Revenue will be $0 for new studios - TODO: integrate with real payment data
+  // ====== REAL REVENUE CALCULATION ======
+  // Get start of current month and previous month for comparison
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+
+  // Fetch real payment data from Payment table (amount is in cents)
+  const [thisMonthPayments, lastMonthPayments, thisMonthBookingRevenue, lastMonthBookingRevenue] = await Promise.all([
+    // Payments this month (SUCCEEDED only)
+    db.payment.aggregate({
+      where: {
+        studioId,
+        status: "SUCCEEDED",
+        createdAt: { gte: startOfMonth }
+      },
+      _sum: { amount: true }
+    }),
+    // Payments last month for comparison
+    db.payment.aggregate({
+      where: {
+        studioId,
+        status: "SUCCEEDED",
+        createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }
+      },
+      _sum: { amount: true }
+    }),
+    // Also check bookings.paidAmount for legacy/direct payments (this month)
+    db.booking.aggregate({
+      where: {
+        studioId,
+        status: { in: ["CONFIRMED", "COMPLETED"] },
+        paidAmount: { not: null },
+        paymentId: null, // Only count if no linked Payment (avoid double counting)
+        createdAt: { gte: startOfMonth }
+      },
+      _sum: { paidAmount: true }
+    }),
+    // Last month booking revenue for comparison
+    db.booking.aggregate({
+      where: {
+        studioId,
+        status: { in: ["CONFIRMED", "COMPLETED"] },
+        paidAmount: { not: null },
+        paymentId: null,
+        createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }
+      },
+      _sum: { paidAmount: true }
+    })
+  ])
+
+  // Calculate total revenue (Payment amount is in cents, convert to dollars)
+  const paymentRevenue = (thisMonthPayments._sum.amount || 0) / 100
+  const bookingRevenue = thisMonthBookingRevenue._sum.paidAmount || 0
+  const thisMonthRevenue = paymentRevenue + bookingRevenue
+
+  const lastMonthPaymentRevenue = (lastMonthPayments._sum.amount || 0) / 100
+  const lastMonthBookingRevenueTotal = lastMonthBookingRevenue._sum.paidAmount || 0
+  const lastMonthTotal = lastMonthPaymentRevenue + lastMonthBookingRevenueTotal
+
+  // Calculate percent change (avoid division by zero)
+  const revenuePercentChange = lastMonthTotal > 0 
+    ? ((thisMonthRevenue - lastMonthTotal) / lastMonthTotal * 100)
+    : (thisMonthRevenue > 0 ? 100 : 0)
+
   const revenue = {
-    thisMonth: 0,
-    percentChange: 0
+    thisMonth: thisMonthRevenue,
+    percentChange: Math.round(revenuePercentChange * 10) / 10 // Round to 1 decimal
   }
 
   // Build the dashboard data object
