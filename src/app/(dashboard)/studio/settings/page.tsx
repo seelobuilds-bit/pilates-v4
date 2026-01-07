@@ -48,13 +48,29 @@ export default function SettingsPage() {
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null)
+  const [activeTemplates, setActiveTemplates] = useState(0)
+  const [baseUrl, setBaseUrl] = useState("")
   const [stripeLoading, setStripeLoading] = useState(false)
   const [connectingStripe, setConnectingStripe] = useState(false)
 
   useEffect(() => {
     fetchStudioData()
     fetchStripeStatus()
+    fetchActiveTemplates()
   }, [])
+  
+  const fetchActiveTemplates = async () => {
+    try {
+      const res = await fetch("/api/studio/email-templates")
+      if (res.ok) {
+        const templates = await res.json()
+        const activeCount = templates.filter((t: { isEnabled: boolean }) => t.isEnabled).length
+        setActiveTemplates(activeCount)
+      }
+    } catch (error) {
+      console.error("Error fetching templates:", error)
+    }
+  }
 
   useEffect(() => {
     // Refresh Stripe status after onboarding
@@ -65,13 +81,25 @@ export default function SettingsPage() {
 
   const fetchStudioData = async () => {
     try {
-      // For now, just set placeholder - you can add an API to fetch this
-      // The actual values will come from the session
-      setStudio({
-        name: "Studio",
-        subdomain: "studio",
-        primaryColor: "#7c3aed"
-      })
+      // Set base URL from window location or production URL
+      const url = typeof window !== 'undefined' 
+        ? window.location.origin 
+        : 'https://thecurrent.app'
+      setBaseUrl(url)
+      
+      const res = await fetch("/api/studio/settings")
+      if (res.ok) {
+        const data = await res.json()
+        setStudio({
+          name: data.name,
+          subdomain: data.subdomain,
+          primaryColor: data.primaryColor || "#7c3aed"
+        })
+      } else if (res.status === 401) {
+        console.error("Session may need refresh - try logging out and back in")
+      }
+    } catch (error) {
+      console.error("Error fetching studio data:", error)
     } finally {
       setLoading(false)
     }
@@ -405,10 +433,19 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <Input 
                   readOnly 
-                  value={`http://localhost:3000/${studio?.subdomain}`} 
+                  value={studio?.subdomain ? `${baseUrl}/${studio.subdomain}` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")} 
                   className="bg-gray-50"
                 />
-                <Button variant="outline">Copy</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (studio?.subdomain) {
+                      navigator.clipboard.writeText(`${baseUrl}/${studio.subdomain}`)
+                    }
+                  }}
+                >
+                  Copy
+                </Button>
               </div>
             </div>
             <div className="space-y-2">
@@ -416,9 +453,18 @@ export default function SettingsPage() {
               <textarea 
                 readOnly
                 className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"
-                value={`<iframe src="http://localhost:3000/${studio?.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>`}
+                value={studio?.subdomain ? `<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")}
               />
-              <Button variant="outline">Copy Code</Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (studio?.subdomain) {
+                    navigator.clipboard.writeText(`<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>`)
+                  }
+                }}
+              >
+                Copy Code
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -449,7 +495,7 @@ export default function SettingsPage() {
             <div className="mt-4">
               <div className="p-3 bg-violet-50 rounded-lg inline-block">
                 <p className="text-xs text-violet-600 font-medium">Active Templates</p>
-                <p className="text-2xl font-bold text-violet-700">8</p>
+                <p className="text-2xl font-bold text-violet-700">{activeTemplates}</p>
               </div>
             </div>
           </CardContent>

@@ -84,6 +84,7 @@ model Studio {
   segments      Segment[]
   templates     MessageTemplate[]
   systemEmails  SystemEmailTemplate[]
+  systemSms     SystemSmsTemplate[]
   hqMessages    HQMessage[]
   
   // Website Analytics
@@ -461,8 +462,12 @@ model MessageTemplate {
 // System Email Templates (transactional emails)
 enum SystemEmailType {
   BOOKING_CONFIRMATION       // When a client books a class
+  CLASS_REMINDER_24HR        // 24 hours before class
+  CLASS_REMINDER_1HR         // 1 hour before class
   CLASS_CANCELLED_BY_STUDIO  // When studio cancels a class
   CLASS_CANCELLED_BY_CLIENT  // When client cancels their booking
+  WAITLIST_NOTIFICATION      // When a spot opens up on waitlist
+  WAITLIST_CONFIRMED         // When client claims waitlist spot
   PAYMENT_SUCCESS            // When payment/rebill succeeds
   PAYMENT_FAILED             // When payment/rebill fails
   PAYMENT_REFUND             // When a refund is processed
@@ -470,9 +475,39 @@ enum SystemEmailType {
   WELCOME                    // Welcome email for new clients
 }
 
+// SMS Template Types
+enum SystemSmsType {
+  BOOKING_CONFIRMATION       // When a client books a class
+  CLASS_REMINDER_24HR        // 24 hours before class
+  CLASS_REMINDER_1HR         // 1 hour before class
+  CLASS_CANCELLED            // When class is cancelled
+  WAITLIST_NOTIFICATION      // When a spot opens up on waitlist
+}
+
+// SMS Templates per studio
+model SystemSmsTemplate {
+  id            String        @id @default(cuid())
+  type          SystemSmsType
+  name          String        // Display name for the template
+  body          String        @db.Text // SMS message body (160 chars recommended)
+  isEnabled     Boolean       @default(true)
+  
+  // Available variables for this template type
+  variables     String[]
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  studioId      String
+  studio        Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  @@unique([studioId, type])
+  @@index([studioId])
+}
+
 model SystemEmailTemplate {
   id            String          @id @default(cuid())
-  type          SystemEmailType @unique
+  type          SystemEmailType
   name          String          // Display name for the template
   subject       String          // Email subject line
   body          String          @db.Text // Plain text version

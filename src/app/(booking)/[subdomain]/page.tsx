@@ -11,8 +11,14 @@ export default async function StudioLandingPage({
   params: Promise<{ subdomain: string }>
 }) {
   const { subdomain } = await params
-  const studio = await db.studio.findUnique({
-    where: { subdomain },
+  // Case-insensitive subdomain lookup
+  const studio = await db.studio.findFirst({
+    where: { 
+      subdomain: { 
+        equals: subdomain, 
+        mode: 'insensitive' 
+      } 
+    },
     include: {
       locations: true,
       merchStore: {
