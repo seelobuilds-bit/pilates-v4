@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,12 +33,42 @@ import {
   Users,
   Edit,
   Trash2,
-  GripVertical,
   Clock,
   MapPin,
   Link as LinkIcon,
-  Lightbulb
+  Lightbulb,
+  Upload,
+  Image as ImageIcon,
+  File,
+  X,
+  Target,
+  TrendingUp,
+  Instagram,
+  Play,
+  CheckCircle2,
+  Eye
 } from "lucide-react"
+
+interface UploadedFile {
+  url: string
+  filename: string
+  type: string
+  size: number
+}
+
+interface Resource {
+  title: string
+  url: string
+  type: "pdf" | "video" | "image" | "document" | "link"
+  filename?: string
+}
+
+interface HomeworkRequirement {
+  task: string
+  quantity: number
+  metric: string
+  description?: string
+}
 
 interface Homework {
   id: string
@@ -91,18 +121,39 @@ interface ContentIdea {
   weekOf: string
 }
 
+const METRIC_OPTIONS = [
+  { value: "reels_created", label: "Reels Created", icon: Play },
+  { value: "posts_created", label: "Posts Created", icon: ImageIcon },
+  { value: "stories_posted", label: "Stories Posted", icon: Instagram },
+  { value: "flow_created", label: "Automation Flows Created", icon: TrendingUp },
+  { value: "bookings", label: "Bookings Generated", icon: Calendar },
+  { value: "link_clicks", label: "Link Clicks", icon: LinkIcon },
+  { value: "followers_gained", label: "Followers Gained", icon: Users },
+  { value: "engagement_rate", label: "Engagement Rate %", icon: Target },
+  { value: "comments_replied", label: "Comments Replied", icon: CheckCircle2 },
+  { value: "dms_sent", label: "DMs Sent", icon: FileText },
+  { value: "custom", label: "Custom Metric", icon: Award },
+]
+
 export default function HQTrainingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([])
   const [activeTab, setActiveTab] = useState("courses")
   
+  // File input refs
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
+  const resourceInputRef = useRef<HTMLInputElement>(null)
+  
   // Modals
   const [showAddCategory, setShowAddCategory] = useState(false)
-  const [showAddModule, setShowAddModule] = useState<string | null>(null) // categoryId
-  const [showAddHomework, setShowAddHomework] = useState<string | null>(null) // moduleId
+  const [showAddModule, setShowAddModule] = useState<string | null>(null)
+  const [showAddHomework, setShowAddHomework] = useState<string | null>(null)
   const [showAddIdea, setShowAddIdea] = useState(false)
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   
   // Forms
   const [newCategory, setNewCategory] = useState({ name: "", description: "", icon: "BookOpen" })
@@ -110,6 +161,7 @@ export default function HQTrainingPage() {
     title: "",
     description: "",
     videoUrl: "",
+    thumbnailUrl: "",
     duration: "",
     isLive: false,
     liveDate: "",
@@ -117,14 +169,17 @@ export default function HQTrainingPage() {
     isInPerson: false,
     eventLocation: "",
     eventAddress: "",
-    maxAttendees: ""
+    maxAttendees: "",
+    resources: [] as Resource[]
   })
   const [newHomework, setNewHomework] = useState({
     title: "",
     description: "",
-    requirements: "",
-    points: "10",
-    dueInDays: ""
+    requirements: [] as HomeworkRequirement[],
+    points: 100,
+    dueInDays: 7,
+    trackingEnabled: true,
+    autoVerify: true
   })
   const [newIdea, setNewIdea] = useState({
     title: "",
@@ -152,6 +207,113 @@ export default function HQTrainingPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // File upload handler
+  const uploadFile = async (file: File, folder: string): Promise<UploadedFile | null> => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", folder)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        alert(error.error || "Upload failed")
+        return null
+      }
+
+      return await res.json()
+    } catch (error) {
+      console.error("Upload error:", error)
+      alert("Failed to upload file")
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const result = await uploadFile(file, "training/videos")
+    if (result) {
+      setNewModule(prev => ({ ...prev, videoUrl: result.url }))
+    }
+  }
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const result = await uploadFile(file, "training/thumbnails")
+    if (result) {
+      setNewModule(prev => ({ ...prev, thumbnailUrl: result.url }))
+    }
+  }
+
+  const handleResourceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const result = await uploadFile(file, "training/resources")
+    if (result) {
+      const type = file.type.includes("pdf") ? "pdf" 
+        : file.type.includes("video") ? "video"
+        : file.type.includes("image") ? "image"
+        : "document"
+      
+      setNewModule(prev => ({
+        ...prev,
+        resources: [...prev.resources, {
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          url: result.url,
+          type,
+          filename: result.filename
+        }]
+      }))
+    }
+  }
+
+  const removeResource = (index: number) => {
+    setNewModule(prev => ({
+      ...prev,
+      resources: prev.resources.filter((_, i) => i !== index)
+    }))
+  }
+
+  const addRequirement = () => {
+    setNewHomework(prev => ({
+      ...prev,
+      requirements: [...prev.requirements, {
+        task: "",
+        quantity: 1,
+        metric: "custom",
+        description: ""
+      }]
+    }))
+  }
+
+  const updateRequirement = (index: number, field: keyof HomeworkRequirement, value: string | number) => {
+    setNewHomework(prev => ({
+      ...prev,
+      requirements: prev.requirements.map((req, i) => 
+        i === index ? { ...req, [field]: value } : req
+      )
+    }))
+  }
+
+  const removeRequirement = (index: number) => {
+    setNewHomework(prev => ({
+      ...prev,
+      requirements: prev.requirements.filter((_, i) => i !== index)
+    }))
+  }
 
   const createCategory = async () => {
     if (!newCategory.name.trim()) return
@@ -185,18 +347,29 @@ export default function HQTrainingPage() {
         body: JSON.stringify({
           type: "module",
           categoryId: showAddModule,
-          ...newModule,
+          title: newModule.title,
+          description: newModule.description,
+          videoUrl: newModule.videoUrl || null,
+          thumbnailUrl: newModule.thumbnailUrl || null,
           duration: newModule.duration ? parseInt(newModule.duration) : null,
+          isLive: newModule.isLive,
+          liveDate: newModule.liveDate || null,
+          liveUrl: newModule.liveUrl || null,
+          isInPerson: newModule.isInPerson,
+          eventLocation: newModule.eventLocation || null,
+          eventAddress: newModule.eventAddress || null,
           maxAttendees: newModule.maxAttendees ? parseInt(newModule.maxAttendees) : null,
+          resources: newModule.resources.length > 0 ? newModule.resources : null,
           order: category?.modules.length || 0
         })
       })
       if (res.ok) {
         setShowAddModule(null)
         setNewModule({
-          title: "", description: "", videoUrl: "", duration: "",
+          title: "", description: "", videoUrl: "", thumbnailUrl: "", duration: "",
           isLive: false, liveDate: "", liveUrl: "",
-          isInPerson: false, eventLocation: "", eventAddress: "", maxAttendees: ""
+          isInPerson: false, eventLocation: "", eventAddress: "", maxAttendees: "",
+          resources: []
         })
         fetchData()
       }
@@ -208,7 +381,7 @@ export default function HQTrainingPage() {
   }
 
   const createHomework = async () => {
-    if (!showAddHomework || !newHomework.title.trim()) return
+    if (!showAddHomework || !newHomework.title.trim() || newHomework.requirements.length === 0) return
     setSaving(true)
     try {
       const res = await fetch("/api/social-media/admin/training", {
@@ -219,14 +392,22 @@ export default function HQTrainingPage() {
           moduleId: showAddHomework,
           title: newHomework.title,
           description: newHomework.description,
-          requirements: newHomework.requirements.split("\n").filter(r => r.trim()),
-          points: parseInt(newHomework.points) || 10,
-          dueInDays: newHomework.dueInDays ? parseInt(newHomework.dueInDays) : null
+          requirements: newHomework.requirements,
+          points: newHomework.points,
+          dueInDays: newHomework.dueInDays
         })
       })
       if (res.ok) {
         setShowAddHomework(null)
-        setNewHomework({ title: "", description: "", requirements: "", points: "10", dueInDays: "" })
+        setNewHomework({
+          title: "",
+          description: "",
+          requirements: [],
+          points: 100,
+          dueInDays: 7,
+          trackingEnabled: true,
+          autoVerify: true
+        })
         fetchData()
       }
     } catch (error) {
@@ -257,6 +438,15 @@ export default function HQTrainingPage() {
     }
   }
 
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case "pdf": return <FileText className="h-4 w-4 text-red-500" />
+      case "video": return <Video className="h-4 w-4 text-blue-500" />
+      case "image": return <ImageIcon className="h-4 w-4 text-green-500" />
+      default: return <File className="h-4 w-4 text-gray-500" />
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -269,8 +459,8 @@ export default function HQTrainingPage() {
     <div className="p-8 bg-gray-50/50 min-h-screen">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Social Media Training</h1>
-          <p className="text-gray-500 mt-1">Manage training courses and content ideas for teachers</p>
+          <h1 className="text-2xl font-bold text-gray-900">Social Media Training Hub</h1>
+          <p className="text-gray-500 mt-1">Create courses, upload content, and track teacher progress</p>
         </div>
       </div>
 
@@ -283,6 +473,10 @@ export default function HQTrainingPage() {
           <TabsTrigger value="ideas" className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
             Content Ideas
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -342,63 +536,93 @@ export default function HQTrainingPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {category.modules.map(module => (
-                          <div 
-                            key={module.id} 
-                            className="p-4 bg-gray-50 rounded-lg flex items-start justify-between"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                {module.isLive ? (
-                                  <Calendar className="h-4 w-4 text-red-500" />
-                                ) : module.isInPerson ? (
-                                  <MapPin className="h-4 w-4 text-blue-500" />
-                                ) : (
-                                  <Video className="h-4 w-4 text-gray-500" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">{module.title}</h4>
-                                {module.description && (
-                                  <p className="text-sm text-gray-500 mt-0.5">{module.description}</p>
-                                )}
-                                <div className="flex items-center gap-3 mt-2">
-                                  {module.duration && (
-                                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {module.duration} min
-                                    </span>
+                        {category.modules.map(module => {
+                          const resources: Resource[] = module.resources ? JSON.parse(module.resources) : []
+                          return (
+                            <div 
+                              key={module.id} 
+                              className="p-4 bg-gray-50 rounded-lg"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3 flex-1">
+                                  {module.thumbnailUrl ? (
+                                    <img 
+                                      src={module.thumbnailUrl} 
+                                      alt={module.title}
+                                      className="w-24 h-16 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-24 h-16 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                      {module.isLive ? (
+                                        <Calendar className="h-6 w-6 text-red-500" />
+                                      ) : module.isInPerson ? (
+                                        <MapPin className="h-6 w-6 text-blue-500" />
+                                      ) : (
+                                        <Video className="h-6 w-6 text-gray-400" />
+                                      )}
+                                    </div>
                                   )}
-                                  {module.isLive && (
-                                    <Badge className="bg-red-100 text-red-700 text-xs">Live Event</Badge>
-                                  )}
-                                  {module.isInPerson && (
-                                    <Badge className="bg-blue-100 text-blue-700 text-xs">In-Person</Badge>
-                                  )}
-                                  <span className="text-xs text-gray-400">
-                                    {module._count.progress} completions • {module._count.registrations} registrations
-                                  </span>
-                                </div>
-                                {module.homework.length > 0 && (
-                                  <div className="mt-2">
-                                    <span className="text-xs text-violet-600 flex items-center gap-1">
-                                      <Award className="h-3 w-3" />
-                                      {module.homework.length} homework assignment{module.homework.length !== 1 ? "s" : ""}
-                                    </span>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900">{module.title}</h4>
+                                    {module.description && (
+                                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{module.description}</p>
+                                    )}
+                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                      {module.duration && (
+                                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {module.duration} min
+                                        </span>
+                                      )}
+                                      {module.isLive && (
+                                        <Badge className="bg-red-100 text-red-700 text-xs">Live Event</Badge>
+                                      )}
+                                      {module.isInPerson && (
+                                        <Badge className="bg-blue-100 text-blue-700 text-xs">In-Person</Badge>
+                                      )}
+                                      {module.videoUrl && (
+                                        <Badge className="bg-green-100 text-green-700 text-xs">Video</Badge>
+                                      )}
+                                      {resources.length > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {resources.length} Resource{resources.length !== 1 ? "s" : ""}
+                                        </Badge>
+                                      )}
+                                      <span className="text-xs text-gray-400">
+                                        {module._count.progress} completions
+                                      </span>
+                                    </div>
+                                    {module.homework.length > 0 && (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <Award className="h-4 w-4 text-violet-500" />
+                                        <span className="text-xs text-violet-600 font-medium">
+                                          {module.homework.length} Homework Assignment{module.homework.length !== 1 ? "s" : ""}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedModule(module)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddHomework(module.id)}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Homework
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowAddHomework(module.id)}
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Homework
-                            </Button>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -450,6 +674,17 @@ export default function HQTrainingPage() {
             </div>
           )}
         </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="py-12 text-center">
+              <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="font-medium text-gray-900 mb-2">Analytics Coming Soon</h3>
+              <p className="text-gray-500">Track homework completion, engagement, and ROI from training.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Add Category Modal */}
@@ -464,7 +699,7 @@ export default function HQTrainingPage() {
               <Input
                 value={newCategory.name}
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                placeholder="e.g., Instagram Basics"
+                placeholder="e.g., Instagram Mastery"
               />
             </div>
             <div>
@@ -472,8 +707,8 @@ export default function HQTrainingPage() {
               <Textarea
                 value={newCategory.description}
                 onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                placeholder="What teachers will learn..."
-                rows={2}
+                placeholder="What teachers will learn in this course..."
+                rows={3}
               />
             </div>
           </div>
@@ -487,114 +722,249 @@ export default function HQTrainingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Module Modal */}
+      {/* Add Module Modal - WITH FILE UPLOADS */}
       <Dialog open={!!showAddModule} onOpenChange={(open) => !open && setShowAddModule(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Training Module</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4 max-h-96 overflow-y-auto">
+          <div className="space-y-6 py-4">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <div>
+                <Label>Title *</Label>
+                <Input
+                  value={newModule.title}
+                  onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
+                  placeholder="e.g., Creating Viral Reels"
+                />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={newModule.description}
+                  onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
+                  placeholder="What this module covers..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Video Upload */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video Content
+              </Label>
+              {newModule.videoUrl ? (
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <Video className="h-5 w-5 text-green-600" />
+                  <span className="text-sm text-green-700 flex-1">Video uploaded</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setNewModule({ ...newModule, videoUrl: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Input
+                    value={newModule.videoUrl}
+                    onChange={(e) => setNewModule({ ...newModule, videoUrl: e.target.value })}
+                    placeholder="Paste video URL or upload..."
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={videoInputRef}
+                    onChange={handleVideoUpload}
+                    accept="video/*"
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail Upload */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Thumbnail Image
+              </Label>
+              {newModule.thumbnailUrl ? (
+                <div className="flex items-center gap-3">
+                  <img src={newModule.thumbnailUrl} alt="Thumbnail" className="w-24 h-16 object-cover rounded" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setNewModule({ ...newModule, thumbnailUrl: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Input
+                    value={newModule.thumbnailUrl}
+                    onChange={(e) => setNewModule({ ...newModule, thumbnailUrl: e.target.value })}
+                    placeholder="Paste image URL or upload..."
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    onChange={handleThumbnailUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Duration */}
             <div>
-              <Label>Title *</Label>
+              <Label>Duration (minutes)</Label>
               <Input
-                value={newModule.title}
-                onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
-                placeholder="e.g., Creating Your First Reel"
+                type="number"
+                value={newModule.duration}
+                onChange={(e) => setNewModule({ ...newModule, duration: e.target.value })}
+                placeholder="e.g., 15"
+                className="w-32"
               />
             </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={newModule.description}
-                onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                placeholder="What this module covers..."
-                rows={2}
-              />
+
+            {/* Resources Upload */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Resources (PDFs, Documents, etc.)
+                </Label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    ref={resourceInputRef}
+                    onChange={handleResourceUpload}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*,video/*"
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => resourceInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                    Upload File
+                  </Button>
+                </div>
+              </div>
+              {newModule.resources.length > 0 && (
+                <div className="space-y-2">
+                  {newModule.resources.map((resource, index) => (
+                    <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                      {getFileIcon(resource.type)}
+                      <span className="text-sm flex-1">{resource.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeResource(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Video URL</Label>
-                <Input
-                  value={newModule.videoUrl}
-                  onChange={(e) => setNewModule({ ...newModule, videoUrl: e.target.value })}
-                  placeholder="https://..."
-                />
+
+            {/* Event Options */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={newModule.isLive}
+                    onCheckedChange={(checked) => setNewModule({ ...newModule, isLive: checked, isInPerson: checked ? false : newModule.isInPerson })}
+                  />
+                  <Label>Live Webinar</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={newModule.isInPerson}
+                    onCheckedChange={(checked) => setNewModule({ ...newModule, isInPerson: checked, isLive: checked ? false : newModule.isLive })}
+                  />
+                  <Label>In-Person Event</Label>
+                </div>
               </div>
-              <div>
-                <Label>Duration (minutes)</Label>
-                <Input
-                  type="number"
-                  value={newModule.duration}
-                  onChange={(e) => setNewModule({ ...newModule, duration: e.target.value })}
-                  placeholder="15"
-                />
-              </div>
+
+              {newModule.isLive && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg">
+                  <div>
+                    <Label>Live Date & Time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={newModule.liveDate}
+                      onChange={(e) => setNewModule({ ...newModule, liveDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Webinar Link (Zoom/Meet)</Label>
+                    <Input
+                      value={newModule.liveUrl}
+                      onChange={(e) => setNewModule({ ...newModule, liveUrl: e.target.value })}
+                      placeholder="https://zoom.us/..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {newModule.isInPerson && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+                  <div>
+                    <Label>Venue Name</Label>
+                    <Input
+                      value={newModule.eventLocation}
+                      onChange={(e) => setNewModule({ ...newModule, eventLocation: e.target.value })}
+                      placeholder="e.g., Dublin Training Center"
+                    />
+                  </div>
+                  <div>
+                    <Label>Full Address</Label>
+                    <Input
+                      value={newModule.eventAddress}
+                      onChange={(e) => setNewModule({ ...newModule, eventAddress: e.target.value })}
+                      placeholder="123 Main St, Dublin"
+                    />
+                  </div>
+                  <div>
+                    <Label>Max Attendees</Label>
+                    <Input
+                      type="number"
+                      value={newModule.maxAttendees}
+                      onChange={(e) => setNewModule({ ...newModule, maxAttendees: e.target.value })}
+                      placeholder="50"
+                      className="w-32"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={newModule.isLive}
-                  onCheckedChange={(checked) => setNewModule({ ...newModule, isLive: checked })}
-                />
-                <Label>Live Event</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={newModule.isInPerson}
-                  onCheckedChange={(checked) => setNewModule({ ...newModule, isInPerson: checked })}
-                />
-                <Label>In-Person</Label>
-              </div>
-            </div>
-            {newModule.isLive && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Live Date</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newModule.liveDate}
-                    onChange={(e) => setNewModule({ ...newModule, liveDate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Live URL</Label>
-                  <Input
-                    value={newModule.liveUrl}
-                    onChange={(e) => setNewModule({ ...newModule, liveUrl: e.target.value })}
-                    placeholder="Zoom/Meet link"
-                  />
-                </div>
-              </div>
-            )}
-            {newModule.isInPerson && (
-              <>
-                <div>
-                  <Label>Event Location</Label>
-                  <Input
-                    value={newModule.eventLocation}
-                    onChange={(e) => setNewModule({ ...newModule, eventLocation: e.target.value })}
-                    placeholder="Venue name"
-                  />
-                </div>
-                <div>
-                  <Label>Event Address</Label>
-                  <Input
-                    value={newModule.eventAddress}
-                    onChange={(e) => setNewModule({ ...newModule, eventAddress: e.target.value })}
-                    placeholder="Full address"
-                  />
-                </div>
-                <div>
-                  <Label>Max Attendees</Label>
-                  <Input
-                    type="number"
-                    value={newModule.maxAttendees}
-                    onChange={(e) => setNewModule({ ...newModule, maxAttendees: e.target.value })}
-                    placeholder="50"
-                  />
-                </div>
-              </>
-            )}
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowAddModule(null)}>Cancel</Button>
@@ -606,63 +976,198 @@ export default function HQTrainingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Homework Modal */}
+      {/* Add Homework Modal - COMPREHENSIVE VERSION */}
       <Dialog open={!!showAddHomework} onOpenChange={(open) => !open && setShowAddHomework(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Homework Assignment</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-violet-600" />
+              Create Homework Assignment
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>Title *</Label>
-              <Input
-                value={newHomework.title}
-                onChange={(e) => setNewHomework({ ...newHomework, title: e.target.value })}
-                placeholder="e.g., Create Your First Reel"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={newHomework.description}
-                onChange={(e) => setNewHomework({ ...newHomework, description: e.target.value })}
-                placeholder="What they need to do..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <Label>Requirements (one per line)</Label>
-              <Textarea
-                value={newHomework.requirements}
-                onChange={(e) => setNewHomework({ ...newHomework, requirements: e.target.value })}
-                placeholder="Must be at least 15 seconds&#10;Include studio branding&#10;Use trending audio"
-                rows={4}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6 py-4">
+            {/* Basic Info */}
+            <div className="space-y-4">
               <div>
-                <Label>Points</Label>
+                <Label>Assignment Title *</Label>
                 <Input
-                  type="number"
-                  value={newHomework.points}
-                  onChange={(e) => setNewHomework({ ...newHomework, points: e.target.value })}
-                  placeholder="10"
+                  value={newHomework.title}
+                  onChange={(e) => setNewHomework({ ...newHomework, title: e.target.value })}
+                  placeholder="e.g., Week 1: Create Your First Viral Reel"
                 />
               </div>
               <div>
-                <Label>Due In (days)</Label>
+                <Label>Description</Label>
+                <Textarea
+                  value={newHomework.description}
+                  onChange={(e) => setNewHomework({ ...newHomework, description: e.target.value })}
+                  placeholder="Explain what teachers need to accomplish and why it matters..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Requirements */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Trackable Requirements *
+                </Label>
+                <Button variant="outline" size="sm" onClick={addRequirement}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Requirement
+                </Button>
+              </div>
+              
+              {newHomework.requirements.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed">
+                  <Target className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Add trackable requirements for this homework</p>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={addRequirement}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add First Requirement
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {newHomework.requirements.map((req, index) => (
+                    <div key={index} className="p-4 bg-gray-50 rounded-lg space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto text-red-500 hover:text-red-700"
+                          onClick={() => removeRequirement(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Task Description</Label>
+                          <Input
+                            value={req.task}
+                            onChange={(e) => updateRequirement(index, "task", e.target.value)}
+                            placeholder="e.g., Create Instagram Reels"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Metric to Track</Label>
+                          <Select
+                            value={req.metric}
+                            onValueChange={(v) => updateRequirement(index, "metric", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {METRIC_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  <span className="flex items-center gap-2">
+                                    <opt.icon className="h-4 w-4" />
+                                    {opt.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Target Quantity</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={req.quantity}
+                            onChange={(e) => updateRequirement(index, "quantity", parseInt(e.target.value) || 1)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Additional Details (optional)</Label>
+                          <Input
+                            value={req.description || ""}
+                            onChange={(e) => updateRequirement(index, "description", e.target.value)}
+                            placeholder="e.g., Must include call-to-action"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tracking Options */}
+            <div className="space-y-4 p-4 bg-violet-50 rounded-lg">
+              <h4 className="font-medium text-violet-900 flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                Automatic Tracking
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Generate Tracking Links</p>
+                    <p className="text-xs text-gray-500">Auto-create UTM-tagged booking links for each teacher</p>
+                  </div>
+                  <Switch
+                    checked={newHomework.trackingEnabled}
+                    onCheckedChange={(checked) => setNewHomework({ ...newHomework, trackingEnabled: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Auto-Verify Completions</p>
+                    <p className="text-xs text-gray-500">Automatically track bookings & link clicks from teacher content</p>
+                  </div>
+                  <Switch
+                    checked={newHomework.autoVerify}
+                    onCheckedChange={(checked) => setNewHomework({ ...newHomework, autoVerify: checked })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Points & Due Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-amber-500" />
+                  Points Reward
+                </Label>
                 <Input
                   type="number"
-                  value={newHomework.dueInDays}
-                  onChange={(e) => setNewHomework({ ...newHomework, dueInDays: e.target.value })}
-                  placeholder="7"
+                  min="0"
+                  value={newHomework.points}
+                  onChange={(e) => setNewHomework({ ...newHomework, points: parseInt(e.target.value) || 0 })}
                 />
+                <p className="text-xs text-gray-500 mt-1">Points awarded upon completion</p>
+              </div>
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-500" />
+                  Due In (Days)
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={newHomework.dueInDays}
+                  onChange={(e) => setNewHomework({ ...newHomework, dueInDays: parseInt(e.target.value) || 7 })}
+                />
+                <p className="text-xs text-gray-500 mt-1">Days from when teacher starts</p>
               </div>
             </div>
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowAddHomework(null)}>Cancel</Button>
-            <Button onClick={createHomework} disabled={saving || !newHomework.title.trim()}>
+            <Button 
+              onClick={createHomework} 
+              disabled={saving || !newHomework.title.trim() || newHomework.requirements.length === 0}
+            >
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Create Homework
             </Button>
@@ -734,6 +1239,78 @@ export default function HQTrainingPage() {
               Create Idea
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Module Detail Modal */}
+      <Dialog open={!!selectedModule} onOpenChange={(open) => !open && setSelectedModule(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedModule?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedModule && (
+            <div className="space-y-4 py-4">
+              {selectedModule.videoUrl && (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video 
+                    src={selectedModule.videoUrl} 
+                    controls 
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
+              
+              {selectedModule.description && (
+                <p className="text-gray-600">{selectedModule.description}</p>
+              )}
+
+              {selectedModule.resources && (
+                <div className="space-y-2">
+                  <Label>Resources</Label>
+                  <div className="space-y-2">
+                    {(JSON.parse(selectedModule.resources) as Resource[]).map((resource, i) => (
+                      <a 
+                        key={i}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-gray-100"
+                      >
+                        {getFileIcon(resource.type)}
+                        <span className="text-sm">{resource.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedModule.homework.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Homework Assignments</Label>
+                  <div className="space-y-2">
+                    {selectedModule.homework.map(hw => (
+                      <div key={hw.id} className="p-3 bg-violet-50 rounded-lg">
+                        <h4 className="font-medium text-violet-900">{hw.title}</h4>
+                        <p className="text-sm text-violet-700 mt-1">{hw.description}</p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-violet-600">
+                          <span className="flex items-center gap-1">
+                            <Award className="h-3 w-3" />
+                            {hw.points} points
+                          </span>
+                          {hw.dueInDays && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Due in {hw.dueInDays} days
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
