@@ -96,7 +96,11 @@ export default function SettingsPage() {
           primaryColor: data.primaryColor || "#7c3aed"
         })
       } else if (res.status === 401) {
-        console.error("Session may need refresh - try logging out and back in")
+        // Check if logged in as wrong user type
+        const sessionRes = await fetch("/api/auth/session")
+        const session = await sessionRes.json()
+        console.error("Studio settings 401 - Session:", session)
+        console.error("You may be logged in as HQ admin instead of a studio owner")
       }
     } catch (error) {
       console.error("Error fetching studio data:", error)
@@ -433,7 +437,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <Input 
                   readOnly 
-                  value={studio?.subdomain ? `${baseUrl}/${studio.subdomain}` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")} 
+                  value={studio?.subdomain ? `${baseUrl}/${studio.subdomain}` : (loading ? "Loading..." : "No studio found. Are you logged in as a studio owner?")} 
                   className="bg-gray-50"
                 />
                 <Button 
