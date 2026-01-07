@@ -37,6 +37,7 @@ const hqLinks = [
   { href: "/hq/studios", label: "Studios", icon: Building2 },
   { href: "/hq/inbox", label: "Studio Comms", icon: Inbox },
   { href: "/hq/sales", label: "Sales CRM", icon: Target },
+  { href: "/hq/training", label: "Training Hub", icon: Video },
   { href: "/hq/support", label: "Support Inbox", icon: Headphones },
   { href: "/hq/leaderboards", label: "Leaderboards", icon: Trophy },
   { href: "/hq/analytics", label: "Analytics", icon: BarChart3 },
