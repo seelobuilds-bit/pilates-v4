@@ -462,13 +462,13 @@ export default function SettingsPage() {
               <textarea 
                 readOnly
                 className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"
-                value={studio?.subdomain ? `<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")}
+                value={studio?.subdomain ? `<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="min-height: 700px; height: 100%; border: none;" frameborder="0" scrolling="no"></iframe>` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")}
               />
               <Button 
                 variant="outline"
                 onClick={() => {
                   if (studio?.subdomain) {
-                    navigator.clipboard.writeText(`<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" height="600" frameborder="0"></iframe>`)
+                    navigator.clipboard.writeText(`<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="min-height: 700px; height: 100%; border: none;" frameborder="0" scrolling="no"></iframe>`)
                   }
                 }}
               >
