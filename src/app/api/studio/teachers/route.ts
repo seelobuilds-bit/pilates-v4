@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     const result = await db.$transaction(async (tx) => {
       let user = existingUser
       let resetToken: string | null = null
+      let needsInviteEmail = false
 
       if (!user) {
         // Generate a reset token for the teacher to set their password
@@ -92,6 +93,29 @@ export async function POST(request: NextRequest) {
             resetTokenExpiry
           }
         })
+        needsInviteEmail = true
+      } else {
+        // User exists - check if they have a password set (empty password = never set up)
+        // Generate a new reset token so they can be re-invited
+        if (user.password === "" || !user.password) {
+          resetToken = crypto.randomBytes(32).toString('hex')
+          const resetTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          await tx.user.update({
+            where: { id: user.id },
+            data: { resetToken, resetTokenExpiry }
+          })
+          needsInviteEmail = true
+        } else {
+          // User has already set up their account - still send a notification
+          needsInviteEmail = true
+          // Generate token anyway in case they need to reset
+          resetToken = crypto.randomBytes(32).toString('hex')
+          const resetTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          await tx.user.update({
+            where: { id: user.id },
+            data: { resetToken, resetTokenExpiry }
+          })
+        }
       }
 
       const teacher = await tx.teacher.create({
@@ -112,11 +136,11 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      return { teacher, resetToken }
+      return { teacher, resetToken, needsInviteEmail }
     })
 
-    // Send invite email if new user was created
-    if (result.resetToken) {
+    // Send invite email
+    if (result.needsInviteEmail && result.resetToken) {
       const baseUrl = process.env.NEXTAUTH_URL || 'https://thecurrent.app'
       const inviteLink = `${baseUrl}/setup-account?token=${result.resetToken}`
       
