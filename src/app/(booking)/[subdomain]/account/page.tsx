@@ -937,7 +937,14 @@ export default function AccountPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {authMode === "login" && (
+                      <a href={`/${subdomain}/forgot-password`} className="text-xs hover:underline" style={{ color: primaryColor }}>
+                        Forgot password?
+                      </a>
+                    )}
+                  </div>
                   <Input
                     id="password"
                     type="password"
