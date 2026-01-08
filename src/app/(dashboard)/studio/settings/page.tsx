@@ -173,12 +173,17 @@ export default function SettingsPage() {
         method: "POST",
       })
       
-      if (res.ok) {
-        const data = await res.json()
+      const data = await res.json()
+      
+      if (res.ok && data.url) {
         window.location.href = data.url
+      } else {
+        console.error("Stripe connect error:", data)
+        alert(data.error || "Failed to connect Stripe. Please try again.")
       }
     } catch (error) {
       console.error("Error:", error)
+      alert("Failed to connect Stripe. Please check your connection and try again.")
     } finally {
       setConnectingStripe(false)
     }
