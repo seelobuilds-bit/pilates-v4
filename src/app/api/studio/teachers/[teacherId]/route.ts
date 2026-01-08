@@ -158,11 +158,7 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            classSessions: {
-              where: {
-                startTime: { gte: new Date() }
-              }
-            }
+            classSessions: true // Check ALL class sessions, not just future
           }
         }
       }
@@ -172,16 +168,78 @@ export async function DELETE(
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
     }
 
-    // Check for upcoming classes
+    // Check for any classes (past or future) - we can't delete teacher if they have class history
     if (existingTeacher._count.classSessions > 0) {
+      // Count future classes specifically for the message
+      const futureClassCount = await db.classSession.count({
+        where: {
+          teacherId,
+          startTime: { gte: new Date() }
+        }
+      })
+      
+      if (futureClassCount > 0) {
+        return NextResponse.json({ 
+          error: `Cannot delete teacher with ${futureClassCount} upcoming classes. Please reassign or cancel their classes first.`
+        }, { status: 400 })
+      }
+      
       return NextResponse.json({ 
-        error: "Cannot delete teacher with upcoming classes. Please reassign or cancel their classes first." 
+        error: `Cannot delete teacher with class history (${existingTeacher._count.classSessions} total classes). Consider deactivating them instead.`
       }, { status: 400 })
     }
 
-    // Delete teacher record (this will also remove them from past class sessions via cascade or leave as orphaned)
-    await db.teacher.delete({
-      where: { id: teacherId }
+    // Delete all related records in a transaction
+    await db.$transaction(async (tx) => {
+      // Delete blocked times (cascade should handle this but being explicit)
+      await tx.teacherBlockedTime.deleteMany({
+        where: { teacherId }
+      })
+      
+      // Delete pay rate if exists
+      await tx.teacherPayRate.deleteMany({
+        where: { teacherId }
+      })
+      
+      // Delete invoices
+      await tx.teacherInvoice.deleteMany({
+        where: { teacherId }
+      })
+      
+      // Delete class flow progress
+      await tx.classFlowProgress.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Delete training requests
+      await tx.trainingRequest.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Delete social media accounts if they exist
+      await tx.socialMediaAccount.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Delete social tracking links
+      await tx.socialMediaTrackingLink.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Delete social training progress
+      await tx.socialTrainingProgress.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Delete social homework submissions
+      await tx.socialHomeworkSubmission.deleteMany({
+        where: { teacherId }
+      }).catch(() => {})
+      
+      // Finally delete the teacher
+      await tx.teacher.delete({
+        where: { id: teacherId }
+      })
     })
 
     return NextResponse.json({ success: true, message: "Teacher deleted successfully" })

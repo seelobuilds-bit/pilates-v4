@@ -140,9 +140,52 @@ export async function DELETE(
       }, { status: 400 })
     }
 
-    // Delete client and their bookings (cascade)
-    await db.client.delete({
-      where: { id: clientId }
+    // Delete all related records in a transaction
+    await db.$transaction(async (tx) => {
+      // Delete waitlist entries
+      await tx.waitlist.deleteMany({
+        where: { clientId }
+      })
+      
+      // Delete bookings
+      await tx.booking.deleteMany({
+        where: { clientId }
+      })
+      
+      // Delete messages
+      await tx.message.deleteMany({
+        where: { clientId }
+      })
+      
+      // Delete payments
+      await tx.payment.deleteMany({
+        where: { clientId }
+      })
+      
+      // Delete vault enrollments if they exist
+      await tx.vaultEnrollment.deleteMany({
+        where: { clientId }
+      }).catch(() => {})
+      
+      // Delete vault bundle subscriptions if they exist
+      await tx.vaultBundleSubscription.deleteMany({
+        where: { clientId }
+      }).catch(() => {})
+      
+      // Delete vault reviews if they exist
+      await tx.vaultReview.deleteMany({
+        where: { clientId }
+      }).catch(() => {})
+      
+      // Delete vault subscriptions if they exist
+      await tx.vaultSubscriber.deleteMany({
+        where: { clientId }
+      }).catch(() => {})
+      
+      // Finally delete the client
+      await tx.client.delete({
+        where: { id: clientId }
+      })
     })
 
     return NextResponse.json({ success: true, message: "Client deleted successfully" })
