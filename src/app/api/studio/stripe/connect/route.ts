@@ -63,17 +63,29 @@ export async function POST() {
 
     // Create account link for onboarding
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
-    const accountLink = await stripe.accountLinks.create({
-      account: stripeAccountId,
-      refresh_url: `${baseUrl}/studio/settings?stripe=refresh`,
-      return_url: `${baseUrl}/studio/settings?stripe=success`,
-      type: "account_onboarding",
-    })
+    
+    console.log("Creating account link with baseUrl:", baseUrl)
+    
+    try {
+      const accountLink = await stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${baseUrl}/studio/settings?stripe=refresh`,
+        return_url: `${baseUrl}/studio/settings?stripe=success`,
+        type: "account_onboarding",
+      })
 
-    return NextResponse.json({ 
-      url: accountLink.url,
-      accountId: stripeAccountId,
-    })
+      return NextResponse.json({ 
+        url: accountLink.url,
+        accountId: stripeAccountId,
+      })
+    } catch (linkError: any) {
+      console.error("Error creating account link:", linkError)
+      return NextResponse.json({ 
+        error: `Failed to create onboarding link: ${linkError?.message || 'Unknown error'}`,
+        code: linkError?.code,
+        accountId: stripeAccountId,
+      }, { status: 500 })
+    }
   } catch (error: any) {
     console.error("Error creating Stripe Connect account:", error)
     // Return more detailed error for debugging
