@@ -120,7 +120,10 @@ export async function POST(request: NextRequest) {
       const baseUrl = process.env.NEXTAUTH_URL || 'https://thecurrent.app'
       const inviteLink = `${baseUrl}/setup-account?token=${result.resetToken}`
       
-      await sendSystemTemplateEmail({
+      console.log(`[TEACHER INVITE] Sending invite email to ${email} for studio ${studio.name}`)
+      console.log(`[TEACHER INVITE] Invite link: ${inviteLink}`)
+      
+      const emailResult = await sendSystemTemplateEmail({
         studioId: session.user.studioId,
         templateType: "TEACHER_INVITE",
         to: email,
@@ -131,6 +134,12 @@ export async function POST(request: NextRequest) {
           inviteLink
         }
       })
+      
+      console.log(`[TEACHER INVITE] Email result:`, emailResult)
+      
+      if (!emailResult.success) {
+        console.error(`[TEACHER INVITE] Failed to send invite email:`, emailResult.error)
+      }
     }
 
     return NextResponse.json(result.teacher)
