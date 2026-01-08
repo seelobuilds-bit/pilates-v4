@@ -1234,7 +1234,12 @@ export default function BookingPage() {
                       <Input type="email" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} required />
                     </div>
                     <div>
-                      <Label>Password</Label>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label>Password</Label>
+                        {authMode === "login" && (
+                          <a href={`/${subdomain}/forgot-password`} className="text-xs text-violet-600 hover:underline">Forgot password?</a>
+                        )}
+                      </div>
                       <Input type="password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} required />
                     </div>
                     <Button type="submit" className="w-full bg-violet-600 hover:bg-violet-700" disabled={authLoading}>

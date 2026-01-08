@@ -1060,7 +1060,12 @@ export default function EmbedBookingPage() {
                       <Input className="h-9 text-sm" type="email" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} required />
                     </div>
                     <div>
-                      <Label className="text-xs">Password</Label>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <Label className="text-xs">Password</Label>
+                        {authMode === "login" && (
+                          <a href={`/${subdomain}/forgot-password`} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-600 hover:underline">Forgot?</a>
+                        )}
+                      </div>
                       <Input className="h-9 text-sm" type="password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} required />
                     </div>
                     <Button type="submit" className="w-full h-10 bg-violet-600 hover:bg-violet-700" disabled={authLoading}>
