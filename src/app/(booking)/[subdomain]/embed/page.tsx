@@ -641,23 +641,35 @@ export default function EmbedBookingPage() {
               <span>A confirmation email has been sent to you</span>
             </div>
 
-            <Button 
-              variant="outline"
-              onClick={() => {
-                setBookingComplete(false)
-                setStep("location")
-                setSelectedLocation(null)
-                setSelectedClass(null)
-                setSelectedTeacher(null)
-                setSelectedSlot(null)
-                setSelectedDate("")
-                setClientSecret(null)
-                setPaymentId(null)
-              }}
-              className="w-full"
-            >
-              Book Another Class
-            </Button>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => {
+                  // Navigate to account page within the embed
+                  window.location.href = `/${subdomain}/embed/account`
+                }}
+                className="w-full bg-violet-600 hover:bg-violet-700"
+              >
+                Manage Bookings
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setBookingComplete(false)
+                  setStep("location")
+                  setSelectedLocation(null)
+                  setSelectedClass(null)
+                  setSelectedTeacher(null)
+                  setSelectedSlot(null)
+                  setSelectedDate("")
+                  setClientSecret(null)
+                  setPaymentId(null)
+                }}
+                className="w-full"
+              >
+                Book Another Class
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

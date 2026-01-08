@@ -663,6 +663,7 @@ interface BookingDetails {
 
 /**
  * Send booking confirmation email to client
+ * Uses system template if enabled, falls back to hardcoded HTML
  */
 export async function sendBookingConfirmationEmail(params: {
   studioId: string
@@ -690,6 +691,33 @@ export async function sendBookingConfirmationEmail(params: {
     hour12: true
   })
 
+  // Try using system template first
+  const templateResult = await sendSystemTemplateEmail({
+    studioId,
+    templateType: "BOOKING_CONFIRMATION",
+    to: clientEmail,
+    variables: {
+      firstName: clientName,
+      lastName: "",
+      className: booking.className,
+      date: dateStr,
+      time: `${timeStr} - ${endTimeStr}`,
+      locationName: booking.locationName,
+      locationAddress: booking.locationAddress || "",
+      teacherName: booking.teacherName,
+      studioName,
+      manageUrl: manageBookingUrl
+    }
+  })
+
+  // If template was sent successfully, return
+  if (templateResult.success) {
+    console.log("[EMAIL] Booking confirmation sent via system template")
+    return templateResult
+  }
+
+  // Fall back to hardcoded HTML if template not available
+  console.log("[EMAIL] Falling back to hardcoded booking confirmation email")
   const html = `
 <!DOCTYPE html>
 <html>
@@ -919,6 +947,7 @@ export async function sendWaitlistNotificationEmail(params: {
 
 /**
  * Send booking cancellation confirmation email
+ * Uses system template if enabled, falls back to hardcoded HTML
  */
 export async function sendBookingCancellationEmail(params: {
   studioId: string
@@ -942,6 +971,33 @@ export async function sendBookingCancellationEmail(params: {
     hour12: true
   })
 
+  // Try using system template first
+  const templateResult = await sendSystemTemplateEmail({
+    studioId,
+    templateType: "CLASS_CANCELLED_BY_CLIENT",
+    to: clientEmail,
+    variables: {
+      firstName: clientName,
+      lastName: "",
+      className: booking.className,
+      date: dateStr,
+      time: timeStr,
+      locationName: booking.locationName,
+      teacherName: booking.teacherName,
+      studioName,
+      refundAmount: refundAmount ? `$${refundAmount.toFixed(2)}` : "N/A",
+      cancellationType
+    }
+  })
+
+  // If template was sent successfully, return
+  if (templateResult.success) {
+    console.log("[EMAIL] Cancellation email sent via system template")
+    return templateResult
+  }
+
+  // Fall back to hardcoded HTML if template not available
+  console.log("[EMAIL] Falling back to hardcoded cancellation email")
   let refundMessage = ''
   if (cancellationType === 'FREE' && refundAmount && refundAmount > 0) {
     refundMessage = `<p style="color: #059669; font-size: 16px; font-weight: 600;">A full refund of $${refundAmount.toFixed(2)} will be processed within 5-10 business days.</p>`
