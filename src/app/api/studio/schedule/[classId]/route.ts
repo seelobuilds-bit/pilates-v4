@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { sendSystemTemplateEmail } from "@/lib/email"
 
 export async function GET(
   request: NextRequest,
@@ -125,11 +126,29 @@ export async function DELETE(
   }
 
   try {
-    // Verify the class belongs to this studio
+    // Get the class with all details needed for notifications
     const existingClass = await db.classSession.findFirst({
       where: {
         id: classId,
         studioId: session.user.studioId
+      },
+      include: {
+        studio: { select: { name: true } },
+        classType: { select: { name: true } },
+        teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+        location: { select: { name: true } },
+        bookings: {
+          where: { status: { in: ["CONFIRMED", "PENDING"] } },
+          include: {
+            client: { select: { email: true, firstName: true } }
+          }
+        },
+        waitlists: {
+          where: { status: "WAITING" },
+          include: {
+            client: { select: { email: true, firstName: true } }
+          }
+        }
       }
     })
 
@@ -137,9 +156,74 @@ export async function DELETE(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Delete associated bookings first
-    await db.booking.deleteMany({
+    const dateStr = existingClass.startTime.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+    const timeStr = existingClass.startTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true
+    })
+    const teacherName = `${existingClass.teacher.user.firstName} ${existingClass.teacher.user.lastName}`
+
+    // Send cancellation emails to all affected clients (don't await to avoid blocking)
+    const emailPromises = existingClass.bookings.map(booking => 
+      sendSystemTemplateEmail({
+        studioId: session.user.studioId,
+        templateType: "CLASS_CANCELLED_BY_STUDIO",
+        to: booking.client.email,
+        variables: {
+          firstName: booking.client.firstName,
+          lastName: "",
+          className: existingClass.classType.name,
+          date: dateStr,
+          time: timeStr,
+          locationName: existingClass.location.name,
+          teacherName,
+          studioName: existingClass.studio.name
+        }
+      }).catch(err => console.error(`Failed to send cancellation email to ${booking.client.email}:`, err))
+    )
+
+    // Also notify people on waitlist
+    const waitlistPromises = existingClass.waitlists.map(waitlist =>
+      sendSystemTemplateEmail({
+        studioId: session.user.studioId,
+        templateType: "CLASS_CANCELLED_BY_STUDIO",
+        to: waitlist.client.email,
+        variables: {
+          firstName: waitlist.client.firstName,
+          lastName: "",
+          className: existingClass.classType.name,
+          date: dateStr,
+          time: timeStr,
+          locationName: existingClass.location.name,
+          teacherName,
+          studioName: existingClass.studio.name
+        }
+      }).catch(err => console.error(`Failed to send cancellation email to waitlist ${waitlist.client.email}:`, err))
+    )
+
+    // Fire off all emails in parallel (don't block the response)
+    Promise.all([...emailPromises, ...waitlistPromises])
+      .then(() => console.log(`[CLASS CANCEL] Sent ${emailPromises.length + waitlistPromises.length} cancellation emails`))
+      .catch(err => console.error("[CLASS CANCEL] Some emails failed:", err))
+
+    // Delete waitlist entries
+    await db.waitlist.deleteMany({
       where: { classSessionId: classId }
+    })
+
+    // Update bookings to CANCELLED status instead of deleting (preserves history)
+    await db.booking.updateMany({
+      where: { classSessionId: classId },
+      data: { 
+        status: "CANCELLED",
+        cancelledAt: new Date(),
+        cancellationReason: "Class cancelled by studio"
+      }
     })
 
     // Delete the class session
@@ -147,7 +231,11 @@ export async function DELETE(
       where: { id: classId }
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      notifiedClients: existingClass.bookings.length,
+      notifiedWaitlist: existingClass.waitlists.length
+    })
   } catch (error) {
     console.error("Failed to delete class session:", error)
     return NextResponse.json({ error: "Failed to delete class session" }, { status: 500 })
