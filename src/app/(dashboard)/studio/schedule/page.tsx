@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2 } from "lucide-react"
 
 interface Location {
   id: string
@@ -34,6 +34,7 @@ interface ClassSession {
   endTime: string
   capacity: number
   locationId: string
+  recurringGroupId?: string | null
   classType: ClassType
   teacher: Teacher
   location: Location
@@ -116,8 +117,122 @@ export default function SchedulePage() {
   const [filterTeacher, setFilterTeacher] = useState<string>(initialTeacher || "all")
   const [filterClassType, setFilterClassType] = useState<string>("all")
   const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
+  
+  // Multi-select state
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [showReassignModal, setShowReassignModal] = useState(false)
+  const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
 
   const weekDates = getWeekDates(weekOffset)
+  
+  // Toggle selection for a class
+  const toggleSelectClass = (classId: string, e: React.MouseEvent) => {
+    if (!selectMode) return
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const newSelected = new Set(selectedClasses)
+    if (newSelected.has(classId)) {
+      newSelected.delete(classId)
+    } else {
+      newSelected.add(classId)
+    }
+    setSelectedClasses(newSelected)
+  }
+  
+  // Select all visible classes
+  const selectAllClasses = () => {
+    setSelectedClasses(new Set(filteredClasses.map(c => c.id)))
+  }
+  
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedClasses(new Set())
+    setSelectMode(false)
+  }
+  
+  // Bulk delete selected classes
+  const handleBulkDelete = async () => {
+    if (selectedClasses.size === 0) return
+    
+    const hasBookings = filteredClasses
+      .filter(c => selectedClasses.has(c.id))
+      .some(c => c._count.bookings > 0)
+    
+    const confirmMsg = hasBookings
+      ? `Some of the ${selectedClasses.size} selected classes have bookings. Are you sure you want to delete them? Clients will need to be notified.`
+      : `Are you sure you want to delete ${selectedClasses.size} classes? This cannot be undone.`
+    
+    if (!confirm(confirmMsg)) return
+    
+    setBulkActionLoading(true)
+    try {
+      const res = await fetch('/api/studio/schedule', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classIds: Array.from(selectedClasses) })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        alert(`Successfully deleted ${data.deleted} classes`)
+        setClasses(classes.filter(c => !selectedClasses.has(c.id)))
+        clearSelection()
+      } else {
+        const data = await res.json()
+        alert(data.message || data.error || 'Failed to delete classes')
+      }
+    } catch (error) {
+      console.error('Failed to delete classes:', error)
+      alert('Failed to delete classes')
+    } finally {
+      setBulkActionLoading(false)
+    }
+  }
+  
+  // Bulk reassign selected classes
+  const handleBulkReassign = async () => {
+    if (selectedClasses.size === 0 || !reassignTeacherId) return
+    
+    setBulkActionLoading(true)
+    try {
+      const res = await fetch('/api/studio/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          classIds: Array.from(selectedClasses),
+          teacherId: reassignTeacherId
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        alert(`Successfully reassigned ${data.updated} classes`)
+        // Update local state
+        const newTeacher = teachers.find(t => t.id === reassignTeacherId)
+        if (newTeacher) {
+          setClasses(classes.map(c => 
+            selectedClasses.has(c.id) 
+              ? { ...c, teacher: newTeacher }
+              : c
+          ))
+        }
+        clearSelection()
+        setShowReassignModal(false)
+        setReassignTeacherId("")
+      } else {
+        const data = await res.json()
+        alert(data.message || data.error || 'Failed to reassign classes')
+      }
+    } catch (error) {
+      console.error('Failed to reassign classes:', error)
+      alert('Failed to reassign classes')
+    } finally {
+      setBulkActionLoading(false)
+    }
+  }
 
   // Create location color map
   const locationColorMap: Record<string, string> = {}
@@ -240,6 +355,57 @@ export default function SchedulePage() {
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
+      {/* Reassign Modal */}
+      {showReassignModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <Card className="w-[400px] shadow-xl">
+            <CardContent className="p-6">
+              <h2 className="font-semibold text-lg text-gray-900 mb-4">
+                Reassign {selectedClasses.size} Classes
+              </h2>
+              <p className="text-gray-500 mb-4">
+                Select a new teacher for the selected classes:
+              </p>
+              <Select value={reassignTeacherId} onValueChange={setReassignTeacherId}>
+                <SelectTrigger className="mb-4">
+                  <SelectValue placeholder="Select teacher..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map(teacher => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.user.firstName} {teacher.user.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowReassignModal(false)
+                    setReassignTeacherId("")
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 bg-violet-600 hover:bg-violet-700"
+                  onClick={handleBulkReassign}
+                  disabled={!reassignTeacherId || bulkActionLoading}
+                >
+                  {bulkActionLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Reassign"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -254,13 +420,88 @@ export default function SchedulePage() {
               : 'Manage your class schedule'}
           </p>
         </div>
-        <Link href="/studio/schedule/new">
-          <Button className="bg-violet-600 hover:bg-violet-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Class
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={selectMode ? "default" : "outline"}
+            onClick={() => {
+              if (selectMode) {
+                clearSelection()
+              } else {
+                setSelectMode(true)
+              }
+            }}
+            className={selectMode ? "bg-violet-600 hover:bg-violet-700" : ""}
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            {selectMode ? "Cancel Select" : "Select Multiple"}
           </Button>
-        </Link>
+          <Link href="/studio/schedule/new">
+            <Button className="bg-violet-600 hover:bg-violet-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Class
+            </Button>
+          </Link>
+        </div>
       </div>
+      
+      {/* Bulk Actions Bar */}
+      {selectMode && selectedClasses.size > 0 && (
+        <Card className="border-0 shadow-sm mb-4 bg-violet-50 border-l-4 border-l-violet-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-5 w-5 text-violet-600" />
+                <span className="font-medium text-violet-900">
+                  {selectedClasses.size} class{selectedClasses.size > 1 ? 'es' : ''} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={selectAllClasses}
+                >
+                  Select All ({filteredClasses.length})
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-violet-600 border-violet-200 hover:bg-violet-100"
+                  onClick={() => setShowReassignModal(true)}
+                  disabled={bulkActionLoading}
+                >
+                  <UserCog className="h-4 w-4 mr-1" />
+                  Reassign
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                >
+                  {bulkActionLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters Bar */}
       <Card className="border-0 shadow-sm mb-6">
@@ -471,36 +712,84 @@ export default function SchedulePage() {
                     
                     {/* Classes */}
                     {(classesByDay[dayIndex] || []).length > 0 ? (
-                      (classesByDay[dayIndex] || []).map((cls) => (
-                        <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
-                          <div
-                            className={`p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md hover:bg-violet-50 transition-all cursor-pointer ${getClassColor(cls.classType.name)}`}
-                          >
-                            <p className="font-medium text-sm text-gray-900 truncate">{cls.classType.name}</p>
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
-                            </p>
-                            {hasMultipleLocations && filterLocation === "all" && (
-                              <Badge 
-                                variant="secondary" 
-                                className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
-                              >
-                                <MapPin className="h-2.5 w-2.5 mr-1" />
-                                {cls.location.name}
-                              </Badge>
-                            )}
-                            <p className={`text-xs mt-1 ${
-                              cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
-                            }`}>
-                              {cls._count.bookings}/{cls.capacity}
-                            </p>
-                          </div>
-                        </Link>
-                      ))
+                      (classesByDay[dayIndex] || []).map((cls) => {
+                        const isSelected = selectedClasses.has(cls.id)
+                        
+                        if (selectMode) {
+                          return (
+                            <div
+                              key={cls.id}
+                              onClick={(e) => toggleSelectClass(cls.id, e)}
+                              className={`p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-pointer ${getClassColor(cls.classType.name)} ${
+                                isSelected 
+                                  ? 'bg-violet-100 ring-2 ring-violet-500' 
+                                  : 'bg-white hover:bg-violet-50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <p className="font-medium text-sm text-gray-900 truncate flex-1">{cls.classType.name}</p>
+                                {isSelected ? (
+                                  <CheckSquare className="h-4 w-4 text-violet-600 shrink-0" />
+                                ) : (
+                                  <Square className="h-4 w-4 text-gray-300 shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                              </p>
+                              {hasMultipleLocations && filterLocation === "all" && (
+                                <Badge 
+                                  variant="secondary" 
+                                  className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
+                                >
+                                  <MapPin className="h-2.5 w-2.5 mr-1" />
+                                  {cls.location.name}
+                                </Badge>
+                              )}
+                              <p className={`text-xs mt-1 ${
+                                cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
+                              }`}>
+                                {cls._count.bookings}/{cls.capacity}
+                              </p>
+                            </div>
+                          )
+                        }
+                        
+                        return (
+                          <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                            <div
+                              className={`p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md hover:bg-violet-50 transition-all cursor-pointer ${getClassColor(cls.classType.name)}`}
+                            >
+                              <p className="font-medium text-sm text-gray-900 truncate">{cls.classType.name}</p>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                              </p>
+                              {hasMultipleLocations && filterLocation === "all" && (
+                                <Badge 
+                                  variant="secondary" 
+                                  className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
+                                >
+                                  <MapPin className="h-2.5 w-2.5 mr-1" />
+                                  {cls.location.name}
+                                </Badge>
+                              )}
+                              <p className={`text-xs mt-1 ${
+                                cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
+                              }`}>
+                                {cls._count.bookings}/{cls.capacity}
+                              </p>
+                            </div>
+                          </Link>
+                        )
+                      })
                     ) : (blockedByDay[dayIndex] || []).length === 0 ? (
                       <p className="text-xs text-gray-400 text-center pt-4">No classes</p>
                     ) : null}

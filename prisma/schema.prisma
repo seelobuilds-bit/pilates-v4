@@ -744,6 +744,9 @@ model ClassSession {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Recurring class tracking
+  recurringGroupId String?  // Groups recurring classes together for bulk operations
 
   studioId    String
   studio      Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
@@ -756,6 +759,8 @@ model ClassSession {
 
   bookings  Booking[]
   waitlists Waitlist[]
+  
+  @@index([recurringGroupId])
 }
 
 enum BookingStatus {

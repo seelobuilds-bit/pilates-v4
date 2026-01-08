@@ -46,6 +46,7 @@ interface ClassSession {
   startTime: string
   endTime: string
   capacity: number
+  recurringGroupId?: string | null
   classType: { id: string; name: string }
   teacher: { id: string; user: { firstName: string; lastName: string } }
   location: { id: string; name: string }
@@ -98,6 +99,13 @@ export default function ClassSessionDetailPage({
   const [messageBody, setMessageBody] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
   const [messageSent, setMessageSent] = useState(false)
+  
+  // Recurring series management
+  const [showRecurringActions, setShowRecurringActions] = useState(false)
+  const [recurringActionLoading, setRecurringActionLoading] = useState(false)
+  const [recurringClassCount, setRecurringClassCount] = useState<number | null>(null)
+  const [showReassignSeriesModal, setShowReassignSeriesModal] = useState(false)
+  const [reassignSeriesTeacherId, setReassignSeriesTeacherId] = useState("")
 
   useEffect(() => {
     async function fetchData() {
@@ -144,6 +152,90 @@ export default function ClassSessionDetailPage({
       setRecurringEndDate(defaultEnd.toISOString().split("T")[0])
     }
   }, [showRecurring, classSession, recurringDays.length])
+  
+  // Fetch recurring series count if this class is part of a series
+  useEffect(() => {
+    async function fetchRecurringCount() {
+      if (!classSession?.recurringGroupId) return
+      
+      try {
+        const res = await fetch(`/api/studio/schedule?recurringGroupId=${classSession.recurringGroupId}&futureOnly=true`)
+        if (res.ok) {
+          const data = await res.json()
+          setRecurringClassCount(Array.isArray(data) ? data.length : 0)
+        }
+      } catch (error) {
+        console.error("Failed to fetch recurring count:", error)
+      }
+    }
+    fetchRecurringCount()
+  }, [classSession?.recurringGroupId])
+  
+  // Delete all future classes in the recurring series
+  const handleDeleteRecurringSeries = async () => {
+    if (!classSession?.recurringGroupId) return
+    
+    if (!confirm(`Are you sure you want to delete all future classes in this recurring series? This cannot be undone.`)) return
+    
+    setRecurringActionLoading(true)
+    try {
+      const res = await fetch('/api/studio/schedule', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          recurringGroupId: classSession.recurringGroupId,
+          futureOnly: true
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        alert(`Deleted ${data.deleted} classes from the recurring series`)
+        router.push("/studio/schedule")
+      } else {
+        const data = await res.json()
+        alert(data.message || data.error || 'Failed to delete classes')
+      }
+    } catch (error) {
+      console.error('Failed to delete recurring series:', error)
+      alert('Failed to delete recurring series')
+    } finally {
+      setRecurringActionLoading(false)
+    }
+  }
+  
+  // Reassign all future classes in the recurring series
+  const handleReassignRecurringSeries = async () => {
+    if (!classSession?.recurringGroupId || !reassignSeriesTeacherId) return
+    
+    setRecurringActionLoading(true)
+    try {
+      const res = await fetch('/api/studio/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          recurringGroupId: classSession.recurringGroupId,
+          futureOnly: true,
+          teacherId: reassignSeriesTeacherId
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        alert(`Reassigned ${data.updated} classes in the recurring series`)
+        router.push("/studio/schedule")
+      } else {
+        const data = await res.json()
+        alert(data.message || data.error || 'Failed to reassign classes')
+      }
+    } catch (error) {
+      console.error('Failed to reassign recurring series:', error)
+      alert('Failed to reassign recurring series')
+    } finally {
+      setRecurringActionLoading(false)
+      setShowReassignSeriesModal(false)
+    }
+  }
 
   const toggleRecurringDay = (dayId: number) => {
     setRecurringDays(prev => 
@@ -734,6 +826,124 @@ export default function ClassSessionDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {/* Recurring Series Management (if part of a series) */}
+          {classSession.recurringGroupId && (
+            <Card className="border-0 shadow-sm border-l-4 border-l-blue-500">
+              <CardContent className="p-6">
+                {/* Reassign Series Modal */}
+                {showReassignSeriesModal && (
+                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <Card className="w-[400px] shadow-xl">
+                      <CardContent className="p-6">
+                        <h2 className="font-semibold text-lg text-gray-900 mb-4">
+                          Reassign Recurring Series
+                        </h2>
+                        <p className="text-gray-500 mb-4">
+                          Select a new teacher for all {recurringClassCount || 0} future classes in this series:
+                        </p>
+                        <Select value={reassignSeriesTeacherId} onValueChange={setReassignSeriesTeacherId}>
+                          <SelectTrigger className="mb-4">
+                            <SelectValue placeholder="Select teacher..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teachers.map(teacher => (
+                              <SelectItem key={teacher.id} value={teacher.id}>
+                                {teacher.user.firstName} {teacher.user.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => {
+                              setShowReassignSeriesModal(false)
+                              setReassignSeriesTeacherId("")
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            className="flex-1 bg-violet-600 hover:bg-violet-700"
+                            onClick={handleReassignRecurringSeries}
+                            disabled={!reassignSeriesTeacherId || recurringActionLoading}
+                          >
+                            {recurringActionLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Reassign All"
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Repeat className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-gray-900">Part of Recurring Series</h2>
+                      <p className="text-sm text-gray-500">
+                        {recurringClassCount !== null 
+                          ? `${recurringClassCount} future classes in this series`
+                          : 'Loading...'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowRecurringActions(!showRecurringActions)}
+                  >
+                    {showRecurringActions ? 'Hide' : 'Manage Series'}
+                  </Button>
+                </div>
+
+                {showRecurringActions && recurringClassCount !== null && recurringClassCount > 0 && (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-sm text-gray-600">
+                      Perform actions on all <strong>{recurringClassCount}</strong> future classes in this series:
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        className="flex-1 text-violet-600 border-violet-200 hover:bg-violet-50"
+                        onClick={() => setShowReassignSeriesModal(true)}
+                        disabled={recurringActionLoading}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Reassign All
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={handleDeleteRecurringSeries}
+                        disabled={recurringActionLoading}
+                      >
+                        {recurringActionLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete All
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Note: This only affects future classes. Past classes will remain unchanged.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Booked Clients */}
           <Card className="border-0 shadow-sm">
