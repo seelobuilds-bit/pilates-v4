@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Send invite email if new user was created
     if (result.resetToken) {
       const baseUrl = process.env.NEXTAUTH_URL || 'https://thecurrent.app'
-      const inviteLink = `${baseUrl}/set-password?token=${result.resetToken}`
+      const inviteLink = `${baseUrl}/setup-account?token=${result.resetToken}`
       
       await sendSystemTemplateEmail({
         studioId: session.user.studioId,
