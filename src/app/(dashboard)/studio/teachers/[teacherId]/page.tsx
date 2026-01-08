@@ -340,9 +340,61 @@ export default function TeacherDetailPage({
               </p>
             </div>
           </div>
-          <Badge variant={teacher.isActive ? "success" : "secondary"} className="text-sm">
-            {teacher.isActive ? "Active" : "Inactive"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant={teacher.isActive ? "success" : "secondary"} className="text-sm">
+              {teacher.isActive ? "Active" : "Inactive"}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className={teacher.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}
+              onClick={async () => {
+                if (!confirm(teacher.isActive 
+                  ? "Remove access? This teacher won't be able to log in or see their schedule." 
+                  : "Restore access? This teacher will be able to log in again.")) return
+                try {
+                  const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: !teacher.isActive })
+                  })
+                  if (res.ok) {
+                    setTeacher({ ...teacher, isActive: !teacher.isActive })
+                  }
+                } catch (error) {
+                  console.error("Failed to update teacher:", error)
+                }
+              }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              {teacher.isActive ? "Remove Access" : "Restore Access"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete this teacher? This action cannot be undone.")) return
+                try {
+                  const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`, {
+                    method: "DELETE"
+                  })
+                  if (res.ok) {
+                    router.push("/studio/teachers")
+                  } else {
+                    const data = await res.json()
+                    alert(data.error || "Failed to delete teacher")
+                  }
+                } catch (error) {
+                  console.error("Failed to delete teacher:", error)
+                  alert("Failed to delete teacher")
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 

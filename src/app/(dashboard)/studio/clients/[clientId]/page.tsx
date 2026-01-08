@@ -25,7 +25,9 @@ import {
   Activity,
   MessageSquare,
   Send,
-  Check
+  Check,
+  Ban,
+  Trash2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -239,6 +241,56 @@ export default function ClientDetailPage({
             >
               <Mail className="h-4 w-4 mr-2" />
               Send Message
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={client.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}
+              onClick={async () => {
+                if (!confirm(client.isActive 
+                  ? "Remove access? This client won't be able to log in or book classes." 
+                  : "Restore access? This client will be able to log in and book again.")) return
+                try {
+                  const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: !client.isActive })
+                  })
+                  if (res.ok) {
+                    setClient({ ...client, isActive: !client.isActive })
+                  }
+                } catch (error) {
+                  console.error("Failed to update client:", error)
+                }
+              }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              {client.isActive ? "Remove Access" : "Restore Access"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete this client? This will also delete their booking history. This action cannot be undone.")) return
+                try {
+                  const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`, {
+                    method: "DELETE"
+                  })
+                  if (res.ok) {
+                    router.push("/studio/clients")
+                  } else {
+                    const data = await res.json()
+                    alert(data.error || "Failed to delete client")
+                  }
+                } catch (error) {
+                  console.error("Failed to delete client:", error)
+                  alert("Failed to delete client")
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
             </Button>
           </div>
         </div>

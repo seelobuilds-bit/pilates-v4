@@ -94,3 +94,60 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update client" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session?.user?.studioId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { clientId } = await params
+
+    // Verify client belongs to studio
+    const existingClient = await db.client.findFirst({
+      where: {
+        id: clientId,
+        studioId: session.user.studioId
+      },
+      include: {
+        _count: {
+          select: {
+            bookings: {
+              where: {
+                status: "CONFIRMED",
+                classSession: {
+                  startTime: { gte: new Date() }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!existingClient) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
+    // Check for upcoming bookings
+    if (existingClient._count.bookings > 0) {
+      return NextResponse.json({ 
+        error: "Cannot delete client with upcoming bookings. Please cancel their bookings first." 
+      }, { status: 400 })
+    }
+
+    // Delete client and their bookings (cascade)
+    await db.client.delete({
+      where: { id: clientId }
+    })
+
+    return NextResponse.json({ success: true, message: "Client deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting client:", error)
+    return NextResponse.json({ error: "Failed to delete client" }, { status: 500 })
+  }
+}

@@ -136,3 +136,57 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update teacher" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ teacherId: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session?.user?.studioId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { teacherId } = await params
+
+    // Verify teacher belongs to studio
+    const existingTeacher = await db.teacher.findFirst({
+      where: {
+        id: teacherId,
+        studioId: session.user.studioId
+      },
+      include: {
+        _count: {
+          select: {
+            classSessions: {
+              where: {
+                startTime: { gte: new Date() }
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!existingTeacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+    }
+
+    // Check for upcoming classes
+    if (existingTeacher._count.classSessions > 0) {
+      return NextResponse.json({ 
+        error: "Cannot delete teacher with upcoming classes. Please reassign or cancel their classes first." 
+      }, { status: 400 })
+    }
+
+    // Delete teacher record (this will also remove them from past class sessions via cascade or leave as orphaned)
+    await db.teacher.delete({
+      where: { id: teacherId }
+    })
+
+    return NextResponse.json({ success: true, message: "Teacher deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting teacher:", error)
+    return NextResponse.json({ error: "Failed to delete teacher" }, { status: 500 })
+  }
+}
