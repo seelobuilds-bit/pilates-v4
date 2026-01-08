@@ -473,6 +473,8 @@ enum SystemEmailType {
   PAYMENT_REFUND             // When a refund is processed
   PASSWORD_RESET             // Forgotten password email
   WELCOME                    // Welcome email for new clients
+  TEACHER_INVITE             // When a teacher is invited to the studio
+  CLIENT_WELCOME             // Welcome email when client registers
 }
 
 // SMS Template Types

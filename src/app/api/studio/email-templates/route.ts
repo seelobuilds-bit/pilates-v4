@@ -367,6 +367,93 @@ If you didn't request this, please ignore this email.
 </body>
 </html>`,
     variables: ["firstName", "lastName", "resetLink", "studioName"]
+  },
+  {
+    type: "TEACHER_INVITE",
+    name: "Teacher Invitation",
+    subject: "You're invited to teach at {{studioName}}!",
+    body: `Hi {{firstName}},
+
+You've been invited to join {{studioName}} as a teacher!
+
+To get started, please set up your account by clicking the link below:
+
+{{inviteLink}}
+
+Once you've set your password, you'll be able to:
+- View your class schedule
+- Track your bookings
+- Access teaching resources
+
+We're excited to have you on the team!
+
+{{studioName}}`,
+    htmlBody: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to the Team! 🎉</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi {{firstName}},</p>
+    <p style="color: #374151; font-size: 16px;">You've been invited to join <strong>{{studioName}}</strong> as a teacher!</p>
+    <p style="color: #374151; font-size: 16px;">To get started, please set up your account:</p>
+    <a href="{{inviteLink}}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 20px 0; font-weight: 600;">Set Up Your Account</a>
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+      <p style="margin: 0 0 10px 0; color: #374151; font-weight: 600;">Once you're set up, you'll be able to:</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ View your class schedule</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ Track your bookings</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ Access teaching resources</p>
+    </div>
+    <p style="color: #6b7280; font-size: 14px;">We're excited to have you on the team!</p>
+    <p style="color: #374151; font-size: 16px; margin-top: 30px;">{{studioName}}</p>
+  </div>
+</body>
+</html>`,
+    variables: ["firstName", "lastName", "studioName", "inviteLink"]
+  },
+  {
+    type: "CLIENT_WELCOME",
+    name: "Client Welcome",
+    subject: "Welcome to {{studioName}}!",
+    body: `Hi {{firstName}},
+
+Welcome to {{studioName}}! We're thrilled to have you join us.
+
+Your account is all set up and ready to go. You can now:
+- Browse and book classes
+- View your booking history
+- Manage your profile
+
+Ready to book your first class? Visit: {{bookingUrl}}
+
+We can't wait to see you in the studio!
+
+{{studioName}}`,
+    htmlBody: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome! 🎉</h1>
+  </div>
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="color: #374151; font-size: 16px;">Hi {{firstName}},</p>
+    <p style="color: #374151; font-size: 16px;">Welcome to <strong>{{studioName}}</strong>! We're thrilled to have you join us.</p>
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+      <p style="margin: 0 0 10px 0; color: #374151; font-weight: 600;">Your account is ready! You can now:</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ Browse and book classes</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ View your booking history</p>
+      <p style="margin: 5px 0; color: #6b7280;">✓ Manage your profile</p>
+    </div>
+    <a href="{{bookingUrl}}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 10px 0; font-weight: 600;">Book Your First Class</a>
+    <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">We can't wait to see you in the studio!</p>
+    <p style="color: #374151; font-size: 16px; margin-top: 30px;">{{studioName}}</p>
+  </div>
+</body>
+</html>`,
+    variables: ["firstName", "lastName", "studioName", "bookingUrl"]
   }
 ]
 

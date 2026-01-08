@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { sign } from "jsonwebtoken"
+import { sendSystemTemplateEmail } from "@/lib/email"
 
 const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
 
@@ -60,6 +61,25 @@ export async function POST(
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7
+    })
+
+    // Send welcome email
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://thecurrent.app'
+    const bookingUrl = `${baseUrl}/${subdomain}/book`
+    
+    await sendSystemTemplateEmail({
+      studioId: studio.id,
+      templateType: "CLIENT_WELCOME",
+      to: email,
+      variables: {
+        firstName,
+        lastName,
+        studioName: studio.name,
+        bookingUrl
+      }
+    }).catch(err => {
+      console.error("Failed to send welcome email:", err)
+      // Don't fail registration if email fails
     })
 
     return NextResponse.json({

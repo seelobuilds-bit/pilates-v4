@@ -986,4 +986,54 @@ export async function sendBookingCancellationEmail(params: {
   })
 }
 
+/**
+ * Send a system email using a template
+ * Fetches the template from the database, substitutes variables, and sends
+ */
+export async function sendSystemTemplateEmail(params: {
+  studioId: string
+  templateType: string
+  to: string
+  variables: Record<string, string>
+}): Promise<SendEmailResult> {
+  const { studioId, templateType, to, variables } = params
 
+  try {
+    // Fetch the template for this studio
+    const template = await db.systemEmailTemplate.findFirst({
+      where: {
+        studioId,
+        type: templateType as any,
+        isEnabled: true
+      }
+    })
+
+    if (!template) {
+      console.log(`[EMAIL] Template ${templateType} not found or disabled for studio ${studioId}`)
+      return { success: false, error: "Template not found or disabled" }
+    }
+
+    // Substitute variables in subject and body
+    let subject = template.subject
+    let htmlBody = template.htmlBody
+    let textBody = template.body
+
+    for (const [key, value] of Object.entries(variables)) {
+      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
+      subject = subject.replace(placeholder, value)
+      htmlBody = htmlBody.replace(placeholder, value)
+      textBody = textBody.replace(placeholder, value)
+    }
+
+    // Send the email
+    return sendStudioEmail(studioId, {
+      to,
+      subject,
+      html: htmlBody,
+      text: textBody
+    })
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send template ${templateType}:`, error)
+    return { success: false, error: "Failed to send email" }
+  }
+}
