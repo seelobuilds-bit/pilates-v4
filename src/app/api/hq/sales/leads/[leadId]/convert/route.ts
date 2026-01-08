@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { sendStudioWelcomeEmail } from "@/lib/email"
+import { createDefaultTemplatesForStudio } from "@/lib/studio-setup"
 import crypto from "crypto"
 
 /**
@@ -111,6 +112,9 @@ export async function POST(
         newStatus: "WON"
       }
     })
+
+    // Create default email and SMS templates for the studio
+    await createDefaultTemplatesForStudio(studio.id)
 
     // Send welcome email with setup link
     const baseUrl = process.env.NEXTAUTH_URL || "https://pilates-v4-soulflow.vercel.app"

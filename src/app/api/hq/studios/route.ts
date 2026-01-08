@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { randomBytes } from "crypto"
 import { sendStudioWelcomeEmail } from "@/lib/email"
+import { createDefaultTemplatesForStudio } from "@/lib/studio-setup"
 
 export async function GET() {
   const session = await getSession()
@@ -80,6 +81,9 @@ export async function POST(request: NextRequest) {
         owner: true,
       }
     })
+
+    // Create default email and SMS templates for the studio
+    await createDefaultTemplatesForStudio(studio.id)
 
     // Send welcome email with setup link
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
