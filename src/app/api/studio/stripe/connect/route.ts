@@ -74,9 +74,15 @@ export async function POST() {
       url: accountLink.url,
       accountId: stripeAccountId,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating Stripe Connect account:", error)
-    return NextResponse.json({ error: "Failed to create Stripe account" }, { status: 500 })
+    // Return more detailed error for debugging
+    const errorMessage = error?.message || error?.raw?.message || "Failed to create Stripe account"
+    return NextResponse.json({ 
+      error: errorMessage,
+      code: error?.code || error?.raw?.code,
+      type: error?.type || error?.raw?.type
+    }, { status: 500 })
   }
 }
 
