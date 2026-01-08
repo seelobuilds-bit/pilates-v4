@@ -62,7 +62,16 @@ export async function POST() {
     }
 
     // Create account link for onboarding
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    // Use NEXTAUTH_URL or fallback to production URL
+    let baseUrl = process.env.NEXTAUTH_URL || "https://thecurrent.app"
+    
+    // Clean up any newlines or whitespace that might have gotten into the env var
+    baseUrl = baseUrl.trim().replace(/\\n/g, '').replace(/\n/g, '')
+    
+    // Ensure it's a valid URL
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = `https://${baseUrl}`
+    }
     
     console.log("Creating account link with baseUrl:", baseUrl)
     
