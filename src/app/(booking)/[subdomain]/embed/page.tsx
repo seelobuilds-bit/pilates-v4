@@ -1,33 +1,272 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, MapPin, Clock, User, Check } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { 
+  MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
+  Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
+} from "lucide-react"
+
+// Stripe Payment Wrapper - loads Stripe with connected account
+function StripePaymentWrapper({
+  clientSecret,
+  connectedAccountId,
+  subdomain,
+  paymentId,
+  amount,
+  onSuccess,
+  selectedSlot,
+  selectedClass,
+  selectedLocation,
+}: {
+  clientSecret: string
+  connectedAccountId: string
+  subdomain: string
+  paymentId: string
+  amount: number
+  onSuccess: (bookingData: BookingDetails) => void
+  selectedSlot: TimeSlot | null
+  selectedClass: ClassType | null
+  selectedLocation: Location | null
+}) {
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
+
+  useEffect(() => {
+    const promise = loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
+      { stripeAccount: connectedAccountId }
+    )
+    setStripePromise(promise)
+  }, [connectedAccountId])
+
+  if (!stripePromise) {
+    return (
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
+        <p className="text-gray-500">Loading payment form...</p>
+      </div>
+    )
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#7c3aed',
+            borderRadius: '8px',
+          },
+        },
+      }}
+    >
+      <EmbeddedPaymentForm 
+        subdomain={subdomain}
+        paymentId={paymentId}
+        amount={amount}
+        onSuccess={onSuccess}
+        selectedSlot={selectedSlot}
+        selectedClass={selectedClass}
+        selectedLocation={selectedLocation}
+      />
+    </Elements>
+  )
+}
+
+function EmbeddedPaymentForm({ 
+  subdomain,
+  paymentId,
+  amount,
+  onSuccess,
+  selectedSlot,
+  selectedClass,
+  selectedLocation,
+}: { 
+  subdomain: string
+  paymentId: string
+  amount: number
+  onSuccess: (bookingData: BookingDetails) => void
+  selectedSlot: TimeSlot | null
+  selectedClass: ClassType | null
+  selectedLocation: Location | null
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handlePaymentSuccess(paymentIntentId: string) {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/confirm-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentIntentId, paymentId })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to complete booking")
+      }
+
+      const data = await res.json()
+      
+      onSuccess({
+        className: selectedClass?.name || data.booking.className,
+        date: selectedSlot ? new Date(selectedSlot.startTime).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "",
+        time: selectedSlot ? new Date(selectedSlot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "",
+        location: selectedLocation?.name || data.booking.location,
+        teacher: selectedSlot ? `${selectedSlot.teacher.user.firstName} ${selectedSlot.teacher.user.lastName}` : data.booking.teacher,
+        price: amount,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete booking")
+      setProcessing(false)
+    }
+  }
+
+  async function handleExpressCheckoutConfirm() {
+    if (!stripe || !elements) return
+    setProcessing(true)
+    setError(null)
+
+    const { error: submitError } = await elements.submit()
+    if (submitError) {
+      setError(submitError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (confirmError) {
+      setError(confirmError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      await handlePaymentSuccess(paymentIntent.id)
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!stripe || !elements) return
+
+    setProcessing(true)
+    setError(null)
+
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    })
+
+    if (stripeError) {
+      setError(stripeError.message || "Payment failed")
+      setProcessing(false)
+      return
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      await handlePaymentSuccess(paymentIntent.id)
+    } else {
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-4">
+        <ExpressCheckoutElement 
+          onConfirm={handleExpressCheckoutConfirm}
+          options={{
+            buttonType: { applePay: "book", googlePay: "book" },
+            buttonTheme: { applePay: "black", googlePay: "black" },
+            layout: { maxColumns: 2, maxRows: 1 },
+          }}
+        />
+      </div>
+
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-3 bg-white text-gray-500">Or pay with card</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <PaymentElement options={{ layout: "tabs" }} />
+        </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={!stripe || processing}
+          className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
+        >
+          {processing ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+          ) : (
+            <><Lock className="w-4 h-4 mr-2" />Pay ${amount.toFixed(2)}</>
+          )}
+        </Button>
+
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <Lock className="w-3 h-3" />
+          <span>Secured by Stripe</span>
+        </div>
+      </form>
+    </div>
+  )
+}
 
 interface Location {
   id: string
   name: string
   address: string
+  city: string
+  state: string
 }
 
 interface ClassType {
   id: string
   name: string
+  description: string
   duration: number
   price: number
 }
 
 interface Teacher {
   id: string
+  bio?: string
   user: { firstName: string; lastName: string }
 }
 
 interface TimeSlot {
   id: string
   startTime: string
+  endTime: string
   teacher: Teacher
   classType: ClassType
   location: Location
@@ -35,22 +274,58 @@ interface TimeSlot {
 }
 
 interface StudioData {
+  id: string
   name: string
   primaryColor: string
   locations: Location[]
   classTypes: ClassType[]
   teachers: Teacher[]
+  stripeEnabled: boolean
 }
 
-type Step = "location" | "class" | "teacher" | "time" | "confirmed"
+interface ClientInfo {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}
+
+type Step = "location" | "class" | "teacher" | "time" | "checkout"
+const STEPS: Step[] = ["location", "class", "teacher", "time", "checkout"]
+
+const stepIcons = {
+  location: MapPin,
+  class: Link2,
+  teacher: User,
+  time: Calendar,
+  checkout: CreditCard
+}
+
+interface BookingDetails {
+  className: string
+  date: string
+  time: string
+  location: string
+  teacher: string
+  price: number
+}
 
 export default function EmbedBookingPage() {
   const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
+  
+  const paymentSuccess = searchParams.get("success") === "true"
+  const paymentCanceled = searchParams.get("canceled") === "true"
+  const sessionId = searchParams.get("session_id")
 
   const [step, setStep] = useState<Step>("location")
   const [studioData, setStudioData] = useState<StudioData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [bookingComplete, setBookingComplete] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null)
 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedClass, setSelectedClass] = useState<ClassType | null>(null)
@@ -60,21 +335,68 @@ export default function EmbedBookingPage() {
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
   const [dateOffset, setDateOffset] = useState(0)
 
+  const [bookingType, setBookingType] = useState<"single" | "recurring" | "pack">("single")
+  const [packSize, setPackSize] = useState(5)
+  const [autoRenew, setAutoRenew] = useState(false)
+
+  const [client, setClient] = useState<ClientInfo | null>(null)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login")
+  const [authForm, setAuthForm] = useState({ email: "", password: "", firstName: "", lastName: "" })
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [bookingLoading, setBookingLoading] = useState(false)
+
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [connectedAccountId, setConnectedAccountId] = useState<string | null>(null)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
+
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch(`/api/booking/${subdomain}/data`)
-        if (res.ok) {
-          const data = await res.json()
-          setStudioData(data)
-        }
+        if (!res.ok) throw new Error("Studio not found")
+        const data = await res.json()
+        setStudioData(data)
       } catch {
-        // Error
+        // Stay on page but show error
       }
       setLoading(false)
     }
     fetchData()
   }, [subdomain])
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch(`/api/booking/${subdomain}/me`)
+        if (res.ok) {
+          const data = await res.json()
+          setClient(data)
+        }
+      } catch {}
+    }
+    checkAuth()
+  }, [subdomain])
+
+  useEffect(() => {
+    if (paymentSuccess && sessionId) {
+      async function fetchBookingDetails() {
+        try {
+          const res = await fetch(`/api/booking/${subdomain}/session/${sessionId}`)
+          if (res.ok) {
+            const data = await res.json()
+            setBookingDetails(data)
+          }
+        } catch (error) {
+          console.error("Error fetching booking details:", error)
+        }
+        setBookingComplete(true)
+      }
+      fetchBookingDetails()
+    }
+  }, [paymentSuccess, sessionId, subdomain])
 
   useEffect(() => {
     if (step === "time" && selectedLocation && selectedClass) {
@@ -83,255 +405,746 @@ export default function EmbedBookingPage() {
   }, [step, selectedLocation, selectedClass, selectedTeacher, selectedDate])
 
   async function fetchSlots() {
+    setSlotsLoading(true)
     try {
-      const params = new URLSearchParams({
+      const searchParams = new URLSearchParams({
         locationId: selectedLocation!.id,
         classTypeId: selectedClass!.id,
         ...(selectedTeacher && { teacherId: selectedTeacher.id }),
         ...(selectedDate && { date: selectedDate })
       })
-      const res = await fetch(`/api/booking/${subdomain}/slots?${params}`)
+      const res = await fetch(`/api/booking/${subdomain}/slots?${searchParams}`)
       const data = await res.json()
       setTimeSlots(data)
     } catch {
       setTimeSlots([])
     }
+    setSlotsLoading(false)
   }
 
   function getAvailableDates() {
-    const dates: string[] = []
+    const dates: { date: string; label: string; isToday: boolean; isTomorrow: boolean }[] = []
     const today = new Date()
     for (let i = 0; i < 14; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
-      dates.push(date.toISOString().split("T")[0])
+      const dateStr = date.toISOString().split("T")[0]
+      const weekday = date.toLocaleDateString("en-US", { weekday: "short" })
+      const monthDay = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      dates.push({
+        date: dateStr,
+        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : `${weekday}, ${monthDay}`,
+        isToday: i === 0,
+        isTomorrow: i === 1
+      })
     }
     return dates
   }
 
   const availableDates = getAvailableDates()
   const visibleDates = availableDates.slice(dateOffset, dateOffset + 5)
+  const currentStepIndex = STEPS.indexOf(step)
 
-  if (loading || !studioData) {
-    return <div className="p-4 text-center">Loading...</div>
+  function selectLocationAndContinue(loc: Location) {
+    setSelectedLocation(loc)
+    setStep("class")
   }
 
-  const primaryColor = studioData.primaryColor
+  function selectClassAndContinue(ct: ClassType) {
+    setSelectedClass(ct)
+    setStep("teacher")
+  }
+
+  function selectTeacherAndContinue(t: Teacher | null) {
+    setSelectedTeacher(t)
+    setStep("time")
+  }
+
+  function selectSlotAndContinue(slot: TimeSlot) {
+    setSelectedSlot(slot)
+    setStep("checkout")
+  }
+
+  async function handleAuth(e: React.FormEvent) {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError(null)
+
+    const endpoint = authMode === "login"
+      ? `/api/booking/${subdomain}/login`
+      : `/api/booking/${subdomain}/register`
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(authForm)
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Authentication failed")
+      }
+
+      const data = await res.json()
+      setClient(data)
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Authentication failed")
+    }
+    setAuthLoading(false)
+  }
+
+  async function handleLogout() {
+    await fetch(`/api/booking/${subdomain}/logout`, { method: "POST" })
+    setClient(null)
+  }
+
+  useEffect(() => {
+    async function createPaymentIntent() {
+      if (step !== "checkout" || !client || !selectedSlot || !studioData?.stripeEnabled || clientSecret) return
+      
+      setCreatingPaymentIntent(true)
+      setPaymentError(null)
+
+      try {
+        const res = await fetch(`/api/booking/${subdomain}/create-payment-intent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            classSessionId: selectedSlot.id,
+            clientEmail: client.email,
+            clientFirstName: client.firstName,
+            clientLastName: client.lastName,
+          })
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || "Failed to initialize payment")
+        }
+
+        const data = await res.json()
+        setClientSecret(data.clientSecret)
+        setPaymentId(data.paymentId)
+        setConnectedAccountId(data.connectedAccountId)
+      } catch (err) {
+        setPaymentError(err instanceof Error ? err.message : "Failed to initialize payment")
+      }
+      setCreatingPaymentIntent(false)
+    }
+
+    createPaymentIntent()
+  }, [step, client, selectedSlot, studioData?.stripeEnabled, subdomain, clientSecret])
+
+  function handlePaymentSuccess(bookingData: BookingDetails) {
+    setBookingDetails(bookingData)
+    setBookingComplete(true)
+  }
+
+  async function handleConfirmBooking() {
+    if (!selectedSlot || !client) return
+    setBookingLoading(true)
+
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/book`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classSessionId: selectedSlot.id,
+          bookingType,
+          packSize: bookingType === "pack" ? packSize : undefined,
+          autoRenew: bookingType === "pack" ? autoRenew : undefined
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Booking failed")
+      }
+
+      setBookingComplete(true)
+      setBookingDetails({
+        className: selectedClass?.name || "",
+        date: selectedSlot ? new Date(selectedSlot.startTime).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "",
+        time: selectedSlot ? new Date(selectedSlot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "",
+        location: selectedLocation?.name || "",
+        teacher: selectedSlot ? `${selectedSlot.teacher.user.firstName} ${selectedSlot.teacher.user.lastName}` : "",
+        price: calculatePrice(),
+      })
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Booking failed")
+    }
+    setBookingLoading(false)
+  }
+
+  function calculatePrice() {
+    if (!selectedClass) return 0
+    const base = selectedClass.price
+    if (bookingType === "recurring") return base * 0.85
+    if (bookingType === "pack") {
+      const discount = packSize === 5 ? 0.9 : packSize === 10 ? 0.8 : 0.75
+      return base * packSize * discount
+    }
+    return base
+  }
+
+  if (loading || !studioData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (bookingComplete || paymentSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="border-0 shadow-lg max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-10 w-10 text-emerald-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
+            <p className="text-gray-500 mb-6">Your class has been booked successfully.</p>
+
+            {bookingDetails && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                      <CalendarCheck className="h-5 w-5 text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{bookingDetails.className}</p>
+                      <p className="text-sm text-gray-500">{bookingDetails.date} at {bookingDetails.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{bookingDetails.location}</p>
+                      <p className="text-sm text-gray-500">with {bookingDetails.teacher}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 justify-center text-sm text-gray-500 mb-6">
+              <Mail className="h-4 w-4" />
+              <span>A confirmation email has been sent to you</span>
+            </div>
+
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setBookingComplete(false)
+                setStep("location")
+                setSelectedLocation(null)
+                setSelectedClass(null)
+                setSelectedTeacher(null)
+                setSelectedSlot(null)
+                setSelectedDate("")
+                setClientSecret(null)
+                setPaymentId(null)
+              }}
+              className="w-full"
+            >
+              Book Another Class
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (paymentCanceled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="border-0 shadow-lg max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CreditCard className="h-10 w-10 text-amber-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Canceled</h1>
+            <p className="text-gray-500 mb-6">Your payment was canceled. No charges were made.</p>
+            <Button 
+              onClick={() => {
+                setStep("location")
+                setSelectedLocation(null)
+                setSelectedClass(null)
+                setSelectedTeacher(null)
+                setSelectedSlot(null)
+              }}
+              className="w-full bg-violet-600 hover:bg-violet-700"
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Location */}
-      {step === "location" && (
-        <>
-          <h3 className="font-semibold">Select Location</h3>
-          {studioData.locations.map((loc) => (
-            <Card
-              key={loc.id}
-              className={`cursor-pointer ${selectedLocation?.id === loc.id ? "ring-2" : ""}`}
-              style={{ borderColor: selectedLocation?.id === loc.id ? primaryColor : undefined }}
-              onClick={() => setSelectedLocation(loc)}
-            >
-              <CardContent className="p-3 flex items-center gap-3">
-                <MapPin className="h-4 w-4" />
-                <span>{loc.name}</span>
-              </CardContent>
-            </Card>
-          ))}
-          <Button
-            className="w-full"
-            style={{ backgroundColor: primaryColor }}
-            disabled={!selectedLocation}
-            onClick={() => setStep("class")}
-          >
-            Continue
-          </Button>
-        </>
-      )}
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="max-w-xl mx-auto px-4 pt-6 pb-4 text-center">
+        <h1 className="text-xl font-bold text-gray-900">Book a Class</h1>
+        <p className="text-gray-500 text-sm mt-1">{studioData.name}</p>
+      </div>
 
-      {/* Class */}
-      {step === "class" && (
-        <>
-          <Button variant="ghost" size="sm" onClick={() => setStep("location")}>
-            <ChevronLeft className="h-4 w-4" /> Back
-          </Button>
-          <h3 className="font-semibold">Select Class</h3>
-          {studioData.classTypes.map((ct) => (
-            <Card
-              key={ct.id}
-              className={`cursor-pointer ${selectedClass?.id === ct.id ? "ring-2" : ""}`}
-              style={{ borderColor: selectedClass?.id === ct.id ? primaryColor : undefined }}
-              onClick={() => setSelectedClass(ct)}
+      {/* Progress Steps */}
+      <div className="flex items-center justify-center gap-3 pb-4">
+        {STEPS.map((s, i) => {
+          const Icon = stepIcons[s]
+          const isCompleted = i < currentStepIndex
+          const isCurrent = i === currentStepIndex
+          return (
+            <div
+              key={s}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                isCompleted
+                  ? "bg-violet-600 text-white"
+                  : isCurrent
+                  ? "bg-violet-600 text-white"
+                  : "bg-gray-100 text-gray-400"
+              }`}
             >
-              <CardContent className="p-3 flex justify-between">
-                <span>{ct.name}</span>
-                <span>${ct.price}</span>
-              </CardContent>
-            </Card>
-          ))}
-          <Button
-            className="w-full"
-            style={{ backgroundColor: primaryColor }}
-            disabled={!selectedClass}
-            onClick={() => setStep("teacher")}
-          >
-            Continue
-          </Button>
-        </>
-      )}
-
-      {/* Teacher */}
-      {step === "teacher" && (
-        <>
-          <Button variant="ghost" size="sm" onClick={() => setStep("class")}>
-            <ChevronLeft className="h-4 w-4" /> Back
-          </Button>
-          <h3 className="font-semibold">Select Teacher (Optional)</h3>
-          <Card
-            className={`cursor-pointer ${!selectedTeacher ? "ring-2" : ""}`}
-            style={{ borderColor: !selectedTeacher ? primaryColor : undefined }}
-            onClick={() => setSelectedTeacher(null)}
-          >
-            <CardContent className="p-3 flex items-center gap-3">
-              <User className="h-4 w-4" />
-              <span>Any Teacher</span>
-            </CardContent>
-          </Card>
-          {studioData.teachers.map((t) => (
-            <Card
-              key={t.id}
-              className={`cursor-pointer ${selectedTeacher?.id === t.id ? "ring-2" : ""}`}
-              style={{ borderColor: selectedTeacher?.id === t.id ? primaryColor : undefined }}
-              onClick={() => setSelectedTeacher(t)}
-            >
-              <CardContent className="p-3 flex items-center gap-3">
-                <User className="h-4 w-4" />
-                <span>{t.user.firstName} {t.user.lastName}</span>
-              </CardContent>
-            </Card>
-          ))}
-          <Button
-            className="w-full"
-            style={{ backgroundColor: primaryColor }}
-            onClick={() => setStep("time")}
-          >
-            Continue
-          </Button>
-        </>
-      )}
-
-      {/* Time */}
-      {step === "time" && (
-        <>
-          <Button variant="ghost" size="sm" onClick={() => setStep("teacher")}>
-            <ChevronLeft className="h-4 w-4" /> Back
-          </Button>
-          <h3 className="font-semibold">Select Time</h3>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setDateOffset(Math.max(0, dateOffset - 5))}
-              disabled={dateOffset === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex gap-1 flex-1 overflow-hidden">
-              {visibleDates.map((date) => {
-                const d = new Date(date + "T00:00:00")
-                const isSelected = selectedDate === date
-                return (
-                  <button
-                    key={date}
-                    className={`flex-1 p-2 rounded text-center text-sm shrink-0 ${
-                      isSelected ? "text-white" : "bg-gray-100"
-                    }`}
-                    style={{ backgroundColor: isSelected ? primaryColor : undefined }}
-                    onClick={() => setSelectedDate(date)}
-                  >
-                    <p className="text-xs">{d.toLocaleDateString("en-US", { weekday: "short" })}</p>
-                    <p className="font-medium">{d.getDate()}</p>
-                  </button>
-                )
-              })}
+              {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 5))}
-              disabled={dateOffset >= availableDates.length - 5}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          )
+        })}
+      </div>
+
+      {/* Breadcrumb */}
+      {(selectedLocation || selectedClass) && step !== "location" && (
+        <div className="max-w-xl mx-auto px-4 pb-3">
+          <div className="flex items-center justify-center gap-3 py-2 border border-gray-200 rounded-full text-xs bg-white">
+            {selectedLocation && (
+              <span className="flex items-center gap-1 text-gray-500">
+                <MapPin className="w-3 h-3" />
+                {selectedLocation.name}
+              </span>
+            )}
+            {selectedClass && (
+              <span className="flex items-center gap-1 text-gray-500">
+                <Link2 className="w-3 h-3" />
+                {selectedClass.name}
+              </span>
+            )}
           </div>
-
-          {timeSlots.length > 0 ? (
-            <div className="space-y-2">
-              {timeSlots.map((slot) => (
-                <Card
-                  key={slot.id}
-                  className={`cursor-pointer ${selectedSlot?.id === slot.id ? "ring-2" : ""}`}
-                  style={{ borderColor: selectedSlot?.id === slot.id ? primaryColor : undefined }}
-                  onClick={() => setSelectedSlot(slot)}
-                >
-                  <CardContent className="p-3 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                    </div>
-                    <Badge variant={slot.spotsLeft > 3 ? "success" : "warning"}>
-                      {slot.spotsLeft} spots
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No classes available</p>
-          )}
-
-          <Button
-            className="w-full"
-            style={{ backgroundColor: primaryColor }}
-            disabled={!selectedSlot}
-            onClick={() => setStep("confirmed")}
-          >
-            Book Now
-          </Button>
-        </>
-      )}
-
-      {/* Confirmed */}
-      {step === "confirmed" && (
-        <div className="text-center space-y-4">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <Check className="h-8 w-8 text-white" />
-          </div>
-          <h3 className="font-semibold">Booking Confirmed!</h3>
-          <p className="text-sm text-muted-foreground">
-            {selectedClass?.name} at {selectedLocation?.name}
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setStep("location")
-              setSelectedLocation(null)
-              setSelectedClass(null)
-              setSelectedTeacher(null)
-              setSelectedSlot(null)
-              setSelectedDate("")
-            }}
-          >
-            Book Another
-          </Button>
         </div>
       )}
+
+      {/* Content */}
+      <div className="max-w-xl mx-auto px-4 py-4">
+        {/* Back Button */}
+        {step !== "location" && (
+          <button
+            onClick={() => setStep(STEPS[currentStepIndex - 1])}
+            className="flex items-center gap-1 text-gray-500 hover:text-gray-700 mb-4 text-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+        )}
+
+        {/* Location Step */}
+        {step === "location" && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-violet-600" />
+                <h2 className="text-base font-semibold">Select Location</h2>
+              </div>
+              <div className="space-y-2">
+                {studioData.locations.map((loc) => (
+                  <button
+                    key={loc.id}
+                    onClick={() => selectLocationAndContinue(loc)}
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{loc.name}</p>
+                      <p className="text-xs text-gray-500">{loc.address}, {loc.city}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Class Step */}
+        {step === "class" && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Link2 className="w-5 h-5 text-violet-600" />
+                <h2 className="text-base font-semibold">Select Class Type</h2>
+              </div>
+              <div className="space-y-2">
+                {studioData.classTypes.map((ct) => (
+                  <button
+                    key={ct.id}
+                    onClick={() => selectClassAndContinue(ct)}
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-left"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 text-sm">{ct.name}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{ct.description}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {ct.duration} min
+                          </span>
+                          <span className="font-medium text-gray-900">${ct.price}</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300 mt-1" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Teacher Step */}
+        {step === "teacher" && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-violet-600" />
+                <h2 className="text-base font-semibold">Select Teacher</h2>
+              </div>
+              <div className="space-y-2">
+                <button
+                  onClick={() => selectTeacherAndContinue(null)}
+                  className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">Any Available Teacher</p>
+                    <p className="text-xs text-gray-500">Show all available time slots</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </button>
+                {studioData.teachers.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => selectTeacherAndContinue(t)}
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-medium">
+                        {t.user.firstName[0]}{t.user.lastName[0]}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{t.user.firstName} {t.user.lastName}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Time Step */}
+        {step === "time" && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-violet-600" />
+                <h2 className="text-base font-semibold">Select Date & Time</h2>
+              </div>
+
+              <div className="mb-5">
+                <p className="text-xs font-medium text-gray-700 mb-2">Select Date</p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
+                    disabled={dateOffset === 0}
+                    className="p-1 disabled:opacity-20"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="flex gap-1.5 flex-1">
+                    {visibleDates.map((d) => {
+                      const isSelected = selectedDate === d.date
+                      return (
+                        <button
+                          key={d.date}
+                          onClick={() => setSelectedDate(d.date)}
+                          className={`flex-1 py-2 px-1 rounded-lg text-center transition-all ${
+                            isSelected ? "bg-violet-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          <p className="text-xs font-medium">{d.label}</p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 1))}
+                    disabled={dateOffset >= availableDates.length - 5}
+                    className="p-1 disabled:opacity-20"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-2">Available Times</p>
+                {slotsLoading ? (
+                  <p className="text-gray-500 text-center py-6 text-sm">Loading times...</p>
+                ) : timeSlots.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {timeSlots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        onClick={() => selectSlotAndContinue(slot)}
+                        className="py-3 px-4 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
+                      >
+                        <p className="font-bold text-gray-900 text-sm">
+                          {new Date(slot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </p>
+                        <p className="text-xs text-gray-500">{slot.teacher.user.firstName}</p>
+                        <p className="text-xs text-gray-400">{slot.spotsLeft} spots</p>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-6 text-sm">No classes available. Try another date.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Checkout Step */}
+        {step === "checkout" && (
+          <div className="space-y-3">
+            {/* Order Summary */}
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <CreditCard className="w-5 h-5 text-violet-600" />
+                  <h2 className="text-base font-semibold">Complete Booking</h2>
+                </div>
+
+                {/* Plan Selection */}
+                <div className="mb-4">
+                  <p className="text-xs font-medium text-gray-700 mb-2">Choose Your Plan</p>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setBookingType("single")}
+                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                        bookingType === "single" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Calendar className={`w-4 h-4 ${bookingType === "single" ? "text-violet-600" : "text-gray-400"}`} />
+                        <span className="text-sm font-medium text-gray-900">Drop-in</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">${selectedClass?.price}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setBookingType("recurring")}
+                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                        bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className={`w-4 h-4 ${bookingType === "recurring" ? "text-violet-600" : "text-gray-400"}`} />
+                        <span className="text-sm font-medium text-gray-900">Weekly</span>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">15% off</Badge>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}/wk</span>
+                    </button>
+
+                    <button
+                      onClick={() => setBookingType("pack")}
+                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                        bookingType === "pack" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className={`w-4 h-4 ${bookingType === "pack" ? "text-violet-600" : "text-gray-400"}`} />
+                        <span className="text-sm font-medium text-gray-900">Class Pack</span>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">Up to 25% off</Badge>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {bookingType === "pack" && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {[5, 10, 20].map((size) => {
+                        const discount = size === 5 ? 10 : size === 10 ? 20 : 25
+                        return (
+                          <button
+                            key={size}
+                            onClick={() => setPackSize(size)}
+                            className={`p-2 rounded-lg border text-center ${
+                              packSize === size ? "border-violet-600 bg-white" : "hover:border-gray-300"
+                            }`}
+                          >
+                            <p className="font-bold text-gray-900 text-sm">{size}</p>
+                            <p className="text-xs text-emerald-600">{discount}% off</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-white rounded border">
+                      <span className="text-xs text-gray-600">Auto-renew</span>
+                      <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Summary */}
+                <div className="border-t pt-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Class</span>
+                    <span className="text-gray-900">{selectedClass?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">When</span>
+                    <span className="text-gray-900">
+                      {selectedSlot && new Date(selectedSlot.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {selectedSlot && new Date(selectedSlot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="font-medium text-gray-900">Total</span>
+                    <span className="font-semibold text-violet-600">${calculatePrice().toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Auth / Payment */}
+            {!client ? (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-5">
+                  <p className="font-medium text-gray-900 text-sm mb-3">{authMode === "login" ? "Sign in to book" : "Create account"}</p>
+                  <form onSubmit={handleAuth} className="space-y-3">
+                    {authError && <div className="p-2 text-xs text-red-600 bg-red-50 rounded">{authError}</div>}
+                    {authMode === "register" && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">First Name</Label>
+                          <Input className="h-9 text-sm" value={authForm.firstName} onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })} required />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Last Name</Label>
+                          <Input className="h-9 text-sm" value={authForm.lastName} onChange={(e) => setAuthForm({ ...authForm, lastName: e.target.value })} required />
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="text-xs">Email</Label>
+                      <Input className="h-9 text-sm" type="email" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} required />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Password</Label>
+                      <Input className="h-9 text-sm" type="password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} required />
+                    </div>
+                    <Button type="submit" className="w-full h-10 bg-violet-600 hover:bg-violet-700" disabled={authLoading}>
+                      {authLoading ? "Loading..." : authMode === "login" ? "Sign In" : "Create Account"}
+                    </Button>
+                    <p className="text-center text-xs text-gray-500">
+                      {authMode === "login" ? (
+                        <>No account? <button type="button" className="text-violet-600" onClick={() => setAuthMode("register")}>Sign up</button></>
+                      ) : (
+                        <>Have account? <button type="button" className="text-violet-600" onClick={() => setAuthMode("login")}>Sign in</button></>
+                      )}
+                    </p>
+                  </form>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500">Booking as</p>
+                      <p className="text-sm text-violet-600">{client.email}</p>
+                    </div>
+                    <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                      <LogOut className="w-3 h-3" />
+                      Change
+                    </button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CreditCard className="w-4 h-4 text-violet-600" />
+                      <p className="font-medium text-gray-900 text-sm">Payment</p>
+                    </div>
+                    {studioData?.stripeEnabled ? (
+                      creatingPaymentIntent ? (
+                        <div className="text-center py-6">
+                          <Loader2 className="w-6 h-6 text-violet-600 animate-spin mx-auto mb-2" />
+                          <p className="text-gray-500 text-sm">Loading payment...</p>
+                        </div>
+                      ) : paymentError ? (
+                        <div className="text-center py-4">
+                          <p className="text-red-600 text-sm mb-2">{paymentError}</p>
+                          <Button variant="outline" size="sm" onClick={() => { setClientSecret(null); setPaymentError(null); }}>
+                            Try Again
+                          </Button>
+                        </div>
+                      ) : clientSecret && connectedAccountId ? (
+                        <StripePaymentWrapper
+                          clientSecret={clientSecret}
+                          connectedAccountId={connectedAccountId}
+                          subdomain={subdomain}
+                          paymentId={paymentId!}
+                          amount={calculatePrice()}
+                          onSuccess={handlePaymentSuccess}
+                          selectedSlot={selectedSlot}
+                          selectedClass={selectedClass}
+                          selectedLocation={selectedLocation}
+                        />
+                      ) : null
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-gray-500 text-sm">Free booking - no payment required</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {!studioData?.stripeEnabled && (
+                  <Button
+                    onClick={handleConfirmBooking}
+                    disabled={bookingLoading}
+                    className="w-full h-10 bg-violet-600 hover:bg-violet-700"
+                  >
+                    {bookingLoading ? "Processing..." : "Confirm Booking"}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-
-
-
