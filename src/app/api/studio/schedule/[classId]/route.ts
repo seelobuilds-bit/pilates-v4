@@ -158,11 +158,19 @@ export async function DELETE(
 
     // Debug logging
     console.log(`[CLASS DELETE] Class ID: ${classId}`)
+    console.log(`[CLASS DELETE] Studio ID: ${session.user.studioId}`)
     console.log(`[CLASS DELETE] Found ${existingClass.bookings.length} bookings with CONFIRMED/PENDING status`)
     console.log(`[CLASS DELETE] Bookings:`, existingClass.bookings.map(b => ({ 
       id: b.id, 
       clientEmail: b.client.email 
     })))
+    
+    // Check ALL bookings for this class (any status)
+    const allBookings = await db.booking.findMany({
+      where: { classSessionId: classId },
+      select: { id: true, status: true, clientId: true }
+    })
+    console.log(`[CLASS DELETE] ALL bookings for this class (any status):`, allBookings)
 
     const dateStr = existingClass.startTime.toLocaleDateString('en-US', { 
       weekday: 'long', 
