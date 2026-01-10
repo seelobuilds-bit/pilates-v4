@@ -75,6 +75,21 @@ export async function POST(
       })
     }
 
+    // Check if client already has an active booking for this class
+    const existingBooking = await db.booking.findFirst({
+      where: {
+        clientId: client.id,
+        classSessionId: classSession.id,
+        status: { in: ["CONFIRMED", "PENDING"] }
+      }
+    })
+
+    if (existingBooking) {
+      return NextResponse.json({ 
+        error: "You have already booked this class" 
+      }, { status: 400 })
+    }
+
     // Create or get Stripe customer on the connected account
     let stripeCustomerId = client.stripeCustomerId
 
