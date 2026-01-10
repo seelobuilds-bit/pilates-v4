@@ -120,7 +120,8 @@ export async function POST(
       }
     })
 
-    // Send booking confirmation email (don't await to avoid slowing down response)
+    // Send booking confirmation email
+    console.log(`[BOOKING] Sending confirmation email to ${booking.client.email}`)
     sendBookingConfirmationEmail({
       studioId: studio.id,
       studioName: studio.name,
@@ -138,7 +139,11 @@ export async function POST(
         status: booking.status
       },
       manageBookingUrl: `https://${subdomain}.thecurrent.app/account`
-    }).catch(err => console.error('Failed to send booking confirmation:', err))
+    }).then(result => {
+      console.log(`[BOOKING] Email result:`, result)
+    }).catch(err => {
+      console.error('[BOOKING] Failed to send booking confirmation:', err)
+    })
 
     return NextResponse.json({ 
       success: true, 

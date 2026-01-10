@@ -240,7 +240,26 @@ export default function SchedulePage() {
     locationColorMap[loc.id] = locationColors[index % Object.keys(locationColors).length]
   })
 
-  // Fetch data
+  // Fetch schedule classes only (for refresh)
+  const fetchSchedule = async () => {
+    const startDate = weekDates[0].toISOString()
+    const endDate = new Date(weekDates[6])
+    endDate.setHours(23, 59, 59, 999)
+    
+    const classesRes = await fetch(`/api/studio/schedule?start=${startDate}&end=${endDate.toISOString()}`)
+    if (classesRes.ok) {
+      const classesData = await classesRes.json()
+      setClasses(classesData)
+    }
+
+    const blockedRes = await fetch(`/api/studio/blocked-times?start=${startDate}&end=${endDate.toISOString()}`)
+    if (blockedRes.ok) {
+      const blockedData = await blockedRes.json()
+      setBlockedTimes(blockedData)
+    }
+  }
+
+  // Fetch all data on initial load and week change
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
@@ -267,28 +286,23 @@ export default function SchedulePage() {
         }
 
         // Fetch classes for the week
-        const startDate = weekDates[0].toISOString()
-        const endDate = new Date(weekDates[6])
-        endDate.setHours(23, 59, 59, 999)
-        
-        const classesRes = await fetch(`/api/studio/schedule?start=${startDate}&end=${endDate.toISOString()}`)
-        if (classesRes.ok) {
-          const classesData = await classesRes.json()
-          setClasses(classesData)
-        }
-
-        // Fetch blocked times for the week
-        const blockedRes = await fetch(`/api/studio/blocked-times?start=${startDate}&end=${endDate.toISOString()}`)
-        if (blockedRes.ok) {
-          const blockedData = await blockedRes.json()
-          setBlockedTimes(blockedData)
-        }
+        await fetchSchedule()
       } catch (error) {
         console.error("Failed to fetch schedule data:", error)
       }
       setLoading(false)
     }
     fetchData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekOffset])
+
+  // Auto-refresh schedule every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchSchedule()
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset])
 
@@ -434,6 +448,14 @@ export default function SchedulePage() {
           >
             <CheckSquare className="h-4 w-4 mr-2" />
             {selectMode ? "Cancel Select" : "Select Multiple"}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => fetchSchedule()}
+            className="text-gray-600"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
           <Link href="/studio/schedule/new">
             <Button className="bg-violet-600 hover:bg-violet-700">
