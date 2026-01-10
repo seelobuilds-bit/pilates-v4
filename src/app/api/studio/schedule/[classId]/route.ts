@@ -156,6 +156,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
+    // Debug logging
+    console.log(`[CLASS DELETE] Class ID: ${classId}`)
+    console.log(`[CLASS DELETE] Found ${existingClass.bookings.length} bookings with CONFIRMED/PENDING status`)
+    console.log(`[CLASS DELETE] Bookings:`, existingClass.bookings.map(b => ({ 
+      id: b.id, 
+      clientEmail: b.client.email 
+    })))
+
     const dateStr = existingClass.startTime.toLocaleDateString('en-US', { 
       weekday: 'long', 
       month: 'long', 
