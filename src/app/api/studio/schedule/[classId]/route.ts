@@ -211,24 +211,23 @@ export async function DELETE(
       .then(() => console.log(`[CLASS CANCEL] Sent ${emailPromises.length + waitlistPromises.length} cancellation emails`))
       .catch(err => console.error("[CLASS CANCEL] Some emails failed:", err))
 
-    // Delete waitlist entries
-    await db.waitlist.deleteMany({
-      where: { classSessionId: classId }
-    })
+    // Use a transaction to ensure all operations succeed together
+    await db.$transaction(async (tx) => {
+      // Delete waitlist entries first
+      await tx.waitlist.deleteMany({
+        where: { classSessionId: classId }
+      })
 
-    // Update bookings to CANCELLED status instead of deleting (preserves history)
-    await db.booking.updateMany({
-      where: { classSessionId: classId },
-      data: { 
-        status: "CANCELLED",
-        cancelledAt: new Date(),
-        cancellationReason: "Class cancelled by studio"
-      }
-    })
+      // Delete bookings (we've already sent cancellation emails)
+      // We delete instead of update to avoid foreign key issues
+      await tx.booking.deleteMany({
+        where: { classSessionId: classId }
+      })
 
-    // Delete the class session
-    await db.classSession.delete({
-      where: { id: classId }
+      // Delete the class session
+      await tx.classSession.delete({
+        where: { id: classId }
+      })
     })
 
     return NextResponse.json({ 

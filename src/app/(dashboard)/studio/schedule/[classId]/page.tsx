@@ -341,18 +341,56 @@ export default function ClassSessionDetailPage({
   }
 
   const handleCancel = async () => {
+    if (!confirm("Are you sure you want to cancel this class? All booked clients will be notified.")) {
+      return
+    }
+    
     setSaving(true)
     try {
       const res = await fetch(`/api/studio/schedule/${resolvedParams.classId}`, {
         method: "DELETE"
       })
+      
       if (res.ok) {
+        const data = await res.json()
+        alert(`Class cancelled. ${data.notifiedClients || 0} client(s) have been notified.`)
         router.push("/studio/schedule")
+      } else {
+        const errorData = await res.json()
+        alert(errorData.error || "Failed to cancel class. Please try again.")
       }
     } catch (error) {
       console.error("Failed to cancel class:", error)
+      alert("Failed to cancel class. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
+  }
+
+  const handleQuickReassign = async (newTeacherId: string) => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/studio/schedule/${resolvedParams.classId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherId: newTeacherId })
+      })
+      
+      if (res.ok) {
+        const updated = await res.json()
+        setClassSession(updated)
+        setSelectedTeacher(newTeacherId)
+        alert("Teacher reassigned successfully!")
+      } else {
+        const errorData = await res.json()
+        alert(errorData.error || "Failed to reassign teacher")
+      }
+    } catch (error) {
+      console.error("Failed to reassign:", error)
+      alert("Failed to reassign teacher")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleSendMessageToAll = async () => {
@@ -613,13 +651,39 @@ export default function ClassSessionDetailPage({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Quick Reassign Dropdown */}
+            <Select
+              value={selectedTeacher}
+              onValueChange={(value) => {
+                if (value !== selectedTeacher) {
+                  if (confirm(`Reassign this class to ${teachers.find(t => t.id === value)?.user.firstName} ${teachers.find(t => t.id === value)?.user.lastName}?`)) {
+                    handleQuickReassign(value)
+                  }
+                }
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <Users className="h-4 w-4 mr-2 text-gray-500" />
+                <SelectValue placeholder="Reassign..." />
+              </SelectTrigger>
+              <SelectContent>
+                {teachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id}>
+                    {teacher.user.firstName} {teacher.user.lastName}
+                    {teacher.id === selectedTeacher && " (current)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
             <Button 
               variant="outline" 
               className="text-red-600 border-red-200 hover:bg-red-50"
-              onClick={() => setShowCancelDialog(true)}
+              onClick={handleCancel}
+              disabled={saving}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Cancel Class
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Class
             </Button>
             <Button 
               className="bg-violet-600 hover:bg-violet-700"
