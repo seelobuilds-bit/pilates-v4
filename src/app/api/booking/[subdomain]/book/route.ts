@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
 import { sendBookingConfirmationEmail } from "@/lib/email"
+import { lockClassSession } from "@/lib/db-locks"
 
 export async function POST(
   request: NextRequest,
@@ -31,93 +32,92 @@ export async function POST(
     const body = await request.json()
     const { classSessionId, bookingType, recurringWeeks, packSize } = body
 
-    const classSession = await db.classSession.findFirst({
-      where: { id: classSessionId, studioId: studio.id },
-      include: {
-        classType: true,
-        _count: { 
-          select: { 
-            bookings: {
-              where: {
-                status: { in: ["CONFIRMED", "PENDING"] }
-              }
-            }
-          }
-        }
+    // NOTE: This endpoint is intended for free bookings (no Stripe).
+    // Paid bookings must go through the PaymentIntent flow.
+    const booking = await db.$transaction(async (tx) => {
+      // Lock the class session row to prevent overbooking races
+      await lockClassSession(tx, classSessionId)
+
+      const classSession = await tx.classSession.findFirst({
+        where: { id: classSessionId, studioId: studio.id },
+        include: {
+          classType: true,
+          teacher: { include: { user: true } },
+          location: true,
+        },
+      })
+
+      if (!classSession) {
+        throw new Error("Class not found")
       }
-    })
 
-    if (!classSession) {
-      return NextResponse.json({ error: "Class not found" }, { status: 404 })
-    }
-
-    // Check if class has started (can't book past classes)
-    if (new Date(classSession.startTime) < new Date()) {
-      return NextResponse.json({ error: "This class has already started" }, { status: 400 })
-    }
-
-    // CRITICAL FIX: Check for double-booking - same client can't book same class twice
-    const existingBooking = await db.booking.findFirst({
-      where: {
-        clientId: decoded.clientId,
-        classSessionId: classSession.id,
-        status: { in: ["CONFIRMED", "PENDING"] }
+      // Check if class has started (can't book past classes)
+      if (new Date(classSession.startTime) < new Date()) {
+        throw new Error("This class has already started")
       }
-    })
 
-    if (existingBooking) {
-      return NextResponse.json({ 
-        error: "You have already booked this class",
-        existingBookingId: existingBooking.id 
-      }, { status: 400 })
-    }
-
-    // Check capacity (only count confirmed and pending bookings)
-    const activeBookingsCount = await db.booking.count({
-      where: {
-        classSessionId: classSession.id,
-        status: { in: ["CONFIRMED", "PENDING"] }
+      // Calculate amount (in dollars)
+      let amount = classSession.classType.price
+      if (bookingType === "recurring") {
+        amount = classSession.classType.price * (recurringWeeks || 4) * 0.9
+      } else if (bookingType === "pack") {
+        amount = classSession.classType.price * (packSize || 5) * 0.85
       }
-    })
 
-    if (activeBookingsCount >= classSession.capacity) {
-      return NextResponse.json({ 
-        error: "Class is full",
-        spotsLeft: 0,
-        canJoinWaitlist: true // Future: implement waitlist
-      }, { status: 400 })
-    }
-
-    // Calculate amount
-    let amount = classSession.classType.price
-    if (bookingType === "recurring") {
-      amount = classSession.classType.price * (recurringWeeks || 4) * 0.9
-    } else if (bookingType === "pack") {
-      amount = classSession.classType.price * (packSize || 5) * 0.85
-    }
-
-    // Create booking as PENDING - will be CONFIRMED after payment
-    // For free classes, immediately confirm
-    const isFreeClass = amount === 0
-    
-    const booking = await db.booking.create({
-      data: {
-        studioId: studio.id,
-        clientId: decoded.clientId,
-        classSessionId: classSession.id,
-        status: isFreeClass ? "CONFIRMED" : "PENDING",
-        paidAmount: isFreeClass ? 0 : null // Set after payment
-      },
-      include: {
-        client: true,
-        classSession: {
-          include: {
-            classType: true,
-            teacher: { include: { user: true } },
-            location: true
-          }
-        }
+      if (amount > 0) {
+        throw new Error("Payment required")
       }
+
+      // Prevent double booking
+      const existingBooking = await tx.booking.findFirst({
+        where: {
+          clientId: decoded.clientId,
+          classSessionId,
+          status: { in: ["CONFIRMED", "PENDING"] },
+        },
+        select: { id: true },
+      })
+
+      if (existingBooking) {
+        const err: any = new Error("You have already booked this class")
+        err.code = "ALREADY_BOOKED"
+        err.existingBookingId = existingBooking.id
+        throw err
+      }
+
+      // Capacity check (active bookings only)
+      const activeBookingsCount = await tx.booking.count({
+        where: {
+          classSessionId,
+          status: { in: ["CONFIRMED", "PENDING"] },
+        },
+      })
+
+      if (activeBookingsCount >= classSession.capacity) {
+        const err: any = new Error("Class is full")
+        err.code = "CLASS_FULL"
+        throw err
+      }
+
+      return tx.booking.create({
+        data: {
+          studioId: studio.id,
+          clientId: decoded.clientId,
+          classSessionId,
+          status: "CONFIRMED",
+          paidAmount: 0,
+        },
+        include: {
+          client: true,
+          classSession: {
+            include: {
+              classType: true,
+              teacher: { include: { user: true } },
+              location: true,
+            },
+          },
+        },
+      })
     })
 
     // Send booking confirmation email
@@ -135,7 +135,7 @@ export async function POST(
         locationAddress: booking.classSession.location.address || undefined,
         startTime: booking.classSession.startTime,
         endTime: booking.classSession.endTime,
-        amount: isFreeClass ? undefined : amount,
+        amount: undefined,
         status: booking.status
       },
       manageBookingUrl: `https://${subdomain}.thecurrent.app/account`
@@ -149,8 +149,8 @@ export async function POST(
       success: true, 
       bookingId: booking.id,
       status: booking.status,
-      requiresPayment: !isFreeClass,
-      amount,
+      requiresPayment: false,
+      amount: 0,
       classDetails: {
         name: booking.classSession.classType.name,
         startTime: booking.classSession.startTime,
@@ -160,6 +160,27 @@ export async function POST(
     })
   } catch (error) {
     console.error("Booking error:", error)
+
+    const message = error instanceof Error ? error.message : "Failed to create booking"
+    if (message === "Payment required") {
+      return NextResponse.json({ error: "Payment required for this class" }, { status: 400 })
+    }
+    if (message === "Class not found") {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 })
+    }
+    if (message === "This class has already started") {
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+    if (message === "Class is full") {
+      return NextResponse.json(
+        { error: "Class is full", spotsLeft: 0, canJoinWaitlist: true },
+        { status: 400 }
+      )
+    }
+    if (message === "You have already booked this class") {
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
   }
 }
