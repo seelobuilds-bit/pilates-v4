@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { db } from "@/lib/db"
 import { getStripe } from "@/lib/stripe"
+import { sendBookingConfirmationEmail } from "@/lib/email"
+import { lockClassSession } from "@/lib/db-locks"
 import Stripe from "stripe"
 
 // Disable body parsing, we need the raw body for webhook verification
@@ -90,120 +92,107 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   })
 
   if (payment) {
-    await db.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: "SUCCEEDED",
-        stripePaymentIntentId: session.payment_intent as string,
-      },
+    // Mark payment succeeded (idempotent)
+    if (payment.status !== "SUCCEEDED") {
+      await db.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: "SUCCEEDED",
+          stripePaymentIntentId: session.payment_intent as string,
+        },
+      })
+    }
+
+    // Create the booking atomically (avoid duplicates / overbooking)
+    const result = await db.$transaction(async (tx) => {
+      await lockClassSession(tx, classSessionId)
+
+      const classSession = await tx.classSession.findFirst({
+        where: { id: classSessionId, studioId },
+        include: {
+          classType: true,
+          teacher: { include: { user: true } },
+          location: true,
+        },
+      })
+
+      if (!classSession) return { kind: "NO_CLASS" as const }
+
+      const existingBooking = await tx.booking.findFirst({
+        where: {
+          clientId,
+          classSessionId,
+          status: { in: ["CONFIRMED", "PENDING"] },
+        },
+        select: { id: true },
+      })
+      if (existingBooking) return { kind: "DUPLICATE" as const, bookingId: existingBooking.id }
+
+      const activeBookingsCount = await tx.booking.count({
+        where: {
+          classSessionId,
+          status: { in: ["CONFIRMED", "PENDING"] },
+        },
+      })
+      if (activeBookingsCount >= classSession.capacity) return { kind: "FULL" as const }
+
+      const booking = await tx.booking.create({
+        data: {
+          status: "CONFIRMED",
+          paidAmount: (session.amount_total || 0) / 100,
+          studioId,
+          clientId,
+          classSessionId,
+          paymentId: payment.id,
+        },
+        include: {
+          client: true,
+          classSession: {
+            include: {
+              classType: true,
+              teacher: { include: { user: true } },
+              location: true,
+            },
+          },
+        },
+      })
+
+      return { kind: "BOOKED" as const, booking }
     })
 
-    // Create the booking
-    const booking = await db.booking.create({
-      data: {
-        status: "CONFIRMED",
-        paidAmount: (session.amount_total || 0) / 100,
+    if (result.kind === "BOOKED") {
+      const studioRecord = await db.studio.findUnique({
+        where: { id: studioId },
+        select: { name: true, subdomain: true },
+      })
+      const baseUrl = (process.env.NEXTAUTH_URL || "https://thecurrent.app").replace(/\/$/, "")
+      const manageBookingUrl = studioRecord?.subdomain
+        ? `${baseUrl}/${studioRecord.subdomain}/account`
+        : `${baseUrl}/account`
+
+      // Send confirmation email (best effort)
+      void sendBookingConfirmationEmail({
         studioId,
-        clientId,
-        classSessionId,
-        paymentId: payment.id,
-      },
-    })
-
-    // Send confirmation email
-    try {
-      await sendBookingConfirmationEmail(studioId, clientId, classSessionId, booking.id)
-    } catch (emailError) {
-      console.error("Failed to send confirmation email:", emailError)
-      // Don't fail the booking if email fails
+        studioName: studioRecord?.name || "Studio",
+        clientEmail: result.booking.client.email,
+        clientName: result.booking.client.firstName,
+        booking: {
+          bookingId: result.booking.id,
+          className: result.booking.classSession.classType.name,
+          teacherName: `${result.booking.classSession.teacher.user.firstName} ${result.booking.classSession.teacher.user.lastName}`,
+          locationName: result.booking.classSession.location.name,
+          locationAddress: result.booking.classSession.location.address || undefined,
+          startTime: result.booking.classSession.startTime,
+          endTime: result.booking.classSession.endTime,
+          amount: (session.amount_total || 0) / 100,
+          status: result.booking.status,
+        },
+        manageBookingUrl,
+      }).catch((e) => console.error("Failed to send booking confirmation email:", e))
+    } else {
+      console.log("[WEBHOOK] checkout.session.completed booking skipped:", result.kind)
     }
   }
-}
-
-async function sendBookingConfirmationEmail(
-  studioId: string, 
-  clientId: string, 
-  classSessionId: string,
-  bookingId: string
-) {
-  // Fetch all the details needed for the email
-  const [studio, client, classSession] = await Promise.all([
-    db.studio.findUnique({ 
-      where: { id: studioId },
-      include: { emailConfig: true }
-    }),
-    db.client.findUnique({ where: { id: clientId } }),
-    db.classSession.findUnique({
-      where: { id: classSessionId },
-      include: {
-        classType: true,
-        teacher: { include: { user: true } },
-        location: true,
-      }
-    })
-  ])
-
-  if (!studio || !client || !classSession) {
-    console.error("Missing data for confirmation email")
-    return
-  }
-
-  // Format date and time
-  const dateStr = new Date(classSession.startTime).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long", 
-    day: "numeric",
-    year: "numeric"
-  })
-  const timeStr = new Date(classSession.startTime).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit"
-  })
-
-  // Create email content
-  const subject = `Booking Confirmed - ${classSession.classType.name}`
-  const body = `
-Hi ${client.firstName},
-
-Your booking has been confirmed! Here are your details:
-
-📅 Class: ${classSession.classType.name}
-🕐 Date & Time: ${dateStr} at ${timeStr}
-📍 Location: ${classSession.location.name}, ${classSession.location.address}
-👤 Instructor: ${classSession.teacher.user.firstName} ${classSession.teacher.user.lastName}
-
-What to bring:
-- Comfortable workout clothes
-- Water bottle
-- Yoga mat (if you have one)
-
-Need to cancel or reschedule? Visit your account page or contact us.
-
-See you soon!
-${studio.name}
-  `.trim()
-
-  // Store the message in the database (even if we can't send it)
-  await db.message.create({
-    data: {
-      type: "EMAIL",
-      direction: "OUTBOUND",
-      status: studio.emailConfig ? "SENT" : "PENDING",
-      subject,
-      body,
-      fromAddress: studio.emailConfig?.fromEmail || `noreply@${studio.subdomain}.cadence.studio`,
-      fromName: studio.name,
-      toAddress: client.email,
-      toName: `${client.firstName} ${client.lastName}`,
-      sentAt: studio.emailConfig ? new Date() : null,
-      studioId,
-      clientId,
-    }
-  })
-
-  // If email is configured, actually send it (using the communications service)
-  // For now, we just store it - the actual sending would happen through the email provider
-  console.log(`Booking confirmation email queued for ${client.email}`)
 }
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
