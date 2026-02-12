@@ -30,7 +30,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react"
-import { MarketingData, Automation, Campaign, Template, Segment } from "./types"
+import { MarketingData, Automation } from "./types"
 
 // Automation templates for empty state
 const defaultAutomationTemplates = [
@@ -642,7 +642,6 @@ export function MarketingView({
     </div>
   )
 }
-
 
 
 

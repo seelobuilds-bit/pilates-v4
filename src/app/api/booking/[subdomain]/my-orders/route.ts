@@ -37,7 +37,10 @@ export async function GET(
     // Get client's merch orders
     const orders = await db.merchOrder.findMany({
       where: {
-        clientId: client.id
+        clientId: client.id,
+        store: {
+          studioId: studio.id,
+        },
       },
       include: {
         items: true
@@ -45,13 +48,26 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json({ orders })
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      totalAmount: order.total,
+      createdAt: order.createdAt,
+      items: order.items.map((item) => ({
+        quantity: item.quantity,
+        product: {
+          name: item.productName,
+        },
+      })),
+    }))
+
+    return NextResponse.json({ orders: formattedOrders })
   } catch (error) {
     console.error("Failed to fetch orders:", error)
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }
-
 
 
 

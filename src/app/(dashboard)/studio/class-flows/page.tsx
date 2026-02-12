@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import Image from "next/image"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,13 +19,9 @@ import {
   Plus,
   Loader2,
   Eye,
-  Users,
   CheckCircle,
-  Clock,
   Star,
   GraduationCap,
-  Calendar,
-  MapPin,
   X,
   Upload,
   Link as LinkIcon,
@@ -32,11 +29,9 @@ import {
   Edit,
   ChevronRight,
   Award,
-  TrendingUp,
   File,
-  Image
+  Image as ImageIcon
 } from "lucide-react"
-import { useRef } from "react"
 
 interface Category {
   id: string
@@ -87,7 +82,6 @@ export default function ClassFlowsPage() {
   const [stats, setStats] = useState({ totalViews: 0, completedCount: 0, pendingTrainingRequests: 0 })
   const [showAddContent, setShowAddContent] = useState(false)
   const [showAddCategory, setShowAddCategory] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [saving, setSaving] = useState(false)
 
   // Form state
@@ -186,11 +180,7 @@ export default function ClassFlowsPage() {
     setUploadingThumbnail(false)
   }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/studio/class-flows/admin")
       if (res.ok) {
@@ -203,7 +193,11 @@ export default function ClassFlowsPage() {
       console.error("Failed to fetch data:", error)
     }
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   async function createCategory() {
     setSaving(true)
@@ -216,7 +210,7 @@ export default function ClassFlowsPage() {
       if (res.ok) {
         setShowAddCategory(false)
         setNewCategory({ name: "", description: "", icon: "📚", color: "#7c3aed" })
-        fetchData()
+        void fetchData()
       }
     } catch (error) {
       console.error("Failed to create category:", error)
@@ -251,7 +245,7 @@ export default function ClassFlowsPage() {
           isPublished: true,
           isFeatured: false
         })
-        fetchData()
+        void fetchData()
       }
     } catch (error) {
       console.error("Failed to create content:", error)
@@ -264,7 +258,7 @@ export default function ClassFlowsPage() {
     
     try {
       await fetch(`/api/studio/class-flows/content?id=${id}`, { method: "DELETE" })
-      fetchData()
+      void fetchData()
     } catch (error) {
       console.error("Failed to delete content:", error)
     }
@@ -452,9 +446,11 @@ export default function ClassFlowsPage() {
                           {/* Thumbnail */}
                           <div className="aspect-video bg-gray-100 relative">
                             {content.thumbnailUrl ? (
-                              <img 
+                              <Image
                                 src={content.thumbnailUrl} 
                                 alt={content.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -939,9 +935,15 @@ export default function ClassFlowsPage() {
                       {newContent.thumbnailUrl ? (
                         <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                           {newContent.thumbnailUrl.startsWith("/uploads") ? (
-                            <img src={newContent.thumbnailUrl} alt="Thumbnail" className="w-16 h-10 object-cover rounded" />
+                            <Image
+                              src={newContent.thumbnailUrl}
+                              alt="Thumbnail"
+                              width={64}
+                              height={40}
+                              className="w-16 h-10 object-cover rounded"
+                            />
                           ) : (
-                            <Image className="h-5 w-5 text-blue-600" />
+                            <ImageIcon className="h-5 w-5 text-blue-600" />
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-blue-700">
@@ -1030,7 +1032,6 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

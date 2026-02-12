@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
 import { sendBookingCancellationEmail, sendWaitlistNotificationEmail } from "@/lib/email"
+import { getStripe } from "@/lib/stripe"
 
 // Cancellation policy defaults (in hours)
 const DEFAULT_FREE_CANCELLATION_WINDOW = 24 // hours before class
@@ -40,6 +41,7 @@ export async function DELETE(
         studioId: studio.id
       },
       include: {
+        payment: true,
         classSession: {
           include: {
             classType: true
@@ -80,6 +82,8 @@ export async function DELETE(
     let refundAmount = booking.paidAmount || 0
     let lateFeePercent = 0
     let message = ""
+    let refundReference: string | null = null
+    let refundStatus: "NONE" | "PROCESSED" | "ALREADY_REFUNDED" = "NONE"
 
     if (hoursUntilClass >= freeCancellationWindow) {
       // Free cancellation - full refund
@@ -106,13 +110,96 @@ export async function DELETE(
       // }, { status: 400 })
     }
 
+    if (refundAmount > 0) {
+      if (!booking.payment || !booking.paymentId) {
+        return NextResponse.json(
+          { error: "Unable to process refund automatically for this booking (missing payment record)." },
+          { status: 400 }
+        )
+      }
+
+      if (booking.payment.status === "REFUNDED" || booking.payment.status === "PARTIALLY_REFUNDED") {
+        refundStatus = "ALREADY_REFUNDED"
+        refundAmount = booking.payment.refundedAmount ?? refundAmount
+      } else {
+        if (!studio.stripeAccountId || !booking.payment.stripePaymentIntentId) {
+          return NextResponse.json(
+            { error: "Unable to process refund automatically for this booking." },
+            { status: 400 }
+          )
+        }
+
+        try {
+          const stripe = getStripe()
+          const refundAmountCents = Math.round(refundAmount * 100)
+          const refund = await stripe.refunds.create(
+            {
+              payment_intent: booking.payment.stripePaymentIntentId,
+              amount: refundAmountCents,
+            },
+            { stripeAccount: studio.stripeAccountId }
+          )
+
+          const refundedAmountDollars = (refund.amount || refundAmountCents) / 100
+          const paymentAmountCents = Math.round(booking.payment.amount || 0)
+          const isFullRefund = (refund.amount || refundAmountCents) >= paymentAmountCents
+
+          await db.payment.update({
+            where: { id: booking.payment.id },
+            data: {
+              status: isFullRefund ? "REFUNDED" : "PARTIALLY_REFUNDED",
+              stripeRefundId: refund.id,
+              refundedAmount: refundedAmountDollars,
+              refundedAt: new Date(),
+              failureMessage: null,
+            },
+          })
+
+          refundReference = refund.id
+          refundStatus = "PROCESSED"
+          refundAmount = refundedAmountDollars
+        } catch (refundError) {
+          const details = refundError instanceof Error ? refundError.message : "Unknown refund error"
+          if (booking.payment?.id) {
+            await db.payment.update({
+              where: { id: booking.payment.id },
+              data: {
+                failureMessage: `Refund failed during client cancellation: ${details}`,
+              },
+            })
+          }
+          return NextResponse.json(
+            { error: "Failed to process refund. Cancellation was not completed." },
+            { status: 500 }
+          )
+        }
+      }
+    }
+
+    if (refundStatus === "ALREADY_REFUNDED") {
+      message = "Booking cancelled successfully. Your refund was already processed."
+    }
+
+    const cancellationAudit = [
+      `Client cancelled (${cancellationType})`,
+      `hoursUntilClass=${Math.round(hoursUntilClass * 10) / 10}`,
+      `refundStatus=${refundStatus}`,
+      `refundAmount=${refundAmount.toFixed(2)}`,
+      refundReference ? `stripeRefundId=${refundReference}` : null,
+    ]
+      .filter(Boolean)
+      .join("; ")
+
     // Update booking status
     const updatedBooking = await db.booking.update({
       where: { id: booking.id },
       data: { 
         status: "CANCELLED",
         cancelledAt: new Date(),
-        cancellationReason: `Client cancelled (${cancellationType})`,
+        cancellationReason: cancellationAudit,
+        notes: booking.notes
+          ? `${booking.notes}\n[${new Date().toISOString()}] ${cancellationAudit}`
+          : `[${new Date().toISOString()}] ${cancellationAudit}`,
       },
       include: {
         client: true,
@@ -193,17 +280,14 @@ export async function DELETE(
       }).catch(err => console.error('Failed to send waitlist notification:', err))
     }
 
-    // TODO: Process refund via Stripe if applicable
-    // if (refundAmount > 0 && booking.paymentId) {
-    //   await processRefund(booking.paymentId, refundAmount)
-    // }
-
     return NextResponse.json({ 
       success: true,
       cancellationType,
       hoursUntilClass: Math.round(hoursUntilClass * 10) / 10,
       originalAmount: booking.paidAmount || 0,
       refundAmount,
+      refundStatus,
+      refundReference,
       lateFeePercent,
       message,
       waitlistNotified: !!nextInWaitlist

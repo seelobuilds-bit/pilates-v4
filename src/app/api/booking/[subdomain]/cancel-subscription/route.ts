@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
+import { getStripe } from "@/lib/stripe"
 
 // POST - Cancel a subscription
 export async function POST(
@@ -11,10 +12,17 @@ export async function POST(
     const { subdomain } = await params
     const body = await request.json()
     const { subscriptionId } = body
+    if (!subscriptionId) {
+      return NextResponse.json({ error: "Subscription ID required" }, { status: 400 })
+    }
 
     // Get studio
     const studio = await db.studio.findUnique({
       where: { subdomain },
+      select: {
+        id: true,
+        stripeAccountId: true,
+      },
     })
 
     if (!studio) {
@@ -36,7 +44,12 @@ export async function POST(
       where: { id: subscriptionId },
       include: {
         plan: {
-          include: { communityChat: true }
+          select: {
+            studioId: true,
+            communityChat: {
+              select: { id: true },
+            },
+          },
         }
       }
     })
@@ -50,7 +63,32 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Update subscription status to cancelled
+    if (subscription.plan.studioId !== studio.id) {
+      return NextResponse.json({ error: "Subscription does not belong to this studio" }, { status: 403 })
+    }
+
+    if (subscription.status === "cancelled") {
+      return NextResponse.json({
+        success: true,
+        message: "Subscription is already scheduled to cancel at period end.",
+        accessUntil: subscription.currentPeriodEnd,
+      })
+    }
+
+    if (subscription.status !== "active") {
+      return NextResponse.json({ error: "Only active subscriptions can be cancelled" }, { status: 400 })
+    }
+
+    if (subscription.stripeSubscriptionId && studio.stripeAccountId) {
+      const stripe = getStripe()
+      await stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        { cancel_at_period_end: true },
+        { stripeAccount: studio.stripeAccountId }
+      )
+    }
+
+    // Mark cancellation scheduled while preserving access until currentPeriodEnd.
     await db.vaultSubscriber.update({
       where: { id: subscriptionId },
       data: {
@@ -59,19 +97,9 @@ export async function POST(
       },
     })
 
-    // Remove from community chat if they were a member
-    if (subscription.plan.communityChat?.id) {
-      await db.vaultSubscriptionChatMember.deleteMany({
-        where: {
-          chatId: subscription.plan.communityChat.id,
-          subscriberId: subscriptionId,
-        }
-      })
-    }
-
     return NextResponse.json({
       success: true,
-      message: "Subscription cancelled successfully. You will retain access until the end of your billing period.",
+      message: "Subscription will cancel at the end of your current billing period.",
       accessUntil: subscription.currentPeriodEnd,
     })
   } catch (error) {
@@ -79,7 +107,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to cancel subscription" }, { status: 500 })
   }
 }
-
 
 
 

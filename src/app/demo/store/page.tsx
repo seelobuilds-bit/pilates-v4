@@ -1,5 +1,4 @@
 import { db } from "@/lib/db"
-import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -59,7 +58,9 @@ export default async function DemoStorePage() {
   ])
 
   const activeProducts = products.filter(p => p.isActive).length
-  const totalRevenue = orders.filter(o => o.status === "COMPLETED").reduce((sum, o) => sum + Number(o.total), 0)
+  const totalRevenue = orders
+    .filter(o => o.status === "DELIVERED")
+    .reduce((sum, o) => sum + Number(o.total), 0)
   const pendingOrders = orders.filter(o => o.status === "PENDING" || o.status === "PROCESSING").length
 
   return (
@@ -223,10 +224,10 @@ export default async function DemoStorePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          order.status === "COMPLETED" ? "bg-green-100" :
+                          order.status === "DELIVERED" ? "bg-green-100" :
                           order.status === "PENDING" ? "bg-amber-100" : "bg-gray-100"
                         }`}>
-                          {order.status === "COMPLETED" ? (
+                          {order.status === "DELIVERED" ? (
                             <CheckCircle className="h-5 w-5 text-green-600" />
                           ) : (
                             <Clock className="h-5 w-5 text-amber-600" />
@@ -242,7 +243,7 @@ export default async function DemoStorePage() {
                       <div className="text-right">
                         <p className="font-bold text-gray-900">${Number(order.total).toFixed(2)}</p>
                         <Badge className={
-                          order.status === "COMPLETED" ? "bg-green-100 text-green-700" :
+                          order.status === "DELIVERED" ? "bg-green-100 text-green-700" :
                           order.status === "PENDING" ? "bg-amber-100 text-amber-700" :
                           "bg-gray-100 text-gray-700"
                         }>
@@ -260,7 +261,5 @@ export default async function DemoStorePage() {
     </div>
   )
 }
-
-
 
 

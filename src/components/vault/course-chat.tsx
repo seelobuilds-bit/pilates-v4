@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,10 +14,7 @@ import {
   Users,
   Pin,
   Reply,
-  MoreVertical,
   Smile,
-  Image,
-  Paperclip,
   X,
   ChevronDown
 } from "lucide-react"
@@ -73,22 +71,11 @@ export function CourseChat({ courseId, courseName }: CourseChatProps) {
   const [showPinned, setShowPinned] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchChat()
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(fetchChat, 5000)
-    return () => clearInterval(interval)
-  }, [courseId])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  function scrollToBottom() {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [])
 
-  async function fetchChat() {
+  const fetchChat = useCallback(async () => {
     try {
       const res = await fetch(`/api/vault/chat?courseId=${courseId}`)
       if (res.ok) {
@@ -102,7 +89,24 @@ export function CourseChat({ courseId, courseName }: CourseChatProps) {
       console.error("Failed to fetch chat:", err)
     }
     setLoading(false)
-  }
+  }, [courseId])
+
+  useEffect(() => {
+    const poll = () => {
+      void fetchChat()
+    }
+    const init = setTimeout(poll, 0)
+    // Poll for new messages every 5 seconds
+    const interval = setInterval(poll, 5000)
+    return () => {
+      clearTimeout(init)
+      clearInterval(interval)
+    }
+  }, [fetchChat])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -302,7 +306,13 @@ export function CourseChat({ courseId, courseName }: CourseChatProps) {
                 <p className="text-gray-700 break-words">{msg.content}</p>
                 
                 {msg.mediaUrl && (
-                  <img src={msg.mediaUrl} alt="" className="mt-2 max-w-xs rounded-lg" />
+                  <Image
+                    src={msg.mediaUrl}
+                    alt=""
+                    width={320}
+                    height={180}
+                    className="mt-2 max-w-xs rounded-lg h-auto"
+                  />
                 )}
                 
                 {/* Reactions */}
@@ -389,9 +399,6 @@ export function CourseChat({ courseId, courseName }: CourseChatProps) {
     </Card>
   )
 }
-
-
-
 
 
 

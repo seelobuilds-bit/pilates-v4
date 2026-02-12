@@ -1,6 +1,34 @@
-import { PrismaClient } from "@prisma/client"
+import {
+  PrismaClient,
+  LeaderboardCategory,
+  LeaderboardParticipantType,
+  LeaderboardTimeframe,
+  PrizeType,
+} from "@prisma/client"
 
 const prisma = new PrismaClient()
+
+interface SeedPrize {
+  position: number
+  name: string
+  prizeType: PrizeType
+  prizeValue: number
+  sponsorName?: string
+}
+
+interface SeedLeaderboard {
+  name: string
+  slug: string
+  description: string
+  category: LeaderboardCategory
+  participantType: LeaderboardParticipantType
+  timeframe: LeaderboardTimeframe
+  metricName: string
+  metricUnit: string
+  color: string
+  isFeatured: boolean
+  prizes: SeedPrize[]
+}
 
 async function main() {
   console.log("🏆 Seeding leaderboards with more variety...")
@@ -28,7 +56,7 @@ async function main() {
   // ========================================
   // STUDIO LEADERBOARDS - 12 Total
   // ========================================
-  const studioLeaderboards = [
+  const studioLeaderboards: SeedLeaderboard[] = [
     // CONTENT & SOCIAL (4)
     {
       name: "Content Champion",
@@ -242,7 +270,7 @@ async function main() {
   // ========================================
   // TEACHER LEADERBOARDS - 15 Total
   // ========================================
-  const teacherLeaderboards = [
+  const teacherLeaderboards: SeedLeaderboard[] = [
     // CONTENT & SOCIAL (5)
     {
       name: "Content Consistency King",
@@ -506,9 +534,9 @@ async function main() {
         name: lb.name,
         slug: lb.slug,
         description: lb.description,
-        category: lb.category as any,
-        participantType: lb.participantType as any,
-        timeframe: lb.timeframe as any,
+        category: lb.category,
+        participantType: lb.participantType,
+        timeframe: lb.timeframe,
         metricName: lb.metricName,
         metricUnit: lb.metricUnit,
         color: lb.color,
@@ -519,9 +547,9 @@ async function main() {
           create: lb.prizes.map(p => ({
             position: p.position,
             name: p.name,
-            prizeType: p.prizeType as any,
+            prizeType: p.prizeType,
             prizeValue: p.prizeValue,
-            sponsorName: (p as any).sponsorName || null
+            sponsorName: p.sponsorName || null
           }))
         }
       }
@@ -615,7 +643,6 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect())
-
 
 
 

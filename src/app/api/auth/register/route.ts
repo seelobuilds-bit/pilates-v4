@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, firstName, lastName, role } = body
+    const { email, password, firstName, lastName } = body
 
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         firstName,
         lastName,
-        role: role || "OWNER",
+        // Public registration can only create studio owner accounts.
+        role: "OWNER",
       }
     })
 

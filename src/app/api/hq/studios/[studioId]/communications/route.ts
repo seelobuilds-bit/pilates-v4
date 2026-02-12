@@ -28,12 +28,7 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    // Mask sensitive fields
-    const emailConfig = studio.emailConfig ? {
-      ...studio.emailConfig,
-      apiKey: studio.emailConfig.apiKey ? "••••••••" : null,
-      smtpPassword: studio.emailConfig.smtpPassword ? "••••••••" : null,
-    } : null
+    const emailConfig = studio.emailConfig ? { ...studio.emailConfig } : null
 
     const smsConfig = studio.smsConfig ? {
       ...studio.smsConfig,
@@ -81,18 +76,11 @@ export async function PUT(
         where: { studioId },
       })
 
-      // Only update apiKey/password if not masked
       const emailData = {
-        provider: emailConfig.provider,
-        fromEmail: emailConfig.fromEmail,
         fromName: emailConfig.fromName,
+        fromEmail: emailConfig.fromEmail || null,
         replyToEmail: emailConfig.replyToEmail || null,
-        smtpHost: emailConfig.smtpHost || null,
-        smtpPort: emailConfig.smtpPort || null,
-        smtpUser: emailConfig.smtpUser || null,
-        smtpSecure: emailConfig.smtpSecure ?? true,
-        ...(emailConfig.apiKey !== "••••••••" && { apiKey: emailConfig.apiKey }),
-        ...(emailConfig.smtpPassword !== "••••••••" && { smtpPassword: emailConfig.smtpPassword }),
+        useFallback: emailConfig.useFallback ?? true,
       }
 
       if (existingEmailConfig) {

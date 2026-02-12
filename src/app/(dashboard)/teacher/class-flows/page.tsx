@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import Image from "next/image"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,17 +20,10 @@ import {
   Clock,
   Star,
   GraduationCap,
-  Calendar,
-  MapPin,
   X,
-  ChevronRight,
   Award,
-  ExternalLink,
   Download,
   ArrowLeft,
-  Users,
-  Phone,
-  Mail
 } from "lucide-react"
 
 interface Category {
@@ -97,12 +91,7 @@ export default function TeacherClassFlowsPage() {
     notes: ""
   })
 
-  useEffect(() => {
-    fetchData()
-    fetchMyRequests()
-  }, [])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/class-flows")
       if (res.ok) {
@@ -115,9 +104,9 @@ export default function TeacherClassFlowsPage() {
       console.error("Failed to fetch data:", error)
     }
     setLoading(false)
-  }
+  }, [])
 
-  async function fetchMyRequests() {
+  const fetchMyRequests = useCallback(async () => {
     try {
       const res = await fetch("/api/class-flows/training-requests")
       if (res.ok) {
@@ -127,7 +116,12 @@ export default function TeacherClassFlowsPage() {
     } catch (error) {
       console.error("Failed to fetch requests:", error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchData()
+    void fetchMyRequests()
+  }, [fetchData, fetchMyRequests])
 
   async function markComplete(contentId: string) {
     try {
@@ -170,7 +164,7 @@ export default function TeacherClassFlowsPage() {
           attendeeCount: 1,
           notes: ""
         })
-        fetchMyRequests()
+        void fetchMyRequests()
       }
     } catch (error) {
       console.error("Failed to submit request:", error)
@@ -430,7 +424,13 @@ export default function TeacherClassFlowsPage() {
                   >
                     <div className="aspect-video bg-gray-100 relative rounded-t-lg overflow-hidden">
                       {content.thumbnailUrl ? (
-                        <img src={content.thumbnailUrl} alt={content.title} className="w-full h-full object-cover" />
+                        <Image
+                          src={content.thumbnailUrl}
+                          alt={content.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           {getTypeIcon(content.type)}
@@ -506,7 +506,13 @@ export default function TeacherClassFlowsPage() {
                 >
                   <div className="aspect-video bg-gray-100 relative rounded-t-lg overflow-hidden">
                     {content.thumbnailUrl ? (
-                      <img src={content.thumbnailUrl} alt={content.title} className="w-full h-full object-cover" />
+                      <Image
+                        src={content.thumbnailUrl}
+                        alt={content.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-50">
                         <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
@@ -793,7 +799,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 
 // GET - Fetch studio settings
 export async function GET() {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
 
-  if (!session?.user?.studioId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ("error" in auth) {
+    return auth.error
   }
 
   try {
     const studio = await db.studio.findUnique({
-      where: { id: session.user.studioId },
+      where: { id: auth.studioId },
       select: {
         id: true,
         name: true,
@@ -34,10 +34,10 @@ export async function GET() {
 
 // PATCH - Update studio settings
 export async function PATCH(request: NextRequest) {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
 
-  if (!session?.user?.studioId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ("error" in auth) {
+    return auth.error
   }
 
   try {
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
     const { name, primaryColor } = body
 
     const studio = await db.studio.update({
-      where: { id: session.user.studioId },
+      where: { id: auth.studioId },
       data: {
         ...(name !== undefined && { name }),
         ...(primaryColor !== undefined && { primaryColor }),

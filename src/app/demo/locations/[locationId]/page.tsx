@@ -25,7 +25,7 @@ import {
   Star,
   BookOpen
 } from "lucide-react"
-import { demoLocations, demoScheduleClasses } from "../../_data/demo-data"
+import { demoLocations } from "../../_data/demo-data"
 
 // Mock stats for location
 const mockLocationStats = {
@@ -82,9 +82,6 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
     isActive: location.isActive
   })
   
-  // Filter classes for this location
-  const locationClasses = demoScheduleClasses.filter(c => c.location.name === location.name)
-
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -395,8 +392,6 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
     </div>
   )
 }
-
-
 
 
 

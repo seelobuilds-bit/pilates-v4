@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,17 +11,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { getPublicSocialMediaMode } from "@/lib/social-media-mode"
 import { 
-  Play, 
   Video, 
   BookOpen,
   Plus,
   Loader2,
   CheckCircle,
-  Clock,
-  Star,
   GraduationCap,
-  Calendar,
   X,
   Instagram,
   MessageCircle,
@@ -31,11 +27,7 @@ import {
   Link as LinkIcon,
   Copy,
   ExternalLink,
-  Users,
-  TrendingUp,
   Award,
-  FileText,
-  ChevronRight,
   Settings,
   Lightbulb,
   ClipboardList,
@@ -47,7 +39,6 @@ import {
   MessageSquare,
   Share2,
   Bookmark,
-  Filter,
   Search,
   BadgeCheck
 } from "lucide-react"
@@ -255,19 +246,10 @@ export default function SocialMediaPage() {
     bookingMessage: "Click below to book your spot! 👇",
     linkToActiveHomework: false
   })
+  const socialMode = getPublicSocialMediaMode()
+  const isSimulatedSocialMode = socialMode === "SIMULATED_BETA"
 
-  useEffect(() => {
-    fetchTrainingData()
-    fetchToolsData()
-    fetchMyHomework()
-    fetchTrendingContent()
-  }, [])
-
-  useEffect(() => {
-    fetchTrendingContent()
-  }, [trendingFilters])
-
-  async function fetchMyHomework() {
+  const fetchMyHomework = useCallback(async () => {
     try {
       const res = await fetch("/api/social-media/homework")
       if (res.ok) {
@@ -281,7 +263,7 @@ export default function SocialMediaPage() {
     } catch (error) {
       console.error("Failed to fetch homework:", error)
     }
-  }
+  }, [])
 
   async function startHomework(homeworkId: string, flowId?: string) {
     setStartingHomework(true)
@@ -376,7 +358,7 @@ export default function SocialMediaPage() {
     setCancellingHomework(false)
   }
 
-  async function fetchTrainingData() {
+  const fetchTrainingData = useCallback(async () => {
     try {
       const res = await fetch("/api/social-media/training")
       if (res.ok) {
@@ -389,9 +371,9 @@ export default function SocialMediaPage() {
     } catch (error) {
       console.error("Failed to fetch training:", error)
     }
-  }
+  }, [])
 
-  async function fetchTrendingContent() {
+  const fetchTrendingContent = useCallback(async () => {
     setLoadingTrending(true)
     try {
       const params = new URLSearchParams()
@@ -414,9 +396,9 @@ export default function SocialMediaPage() {
       console.error("Failed to fetch trending content:", error)
     }
     setLoadingTrending(false)
-  }
+  }, [trendingFilters])
 
-  async function fetchToolsData() {
+  const fetchToolsData = useCallback(async () => {
     try {
       const [accountsRes, flowsRes, linksRes] = await Promise.all([
         fetch("/api/social-media/accounts"),
@@ -438,7 +420,17 @@ export default function SocialMediaPage() {
       console.error("Failed to fetch tools data:", error)
     }
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchTrainingData()
+    void fetchToolsData()
+    void fetchMyHomework()
+  }, [fetchTrainingData, fetchToolsData, fetchMyHomework])
+
+  useEffect(() => {
+    void fetchTrendingContent()
+  }, [fetchTrendingContent])
 
   async function connectAccount() {
     setSaving(true)
@@ -454,7 +446,7 @@ export default function SocialMediaPage() {
       if (res.ok) {
         setShowConnectAccount(false)
         setNewAccountUsername("")
-        fetchToolsData()
+        void fetchToolsData()
       }
     } catch (error) {
       console.error("Failed to connect account:", error)
@@ -502,7 +494,7 @@ export default function SocialMediaPage() {
           bookingMessage: "Click below to book your spot! 👇",
           linkToActiveHomework: false
         })
-        fetchToolsData()
+        void fetchToolsData()
       }
     } catch (error) {
       console.error("Failed to create flow:", error)
@@ -542,6 +534,15 @@ export default function SocialMediaPage() {
           <p className="text-gray-500">Training, tools, and automation for Instagram & TikTok</p>
         </div>
       </div>
+
+      {isSimulatedSocialMode && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">Social media is running in simulated beta mode.</p>
+          <p className="mt-1 text-sm text-amber-800">
+            Account connection and outbound DM actions are stored internally and do not call Instagram or TikTok APIs.
+          </p>
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -1233,8 +1234,8 @@ export default function SocialMediaPage() {
 
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> In production, this will use OAuth to securely connect your account. 
-                      For now, enter your username to simulate the connection.
+                      <strong>Note:</strong> This environment uses simulated beta mode. Enter a username to create an internal test
+                      account connection.
                     </p>
                   </div>
                 </div>
@@ -1832,8 +1833,6 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-
-
 
 
 

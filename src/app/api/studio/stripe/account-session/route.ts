@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
 import { getStripe, isStripeConfigured } from "@/lib/stripe"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 
 // POST - Create an account session for embedded components
 export async function POST() {
@@ -12,13 +12,11 @@ export async function POST() {
       }, { status: 500 })
     }
 
-    const session = await getSession()
-    
-    if (!session?.user?.studioId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await requireOwnerStudioAccess()
+    if ("error" in auth) {
+      return auth.error
     }
-
-    const studioId = session.user.studioId
+    const studioId = auth.studioId
 
     const studio = await db.studio.findUnique({
       where: { id: studioId },

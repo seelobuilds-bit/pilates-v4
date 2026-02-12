@@ -79,10 +79,7 @@ export async function POST(
       })
 
       if (existingBooking) {
-        const err: any = new Error("You have already booked this class")
-        err.code = "ALREADY_BOOKED"
-        err.existingBookingId = existingBooking.id
-        throw err
+        throw new Error("You have already booked this class")
       }
 
       // Capacity check (active bookings only)
@@ -94,9 +91,7 @@ export async function POST(
       })
 
       if (activeBookingsCount >= classSession.capacity) {
-        const err: any = new Error("Class is full")
-        err.code = "CLASS_FULL"
-        throw err
+        throw new Error("Class is full")
       }
 
       return tx.booking.create({

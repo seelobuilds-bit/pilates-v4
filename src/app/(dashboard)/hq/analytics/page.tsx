@@ -8,7 +8,6 @@ import {
   Users, 
   Calendar, 
   TrendingUp, 
-  TrendingDown,
   DollarSign, 
   Activity,
   AlertTriangle,
@@ -18,18 +17,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   UserPlus,
-  UserMinus,
   Zap,
   Target,
   BarChart3
 } from "lucide-react"
 
 export default async function HQAnalyticsPage() {
-  const [studioCount, userCount, clientCount, classCount, bookingCount] = await Promise.all([
+  const [studioCount, clientCount, bookingCount] = await Promise.all([
     db.studio.count(),
-    db.user.count(),
     db.client.count(),
-    db.classSession.count(),
     db.booking.count(),
   ])
 
@@ -60,8 +56,8 @@ export default async function HQAnalyticsPage() {
   const studioHealth = studios.map((studio, i) => ({
     ...studio,
     health: i === 0 ? 'healthy' : i === 1 ? 'growing' : i === 2 ? 'at-risk' : 'healthy',
-    revenue: Math.round(25000 - (i * 3000) + Math.random() * 5000),
-    utilisation: Math.round(75 - (i * 5) + Math.random() * 10),
+    revenue: Math.round(25000 - (i * 3000) + (i * 750)),
+    utilisation: Math.round(75 - (i * 5) + (i * 2)),
     churnRate: Math.round(3 + (i * 1.5)),
     lastActive: i === 2 ? '3 days ago' : 'Today',
     trend: i === 2 ? 'down' : i === 1 ? 'up' : 'stable'

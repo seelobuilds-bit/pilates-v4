@@ -19,24 +19,16 @@ import {
 } from "@/components/ui/select"
 import {
   Trophy,
-  Medal,
-  Award,
   Star,
-  TrendingUp,
   Crown,
   Gift,
   Loader2,
   Plus,
-  Edit,
-  Settings,
   Users,
   Calendar,
   Check,
   Clock,
-  DollarSign,
   Target,
-  Sparkles,
-  Eye
 } from "lucide-react"
 
 interface Prize {
@@ -828,7 +820,6 @@ export default function HQLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         if (payRate) {
           if (payRate.type === "PER_CLASS") {
             earnings = payRate.rate
-          } else if (payRate.type === "HOURLY") {
+          } else if (payRate.type === "PER_HOUR") {
             const hours = (new Date(cls.endTime).getTime() - new Date(cls.startTime).getTime()) / (1000 * 60 * 60)
             earnings = payRate.rate * hours
           } else if (payRate.type === "PER_STUDENT") {
@@ -296,7 +296,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete invoice" }, { status: 500 })
   }
 }
-
 
 
 

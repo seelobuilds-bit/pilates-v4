@@ -7,7 +7,6 @@ import {
   Plus, 
   Calendar,
   Clock,
-  Users,
   DollarSign,
   ChevronRight,
   Dumbbell
@@ -144,11 +143,11 @@ export default async function DemoClassesPage() {
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: classType.color ? `${classType.color}20` : '#f3f4f6' }}
+                          style={{ backgroundColor: studio.primaryColor ? `${studio.primaryColor}20` : "#f3f4f6" }}
                         >
                           <Dumbbell 
                             className="h-6 w-6" 
-                            style={{ color: classType.color || '#6b7280' }}
+                            style={{ color: studio.primaryColor || "#6b7280" }}
                           />
                         </div>
                         <div>
@@ -185,12 +184,12 @@ export default async function DemoClassesPage() {
                       </div>
                     </div>
 
-                    {(classType.defaultPrice && Number(classType.defaultPrice) > 0) && (
+                    {classType.price > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                        <span className="text-sm text-gray-500">Default Price</span>
+                        <span className="text-sm text-gray-500">Price</span>
                         <span className="font-semibold text-violet-600 flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />
-                          {Number(classType.defaultPrice).toFixed(2)}
+                          {Number(classType.price).toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -204,7 +203,5 @@ export default async function DemoClassesPage() {
     </div>
   )
 }
-
-
 
 

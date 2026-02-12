@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -54,6 +54,17 @@ interface Store {
   flatShippingRate: number | null
 }
 
+interface CartItem {
+  studioProductId: string
+  productId: string
+  name: string
+  image: string | null
+  unitPrice: number
+  quantity: number
+  variantId?: string
+  variantName?: string
+}
+
 export default function CustomerProductPage({ 
   params 
 }: { 
@@ -67,12 +78,9 @@ export default function CustomerProductPage({
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
 
-  useEffect(() => {
-    fetchProduct()
-  }, [subdomain, productId])
-
-  async function fetchProduct() {
+  const fetchProduct = useCallback(async () => {
     try {
       const res = await fetch(`/api/booking/${subdomain}/store`)
       if (res.ok) {
@@ -90,7 +98,25 @@ export default function CustomerProductPage({
       console.error("Failed to fetch product:", err)
     }
     setLoading(false)
-  }
+  }, [subdomain, productId])
+
+  useEffect(() => {
+    void fetchProduct()
+  }, [fetchProduct])
+
+  useEffect(() => {
+    const key = `store_cart_${subdomain}`
+    const refreshCartCount = () => {
+      if (typeof window === "undefined") return
+      const raw = window.localStorage.getItem(key)
+      const items: CartItem[] = raw ? JSON.parse(raw) : []
+      setCartCount(items.reduce((sum, item) => sum + item.quantity, 0))
+    }
+
+    refreshCartCount()
+    window.addEventListener("storage", refreshCartCount)
+    return () => window.removeEventListener("storage", refreshCartCount)
+  }, [subdomain])
 
   const getCategoryLabel = (cat: string) => {
     const labels: Record<string, string> = {
@@ -122,9 +148,49 @@ export default function CustomerProductPage({
 
   async function addToCart() {
     setAdding(true)
-    // TODO: Implement cart functionality
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    alert("Added to cart! (Cart functionality coming soon)")
+    try {
+      if (!product) {
+        setAdding(false)
+        return
+      }
+      const key = `store_cart_${subdomain}`
+      const raw = window.localStorage.getItem(key)
+      const existingItems: CartItem[] = raw ? JSON.parse(raw) : []
+
+      const variantNameParts = [selectedVariant?.color, selectedVariant?.size].filter(Boolean)
+      const variantName =
+        selectedVariant?.name || (variantNameParts.length > 0 ? variantNameParts.join(" / ") : undefined)
+
+      const cartItem: CartItem = {
+        studioProductId: product.id,
+        productId: product.productId,
+        name: product.name,
+        image: product.images[0] || null,
+        unitPrice: currentPrice,
+        quantity,
+        variantId: selectedVariant?.variantId,
+        variantName,
+      }
+
+      const existingIndex = existingItems.findIndex(
+        (item) =>
+          item.studioProductId === cartItem.studioProductId &&
+          (item.variantId || "") === (cartItem.variantId || "")
+      )
+
+      if (existingIndex >= 0) {
+        existingItems[existingIndex].quantity += quantity
+      } else {
+        existingItems.push(cartItem)
+      }
+
+      window.localStorage.setItem(key, JSON.stringify(existingItems))
+      setCartCount(existingItems.reduce((sum, item) => sum + item.quantity, 0))
+      alert("Added to cart")
+    } catch (err) {
+      console.error("Failed to add to cart:", err)
+      alert("Failed to add to cart")
+    }
     setAdding(false)
   }
 
@@ -166,10 +232,12 @@ export default function CustomerProductPage({
           <h1 className="font-semibold" style={{ color: store.accentColor }}>
             {store.name}
           </h1>
-          <Button variant="outline" size="sm">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Cart
-          </Button>
+          <Link href={`/${subdomain}/store/cart`}>
+            <Button variant="outline" size="sm">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Cart {cartCount > 0 ? `(${cartCount})` : ""}
+            </Button>
+          </Link>
         </div>
       </header>
 
@@ -454,8 +522,6 @@ export default function CustomerProductPage({
     </div>
   )
 }
-
-
 
 
 

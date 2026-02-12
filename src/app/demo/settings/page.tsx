@@ -8,14 +8,12 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  Settings,
   Building2,
   CreditCard,
   Bell,
   Mail,
   Globe,
   Palette,
-  Lock,
   Save,
   Link as LinkIcon
 } from "lucide-react"
@@ -96,7 +94,7 @@ export default async function DemoSettingsPage() {
                 <div className="space-y-2">
                   <Label>Description</Label>
                   <Textarea 
-                    value={studio.description || "A modern pilates studio focused on mind-body wellness."}
+                    value={`Welcome to ${studio.name}, a modern pilates studio focused on mind-body wellness.`}
                     disabled
                     rows={3}
                   />
@@ -305,24 +303,18 @@ export default async function DemoSettingsPage() {
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-lg border"
-                      style={{ backgroundColor: studio.brandColor || '#8B5CF6' }}
+                      style={{ backgroundColor: studio.primaryColor || "#8B5CF6" }}
                     />
-                    <Input value={studio.brandColor || '#8B5CF6'} disabled className="w-32" />
+                    <Input value={studio.primaryColor || "#8B5CF6"} disabled className="w-32" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Logo</Label>
                   <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                    {studio.logoUrl ? (
-                      <img src={studio.logoUrl} alt="Logo" className="max-h-20 mx-auto" />
-                    ) : (
-                      <>
-                        <Palette className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500">No logo uploaded</p>
-                        <Button variant="outline" size="sm" className="mt-2">Upload Logo</Button>
-                      </>
-                    )}
+                    <Palette className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">No logo uploaded</p>
+                    <Button variant="outline" size="sm" className="mt-2">Upload Logo</Button>
                   </div>
                 </div>
 
@@ -343,7 +335,5 @@ export default async function DemoSettingsPage() {
     </div>
   )
 }
-
-
 
 

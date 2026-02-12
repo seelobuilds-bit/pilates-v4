@@ -293,7 +293,6 @@ export default function SchedulePage() {
       setLoading(false)
     }
     fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset])
 
   // Auto-refresh schedule every 30 seconds
@@ -303,7 +302,6 @@ export default function SchedulePage() {
     }, 30000) // 30 seconds
 
     return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset])
 
   // Filter classes

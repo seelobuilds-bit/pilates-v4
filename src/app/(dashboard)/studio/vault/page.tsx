@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,21 +26,14 @@ import {
   Eye,
   Edit,
   Trash2,
-  Filter,
   TrendingUp,
   BarChart3,
   MessageSquare,
-  Award,
   Link as LinkIcon,
-  Copy,
   CheckCircle,
-  Clock,
-  Target,
   Crown,
   Lock,
   Unlock,
-  CreditCard,
-  Repeat,
   Save
 } from "lucide-react"
 
@@ -645,7 +639,13 @@ export default function StudioVaultPage() {
                     {/* Thumbnail */}
                     <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 relative">
                       {course.thumbnailUrl ? (
-                        <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
+                        <Image
+                          src={course.thumbnailUrl}
+                          alt={course.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <BookOpen className="h-12 w-12 text-white/50" />
@@ -1416,8 +1416,6 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
-
 
 
 

@@ -14,6 +14,13 @@ export async function POST(
     const body = await request.json()
     const { paymentIntentId, paymentId } = body
 
+    if (!paymentIntentId || !paymentId) {
+      return NextResponse.json(
+        { error: "paymentIntentId and paymentId are required" },
+        { status: 400 }
+      )
+    }
+
     // Get studio
     const studio = await db.studio.findUnique({
       where: { subdomain },
@@ -105,10 +112,22 @@ export async function POST(
           classSessionId,
           status: { in: ["CONFIRMED", "PENDING"] },
         },
-        select: { id: true },
+        include: {
+          classSession: {
+            include: {
+              classType: true,
+              teacher: { include: { user: true } },
+              location: true,
+            },
+          },
+          client: true,
+        },
       })
 
       if (existingActiveBooking) {
+        if (existingActiveBooking.paymentId === payment.id) {
+          return { kind: "ALREADY_BOOKED" as const, booking: existingActiveBooking }
+        }
         return { kind: "DUPLICATE" as const, existingBookingId: existingActiveBooking.id }
       }
 
@@ -147,6 +166,20 @@ export async function POST(
 
       return { kind: "BOOKED" as const, booking }
     })
+
+    if (decision.kind === "ALREADY_BOOKED") {
+      return NextResponse.json({
+        success: true,
+        booking: {
+          id: decision.booking.id,
+          className: decision.booking.classSession.classType.name,
+          date: decision.booking.classSession.startTime,
+          location: decision.booking.classSession.location.name,
+          teacher: `${decision.booking.classSession.teacher.user.firstName} ${decision.booking.classSession.teacher.user.lastName}`,
+          price: payment.amount / 100,
+        },
+      })
+    }
 
     if (decision.kind !== "BOOKED") {
       // Payment succeeded but we couldn't create a booking. Refund immediately.
@@ -237,8 +270,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm payment" }, { status: 500 })
   }
 }
-
-
 
 
 

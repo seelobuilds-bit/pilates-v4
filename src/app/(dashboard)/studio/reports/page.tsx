@@ -37,7 +37,6 @@ import {
   Eye,
   X,
   Globe,
-  MousePointer,
   Monitor,
   Smartphone,
   Tablet,
@@ -144,7 +143,7 @@ export default function ReportsPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loadingTeachers, setLoadingTeachers] = useState(true)
   const [reportData, setReportData] = useState(defaultData)
-  const [loadingReports, setLoadingReports] = useState(true)
+  const [, setLoadingReports] = useState(true)
   
   // Fetch real reports data from API
   useEffect(() => {
@@ -158,23 +157,31 @@ export default function ReportsPage() {
           
           // Calculate percentages and trends from real data
           const totalRevenue = data.revenue?.total || 0
-          const revenueBySource = data.revenue?.byClassType?.map((item: { name: string; amount: number }, i: number) => ({
+          const previousRevenue = data.revenue?.previousTotal || 0
+          const revenuePercentChange =
+            previousRevenue > 0
+              ? Math.round((((totalRevenue - previousRevenue) / previousRevenue) * 100) * 10) / 10
+              : 0
+          const revenueTrend = totalRevenue > previousRevenue ? "up" : totalRevenue < previousRevenue ? "down" : "neutral"
+          const revenueBySource = data.revenue?.byClassType?.map((item: { name: string; amount: number }) => ({
             name: item.name,
             amount: item.amount,
             percent: totalRevenue > 0 ? Math.round((item.amount / totalRevenue) * 100) : 0,
-            trend: i === 0 ? 'up' : 'stable',
-            change: i === 0 ? 12 : 5
+            trend: "stable",
+            change: 0
           })) || []
           
           // Calculate utilisation from classes data
           const totalClasses = data.classes?.total || 0
-          const totalBookings = data.bookings?.total || 0
-          const avgFill = totalClasses > 0 ? Math.round((totalBookings / (totalClasses * 10)) * 100) : 0 // Assume 10 avg capacity
+          const classCapacity = data.classes?.totalCapacity || 0
           
           // Map booking status
           const bookingsByStatus = data.bookings?.byStatus || []
           const confirmedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CONFIRMED')?.count || 0
           const cancelledBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CANCELLED')?.count || 0
+          const completedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'COMPLETED')?.count || 0
+          const totalAttendance = confirmedBookings + completedBookings
+          const avgFill = classCapacity > 0 ? Math.round((totalAttendance / classCapacity) * 100) : 0
           
           // Calculate churn rate
           const totalClients = data.clients?.total || 0
@@ -186,11 +193,11 @@ export default function ReportsPage() {
           setReportData({
             revenue: {
               total: totalRevenue,
-              previousPeriod: Math.round(totalRevenue * 0.92), // Estimate previous period
-              trend: 'up',
-              percentChange: 8.5,
+              previousPeriod: previousRevenue,
+              trend: revenueTrend,
+              percentChange: revenuePercentChange,
               bySource: revenueBySource,
-              monthly: [], // Would need time-series API
+              monthly: data.revenue?.monthly || [],
               insights: totalRevenue > 0 ? [
                 { type: 'positive', message: `Revenue is tracking at $${totalRevenue.toLocaleString()} this period` },
                 { type: 'info', message: `${confirmedBookings} bookings confirmed, ${cancelledBookings} cancelled` }
@@ -200,17 +207,17 @@ export default function ReportsPage() {
             },
             utilisation: {
               averageFill: avgFill,
-              previousPeriod: avgFill > 0 ? avgFill - 4 : 0,
+              previousPeriod: 0,
               totalClasses: totalClasses,
-              totalAttendance: totalBookings,
-              peakUtilisation: avgFill > 0 ? Math.min(avgFill + 15, 100) : 0,
-              lowestUtilisation: avgFill > 0 ? Math.max(avgFill - 20, 0) : 0,
-              byTimeSlot: [],
-              byDay: [],
-              topClasses: [],
-              underperforming: [],
+              totalAttendance: totalAttendance,
+              peakUtilisation: avgFill,
+              lowestUtilisation: avgFill,
+              byTimeSlot: data.classes?.byTimeSlot || [],
+              byDay: data.classes?.byDay || [],
+              topClasses: data.classes?.topClasses || [],
+              underperforming: data.classes?.underperforming || [],
               insights: totalClasses > 0 ? [
-                { type: 'positive', message: `${totalClasses} classes scheduled with ${totalBookings} total bookings` }
+                { type: 'positive', message: `${totalClasses} classes scheduled with ${totalAttendance} attended bookings` }
               ] : [
                 { type: 'warning', message: 'No classes scheduled yet. Add classes to see utilisation data.' }
               ]
@@ -261,7 +268,7 @@ export default function ReportsPage() {
     
     fetchReportData()
   }, [period])
-  
+
   // Fetch real teachers from API
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -275,7 +282,7 @@ export default function ReportsPage() {
             user: { firstName: string; lastName: string }; 
             specialties: string | string[];
             _count?: { classSessions?: number }
-          }, index: number) => ({
+          }) => ({
             id: teacher.id,
             name: teacher.user ? `${teacher.user.firstName} ${teacher.user.lastName}` : 'Unknown',
             specialties: Array.isArray(teacher.specialties) 
@@ -370,6 +377,15 @@ export default function ReportsPage() {
     }
   }
 
+  const revenueChangeLabel = `${reportData.revenue.percentChange > 0 ? "+" : ""}${reportData.revenue.percentChange}%`
+  const utilisationChange = reportData.utilisation.averageFill - reportData.utilisation.previousPeriod
+  const utilisationChangeLabel = `${utilisationChange > 0 ? "+" : ""}${utilisationChange}%`
+  const peakTimeLabel = reportData.utilisation.byTimeSlot[0]?.time || "No data"
+  const averageRevenuePerClient =
+    reportData.retention.activeClients > 0
+      ? Math.round(reportData.revenue.total / reportData.retention.activeClients)
+      : 0
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -395,15 +411,15 @@ export default function ReportsPage() {
               <SelectTrigger className="w-[180px] bg-white">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="365">Last year</SelectItem>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7">Last 7 days</SelectItem>
+            <SelectItem value="30">Last 30 days</SelectItem>
+            <SelectItem value="90">Last 90 days</SelectItem>
+            <SelectItem value="365">Last year</SelectItem>
                 <SelectItem value="custom">Custom Range...</SelectItem>
-              </SelectContent>
-            </Select>
+          </SelectContent>
+        </Select>
             
             {/* Custom Date Range Picker - positioned under selector, right-aligned */}
             {showCustomDate && (
@@ -478,7 +494,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="text-gray-500 text-sm font-medium">Revenue Growth</p>
-                <p className="text-gray-900 font-bold text-2xl">+{reportData.revenue.percentChange}%</p>
+                <p className="text-gray-900 font-bold text-2xl">{revenueChangeLabel}</p>
                 <p className="text-gray-400 text-xs">vs last period</p>
               </div>
             </div>
@@ -511,8 +527,8 @@ export default function ReportsPage() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">Peak Time</p>
-                  <p className="text-gray-900 font-bold text-2xl">Sat 9:30</p>
-                  <p className="text-gray-400 text-xs">Most popular slot</p>
+                  <p className="text-gray-900 font-bold text-2xl">{peakTimeLabel}</p>
+                  <p className="text-gray-400 text-xs">{peakTimeLabel === "No data" ? "No classes tracked yet" : "Most popular slot"}</p>
                 </div>
               </div>
             </CardContent>
@@ -559,7 +575,7 @@ export default function ReportsPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Summary Cards */}
+      {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/studio/reports?tab=revenue')}>
               <CardContent className="p-4">
@@ -568,14 +584,18 @@ export default function ReportsPage() {
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                   </div>
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                    <ArrowUpRight className="h-3 w-3 mr-1" />
-                    {reportData.revenue.percentChange}%
+                    {reportData.revenue.percentChange >= 0 ? (
+                      <ArrowUpRight className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                    )}
+                    {revenueChangeLabel}
                   </Badge>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">${reportData.revenue.total.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">Revenue</p>
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
 
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/studio/schedule')}>
               <CardContent className="p-4">
@@ -584,13 +604,13 @@ export default function ReportsPage() {
                     <Percent className="h-5 w-5 text-violet-600" />
                   </div>
                   <Badge variant="secondary" className="bg-violet-50 text-violet-700">
-                    +4%
+                    {utilisationChangeLabel}
                   </Badge>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{reportData.utilisation.averageFill}%</p>
                 <p className="text-sm text-gray-500">Avg. Class Fill</p>
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
 
             <Link href="/studio/clients">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
@@ -598,15 +618,15 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                       <UserPlus className="h-5 w-5 text-blue-600" />
-                    </div>
+            </div>
                     <Badge variant="secondary" className="bg-blue-50 text-blue-700">
                       +{reportData.retention.newClients}
                     </Badge>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{reportData.retention.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
-                </CardContent>
-              </Card>
+          </CardContent>
+        </Card>
             </Link>
 
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/studio/reports?tab=retention')}>
@@ -622,9 +642,9 @@ export default function ReportsPage() {
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{reportData.retention.churnRate}%</p>
                 <p className="text-sm text-gray-500">Churn Rate</p>
-              </CardContent>
-            </Card>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -708,7 +728,7 @@ export default function ReportsPage() {
                     {reportData.retention.atRiskClients} clients
                   </Badge>
                 </div>
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {reportData.retention.atRiskList.map((client) => (
                     <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity">
@@ -728,9 +748,9 @@ export default function ReportsPage() {
                         <Mail className="h-4 w-4 mr-1" />
                         Reach Out
                       </Button>
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
                 <Link href="/studio/clients?filter=at-risk">
                   <Button variant="ghost" className="w-full mt-4 text-amber-600">
                     View All At-Risk Clients
@@ -744,7 +764,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Suggested Actions</h3>
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {[
                     ...reportData.revenue.insights,
                     ...reportData.utilisation.insights.slice(0, 1),
@@ -753,9 +773,9 @@ export default function ReportsPage() {
                     <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                       {getInsightIcon(insight.type)}
                       <p className="text-sm text-gray-700">{insight.message}</p>
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <Link href="/studio/marketing">
                     <Button variant="outline" className="w-full">
@@ -785,8 +805,12 @@ export default function ReportsPage() {
                 <p className="text-3xl font-bold text-gray-900">${reportData.revenue.total.toLocaleString()}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                    <ArrowUpRight className="h-3 w-3 mr-1" />
-                    {reportData.revenue.percentChange}%
+                    {reportData.revenue.percentChange >= 0 ? (
+                      <ArrowUpRight className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                    )}
+                    {revenueChangeLabel}
                   </Badge>
                   <span className="text-sm text-gray-500">vs last period</span>
                 </div>
@@ -804,11 +828,11 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">Avg. Per Client</p>
-                <p className="text-3xl font-bold text-gray-900">${Math.round(reportData.revenue.total / reportData.retention.activeClients)}</p>
+                <p className="text-3xl font-bold text-gray-900">${averageRevenuePerClient}</p>
                 <p className="text-sm text-gray-500 mt-2">Revenue per active client</p>
               </CardContent>
             </Card>
-          </div>
+                </div>
 
           {/* Revenue by Source */}
           <Card className="border-0 shadow-sm">
@@ -827,9 +851,9 @@ export default function ReportsPage() {
                         }`}>
                           {source.trend === 'up' ? '+' : ''}{source.change}%
                         </Badge>
-                      </div>
+                </div>
                       <span className="font-bold text-gray-900">${source.amount.toLocaleString()}</span>
-                    </div>
+                </div>
                     <div className="w-full bg-gray-100 rounded-full h-3">
                       <div 
                         className={`h-3 rounded-full ${
@@ -870,7 +894,7 @@ export default function ReportsPage() {
                 <p className="text-sm text-gray-500 mb-1">Average Fill Rate</p>
                 <p className="text-2xl font-bold text-gray-900">{reportData.utilisation.averageFill}%</p>
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 mt-2">
-                  +4% vs last period
+                  {utilisationChangeLabel} vs last period
                 </Badge>
               </CardContent>
             </Card>
@@ -918,7 +942,7 @@ export default function ReportsPage() {
                 </Link>
               </div>
               
-              <div className="space-y-3">
+                  <div className="space-y-3">
                 {reportData.utilisation.byTimeSlot.map((slot, i) => {
                   const isGood = slot.fill >= 80
                   const isBad = slot.fill < 60
@@ -965,8 +989,8 @@ export default function ReportsPage() {
                         <Badge className="bg-emerald-500">{cls.fill}% full</Badge>
                       </div>
                     </Link>
-                  ))}
-                </div>
+                    ))}
+                  </div>
                 <p className="text-sm text-emerald-600 mt-4">
                   💡 Consider adding more capacity to these time slots
                 </p>
@@ -1148,8 +1172,8 @@ export default function ReportsPage() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
         </TabsContent>
 
         {/* Retention Tab */}
@@ -1210,7 +1234,7 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Retention by Tenure</h3>
                 <p className="text-sm text-gray-500 mb-4">How long do clients stay?</p>
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {reportData.retention.cohortRetention.map((cohort, i) => (
                     <div key={i}>
                       <div className="flex items-center justify-between mb-1">
@@ -1229,9 +1253,9 @@ export default function ReportsPage() {
                           style={{ width: `${cohort.retained}%` }}
                         />
                       </div>
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
                 <p className="text-sm text-violet-600 mt-4">
                   💡 Focus on first-month retention to improve overall numbers
                 </p>
@@ -1424,8 +1448,8 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
           {/* Marketing Insights */}
           <Card className="border-0 shadow-sm bg-violet-50">
@@ -1438,7 +1462,7 @@ export default function ReportsPage() {
                     <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
-              </div>
+          </div>
               <div className="space-y-3">
                 {reportData.marketing.insights.map((insight, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -1613,9 +1637,6 @@ function SocialMediaReportSection() {
           ) : (
             <div className="space-y-3">
               {flows.map(flow => {
-                const responseRate = flow.totalTriggered > 0 
-                  ? Math.round((flow.totalResponded / flow.totalTriggered) * 100) 
-                  : 0
                 const bookingRate = flow.totalTriggered > 0 
                   ? Math.round((flow.totalBooked / flow.totalTriggered) * 100) 
                   : 0

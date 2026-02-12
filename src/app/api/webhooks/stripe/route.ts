@@ -67,6 +67,30 @@ export async function POST(request: NextRequest) {
         break
       }
 
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription
+        await handleSubscriptionUpdated(subscription)
+        break
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription
+        await handleSubscriptionDeleted(subscription)
+        break
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice
+        await handleInvoicePaymentSucceeded(invoice)
+        break
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice
+        await handleInvoicePaymentFailed(invoice)
+        break
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
@@ -196,6 +220,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 }
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const latestCharge = paymentIntent.latest_charge
+  const receiptUrl =
+    latestCharge && typeof latestCharge !== "string"
+      ? latestCharge.receipt_url || null
+      : null
+
   const payment = await db.payment.findFirst({
     where: { stripePaymentIntentId: paymentIntent.id },
   })
@@ -206,7 +236,7 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
       data: {
         status: "SUCCEEDED",
         netAmount: paymentIntent.amount_received,
-        receiptUrl: paymentIntent.charges?.data[0]?.receipt_url,
+        receiptUrl,
       },
     })
   }
@@ -243,6 +273,7 @@ async function handleRefund(charge: Stripe.Charge) {
         status: isFullRefund ? "REFUNDED" : "PARTIALLY_REFUNDED",
         refundedAmount: refundedAmount / 100,
         refundedAt: new Date(),
+        failureMessage: `Stripe webhook refund processed (charge=${charge.id}, refunded=${(refundedAmount / 100).toFixed(2)})`,
       },
     })
 
@@ -255,7 +286,11 @@ async function handleRefund(charge: Stripe.Charge) {
       if (booking) {
         await db.booking.update({
           where: { id: booking.id },
-          data: { status: "CANCELLED" },
+          data: {
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+            cancellationReason: "Cancelled after Stripe refund webhook (full refund)",
+          },
         })
       }
     }
@@ -279,4 +314,123 @@ async function handleAccountUpdate(account: Stripe.Account) {
       },
     })
   }
+}
+
+function normalizeSubscriptionStatus(status: Stripe.Subscription.Status): string {
+  if (status === "active" || status === "trialing") return "active"
+  if (status === "past_due" || status === "unpaid") return "past_due"
+  if (status === "canceled") return "cancelled"
+  return "paused"
+}
+
+function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription
+  if (!subscriptionRef) return null
+  if (typeof subscriptionRef === "string") return subscriptionRef
+  return subscriptionRef.id
+}
+
+function getSubscriptionPeriod(subscription: Stripe.Subscription): { start: Date; end: Date } | null {
+  const firstItem = subscription.items.data[0]
+  if (!firstItem) return null
+
+  return {
+    start: new Date(firstItem.current_period_start * 1000),
+    end: new Date(firstItem.current_period_end * 1000),
+  }
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const status = normalizeSubscriptionStatus(subscription.status)
+  const shouldSetCancelledAt =
+    status === "cancelled" ||
+    Boolean(subscription.cancel_at_period_end) ||
+    Boolean(subscription.canceled_at)
+  const period = getSubscriptionPeriod(subscription)
+
+  const updateData: {
+    status: string
+    cancelledAt: Date | null
+    currentPeriodStart?: Date
+    currentPeriodEnd?: Date
+  } = {
+    status,
+    cancelledAt: shouldSetCancelledAt
+      ? new Date((subscription.canceled_at || Math.floor(Date.now() / 1000)) * 1000)
+      : null,
+  }
+
+  if (period) {
+    updateData.currentPeriodStart = period.start
+    updateData.currentPeriodEnd = period.end
+  }
+
+  await db.vaultSubscriber.updateMany({
+    where: { stripeSubscriptionId: subscription.id },
+    data: updateData,
+  })
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const period = getSubscriptionPeriod(subscription)
+
+  const updateData: {
+    status: string
+    cancelledAt: Date
+    currentPeriodStart?: Date
+    currentPeriodEnd?: Date
+  } = {
+    status: "cancelled",
+    cancelledAt: new Date((subscription.canceled_at || Math.floor(Date.now() / 1000)) * 1000),
+  }
+
+  if (period) {
+    updateData.currentPeriodStart = period.start
+    updateData.currentPeriodEnd = period.end
+  }
+
+  await db.vaultSubscriber.updateMany({
+    where: { stripeSubscriptionId: subscription.id },
+    data: updateData,
+  })
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const subscriptionId = getSubscriptionIdFromInvoice(invoice)
+  if (!subscriptionId) return
+
+  const updateData: {
+    status: string
+    paidAmount?: number
+    currentPeriodStart?: Date
+    currentPeriodEnd?: Date
+  } = {
+    status: "active",
+  }
+
+  if (typeof invoice.amount_paid === "number") {
+    updateData.paidAmount = invoice.amount_paid / 100
+  }
+
+  if (typeof invoice.period_start === "number" && typeof invoice.period_end === "number") {
+    updateData.currentPeriodStart = new Date(invoice.period_start * 1000)
+    updateData.currentPeriodEnd = new Date(invoice.period_end * 1000)
+  }
+
+  await db.vaultSubscriber.updateMany({
+    where: { stripeSubscriptionId: subscriptionId },
+    data: updateData,
+  })
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const subscriptionId = getSubscriptionIdFromInvoice(invoice)
+  if (!subscriptionId) return
+
+  await db.vaultSubscriber.updateMany({
+    where: { stripeSubscriptionId: subscriptionId },
+    data: {
+      status: "past_due",
+    },
+  })
 }

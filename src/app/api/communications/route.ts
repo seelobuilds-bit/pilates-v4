@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         result = await sendSMS({
           to,
           from: from || undefined,
-          message: content,
+          body: content,
         })
         activityType = ActivityType.SMS
         break
@@ -178,7 +178,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send communication" }, { status: 500 })
   }
 }
-
 
 
 

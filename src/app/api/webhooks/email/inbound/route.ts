@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { headers } from "next/headers"
 import { Webhook } from "svix"
+import { getSession } from "@/lib/session"
 
 // GET - Test endpoint to verify webhook is reachable
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+
+  const session = await getSession()
+  if (!session?.user || session.user.role !== "HQ_ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   return NextResponse.json({ 
     status: "ok", 
     message: "Inbound email webhook is active",
@@ -147,7 +157,6 @@ function cleanReplyText(text: string): string {
   // Remove common reply patterns
   const lines = text.split('\n')
   const cleanLines: string[] = []
-  let foundQuoteMarker = false
   
   for (const line of lines) {
     // Stop at common reply markers (but only if we have some content already)
@@ -159,7 +168,6 @@ function cleanReplyText(text: string): string {
         line.includes('Original Message') ||
         line.match(/^From:.*@/)
       ) {
-        foundQuoteMarker = true
         break
       }
     }
@@ -190,6 +198,8 @@ export async function POST(request: NextRequest) {
     console.log("[Inbound Email] Webhook received")
     console.log("[Inbound Email] Raw body preview:", rawBody.substring(0, 500))
     
+    const isProduction = process.env.NODE_ENV === "production"
+
     // Verify webhook signature if secret is configured
     if (webhookSecret) {
       const svixId = headersList.get("svix-id")
@@ -215,6 +225,9 @@ export async function POST(request: NextRequest) {
         console.error("[Inbound Email] Invalid signature:", err)
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
       }
+    } else if (isProduction) {
+      console.error("[Inbound Email] RESEND_WEBHOOK_SECRET is required in production")
+      return NextResponse.json({ error: "Webhook misconfigured" }, { status: 500 })
     } else {
       console.log("[Inbound Email] No webhook secret configured, skipping verification")
     }
@@ -336,11 +349,11 @@ export async function POST(request: NextRequest) {
           email: { equals: fromEmail, mode: "insensitive" },
           role: "OWNER"
         },
-        include: { ownedStudios: true }
+        include: { ownedStudio: true }
       })
       
-      if (studioOwner && studioOwner.ownedStudios.length > 0) {
-        const studio = studioOwner.ownedStudios[0]
+      if (studioOwner?.ownedStudio) {
+        const studio = studioOwner.ownedStudio
         
         await db.hQMessage.create({
           data: {

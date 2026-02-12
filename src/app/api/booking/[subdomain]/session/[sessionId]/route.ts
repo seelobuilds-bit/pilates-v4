@@ -8,13 +8,25 @@ export async function GET(
 ) {
   try {
     const { subdomain, sessionId } = await params
+    const studio = await db.studio.findUnique({
+      where: { subdomain },
+      select: { id: true },
+    })
+
+    if (!studio) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 404 })
+    }
 
     // Find the payment by checkout session ID
     const payment = await db.payment.findFirst({
-      where: { stripeCheckoutSessionId: sessionId },
+      where: {
+        stripeCheckoutSessionId: sessionId,
+        studioId: studio.id,
+      },
       include: {
         client: true,
         bookings: {
+          where: { studioId: studio.id },
           include: {
             classSession: {
               include: {

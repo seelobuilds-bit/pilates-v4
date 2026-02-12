@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Trophy,
   Medal,
@@ -30,13 +29,11 @@ import { LeaderboardData, Leaderboard } from "./types"
 
 interface LeaderboardsViewProps {
   data: LeaderboardData
-  linkPrefix?: string
   isLoading?: boolean
 }
 
 export function LeaderboardsView({ 
   data, 
-  linkPrefix = "/studio",
   isLoading = false
 }: LeaderboardsViewProps) {
   const [activeTab, setActiveTab] = useState<"studio" | "teacher">("studio")
@@ -529,7 +526,6 @@ export function LeaderboardsView({
     </div>
   )
 }
-
 
 
 

@@ -288,7 +288,7 @@ export function SupportWidget() {
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 p-6">
                       <MessageCircle className="h-12 w-12 mb-3 text-gray-300" />
                       <p className="font-medium">No conversations yet</p>
-                      <p className="text-sm text-center mt-1">Start a conversation and we'll get back to you right away!</p>
+                      <p className="text-sm text-center mt-1">Start a conversation and we&apos;ll get back to you right away!</p>
                     </div>
                   ) : (
                     <div className="divide-y">
@@ -460,7 +460,6 @@ export function SupportWidget() {
     </>
   )
 }
-
 
 
 

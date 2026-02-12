@@ -169,8 +169,7 @@ export async function PATCH(
 
 // DELETE - Delete task
 export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ leadId: string }> }
+  request: Request
 ) {
   try {
     const session = await getSession()
@@ -195,7 +194,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete task" }, { status: 500 })
   }
 }
-
 
 
 

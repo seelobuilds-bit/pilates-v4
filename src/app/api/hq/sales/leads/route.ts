@@ -194,7 +194,7 @@ export async function PUT(request: Request) {
           }
         })
         results.created++
-      } catch (err) {
+      } catch {
         results.errors.push(`Failed to import: ${leadData.contactEmail || leadData.studioName}`)
       }
     }
@@ -205,7 +205,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Failed to import leads" }, { status: 500 })
   }
 }
-
 
 
 

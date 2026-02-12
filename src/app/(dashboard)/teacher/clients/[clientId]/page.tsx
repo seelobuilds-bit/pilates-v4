@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   ArrowLeft,
   Mail,
@@ -19,8 +18,6 @@ import {
   Clock,
   Send,
   Loader2,
-  CheckCircle,
-  Users
 } from "lucide-react"
 
 interface ClientDetail {
@@ -60,7 +57,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("conversation")
   
   // Message compose
   const [messageType, setMessageType] = useState<"email" | "sms">("email")
@@ -395,7 +391,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

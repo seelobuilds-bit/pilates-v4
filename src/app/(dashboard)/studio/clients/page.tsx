@@ -190,7 +190,7 @@ export default function ClientsPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       // Show success (in production this would be a toast)
-      alert(`Added ${selectedClients.size} client(s) to segment`)
+      alert(`Added ${selectedClients.size} client(s) to segment ${segmentId}`)
       setSelectedClients(new Set())
       setShowSegmentDropdown(false)
     } catch (error) {

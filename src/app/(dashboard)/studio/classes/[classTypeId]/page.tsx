@@ -63,6 +63,18 @@ interface ClassTypeStats {
   recentClasses: { date: string; teacher: string; location: string; attendance: number; capacity: number }[]
 }
 
+const emptyClassTypeStats: ClassTypeStats = {
+  totalBookings: 0,
+  totalRevenue: 0,
+  avgAttendance: 0,
+  avgRating: 0,
+  topTeachers: [],
+  topLocations: [],
+  monthlyBookings: [],
+  popularTimes: [],
+  recentClasses: []
+}
+
 export default function EditClassTypePage({
   params,
 }: {
@@ -109,6 +121,7 @@ export default function EditClassTypePage({
           })
           setSelectedLocations(data.locationIds || [])
           setSelectedTeachers(data.teacherIds || [])
+          setStats(data.stats || emptyClassTypeStats)
         }
         
         if (locationsRes.ok) {
@@ -129,43 +142,6 @@ export default function EditClassTypePage({
           }
         }
 
-        // Mock stats
-        setStats({
-          totalBookings: 847,
-          totalRevenue: 25410,
-          avgAttendance: 7.2,
-          avgRating: 4.8,
-          topTeachers: [
-            { name: "Sarah Johnson", classes: 45, rating: 4.9 },
-            { name: "Mike Chen", classes: 32, rating: 4.8 },
-            { name: "Emily Davis", classes: 28, rating: 4.7 }
-          ],
-          topLocations: [
-            { name: "Downtown Studio", bookings: 523 },
-            { name: "Westside Location", bookings: 324 }
-          ],
-          monthlyBookings: [
-            { month: "Jul", count: 112 },
-            { month: "Aug", count: 134 },
-            { month: "Sep", count: 128 },
-            { month: "Oct", count: 156 },
-            { month: "Nov", count: 167 },
-            { month: "Dec", count: 150 }
-          ],
-          popularTimes: [
-            { time: "9:00 AM", count: 189 },
-            { time: "6:00 PM", count: 167 },
-            { time: "10:30 AM", count: 145 },
-            { time: "5:00 PM", count: 134 },
-            { time: "7:30 AM", count: 98 }
-          ],
-          recentClasses: [
-            { date: "Today, 9:00 AM", teacher: "Sarah J.", location: "Downtown", attendance: 8, capacity: 10 },
-            { date: "Yesterday, 6:00 PM", teacher: "Mike C.", location: "Westside", attendance: 10, capacity: 10 },
-            { date: "Dec 15, 10:30 AM", teacher: "Emily D.", location: "Downtown", attendance: 7, capacity: 10 },
-            { date: "Dec 14, 5:00 PM", teacher: "Sarah J.", location: "Downtown", attendance: 9, capacity: 10 }
-          ]
-        })
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -258,6 +234,12 @@ export default function EditClassTypePage({
   const activeTeachers = teachers.filter(t => t.isActive)
   const allLocationsSelected = selectedLocations.length === 0 || selectedLocations.length === activeLocations.length
   const allTeachersSelected = selectedTeachers.length === 0 || selectedTeachers.length === activeTeachers.length
+  const safeStats = stats || emptyClassTypeStats
+  const hasClassReportData =
+    safeStats.totalBookings > 0 ||
+    safeStats.totalRevenue > 0 ||
+    safeStats.topTeachers.length > 0 ||
+    safeStats.monthlyBookings.some((month) => month.count > 0)
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
@@ -288,7 +270,7 @@ export default function EditClassTypePage({
                   <Calendar className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.totalBookings.toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Total Bookings</p>
                 </div>
               </div>
@@ -302,7 +284,7 @@ export default function EditClassTypePage({
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">${safeStats.totalRevenue.toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Revenue</p>
                 </div>
               </div>
@@ -316,7 +298,7 @@ export default function EditClassTypePage({
                   <Users className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.avgAttendance}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgAttendance}</p>
                   <p className="text-sm text-gray-500">Avg. Attendance</p>
                 </div>
               </div>
@@ -330,7 +312,7 @@ export default function EditClassTypePage({
                   <Star className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.avgRating}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgRating > 0 ? safeStats.avgRating.toFixed(1) : "N/A"}</p>
                   <p className="text-sm text-gray-500">Avg. Rating</p>
                 </div>
               </div>
@@ -626,7 +608,7 @@ export default function EditClassTypePage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
-          {stats && (
+          {stats && hasClassReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Teachers for this Class */}
               <Card className="border-0 shadow-sm">
@@ -636,7 +618,7 @@ export default function EditClassTypePage({
                     <h3 className="font-semibold text-gray-900">Top Teachers</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.topTeachers.map((teacher, i) => (
+                    {safeStats.topTeachers.map((teacher, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
@@ -649,7 +631,7 @@ export default function EditClassTypePage({
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                          <span className="font-medium text-gray-900">{teacher.rating}</span>
+                          <span className="font-medium text-gray-900">{teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
                         </div>
                       </div>
                     ))}
@@ -665,8 +647,8 @@ export default function EditClassTypePage({
                     <h3 className="font-semibold text-gray-900">Bookings by Location</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.topLocations.map((loc, i) => {
-                      const total = stats.topLocations.reduce((a, l) => a + l.bookings, 0)
+                    {safeStats.topLocations.map((loc, i) => {
+                      const total = safeStats.topLocations.reduce((a, l) => a + l.bookings, 0)
                       const pct = Math.round((loc.bookings / total) * 100)
                       return (
                         <div key={i}>
@@ -695,7 +677,7 @@ export default function EditClassTypePage({
                     <h3 className="font-semibold text-gray-900">Popular Times</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.popularTimes.map((slot, i) => (
+                    {safeStats.popularTimes.map((slot, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-medium">
@@ -718,7 +700,7 @@ export default function EditClassTypePage({
                     <h3 className="font-semibold text-gray-900">Recent Classes</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.recentClasses.map((cls, i) => (
+                    {safeStats.recentClasses.map((cls, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{cls.date}</p>
@@ -746,8 +728,8 @@ export default function EditClassTypePage({
                     <h3 className="font-semibold text-gray-900">Booking Trends</h3>
                   </div>
                   <div className="flex items-end justify-between h-40 gap-4">
-                    {stats.monthlyBookings.map((month, i) => {
-                      const maxCount = Math.max(...stats.monthlyBookings.map(m => m.count))
+                    {safeStats.monthlyBookings.map((month, i) => {
+                      const maxCount = Math.max(...safeStats.monthlyBookings.map(m => m.count))
                       const height = (month.count / maxCount) * 100
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -764,6 +746,17 @@ export default function EditClassTypePage({
                 </CardContent>
               </Card>
             </div>
+          )}
+          {(!stats || !hasClassReportData) && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-10 text-center">
+                <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <p className="text-gray-500">
+                  This class type has no tracked activity yet, so reporting is empty.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>

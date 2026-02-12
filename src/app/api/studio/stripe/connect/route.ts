@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
 import { getStripe, isStripeConfigured } from "@/lib/stripe"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 
 // POST - Create Stripe Connect account and get onboarding link
 export async function POST() {
@@ -12,13 +12,11 @@ export async function POST() {
       }, { status: 500 })
     }
 
-    const session = await getSession()
-    
-    if (!session?.user?.studioId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await requireOwnerStudioAccess()
+    if ("error" in auth) {
+      return auth.error
     }
-
-    const studioId = session.user.studioId
+    const studioId = auth.studioId
     const stripe = getStripe()
 
     // Get studio
@@ -87,22 +85,33 @@ export async function POST() {
         url: accountLink.url,
         accountId: stripeAccountId,
       })
-    } catch (linkError: any) {
+    } catch (linkError: unknown) {
+      const linkErr = linkError as { message?: string; code?: string }
       console.error("Error creating account link:", linkError)
       return NextResponse.json({ 
-        error: `Failed to create onboarding link: ${linkError?.message || 'Unknown error'}`,
-        code: linkError?.code,
+        error: `Failed to create onboarding link: ${linkErr.message || 'Unknown error'}`,
+        code: linkErr.code,
         accountId: stripeAccountId,
       }, { status: 500 })
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const stripeError = error as {
+      message?: string
+      code?: string
+      type?: string
+      raw?: {
+        message?: string
+        code?: string
+        type?: string
+      }
+    }
     console.error("Error creating Stripe Connect account:", error)
     // Return more detailed error for debugging
-    const errorMessage = error?.message || error?.raw?.message || "Failed to create Stripe account"
+    const errorMessage = stripeError.message || stripeError.raw?.message || "Failed to create Stripe account"
     return NextResponse.json({ 
       error: errorMessage,
-      code: error?.code || error?.raw?.code,
-      type: error?.type || error?.raw?.type
+      code: stripeError.code || stripeError.raw?.code,
+      type: stripeError.type || stripeError.raw?.type
     }, { status: 500 })
   }
 }
@@ -110,10 +119,9 @@ export async function POST() {
 // GET - Get Stripe account status
 export async function GET() {
   try {
-    const session = await getSession()
-    
-    if (!session?.user?.studioId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await requireOwnerStudioAccess()
+    if ("error" in auth) {
+      return auth.error
     }
 
     // If Stripe is not configured, return not configured status
@@ -129,7 +137,7 @@ export async function GET() {
       })
     }
 
-    const studioId = session.user.studioId
+    const studioId = auth.studioId
 
     const studio = await db.studio.findUnique({
       where: { id: studioId },
@@ -208,13 +216,11 @@ export async function GET() {
 // DELETE - Disconnect Stripe account
 export async function DELETE() {
   try {
-    const session = await getSession()
-    
-    if (!session?.user?.studioId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await requireOwnerStudioAccess()
+    if ("error" in auth) {
+      return auth.error
     }
-
-    const studioId = session.user.studioId
+    const studioId = auth.studioId
 
     // Clear Stripe data (note: we don't delete the Stripe account itself)
     await db.studio.update({

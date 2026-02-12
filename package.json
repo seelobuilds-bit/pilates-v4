@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "typecheck": "tsc --noEmit",
+    "test:authz": "node scripts/tests/authz-boundaries.mjs",
+    "test:booking": "TEST_BOOKING_SUBDOMAIN=${TEST_BOOKING_SUBDOMAIN:-zenith} node scripts/tests/booking-payment-subscription.mjs",
+    "test:smoke": "node scripts/tests/smoke-routes.mjs",
+    "test:integration": "pnpm test:authz && pnpm test:booking && pnpm test:smoke",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",

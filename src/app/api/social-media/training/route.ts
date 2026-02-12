@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 // GET - Fetch all training categories and modules
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getSession()
 
   if (!session?.user) {
@@ -105,8 +105,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch training" }, { status: 500 })
   }
 }
-
-
 
 
 

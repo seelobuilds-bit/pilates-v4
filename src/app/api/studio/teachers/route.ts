@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { sendSystemTemplateEmail } from "@/lib/email"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 
 export async function GET() {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
 
-  if (!session?.user?.studioId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ("error" in auth) {
+    return auth.error
   }
 
   const teachers = await db.teacher.findMany({
-    where: { studioId: session.user.studioId },
+    where: { studioId: auth.studioId },
     include: {
       user: {
         select: {
@@ -31,10 +31,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
 
-  if (!session?.user?.studioId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ("error" in auth) {
+    return auth.error
   }
 
   try {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       const existingTeacher = await db.teacher.findFirst({
         where: {
           userId: existingUser.id,
-          studioId: session.user.studioId
+          studioId: auth.studioId
         }
       })
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Get studio info for the email
     const studio = await db.studio.findUnique({
-      where: { id: session.user.studioId }
+      where: { id: auth.studioId }
     })
 
     if (!studio) {
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       const teacher = await tx.teacher.create({
         data: {
           userId: user.id,
-          studioId: session.user.studioId,
+          studioId: auth.studioId,
           specialties: specialties || []
         },
         include: {
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
       console.log(`[TEACHER INVITE] Invite link: ${inviteLink}`)
       
       const emailResult = await sendSystemTemplateEmail({
-        studioId: session.user.studioId,
+        studioId: auth.studioId,
         templateType: "TEACHER_INVITE",
         to: email,
         variables: {

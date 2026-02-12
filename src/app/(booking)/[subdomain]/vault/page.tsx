@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect, useCallback, use } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   BookOpen,
@@ -16,8 +16,6 @@ import {
   Users,
   Star,
   Play,
-  Clock,
-  CheckCircle,
   Lock,
   ArrowLeft
 } from "lucide-react"
@@ -61,7 +59,6 @@ interface Studio {
 
 export default function ClientVaultPage({ params }: { params: Promise<{ subdomain: string }> }) {
   const resolvedParams = use(params)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const affiliateCode = searchParams.get("ref")
   
@@ -71,35 +68,18 @@ export default function ClientVaultPage({ params }: { params: Promise<{ subdomai
   const [categories, setCategories] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [audienceFilter, setAudienceFilter] = useState("CLIENTS")
 
-  useEffect(() => {
-    fetchData()
-    
-    // Track affiliate click if code present
-    if (affiliateCode) {
-      fetch("/api/vault/affiliates", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: affiliateCode, action: "click" })
-      })
-    }
-  }, [affiliateCode])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     try {
-      // Fetch studio info
       const studioRes = await fetch(`/api/booking/${resolvedParams.subdomain}/data`)
       if (studioRes.ok) {
         const data = await studioRes.json()
         setStudio(data.studio)
       }
 
-      // Fetch published courses for this audience
       const coursesRes = await fetch(`/api/vault/courses?published=true`)
       if (coursesRes.ok) {
         const data = await coursesRes.json()
-        // Filter to show only CLIENTS and ALL courses for clients
         const clientCourses = data.courses.filter(
           (c: Course) => c.audience === "CLIENTS" || c.audience === "ALL"
         )
@@ -110,7 +90,20 @@ export default function ClientVaultPage({ params }: { params: Promise<{ subdomai
       console.error("Failed to fetch vault:", err)
     }
     setLoading(false)
-  }
+  }, [resolvedParams.subdomain])
+
+  useEffect(() => {
+    void fetchData()
+    
+    // Track affiliate click if code present
+    if (affiliateCode) {
+      void fetch("/api/vault/affiliates", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: affiliateCode, action: "click" })
+      })
+    }
+  }, [affiliateCode, fetchData])
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = !searchQuery || 
@@ -243,9 +236,11 @@ function CourseCard({
       <CardContent className="p-0">
         <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 relative rounded-t-lg overflow-hidden">
           {course.thumbnailUrl ? (
-            <img 
+            <Image
               src={course.thumbnailUrl} 
               alt={course.title} 
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
             />
           ) : (
@@ -337,7 +332,6 @@ function CourseCard({
     </Card>
   )
 }
-
 
 
 

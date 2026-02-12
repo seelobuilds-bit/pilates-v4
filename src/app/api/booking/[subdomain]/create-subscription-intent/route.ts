@@ -53,9 +53,13 @@ export async function POST(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 })
+    }
+
     // Get plan
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
     })
 
     if (!plan || !plan.isActive) {
@@ -63,16 +67,20 @@ export async function POST(
     }
 
     // Check if already subscribed
+    const now = new Date()
     const existingSubscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: client.id,
         planId: plan.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (existingSubscription) {
-      return NextResponse.json({ error: "Already subscribed to this plan" }, { status: 400 })
+      return NextResponse.json({ error: "Already subscribed or cancellation is pending for this plan" }, { status: 400 })
     }
 
     const stripe = getStripe()
@@ -155,8 +163,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
-
 
 
 

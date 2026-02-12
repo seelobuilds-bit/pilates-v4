@@ -20,14 +20,11 @@ import {
   Search,
   Phone,
   Mail,
-  Building2,
   Clock,
   Target,
-  DollarSign,
   Calendar,
   ChevronRight,
   Loader2,
-  CheckCircle,
   Video,
   Bell,
 } from "lucide-react"
@@ -193,7 +190,7 @@ export default function SalesDashboardPage() {
             <Target className="h-7 w-7 text-violet-600" />
             My Sales Dashboard
           </h1>
-          <p className="text-gray-500 mt-1">Welcome back, {session?.user?.firstName}! Here's your pipeline.</p>
+          <p className="text-gray-500 mt-1">Welcome back, {session?.user?.firstName}! Here&apos;s your pipeline.</p>
         </div>
         <Link href="/sales/calendar">
           <Button variant="outline">
@@ -498,7 +495,7 @@ export default function SalesDashboardPage() {
                           {demo.contactPhone && <p><Phone className="h-3 w-3 inline mr-1" />{demo.contactPhone}</p>}
                         </div>
                         {demo.interests && (
-                          <p className="text-sm text-gray-500 mt-3 italic">"{demo.interests}"</p>
+                          <p className="text-sm text-gray-500 mt-3 italic">&quot;{demo.interests}&quot;</p>
                         )}
                         <div className="mt-4">
                           <Link href="/sales/demos">
@@ -566,8 +563,6 @@ export default function SalesDashboardPage() {
     </div>
   )
 }
-
-
 
 
 

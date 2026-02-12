@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { SystemEmailType } from "@prisma/client"
@@ -467,7 +467,7 @@ const deprecatedTypes: SystemEmailType[] = ["CLASS_REMINDER_24HR", "CLASS_REMIND
 export async function GET() {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -529,7 +529,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch email templates" }, { status: 500 })
   }
 }
-
 
 
 

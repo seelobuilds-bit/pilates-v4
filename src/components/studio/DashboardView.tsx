@@ -27,7 +27,7 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react"
-import { DashboardData, ClassSession, Client, Booking } from "./types"
+import { DashboardData } from "./types"
 
 interface DashboardViewProps {
   data: DashboardData
@@ -532,7 +532,6 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     </div>
   )
 }
-
 
 
 

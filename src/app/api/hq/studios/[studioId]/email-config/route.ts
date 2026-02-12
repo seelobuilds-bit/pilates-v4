@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { createDomain, checkDomainStatus, verifyDomain, deleteDomain } from "@/lib/email"
+import { Prisma } from "@prisma/client"
+
+function toJsonField(value: unknown): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value === null || value === undefined
+    ? Prisma.JsonNull
+    : (value as Prisma.InputJsonValue)
+}
 
 // GET - Fetch studio email config (HQ admin)
 export async function GET(
@@ -101,7 +108,7 @@ export async function POST(
           domain: domainData.domain,
           resendDomainId: domainData.resendDomainId,
           domainStatus: domainData.domainStatus,
-          dnsRecords: domainData.dnsRecords
+          dnsRecords: toJsonField(domainData.dnsRecords)
         })
       },
       create: {
@@ -112,7 +119,7 @@ export async function POST(
         domain: domainData?.domain || null,
         resendDomainId: domainData?.resendDomainId || null,
         domainStatus: domainData?.domainStatus || "not_started",
-        dnsRecords: domainData?.dnsRecords || null
+        dnsRecords: toJsonField(domainData?.dnsRecords)
       }
     })
 
@@ -168,7 +175,9 @@ export async function PATCH(
       where: { studioId },
       data: {
         domainStatus: result.status || config.domainStatus,
-        dnsRecords: result.records || config.dnsRecords,
+        dnsRecords: result.records
+          ? toJsonField(result.records)
+          : toJsonField(config.dnsRecords),
         verifiedAt: result.status === "verified" ? new Date() : null
       }
     })
@@ -183,4 +192,3 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

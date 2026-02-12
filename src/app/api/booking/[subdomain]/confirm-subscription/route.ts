@@ -60,30 +60,60 @@ export async function POST(
       return NextResponse.json({ error: "Payment record not found" }, { status: 404 })
     }
 
+    if (payment.studioId !== studio.id) {
+      return NextResponse.json({ error: "Payment does not belong to this studio" }, { status: 400 })
+    }
+
+    if (payment.clientId !== decoded.clientId) {
+      return NextResponse.json({ error: "Payment does not belong to this client" }, { status: 400 })
+    }
+
+    if (payment.stripePaymentIntentId && payment.stripePaymentIntentId !== paymentIntentId) {
+      return NextResponse.json({ error: "Payment mismatch" }, { status: 400 })
+    }
+
     // Update payment status
     await db.payment.update({
       where: { id: paymentId },
       data: {
         status: "SUCCEEDED",
         stripeChargeId: paymentIntent.latest_charge as string,
+        stripePaymentIntentId: paymentIntentId,
       },
     })
 
     // Get subscription details from metadata
     const planId = paymentIntent.metadata.planId
     const clientId = paymentIntent.metadata.clientId
+    const metadataStudioId = paymentIntent.metadata.studioId
     const interval = paymentIntent.metadata.interval as "monthly" | "yearly"
 
     if (!planId || !clientId) {
       return NextResponse.json({ error: "Missing subscription information" }, { status: 400 })
     }
 
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval metadata" }, { status: 400 })
+    }
+
+    if (clientId !== decoded.clientId) {
+      return NextResponse.json({ error: "Payment metadata client mismatch" }, { status: 400 })
+    }
+
+    if (metadataStudioId && metadataStudioId !== studio.id) {
+      return NextResponse.json({ error: "Payment metadata studio mismatch" }, { status: 400 })
+    }
+
     // Check for existing subscription (idempotency)
+    const now = new Date()
     const existingSubscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId,
         planId,
-        status: "active",
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       },
     })
 
@@ -96,8 +126,8 @@ export async function POST(
     }
 
     // Get the plan
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: { communityChat: true }
     })
 
@@ -106,7 +136,6 @@ export async function POST(
     }
 
     // Calculate period dates
-    const now = new Date()
     const periodEnd = new Date(now)
     if (interval === "monthly") {
       periodEnd.setMonth(periodEnd.getMonth() + 1)
@@ -161,8 +190,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm subscription" }, { status: 500 })
   }
 }
-
-
 
 
 

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "module") {
-      const module = await db.socialTrainingModule.create({
+      const createdModule = await db.socialTrainingModule.create({
         data: {
           categoryId: data.categoryId,
           title: data.title,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           order: data.order || 0
         }
       })
-      return NextResponse.json(module)
+      return NextResponse.json(createdModule)
     }
 
     if (type === "homework") {
@@ -153,7 +153,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (type === "module") {
-      const module = await db.socialTrainingModule.update({
+      const updatedModule = await db.socialTrainingModule.update({
         where: { id },
         data: {
           title: data.title,
@@ -172,7 +172,7 @@ export async function PUT(request: NextRequest) {
           order: data.order
         }
       })
-      return NextResponse.json(module)
+      return NextResponse.json(updatedModule)
     }
 
     if (type === "homework") {
@@ -241,7 +241,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 })
   }
 }
-
 
 
 

@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { role, id: userId, teacherId, studioId } = session.user
+    const { role, id: userId, teacherId } = session.user
 
     let conversations
     
@@ -110,7 +110,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 })
   }
 }
-
 
 
 

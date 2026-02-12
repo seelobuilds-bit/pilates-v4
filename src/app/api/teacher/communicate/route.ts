@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import nodemailer from "nodemailer"
-import twilio from "twilio"
+import { sendEmail, sendSMS } from "@/lib/communications"
 
 export async function POST(request: Request) {
   const session = await getSession()
@@ -62,63 +61,30 @@ export async function POST(request: Request) {
     const teacherName = teacher?.user ? `${teacher.user.firstName} ${teacher.user.lastName}` : "Your Teacher"
 
     if (type === "email") {
-      // Send email
       const emailConfig = client.studio.emailConfig
 
       if (!emailConfig) {
         return NextResponse.json({ error: "Email not configured for this studio" }, { status: 400 })
       }
 
-      const transporter = nodemailer.createTransport({
-        host: emailConfig.smtpHost,
-        port: emailConfig.smtpPort,
-        secure: emailConfig.smtpPort === 465,
-        auth: {
-          user: emailConfig.smtpUser,
-          pass: emailConfig.smtpPassword
-        }
-      })
-
-      await transporter.sendMail({
-        from: `"${teacherName} via ${client.studio.name}" <${emailConfig.fromEmail}>`,
+      const result = await sendEmail(client.studioId, {
         to: client.email,
+        toName: `${client.firstName} ${client.lastName}`,
         subject: subject || "Message from your instructor",
-        text: message,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <p>Hi ${client.firstName},</p>
-            <div style="white-space: pre-wrap;">${message}</div>
-            <p style="margin-top: 24px;">Best,<br/>${teacherName}</p>
-            <hr style="margin-top: 32px; border: none; border-top: 1px solid #eee;" />
-            <p style="color: #888; font-size: 12px;">
-              Sent from ${client.studio.name}
-            </p>
-          </div>
-        `
+        body: `Hi ${client.firstName},\n\n${message}\n\nBest,\n${teacherName}`,
+        clientId: client.id,
       })
 
-      // Log the communication
-      await db.message.create({
-        data: {
-          channel: "EMAIL",
-          direction: "OUTBOUND",
-          status: "SENT",
-          subject: subject || "Message from instructor",
-          body: message,
-          fromAddress: emailConfig.fromEmail,
-          toAddress: client.email,
-          fromName: teacherName,
-          toName: `${client.firstName} ${client.lastName}`,
-          sentAt: new Date(),
-          studioId: client.studioId,
-          clientId: client.id
-        }
-      })
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || "Failed to send email" },
+          { status: 500 }
+        )
+      }
 
       return NextResponse.json({ success: true, message: "Email sent successfully" })
 
     } else if (type === "sms") {
-      // Send SMS
       if (!client.phone) {
         return NextResponse.json({ error: "Client has no phone number" }, { status: 400 })
       }
@@ -129,30 +95,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "SMS not configured for this studio" }, { status: 400 })
       }
 
-      const twilioClient = twilio(smsConfig.twilioAccountSid, smsConfig.twilioAuthToken)
-
-      await twilioClient.messages.create({
+      const result = await sendSMS(client.studioId, {
+        to: client.phone,
+        toName: `${client.firstName} ${client.lastName}`,
         body: `${message}\n\n- ${teacherName}, ${client.studio.name}`,
-        from: smsConfig.twilioPhoneNumber,
-        to: client.phone
+        from: smsConfig.fromNumber,
+        clientId: client.id,
       })
 
-      // Log the communication
-      await db.message.create({
-        data: {
-          channel: "SMS",
-          direction: "OUTBOUND",
-          status: "SENT",
-          body: message,
-          fromAddress: smsConfig.twilioPhoneNumber,
-          toAddress: client.phone,
-          fromName: teacherName,
-          toName: `${client.firstName} ${client.lastName}`,
-          sentAt: new Date(),
-          studioId: client.studioId,
-          clientId: client.id
-        }
-      })
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || "Failed to send SMS" },
+          { status: 500 }
+        )
+      }
 
       return NextResponse.json({ success: true, message: "SMS sent successfully" })
 
@@ -165,7 +121,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-
 
 
 

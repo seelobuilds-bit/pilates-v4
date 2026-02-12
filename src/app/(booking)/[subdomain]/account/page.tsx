@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { loadStripe } from "@stripe/stripe-js"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { 
   Calendar, 
@@ -28,7 +29,6 @@ import {
   Sparkles,
   Play,
   CheckCircle,
-  Star,
   Loader2,
   Mail,
   Phone,
@@ -66,15 +66,14 @@ function SubscriptionPaymentWrapper({
   onSuccess: () => void
   onCancel: () => void
 }) {
-  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
-
-  useEffect(() => {
-    const promise = loadStripe(
+  const stripePromise = useMemo(
+    () =>
+      loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
       { stripeAccount: connectedAccountId }
-    )
-    setStripePromise(promise)
-  }, [connectedAccountId])
+      ),
+    [connectedAccountId]
+  )
 
   if (!stripePromise) {
     return (
@@ -328,7 +327,7 @@ interface ChatMessage {
   }
 }
 
-function ClientCommunityChat({ planId, planName, subdomain }: { planId: string; planName: string; subdomain: string }) {
+function ClientCommunityChat({ planId, subdomain }: { planId: string; subdomain: string }) {
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [memberCount, setMemberCount] = useState(0)
@@ -336,17 +335,7 @@ function ClientCommunityChat({ planId, planName, subdomain }: { planId: string; 
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchChat()
-    const interval = setInterval(fetchChat, 5000)
-    return () => clearInterval(interval)
-  }, [planId])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  async function fetchChat() {
+  const fetchChat = useCallback(async () => {
     try {
       const res = await fetch(`/api/booking/${subdomain}/community-chat?planId=${planId}`)
       if (res.ok) {
@@ -358,7 +347,23 @@ function ClientCommunityChat({ planId, planName, subdomain }: { planId: string; 
       console.error("Failed to fetch chat:", err)
     }
     setLoading(false)
-  }
+  }, [planId, subdomain])
+
+  useEffect(() => {
+    const poll = () => {
+      void fetchChat()
+    }
+    const init = setTimeout(poll, 0)
+    const interval = setInterval(poll, 5000)
+    return () => {
+      clearTimeout(init)
+      clearInterval(interval)
+    }
+  }, [fetchChat])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -490,6 +495,7 @@ interface Subscription {
   status: string
   interval: string
   currentPeriodEnd: string
+  cancelledAt?: string | null
   plan: {
     id: string
     name: string
@@ -586,6 +592,7 @@ export default function AccountPage() {
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null)
   const [cancelling, setCancelling] = useState(false)
+  const [renewingSubscriptionId, setRenewingSubscriptionId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -731,12 +738,26 @@ export default function AccountPage() {
   }
 
   async function handleSelectPlan(plan: SubscriptionPlan, interval: "monthly" | "yearly") {
+    const selectedPrice = interval === "yearly" ? plan.yearlyPrice : plan.monthlyPrice
+
     setSelectedPlan(plan)
     setSelectedInterval(interval)
     setClientSecret(null)
     setPaymentId(null)
     setConnectedAccountId(null)
     setPaymentError(null)
+
+    if (selectedPrice === null) {
+      setPaymentError("This billing interval is not available for this plan.")
+      setShowSubscriptionModal(true)
+      return
+    }
+
+    if (selectedPrice <= 0) {
+      setPaymentAmount(0)
+      setShowSubscriptionModal(true)
+      return
+    }
     
     // Check if studio has Stripe enabled
     if (studio?.stripeEnabled) {
@@ -764,8 +785,7 @@ export default function AccountPage() {
       }
       setCreatingPaymentIntent(false)
     } else {
-      // No Stripe - free subscription (for testing)
-      setPaymentAmount(interval === "yearly" ? (plan.yearlyPrice || 0) * 100 : plan.monthlyPrice * 100)
+      setPaymentError("Payments are not enabled for this studio yet. Paid plans are unavailable right now.")
     }
     
     setShowSubscriptionModal(true)
@@ -830,10 +850,7 @@ export default function AccountPage() {
         alert(data.message)
         setShowCancelModal(false)
         setSubscriptionToCancel(null)
-        // Update local state
-        setSubscriptions(subscriptions.map(s => 
-          s.id === subscriptionToCancel.id ? { ...s, status: "cancelled" } : s
-        ))
+        await fetchData()
       } else {
         const error = await res.json()
         alert(error.error || "Failed to cancel subscription")
@@ -843,6 +860,30 @@ export default function AccountPage() {
       alert("Failed to cancel subscription")
     }
     setCancelling(false)
+  }
+
+  async function handleRenewSubscription(subscriptionId: string) {
+    setRenewingSubscriptionId(subscriptionId)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/renew-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        alert(data.message || "Subscription resumed")
+        await fetchData()
+      } else {
+        const error = await res.json()
+        alert(error.error || "Failed to resume subscription")
+      }
+    } catch (err) {
+      console.error("Renew error:", err)
+      alert("Failed to resume subscription")
+    }
+    setRenewingSubscriptionId(null)
   }
 
   if (loading) {
@@ -1015,10 +1056,22 @@ export default function AccountPage() {
     b.status === "COMPLETED" || b.status === "CANCELLED" || new Date(b.classSession.startTime) <= new Date()
   )
 
-  const activeSubscriptions = subscriptions.filter(s => s.status === "active")
+  const hasSubscriptionAccess = (subscription: Subscription) => {
+    const periodEnd = new Date(subscription.currentPeriodEnd)
+    const periodStillActive = !Number.isNaN(periodEnd.getTime()) && periodEnd > new Date()
+    return subscription.status === "active" || (subscription.status === "cancelled" && periodStillActive)
+  }
+
+  const activeSubscriptions = subscriptions.filter(hasSubscriptionAccess)
   const hasActiveSubscription = activeSubscriptions.length > 0
   const clientPlans = availablePlans.filter(p => p.audience === "CLIENTS")
   const teacherPlans = availablePlans.filter(p => p.audience === "TEACHERS")
+  const selectedPlanPrice = selectedPlan
+    ? selectedInterval === "yearly"
+      ? selectedPlan.yearlyPrice
+      : selectedPlan.monthlyPrice
+    : null
+  const canUseFreeSubscribe = (selectedPlanPrice ?? 0) <= 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1303,7 +1356,13 @@ export default function AccountPage() {
                             <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                               <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                                 {course.thumbnailUrl ? (
-                                  <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover rounded-lg" />
+                                  <Image
+                                    src={course.thumbnailUrl}
+                                    alt={course.title}
+                                    width={64}
+                                    height={64}
+                                    className="w-full h-full object-cover rounded-lg"
+                                  />
                                 ) : (
                                   <Play className="h-6 w-6 text-white" />
                                 )}
@@ -1392,7 +1451,6 @@ export default function AccountPage() {
                         </div>
                         <ClientCommunityChat 
                           planId={sub.plan.id} 
-                          planName={sub.plan.name}
                           subdomain={subdomain}
                         />
                       </div>
@@ -1428,28 +1486,51 @@ export default function AccountPage() {
                             </p>
                           </div>
                         </div>
-                        <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
+                        {sub.status === "cancelled" ? (
+                          <Badge className="bg-amber-100 text-amber-800 border-0">Cancels Soon</Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
+                        )}
                       </div>
                       <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center gap-6 text-sm">
                           <span className="text-gray-600">
-                            <span className="font-medium">Renews:</span> {new Date(sub.currentPeriodEnd).toLocaleDateString()}
+                            <span className="font-medium">{sub.status === "cancelled" ? "Ends:" : "Renews:"}</span>{" "}
+                            {new Date(sub.currentPeriodEnd).toLocaleDateString()}
                           </span>
                           <span className="text-gray-600">
                             <span className="font-medium">Price:</span> ${sub.plan.monthlyPrice}/{sub.interval === "yearly" ? "year" : "month"}
                           </span>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                          onClick={() => {
-                            setSubscriptionToCancel(sub)
-                            setShowCancelModal(true)
-                          }}
-                        >
-                          Cancel
-                        </Button>
+                        {sub.status === "cancelled" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={renewingSubscriptionId === sub.id}
+                            onClick={() => handleRenewSubscription(sub.id)}
+                          >
+                            {renewingSubscriptionId === sub.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Resuming
+                              </>
+                            ) : (
+                              "Resume Auto-Renew"
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                            onClick={() => {
+                              setSubscriptionToCancel(sub)
+                              setShowCancelModal(true)
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                       {sub.plan.features && sub.plan.features.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -1484,7 +1565,7 @@ export default function AccountPage() {
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {clientPlans.map(plan => {
-                      const isSubscribed = subscriptions.some(s => s.plan.id === plan.id && s.status === "active")
+                      const isSubscribed = subscriptions.some(s => s.plan.id === plan.id && hasSubscriptionAccess(s))
                       return (
                         <Card key={plan.id} className={`border-2 shadow-sm hover:shadow-md transition-all ${isSubscribed ? 'border-green-500 bg-green-50/30' : 'border-gray-200 hover:border-violet-300'}`}>
                           <CardContent className="p-6">
@@ -1558,7 +1639,7 @@ export default function AccountPage() {
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {teacherPlans.map(plan => {
-                      const isSubscribed = subscriptions.some(s => s.plan.id === plan.id && s.status === "active")
+                      const isSubscribed = subscriptions.some(s => s.plan.id === plan.id && hasSubscriptionAccess(s))
                       return (
                         <Card key={plan.id} className={`border-2 shadow-sm hover:shadow-md transition-all ${isSubscribed ? 'border-green-500 bg-green-50/30' : 'border-gray-200 hover:border-blue-300'}`}>
                           <CardContent className="p-6">
@@ -1631,7 +1712,13 @@ export default function AccountPage() {
                     <CardContent className="p-0">
                       <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 relative rounded-t-lg">
                         {course.thumbnailUrl ? (
-                          <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover rounded-t-lg" />
+                          <Image
+                            src={course.thumbnailUrl}
+                            alt={course.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="w-full h-full object-cover rounded-t-lg"
+                          />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <BookOpen className="h-12 w-12 text-white/50" />
@@ -1874,12 +1961,12 @@ export default function AccountPage() {
                   onSuccess={handleSubscriptionSuccess}
                   onCancel={handleCancelPayment}
                 />
-              ) : !studio?.stripeEnabled ? (
-                // Free subscription for testing when Stripe not enabled
+              ) : canUseFreeSubscribe ? (
+                // Free subscription path (only for zero-price plans)
                 <div className="space-y-4">
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                    <p className="font-medium">Test Mode</p>
-                    <p>Payments are not enabled. Subscribe for free to test.</p>
+                    <p className="font-medium">Free Plan</p>
+                    <p>This plan is free for the selected billing interval.</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between text-sm">
@@ -1904,7 +1991,7 @@ export default function AccountPage() {
                       ) : (
                         <Zap className="h-4 w-4 mr-2" />
                       )}
-                      Subscribe Free
+                      Start Free Access
                     </Button>
                   </div>
                 </div>

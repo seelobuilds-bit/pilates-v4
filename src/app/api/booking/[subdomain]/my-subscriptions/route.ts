@@ -35,10 +35,14 @@ export async function GET(
     }
 
     // Get client's vault subscriptions
+    const now = new Date()
     const subscriptions = await db.vaultSubscriber.findMany({
       where: {
         clientId: client.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       },
       include: {
         plan: {
@@ -68,7 +72,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch subscriptions" }, { status: 500 })
   }
 }
-
 
 
 

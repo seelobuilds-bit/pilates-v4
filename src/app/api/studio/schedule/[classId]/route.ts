@@ -11,14 +11,15 @@ export async function GET(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   const classSession = await db.classSession.findFirst({
     where: {
       id: classId,
-      studioId: session.user.studioId
+      studioId
     },
     include: {
       classType: true,
@@ -56,9 +57,10 @@ export async function PATCH(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   try {
     const body = await request.json()
@@ -68,7 +70,7 @@ export async function PATCH(
     const existingClass = await db.classSession.findFirst({
       where: {
         id: classId,
-        studioId: session.user.studioId
+        studioId
       },
       include: {
         _count: { select: { bookings: true } }
@@ -122,16 +124,17 @@ export async function DELETE(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   try {
     // Get the class with all details needed for notifications
     const existingClass = await db.classSession.findFirst({
       where: {
         id: classId,
-        studioId: session.user.studioId
+        studioId
       },
       include: {
         studio: { select: { name: true, stripeAccountId: true } },
@@ -230,7 +233,7 @@ export async function DELETE(
     // Send cancellation emails to all affected clients (don't block the response)
     const emailPromises = existingClass.bookings.map(booking => 
       sendSystemTemplateEmail({
-        studioId: session.user.studioId,
+        studioId,
         templateType: "CLASS_CANCELLED_BY_STUDIO",
         to: booking.client.email,
         variables: {
@@ -249,7 +252,7 @@ export async function DELETE(
     // Also notify people on waitlist
     const waitlistPromises = existingClass.waitlists.map(waitlist =>
       sendSystemTemplateEmail({
-        studioId: session.user.studioId,
+        studioId,
         templateType: "CLASS_CANCELLED_BY_STUDIO",
         to: waitlist.client.email,
         variables: {

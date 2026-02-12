@@ -174,7 +174,7 @@ async function main() {
 
     // Create teachers
     const teachers = await Promise.all(
-      teacherNames.slice(0, 3).map(async (name, i) => {
+      teacherNames.slice(0, 3).map(async (name) => {
         const teacherPassword = await bcrypt.hash("teacher123", 10)
         const user = await prisma.user.create({
           data: {

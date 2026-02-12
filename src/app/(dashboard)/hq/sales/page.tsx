@@ -32,8 +32,6 @@ import {
   Building2,
   Clock,
   Target,
-  TrendingUp,
-  DollarSign,
   Calendar,
   ChevronRight,
   Loader2,
@@ -42,9 +40,6 @@ import {
   Video,
   Bell,
   UserPlus,
-  MessageSquare,
-  ArrowRight,
-  ExternalLink
 } from "lucide-react"
 import { PipelineBoard } from "@/components/sales/pipeline-board"
 
@@ -829,7 +824,7 @@ export default function HQSalesCRMPage() {
                         </div>
                         {demo.interests && (
                           <p className="text-sm text-gray-500 mt-3 italic border-l-2 border-purple-200 pl-3">
-                            "{demo.interests}"
+                            &quot;{demo.interests}&quot;
                           </p>
                         )}
                         <div className="flex items-center justify-between mt-4 pt-3 border-t">
@@ -1283,7 +1278,7 @@ Jane Smith, jane@studio.com, 555-5678, Core Fitness"
                   <p className="text-sm text-gray-500 mt-2">Studio Size: {showAssignDemo.studioSize}</p>
                 )}
                 {showAssignDemo.interests && (
-                  <p className="text-sm text-gray-600 mt-2 italic">"{showAssignDemo.interests}"</p>
+                  <p className="text-sm text-gray-600 mt-2 italic">&quot;{showAssignDemo.interests}&quot;</p>
                 )}
               </div>
               <div>
@@ -1318,9 +1313,6 @@ Jane Smith, jane@studio.com, 555-5678, Core Fitness"
     </div>
   )
 }
-
-
-
 
 
 

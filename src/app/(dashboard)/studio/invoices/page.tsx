@@ -21,8 +21,7 @@ import {
   User,
   Calendar,
   CreditCard,
-  Banknote,
-  AlertCircle
+  Banknote
 } from "lucide-react"
 import Link from "next/link"
 
@@ -681,7 +680,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

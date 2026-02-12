@@ -1,6 +1,32 @@
-import { PrismaClient } from "@prisma/client"
+import { FlowTriggerType, MessageDirection, PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
+
+interface FlowSeed {
+  name: string
+  description: string
+  triggerType: FlowTriggerType
+  triggerKeywords: string[]
+  responseMessage: string
+  bookingMessage?: string
+  accountId: string
+  isActive: boolean
+  totalTriggered: number
+  totalResponded: number
+  totalBooked: number
+}
+
+interface ConversationMessageSeed {
+  direction: MessageDirection
+  content: string
+  isAutomated?: boolean
+}
+
+interface ConversationSeed {
+  platformUserId: string
+  platformUsername: string
+  messages: ConversationMessageSeed[]
+}
 
 async function seedSocialMedia() {
   console.log("🌱 Seeding Social Media data...")
@@ -237,7 +263,7 @@ async function seedSocialMedia() {
 
     for (const mod of cat.modules) {
       const moduleData = mod as Record<string, unknown>
-      const module = await prisma.socialTrainingModule.create({
+      const trainingModule = await prisma.socialTrainingModule.create({
         data: {
           categoryId: category.id,
           title: mod.title,
@@ -260,7 +286,7 @@ async function seedSocialMedia() {
       if (homework) {
         await prisma.socialTrainingHomework.create({
           data: {
-            moduleId: module.id,
+            moduleId: trainingModule.id,
             title: homework.title,
             description: homework.description,
             requirements: homework.requirements,
@@ -367,7 +393,7 @@ async function seedSocialMedia() {
   console.log("Created studio TikTok account")
 
   // Create automation flows
-  const flows = [
+  const flows: FlowSeed[] = [
     {
       name: "Book Now Auto-Reply",
       description: "Auto-respond when someone comments 'book', 'info', or 'interested'",
@@ -424,7 +450,7 @@ async function seedSocialMedia() {
       data: {
         name: flowData.name,
         description: flowData.description,
-        triggerType: flowData.triggerType as any,
+        triggerType: flowData.triggerType,
         triggerKeywords: flowData.triggerKeywords,
         responseMessage: flowData.responseMessage,
         bookingMessage: flowData.bookingMessage || null,
@@ -461,7 +487,7 @@ async function seedSocialMedia() {
   // TEST SOCIAL MESSAGES (DM Inbox)
   // ==========================================
 
-  const conversations = [
+  const conversations: ConversationSeed[] = [
     {
       platformUserId: "ig_user_12345",
       platformUsername: "yoga_sarah",
@@ -502,7 +528,7 @@ async function seedSocialMedia() {
           platform,
           platformUserId: conv.platformUserId,
           platformUsername: conv.platformUsername,
-          direction: msg.direction as any,
+          direction: msg.direction,
           content: msg.content,
           isRead: i < conv.messages.length - 1, // Last message unread
           isAutomated: msg.isAutomated || false,
@@ -520,7 +546,7 @@ async function seedSocialMedia() {
 
   if (teacher) {
     // Create teacher's own Instagram account
-    const teacherAccount = await prisma.socialMediaAccount.create({
+    await prisma.socialMediaAccount.create({
       data: {
         platform: "INSTAGRAM",
         platformUserId: "ig_teacher_sarah_789",
@@ -540,10 +566,10 @@ async function seedSocialMedia() {
       take: 3 // First 3 modules
     })
 
-    for (const module of allModules) {
+    for (const trainingModule of allModules) {
       await prisma.socialTrainingProgress.create({
         data: {
-          moduleId: module.id,
+          moduleId: trainingModule.id,
           teacherId: teacher.id,
           isCompleted: true,
           completedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in last week
@@ -587,11 +613,6 @@ seedSocialMedia()
   .finally(async () => {
     await prisma.$disconnect()
   })
-
-
-
-
-
 
 
 

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -25,9 +25,10 @@ export async function GET(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    const bookings = await db.booking.findMany({
+    const allBookings = await db.booking.findMany({
       where: {
-        clientId: client.id
+        clientId: client.id,
+        studioId: session.user.studioId
       },
       include: {
         classSession: {
@@ -38,13 +39,149 @@ export async function GET(
           }
         }
       },
-      orderBy: { createdAt: "desc" },
-      take: 20
+      orderBy: { createdAt: "desc" }
     })
+
+    const recentBookings = allBookings.slice(0, 20)
+
+    const messages = await db.message.findMany({
+      where: {
+        studioId: session.user.studioId,
+        clientId: client.id
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        channel: true,
+        direction: true,
+        subject: true,
+        body: true,
+        createdAt: true
+      }
+    })
+
+    const nonCancelledBookings = allBookings.filter((booking) => booking.status !== "CANCELLED")
+    const completedClasses = allBookings.filter((booking) => booking.status === "COMPLETED").length
+    const cancelledClasses = allBookings.filter((booking) => booking.status === "CANCELLED").length
+
+    const totalSpent = nonCancelledBookings.reduce((sum, booking) => {
+      const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+      return sum + amount
+    }, 0)
+
+    const totalBookings = allBookings.length
+    const cancelRate = totalBookings > 0 ? Math.round((cancelledClasses / totalBookings) * 1000) / 10 : 0
+
+    const classCounts = new Map<string, number>()
+    const teacherCounts = new Map<string, number>()
+    const locationCounts = new Map<string, number>()
+
+    for (const booking of nonCancelledBookings) {
+      const className = booking.classSession.classType.name
+      classCounts.set(className, (classCounts.get(className) || 0) + 1)
+
+      const teacherName = `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`.trim()
+      teacherCounts.set(teacherName, (teacherCounts.get(teacherName) || 0) + 1)
+
+      const locationName = booking.classSession.location.name
+      locationCounts.set(locationName, (locationCounts.get(locationName) || 0) + 1)
+    }
+
+    const classBreakdown = Array.from(classCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+
+    const teacherBreakdown = Array.from(teacherCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+
+    const locationBreakdown = Array.from(locationCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+
+    const oldestBookingDate = allBookings[allBookings.length - 1]?.createdAt
+    let avgBookingsPerMonth = 0
+    if (oldestBookingDate && totalBookings > 0) {
+      const now = new Date()
+      const monthDiff =
+        (now.getFullYear() - oldestBookingDate.getFullYear()) * 12 +
+        (now.getMonth() - oldestBookingDate.getMonth()) +
+        1
+      const activeMonths = Math.max(1, monthDiff)
+      avgBookingsPerMonth = Math.round((totalBookings / activeMonths) * 10) / 10
+    }
+
+    const now = new Date()
+    const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        month: date.toLocaleDateString("en-US", { month: "short" }),
+        count: 0
+      }
+    })
+    const bucketLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+
+    for (const booking of allBookings) {
+      const bookingDate = new Date(booking.createdAt)
+      const key = `${bookingDate.getFullYear()}-${bookingDate.getMonth()}`
+      const bucket = bucketLookup.get(key)
+      if (bucket) {
+        bucket.count += 1
+      }
+    }
+
+    const activityTimeline = allBookings.slice(0, 10).map((booking) => {
+      let action = "Updated"
+      if (booking.status === "CONFIRMED") action = "Booked"
+      if (booking.status === "COMPLETED") action = "Completed"
+      if (booking.status === "CANCELLED") action = "Cancelled"
+      if (booking.status === "NO_SHOW") action = "No Show"
+      if (booking.status === "PENDING") action = "Pending"
+
+      const classDate = new Date(booking.classSession.startTime)
+      return {
+        date: new Date(booking.createdAt).toLocaleDateString(),
+        action,
+        details: `${booking.classSession.classType.name} - ${classDate.toLocaleDateString()} ${classDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      }
+    })
+
+    const communications = messages.map((message) => ({
+      id: message.id,
+      type: message.channel === "SMS" ? "sms" : "email",
+      direction: message.direction === "INBOUND" ? "inbound" : "outbound",
+      subject: message.subject || undefined,
+      content: message.body,
+      timestamp: message.createdAt.toISOString()
+    }))
+
+    const stats = {
+      totalSpent: Math.round(totalSpent * 100) / 100,
+      totalBookings,
+      completedClasses,
+      cancelRate,
+      avgBookingsPerMonth,
+      membershipType:
+        client.credits > 0
+          ? `${client.credits} credit${client.credits === 1 ? "" : "s"} available`
+          : "No active package",
+      favoriteClass: classBreakdown[0]?.name || "No data yet",
+      favoriteTeacher: teacherBreakdown[0]?.name || "No data yet",
+      favoriteLocation: locationBreakdown[0]?.name || "No data yet",
+      classBreakdown,
+      teacherBreakdown,
+      locationBreakdown,
+      monthlyBookings: monthlyBuckets.map(({ month, count }) => ({ month, count })),
+      activityTimeline
+    }
 
     return NextResponse.json({
       client,
-      bookings
+      bookings: recentBookings,
+      stats,
+      communications
     })
   } catch (error) {
     console.error("Error fetching client:", error)
@@ -58,7 +195,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -101,7 +238,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

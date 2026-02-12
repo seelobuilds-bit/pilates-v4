@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { SubscriptionChat } from "@/components/vault/subscription-chat"
 import { MessageSquare, Loader2, Users, GraduationCap, Home, Sparkles } from "lucide-react"
 
@@ -204,7 +202,6 @@ export default function TeacherCommunityPage() {
     </div>
   )
 }
-
 
 
 

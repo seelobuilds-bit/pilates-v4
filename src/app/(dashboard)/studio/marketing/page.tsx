@@ -168,7 +168,7 @@ const defaultSegments = [
 export default function MarketingPage() {
   const [automations, setAutomations] = useState<Automation[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [templates, setTemplates] = useState<Template[]>([])
+  const [templates] = useState<Template[]>([])
   const [activeTab, setActiveTab] = useState("automations")
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)

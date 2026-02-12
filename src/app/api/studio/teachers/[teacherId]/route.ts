@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -50,35 +50,132 @@ export async function GET(
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
     }
 
-    // Calculate stats
-    const totalBookings = await db.booking.count({
+    const allClassSessions = await db.classSession.findMany({
+      where: {
+        teacherId: teacher.id
+      },
+      include: {
+        classType: { select: { name: true } },
+        location: { select: { name: true } },
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "desc" }
+    })
+
+    const allBookings = await db.booking.findMany({
       where: {
         classSession: {
           teacherId: teacher.id
         }
-      }
+      },
+      include: {
+        classSession: {
+          include: {
+            classType: { select: { name: true, price: true } },
+            location: { select: { name: true } }
+          }
+        },
+        client: {
+          select: { firstName: true, lastName: true }
+        }
+      },
+      orderBy: { createdAt: "desc" }
     })
 
     const thisMonthStart = new Date()
     thisMonthStart.setDate(1)
     thisMonthStart.setHours(0, 0, 0, 0)
 
-    const classesThisMonth = await db.classSession.count({
-      where: {
-        teacherId: teacher.id,
-        startTime: { gte: thisMonthStart }
+    const classesThisMonth = allClassSessions.filter(
+      (session) => new Date(session.startTime) >= thisMonthStart
+    ).length
+
+    const uniqueStudents = new Set(allBookings.map((booking) => booking.clientId))
+    const nonCancelledBookings = allBookings.filter((booking) => booking.status !== "CANCELLED")
+    const completedBookings = allBookings.filter((booking) => booking.status === "COMPLETED").length
+
+    const revenue = nonCancelledBookings.reduce((sum, booking) => {
+      const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+      return sum + amount
+    }, 0)
+
+    const avgClassSize =
+      allClassSessions.length > 0
+        ? Math.round((nonCancelledBookings.length / allClassSessions.length) * 10) / 10
+        : 0
+
+    const completionRate =
+      nonCancelledBookings.length > 0
+        ? Math.round((completedBookings / nonCancelledBookings.length) * 100)
+        : 0
+
+    const clientBookingCounts = new Map<string, number>()
+    for (const booking of nonCancelledBookings) {
+      const name = `${booking.client.firstName} ${booking.client.lastName}`.trim()
+      clientBookingCounts.set(name, (clientBookingCounts.get(name) || 0) + 1)
+    }
+
+    const repeatClientCount = Array.from(clientBookingCounts.values()).filter((count) => count > 1).length
+    const retentionRate =
+      clientBookingCounts.size > 0 ? Math.round((repeatClientCount / clientBookingCounts.size) * 100) : 0
+
+    const classCounts = new Map<string, number>()
+    const locationCounts = new Map<string, number>()
+    for (const session of allClassSessions) {
+      classCounts.set(session.classType.name, (classCounts.get(session.classType.name) || 0) + 1)
+      locationCounts.set(session.location.name, (locationCounts.get(session.location.name) || 0) + 1)
+    }
+
+    const now = new Date()
+    const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        month: date.toLocaleDateString("en-US", { month: "short" }),
+        count: 0
       }
     })
+    const monthLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+    for (const session of allClassSessions) {
+      const date = new Date(session.startTime)
+      const key = `${date.getFullYear()}-${date.getMonth()}`
+      const bucket = monthLookup.get(key)
+      if (bucket) {
+        bucket.count += 1
+      }
+    }
+
+    const topClients = Array.from(clientBookingCounts.entries())
+      .map(([name, bookings]) => ({ name, bookings }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 5)
+
+    const extendedStats = {
+      revenue: Math.round(revenue * 100) / 100,
+      retentionRate,
+      avgClassSize,
+      completionRate,
+      classBreakdown: Array.from(classCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count),
+      locationBreakdown: Array.from(locationCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count),
+      monthlyClasses: monthlyBuckets.map(({ month, count }) => ({ month, count })),
+      recentReviews: [] as Array<{ clientName: string; rating: number; comment: string; date: string }>,
+      topClients
+    }
 
     return NextResponse.json({
       ...teacher,
       upcomingClasses: teacher.classSessions,
       stats: {
         totalClasses: teacher._count.classSessions,
-        totalStudents: totalBookings,
-        averageRating: 4.8, // Placeholder - would need a ratings table
+        totalStudents: uniqueStudents.size,
+        averageRating: 0,
         thisMonth: classesThisMonth
-      }
+      },
+      extendedStats
     })
   } catch (error) {
     console.error("Error fetching teacher:", error)
@@ -92,7 +189,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -143,7 +240,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession()
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -213,7 +310,7 @@ export async function DELETE(
       
       // Delete training requests
       await tx.trainingRequest.deleteMany({
-        where: { teacherId }
+        where: { requestedById: teacherId }
       }).catch(() => {})
       
       // Delete social media accounts if they exist

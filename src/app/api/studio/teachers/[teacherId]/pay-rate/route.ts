@@ -10,7 +10,7 @@ export async function GET(
   const session = await getSession()
   const { teacherId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -51,7 +51,7 @@ export async function PUT(
   const session = await getSession()
   const { teacherId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

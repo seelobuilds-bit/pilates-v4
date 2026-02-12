@@ -35,21 +35,25 @@ export async function GET(
     }
 
     // Check if client has active subscription to this plan
+    const now = new Date()
     const subscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: decoded.clientId,
         planId,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (!subscription) {
-      return NextResponse.json({ error: "No active subscription to this plan" }, { status: 403 })
+      return NextResponse.json({ error: "No active subscription access to this plan" }, { status: 403 })
     }
 
     // Get the plan and chat
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: {
         communityChat: {
           include: {
@@ -128,21 +132,25 @@ export async function POST(
     }
 
     // Check if client has active subscription to this plan
+    const now = new Date()
     const subscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: decoded.clientId,
         planId,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (!subscription) {
-      return NextResponse.json({ error: "No active subscription to this plan" }, { status: 403 })
+      return NextResponse.json({ error: "No active subscription access to this plan" }, { status: 403 })
     }
 
     // Get the plan and chat
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: { communityChat: true }
     })
 
@@ -197,8 +205,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-
-
 
 
 

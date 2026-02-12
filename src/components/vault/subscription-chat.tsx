@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -44,21 +44,11 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
   const [chatEnabled, setChatEnabled] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchChat()
-    const interval = setInterval(fetchChat, 5000)
-    return () => clearInterval(interval)
-  }, [planId])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  function scrollToBottom() {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [])
 
-  async function fetchChat() {
+  const fetchChat = useCallback(async () => {
     console.log("[SubscriptionChat] Fetching chat for planId:", planId)
     try {
       const res = await fetch(`/api/vault/subscription/chat?planId=${planId}`)
@@ -77,7 +67,23 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
       console.error("[SubscriptionChat] Failed to fetch chat:", err)
     }
     setLoading(false)
-  }
+  }, [planId])
+
+  useEffect(() => {
+    const poll = () => {
+      void fetchChat()
+    }
+    const init = setTimeout(poll, 0)
+    const interval = setInterval(poll, 5000)
+    return () => {
+      clearTimeout(init)
+      clearInterval(interval)
+    }
+  }, [fetchChat])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -259,9 +265,6 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
     </Card>
   )
 }
-
-
-
 
 
 

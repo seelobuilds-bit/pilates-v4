@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import nodemailer from "nodemailer"
+import { sendEmail, sendSMS } from "@/lib/communications"
 
 export async function POST(request: Request) {
   const session = await getSession()
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { clientIds, channel, subject, message, classId } = await request.json()
+    const { clientIds, channel, subject, message } = await request.json()
 
     if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
       return NextResponse.json({ error: "No recipients specified" }, { status: 400 })
@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     const teacher = await db.teacher.findUnique({
       where: { id: session.user.teacherId },
       include: {
-        studio: true,
+        studio: {
+          include: {
+            emailConfig: true,
+            smsConfig: true,
+          },
+        },
         user: {
           select: {
             firstName: true,
@@ -77,56 +82,28 @@ export async function POST(request: Request) {
     }
 
     if (channel === "EMAIL") {
-      // Get email config from studio settings
-      const emailConfig = studio.settings as { email?: { smtpHost?: string; smtpPort?: number; smtpUser?: string; smtpPassword?: string; fromEmail?: string; fromName?: string } } | null
-      
-      if (!emailConfig?.email?.smtpHost || !emailConfig?.email?.smtpUser) {
+      if (!studio.emailConfig) {
         return NextResponse.json({ error: "Email not configured for this studio" }, { status: 400 })
       }
 
-      const transporter = nodemailer.createTransport({
-        host: emailConfig.email.smtpHost,
-        port: emailConfig.email.smtpPort || 587,
-        secure: (emailConfig.email.smtpPort || 587) === 465,
-        auth: {
-          user: emailConfig.email.smtpUser,
-          pass: emailConfig.email.smtpPassword
-        }
-      })
-
       for (const client of clients) {
         try {
-          await transporter.sendMail({
-            from: `"${teacherName} - ${studio.name}" <${emailConfig.email.fromEmail || emailConfig.email.smtpUser}>`,
+          const result = await sendEmail(studio.id, {
             to: client.email,
+            toName: `${client.firstName} ${client.lastName}`,
             subject: subject || `Message from ${teacherName}`,
-            text: message,
-            html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <p>${message.replace(/\n/g, '<br>')}</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="color: #666; font-size: 12px;">From ${teacherName} at ${studio.name}</p>
-            </div>`
+            body: message,
+            clientId: client.id,
           })
 
-          // Log message (shared inbox)
-          await db.message.create({
-            data: {
-              channel: "EMAIL",
-              direction: "OUTBOUND",
-              status: "SENT",
-              subject,
-              body: message,
-              fromAddress: emailConfig.email.fromEmail || emailConfig.email.smtpUser,
-              toAddress: client.email,
-              fromName: teacherName,
-              toName: `${client.firstName} ${client.lastName}`,
-              sentAt: new Date(),
-              studioId: studio.id,
-              clientId: client.id
-            }
-          })
-
-          results.sent++
+          if (result.success) {
+            results.sent++
+          } else {
+            results.failed++
+            results.errors.push(
+              `Failed to send to ${client.firstName} ${client.lastName}: ${result.error || "Unknown error"}`
+            )
+          }
         } catch (error) {
           console.error(`Failed to send email to ${client.email}:`, error)
           results.failed++
@@ -134,14 +111,9 @@ export async function POST(request: Request) {
         }
       }
     } else if (channel === "SMS") {
-      // Get SMS config
-      const smsConfig = studio.settings as { sms?: { twilioAccountSid?: string; twilioAuthToken?: string; twilioPhoneNumber?: string } } | null
-      
-      if (!smsConfig?.sms?.twilioAccountSid || !smsConfig?.sms?.twilioPhoneNumber) {
+      if (!studio.smsConfig?.fromNumber) {
         return NextResponse.json({ error: "SMS not configured for this studio" }, { status: 400 })
       }
-
-      const twilio = require('twilio')(smsConfig.sms.twilioAccountSid, smsConfig.sms.twilioAuthToken)
 
       for (const client of clients) {
         if (!client.phone) {
@@ -151,30 +123,22 @@ export async function POST(request: Request) {
         }
 
         try {
-          await twilio.messages.create({
+          const result = await sendSMS(studio.id, {
+            to: client.phone,
+            toName: `${client.firstName} ${client.lastName}`,
             body: `${message}\n\n- ${teacherName}`,
-            from: smsConfig.sms.twilioPhoneNumber,
-            to: client.phone
+            from: studio.smsConfig.fromNumber,
+            clientId: client.id,
           })
 
-          // Log message (shared inbox)
-          await db.message.create({
-            data: {
-              channel: "SMS",
-              direction: "OUTBOUND",
-              status: "SENT",
-              body: message,
-              fromAddress: smsConfig.sms.twilioPhoneNumber,
-              toAddress: client.phone,
-              fromName: teacherName,
-              toName: `${client.firstName} ${client.lastName}`,
-              sentAt: new Date(),
-              studioId: studio.id,
-              clientId: client.id
-            }
-          })
-
-          results.sent++
+          if (result.success) {
+            results.sent++
+          } else {
+            results.failed++
+            results.errors.push(
+              `Failed to send to ${client.firstName} ${client.lastName}: ${result.error || "Unknown error"}`
+            )
+          }
         } catch (error) {
           console.error(`Failed to send SMS to ${client.phone}:`, error)
           results.failed++
@@ -196,7 +160,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send messages" }, { status: 500 })
   }
 }
-
 
 
 

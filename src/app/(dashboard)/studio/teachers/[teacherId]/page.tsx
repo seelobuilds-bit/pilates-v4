@@ -34,7 +34,6 @@ import {
   CheckCircle,
   AlertCircle,
   Eye,
-  Plus,
   Trash2
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -79,6 +78,18 @@ interface TeacherStats {
   monthlyClasses: { month: string; count: number }[]
   recentReviews: { clientName: string; rating: number; comment: string; date: string }[]
   topClients: { name: string; bookings: number }[]
+}
+
+const emptyTeacherStats: TeacherStats = {
+  revenue: 0,
+  retentionRate: 0,
+  avgClassSize: 0,
+  completionRate: 0,
+  classBreakdown: [],
+  locationBreakdown: [],
+  monthlyClasses: [],
+  recentReviews: [],
+  topClients: []
 }
 
 interface BlockedTime {
@@ -138,43 +149,8 @@ export default function TeacherDetailPage({
           const data = await res.json()
           setTeacher(data)
           setSpecialtiesInput(data.specialties?.join(", ") || "")
+          setExtendedStats(data.extendedStats || emptyTeacherStats)
         }
-
-        // Mock extended stats
-        setExtendedStats({
-          revenue: 12450,
-          retentionRate: 87,
-          avgClassSize: 7.8,
-          completionRate: 96,
-          classBreakdown: [
-            { name: "Reformer Pilates", count: 45 },
-            { name: "Mat Pilates", count: 32 },
-            { name: "Tower Class", count: 12 }
-          ],
-          locationBreakdown: [
-            { name: "Downtown Studio", count: 56 },
-            { name: "Westside Location", count: 33 }
-          ],
-          monthlyClasses: [
-            { month: "Jul", count: 12 },
-            { month: "Aug", count: 15 },
-            { month: "Sep", count: 14 },
-            { month: "Oct", count: 18 },
-            { month: "Nov", count: 16 },
-            { month: "Dec", count: 14 }
-          ],
-          recentReviews: [
-            { clientName: "Emma W.", rating: 5, comment: "Amazing class! Sarah is so attentive and helpful.", date: "2 days ago" },
-            { clientName: "John D.", rating: 5, comment: "Best instructor I've had. Really knows her stuff.", date: "1 week ago" },
-            { clientName: "Lisa M.", rating: 4, comment: "Great energy and clear instructions.", date: "2 weeks ago" }
-          ],
-          topClients: [
-            { name: "Emma Wilson", bookings: 24 },
-            { name: "John Davis", bookings: 18 },
-            { name: "Lisa Martinez", bookings: 15 },
-            { name: "Alex Brown", bookings: 12 }
-          ]
-        })
       } catch (error) {
         console.error("Failed to fetch teacher:", error)
       }
@@ -317,6 +293,13 @@ export default function TeacherDetailPage({
     )
   }
 
+  const safeExtendedStats = extendedStats || emptyTeacherStats
+  const hasTeacherReportData =
+    safeExtendedStats.revenue > 0 ||
+    safeExtendedStats.classBreakdown.length > 0 ||
+    safeExtendedStats.locationBreakdown.length > 0 ||
+    safeExtendedStats.monthlyClasses.some((month) => month.count > 0)
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -435,7 +418,9 @@ export default function TeacherDetailPage({
                 <Star className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{teacher.stats.averageRating.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {teacher.stats.averageRating > 0 ? teacher.stats.averageRating.toFixed(1) : "N/A"}
+                </p>
                 <p className="text-sm text-gray-500">Avg. Rating</p>
               </div>
             </div>
@@ -449,7 +434,7 @@ export default function TeacherDetailPage({
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">${extendedStats?.revenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${safeExtendedStats.revenue.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">Revenue Generated</p>
               </div>
             </div>
@@ -480,7 +465,7 @@ export default function TeacherDetailPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
-          {extendedStats && (
+          {extendedStats && hasTeacherReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Performance Metrics */}
               <Card className="border-0 shadow-sm">
@@ -491,15 +476,15 @@ export default function TeacherDetailPage({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-emerald-50 rounded-xl text-center">
-                      <p className="text-2xl font-bold text-emerald-600">{extendedStats.retentionRate}%</p>
+                      <p className="text-2xl font-bold text-emerald-600">{safeExtendedStats.retentionRate}%</p>
                       <p className="text-sm text-emerald-700">Client Retention</p>
                     </div>
                     <div className="p-4 bg-blue-50 rounded-xl text-center">
-                      <p className="text-2xl font-bold text-blue-600">{extendedStats.avgClassSize}</p>
+                      <p className="text-2xl font-bold text-blue-600">{safeExtendedStats.avgClassSize}</p>
                       <p className="text-sm text-blue-700">Avg. Class Size</p>
                     </div>
                     <div className="p-4 bg-violet-50 rounded-xl text-center">
-                      <p className="text-2xl font-bold text-violet-600">{extendedStats.completionRate}%</p>
+                      <p className="text-2xl font-bold text-violet-600">{safeExtendedStats.completionRate}%</p>
                       <p className="text-sm text-violet-700">Completion Rate</p>
                     </div>
                     <div className="p-4 bg-amber-50 rounded-xl text-center">
@@ -518,8 +503,8 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Classes Taught</h3>
                   </div>
                   <div className="space-y-3">
-                    {extendedStats.classBreakdown.map((cls, i) => {
-                      const total = extendedStats.classBreakdown.reduce((a, c) => a + c.count, 0)
+                    {safeExtendedStats.classBreakdown.map((cls, i) => {
+                      const total = safeExtendedStats.classBreakdown.reduce((a, c) => a + c.count, 0)
                       const pct = Math.round((cls.count / total) * 100)
                       return (
                         <div key={i}>
@@ -548,8 +533,8 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Location Split</h3>
                   </div>
                   <div className="space-y-3">
-                    {extendedStats.locationBreakdown.map((loc, i) => {
-                      const total = extendedStats.locationBreakdown.reduce((a, l) => a + l.count, 0)
+                    {safeExtendedStats.locationBreakdown.map((loc, i) => {
+                      const total = safeExtendedStats.locationBreakdown.reduce((a, l) => a + l.count, 0)
                       const pct = Math.round((loc.count / total) * 100)
                       return (
                         <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -578,7 +563,7 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Top Clients</h3>
                   </div>
                   <div className="space-y-3">
-                    {extendedStats.topClients.map((client, i) => (
+                    {safeExtendedStats.topClients.map((client, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
@@ -601,7 +586,7 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Recent Reviews</h3>
                   </div>
                   <div className="space-y-4">
-                    {extendedStats.recentReviews.map((review, i) => (
+                    {safeExtendedStats.recentReviews.map((review, i) => (
                       <div key={i} className="p-4 bg-gray-50 rounded-xl">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -632,8 +617,8 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Classes Over Time</h3>
                   </div>
                   <div className="flex items-end justify-between h-32 gap-4">
-                    {extendedStats.monthlyClasses.map((month, i) => {
-                      const maxCount = Math.max(...extendedStats.monthlyClasses.map(m => m.count))
+                    {safeExtendedStats.monthlyClasses.map((month, i) => {
+                      const maxCount = Math.max(...safeExtendedStats.monthlyClasses.map(m => m.count))
                       const height = (month.count / maxCount) * 100
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -650,6 +635,17 @@ export default function TeacherDetailPage({
                 </CardContent>
               </Card>
             </div>
+          )}
+          {(!extendedStats || !hasTeacherReportData) && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-10 text-center">
+                <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <p className="text-gray-500">
+                  This teacher has no tracked class activity yet, so reporting is empty.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 

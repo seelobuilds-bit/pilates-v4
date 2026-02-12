@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,6 @@ import { Lock, Loader2, CheckCircle, AlertCircle, ArrowRight } from "lucide-reac
 
 function SetupAccountForm() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const token = searchParams.get("token")
   
   const [password, setPassword] = useState("")
@@ -51,7 +50,7 @@ function SetupAccountForm() {
       } else {
         setError(data.error || "Failed to set up account")
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
@@ -169,4 +168,3 @@ export default function SetupAccountPage() {
     </Suspense>
   )
 }
-

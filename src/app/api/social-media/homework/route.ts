@@ -14,7 +14,7 @@ function getUserIdentifier(session: { user?: { teacherId?: string; id?: string; 
 }
 
 // GET - Fetch homework submissions (works for both teachers and studio owners)
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getSession()
   const userIdent = getUserIdentifier(session as { user?: { teacherId?: string; id?: string; role?: string } })
 
@@ -451,7 +451,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to process homework" }, { status: 500 })
   }
 }
-
 
 
 

@@ -6,7 +6,7 @@ import { getSession } from "@/lib/session"
 export async function GET(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

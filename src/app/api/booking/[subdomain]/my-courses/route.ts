@@ -35,10 +35,14 @@ export async function GET(
     }
 
     // Get client's active subscriptions to determine which courses they have access to
+    const now = new Date()
     const subscriptions = await db.vaultSubscriber.findMany({
       where: {
         clientId: client.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       },
       include: {
         plan: true
@@ -113,7 +117,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch courses" }, { status: 500 })
   }
 }
-
 
 
 

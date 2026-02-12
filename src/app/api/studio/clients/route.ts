@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs"
 export async function GET() {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
