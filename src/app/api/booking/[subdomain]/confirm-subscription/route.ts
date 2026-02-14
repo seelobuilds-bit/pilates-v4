@@ -10,8 +10,6 @@ export async function POST(
 ) {
   try {
     const { subdomain } = await params
-    const body = await request.json()
-    const { paymentIntentId, paymentId } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -22,7 +20,7 @@ export async function POST(
       },
     })
 
-    if (!studio || !studio.stripeAccountId) {
+    if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
@@ -34,6 +32,17 @@ export async function POST(
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    if (!studio.stripeAccountId) {
+      return NextResponse.json({ error: "Studio payment setup incomplete" }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { paymentIntentId, paymentId } = body
+
+    if (!paymentIntentId || !paymentId) {
+      return NextResponse.json({ error: "paymentIntentId and paymentId are required" }, { status: 400 })
     }
 
     const stripe = getStripe()
@@ -190,7 +199,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm subscription" }, { status: 500 })
   }
 }
-
 
 
 

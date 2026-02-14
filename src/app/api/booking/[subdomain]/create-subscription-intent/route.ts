@@ -10,8 +10,6 @@ export async function POST(
 ) {
   try {
     const { subdomain } = await params
-    const body = await request.json()
-    const { planId, interval } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -27,12 +25,6 @@ export async function POST(
 
     if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
-    }
-
-    if (!studio.stripeAccountId || !studio.stripeChargesEnabled) {
-      return NextResponse.json({ 
-        error: "This studio has not set up payments yet" 
-      }, { status: 400 })
     }
 
     // Authenticate client
@@ -53,8 +45,17 @@ export async function POST(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
+    const body = await request.json()
+    const { planId, interval } = body
+
     if (interval !== "monthly" && interval !== "yearly") {
       return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 })
+    }
+
+    if (!studio.stripeAccountId || !studio.stripeChargesEnabled) {
+      return NextResponse.json({
+        error: "This studio has not set up payments yet"
+      }, { status: 400 })
     }
 
     // Get plan
@@ -163,7 +164,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
 
 
 

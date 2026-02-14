@@ -118,6 +118,11 @@ export default function ClassFlowsPage() {
   const pdfInputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
+  function isUploadedAsset(url: string | null | undefined): boolean {
+    if (!url) return false
+    return url.startsWith("/uploads") || url.startsWith("http://") || url.startsWith("https://")
+  }
+
   async function handleFileUpload(file: File, type: "video" | "pdf" | "thumbnail") {
     const formData = new FormData()
     formData.append("file", file)
@@ -786,7 +791,7 @@ export default function ClassFlowsPage() {
                             onChange={onVideoFileChange}
                             className="hidden"
                           />
-                          {newContent.videoUrl && newContent.videoUrl.startsWith("/uploads") ? (
+                          {isUploadedAsset(newContent.videoUrl) ? (
                             <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg">
                               <Video className="h-5 w-5 text-emerald-600" />
                               <div className="flex-1 min-w-0">
@@ -819,7 +824,7 @@ export default function ClassFlowsPage() {
                                 <div className="flex flex-col items-center">
                                   <Upload className="h-6 w-6 mb-2" />
                                   <span>Click to upload video</span>
-                                  <span className="text-xs text-gray-400">MP4, WebM, MOV (max 500MB)</span>
+                                  <span className="text-xs text-gray-400">MP4, WebM, MOV (max 50MB)</span>
                                 </div>
                               )}
                             </Button>
@@ -872,7 +877,7 @@ export default function ClassFlowsPage() {
                             onChange={onPdfFileChange}
                             className="hidden"
                           />
-                          {newContent.pdfUrl && newContent.pdfUrl.startsWith("/uploads") ? (
+                          {isUploadedAsset(newContent.pdfUrl) ? (
                             <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
                               <FileText className="h-5 w-5 text-red-600" />
                               <div className="flex-1 min-w-0">
@@ -905,7 +910,7 @@ export default function ClassFlowsPage() {
                                 <div className="flex flex-col items-center">
                                   <File className="h-6 w-6 mb-2" />
                                   <span>Click to upload PDF</span>
-                                  <span className="text-xs text-gray-400">PDF files (max 50MB)</span>
+                                  <span className="text-xs text-gray-400">PDF files (max 10MB)</span>
                                 </div>
                               )}
                             </Button>
@@ -934,12 +939,10 @@ export default function ClassFlowsPage() {
                       />
                       {newContent.thumbnailUrl ? (
                         <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                          {newContent.thumbnailUrl.startsWith("/uploads") ? (
-                            <Image
+                          {isUploadedAsset(newContent.thumbnailUrl) ? (
+                            <img
                               src={newContent.thumbnailUrl}
                               alt="Thumbnail"
-                              width={64}
-                              height={40}
                               className="w-16 h-10 object-cover rounded"
                             />
                           ) : (
@@ -947,7 +950,7 @@ export default function ClassFlowsPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-blue-700">
-                              {newContent.thumbnailUrl.startsWith("/uploads") ? "Thumbnail uploaded" : "Thumbnail URL set"}
+                              {isUploadedAsset(newContent.thumbnailUrl) ? "Thumbnail uploaded" : "Thumbnail URL set"}
                             </p>
                             <p className="text-xs text-blue-600 truncate">{newContent.thumbnailUrl}</p>
                           </div>
@@ -1032,7 +1035,6 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

@@ -27,6 +27,44 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - name: Select Database Env By Branch
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            DB_URL="${{ secrets.SUPABASE_PROD_DATABASE_URL }}"
+            DIRECT_DB_URL="${{ secrets.SUPABASE_PROD_DIRECT_URL }}"
+            STORAGE_URL="${{ secrets.SUPABASE_PROD_URL }}"
+            STORAGE_SERVICE_KEY="${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}"
+          else
+            DB_URL="${{ secrets.SUPABASE_STAGING_DATABASE_URL }}"
+            DIRECT_DB_URL="${{ secrets.SUPABASE_STAGING_DIRECT_URL }}"
+            STORAGE_URL="${{ secrets.SUPABASE_STAGING_URL }}"
+            STORAGE_SERVICE_KEY="${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}"
+          fi
+
+          # Fallback lets lint/typecheck/build continue if secrets are missing (e.g. fork PRs).
+          if [[ -z "${DB_URL}" ]]; then
+            DB_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
+          fi
+
+          if [[ -z "${DIRECT_DB_URL}" ]]; then
+            DIRECT_DB_URL="${DB_URL}"
+          fi
+
+          if [[ -z "${STORAGE_URL}" ]]; then
+            STORAGE_URL="https://example.supabase.co"
+          fi
+
+          if [[ -z "${STORAGE_SERVICE_KEY}" ]]; then
+            STORAGE_SERVICE_KEY="placeholder-service-role-key"
+          fi
+
+          echo "DATABASE_URL=${DB_URL}" >> "$GITHUB_ENV"
+          echo "DIRECT_URL=${DIRECT_DB_URL}" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=${STORAGE_URL}" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=${STORAGE_SERVICE_KEY}" >> "$GITHUB_ENV"
+          echo "SUPABASE_STORAGE_BUCKET=uploads" >> "$GITHUB_ENV"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

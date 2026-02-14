@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "media:migrate:dry": "node scripts/migrate-blob-to-supabase.mjs",
+    "media:migrate:apply": "node scripts/migrate-blob-to-supabase.mjs --apply",
     "typecheck": "tsc --noEmit",
     "test:authz": "node scripts/tests/authz-boundaries.mjs",
     "test:booking": "TEST_BOOKING_SUBDOMAIN=${TEST_BOOKING_SUBDOMAIN:-zenith} node scripts/tests/booking-payment-subscription.mjs",
@@ -39,7 +43,6 @@
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
     "@types/nodemailer": "^7.0.4",
-    "@vercel/blob": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
