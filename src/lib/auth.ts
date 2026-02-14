@@ -12,41 +12,46 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null
+          }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-          include: {
-            ownedStudio: true,
-            teacher: {
-              include: {
-                studio: true
+          const user = await db.user.findUnique({
+            where: { email: credentials.email },
+            include: {
+              ownedStudio: true,
+              teacher: {
+                include: {
+                  studio: true
+                }
               }
             }
+          })
+
+          if (!user || !user.password) {
+            return null
           }
-        })
 
-        if (!user) {
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+
+          if (!isPasswordValid) {
+            return null
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            studioId: user.ownedStudio?.id || user.teacher?.studioId || null,
+            studioName: user.ownedStudio?.name || user.teacher?.studio?.name || null,
+            teacherId: user.teacher?.id || null,
+          }
+        } catch (error) {
+          console.error("Credentials authorize failed:", error)
           return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          studioId: user.ownedStudio?.id || user.teacher?.studioId || null,
-          studioName: user.ownedStudio?.name || user.teacher?.studio?.name || null,
-          teacherId: user.teacher?.id || null,
         }
       }
     })
