@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { sendSystemTemplateEmail } from "@/lib/email"
+import { getStripe } from "@/lib/stripe"
 
 export async function GET(
   request: NextRequest,
@@ -10,14 +11,15 @@ export async function GET(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   const classSession = await db.classSession.findFirst({
     where: {
       id: classId,
-      studioId: session.user.studioId
+      studioId
     },
     include: {
       classType: true,
@@ -55,9 +57,10 @@ export async function PATCH(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   try {
     const body = await request.json()
@@ -67,7 +70,7 @@ export async function PATCH(
     const existingClass = await db.classSession.findFirst({
       where: {
         id: classId,
-        studioId: session.user.studioId
+        studioId
       },
       include: {
         _count: { select: { bookings: true } }
@@ -121,19 +124,20 @@ export async function DELETE(
   const session = await getSession()
   const { classId } = await params
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const studioId = session.user.studioId
 
   try {
     // Get the class with all details needed for notifications
     const existingClass = await db.classSession.findFirst({
       where: {
         id: classId,
-        studioId: session.user.studioId
+        studioId
       },
       include: {
-        studio: { select: { name: true } },
+        studio: { select: { name: true, stripeAccountId: true } },
         classType: { select: { name: true } },
         teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
         location: { select: { name: true } },
@@ -156,21 +160,63 @@ export async function DELETE(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Debug logging
-    console.log(`[CLASS DELETE] Class ID: ${classId}`)
-    console.log(`[CLASS DELETE] Studio ID: ${session.user.studioId}`)
-    console.log(`[CLASS DELETE] Found ${existingClass.bookings.length} bookings with CONFIRMED/PENDING status`)
-    console.log(`[CLASS DELETE] Bookings:`, existingClass.bookings.map(b => ({ 
-      id: b.id, 
-      clientEmail: b.client.email 
-    })))
-    
-    // Check ALL bookings for this class (any status)
-    const allBookings = await db.booking.findMany({
-      where: { classSessionId: classId },
-      select: { id: true, status: true, clientId: true }
-    })
-    console.log(`[CLASS DELETE] ALL bookings for this class (any status):`, allBookings)
+    // Refund any paid bookings before cancelling/deleting.
+    // If refunds fail, we abort (no emails, no deletion) so we don't break financial integrity.
+    if (existingClass.studio.stripeAccountId) {
+      const stripe = getStripe()
+
+      const paidBookings = await db.booking.findMany({
+        where: {
+          classSessionId: classId,
+          paymentId: { not: null },
+          status: { in: ["CONFIRMED", "PENDING"] },
+        },
+        include: {
+          payment: true,
+        },
+      })
+
+      const failures: Array<{ bookingId: string; paymentId: string; reason: string }> = []
+
+      for (const booking of paidBookings) {
+        const payment = booking.payment
+        if (!payment) continue
+        if (payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") continue
+        if (!payment.stripePaymentIntentId) continue
+
+        try {
+          const refund = await stripe.refunds.create(
+            { payment_intent: payment.stripePaymentIntentId },
+            { stripeAccount: existingClass.studio.stripeAccountId }
+          )
+
+          await db.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: "REFUNDED",
+              stripeRefundId: refund.id,
+              refundedAmount: (refund.amount || 0) / 100,
+              refundedAt: new Date(),
+            },
+          })
+        } catch (e) {
+          const reason = e instanceof Error ? e.message : "Unknown refund error"
+          failures.push({ bookingId: booking.id, paymentId: payment.id, reason })
+        }
+      }
+
+      if (failures.length > 0) {
+        console.error("[CLASS CANCEL] Refund failures:", failures)
+        return NextResponse.json(
+          {
+            error:
+              "Failed to refund one or more clients. Class was not cancelled. Please retry or refund manually.",
+            failures,
+          },
+          { status: 500 }
+        )
+      }
+    }
 
     const dateStr = existingClass.startTime.toLocaleDateString('en-US', { 
       weekday: 'long', 
@@ -184,10 +230,10 @@ export async function DELETE(
     })
     const teacherName = `${existingClass.teacher.user.firstName} ${existingClass.teacher.user.lastName}`
 
-    // Send cancellation emails to all affected clients (don't await to avoid blocking)
+    // Send cancellation emails to all affected clients (don't block the response)
     const emailPromises = existingClass.bookings.map(booking => 
       sendSystemTemplateEmail({
-        studioId: session.user.studioId,
+        studioId,
         templateType: "CLASS_CANCELLED_BY_STUDIO",
         to: booking.client.email,
         variables: {
@@ -206,7 +252,7 @@ export async function DELETE(
     // Also notify people on waitlist
     const waitlistPromises = existingClass.waitlists.map(waitlist =>
       sendSystemTemplateEmail({
-        studioId: session.user.studioId,
+        studioId,
         templateType: "CLASS_CANCELLED_BY_STUDIO",
         to: waitlist.client.email,
         variables: {

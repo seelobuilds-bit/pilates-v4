@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,8 +31,6 @@ import {
   Users,
   Clock,
   Plus,
-  X,
-  Edit,
   Trash2,
   ExternalLink
 } from "lucide-react"
@@ -83,7 +81,7 @@ export default function SalesCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [, setSelectedDate] = useState<Date | null>(null)
   const [saving, setSaving] = useState(false)
 
   // New event form
@@ -337,7 +335,6 @@ export default function SalesCalendarPage() {
           <div className="grid grid-cols-7">
             {days.map((day, idx) => {
               const { events: dayEvents, demos: dayDemos } = getEventsForDay(day.date)
-              const hasItems = dayEvents.length > 0 || dayDemos.length > 0
 
               return (
                 <div
@@ -391,7 +388,7 @@ export default function SalesCalendarPage() {
 
       {/* Today's Schedule */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Today's Schedule</h2>
+        <h2 className="text-lg font-semibold mb-4">Today&apos;s Schedule</h2>
         <div className="space-y-3">
           {(() => {
             const today = new Date()
@@ -600,9 +597,6 @@ export default function SalesCalendarPage() {
     </div>
   )
 }
-
-
-
 
 
 

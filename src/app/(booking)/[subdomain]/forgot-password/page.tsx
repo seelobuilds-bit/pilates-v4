@@ -37,7 +37,7 @@ export default function ClientForgotPasswordPage({
         const data = await res.json()
         setError(data.error || "Failed to send reset link")
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
@@ -54,12 +54,12 @@ export default function ClientForgotPasswordPage({
             </div>
             <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
             <CardDescription>
-              If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.
+              If an account exists for <strong>{email}</strong>, you&apos;ll receive a password reset link shortly.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-gray-500 mb-4">
-              Didn't receive the email? Check your spam folder or try again.
+              Didn&apos;t receive the email? Check your spam folder or try again.
             </p>
             <Button
               variant="outline"
@@ -93,7 +93,7 @@ export default function ClientForgotPasswordPage({
             Forgot Password?
           </CardTitle>
           <CardDescription className="text-center">
-            Enter your email and we'll send you a reset link
+            Enter your email and we&apos;ll send you a reset link
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,5 +142,3 @@ export default function ClientForgotPasswordPage({
     </div>
   )
 }
-
-

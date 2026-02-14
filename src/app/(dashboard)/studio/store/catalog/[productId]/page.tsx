@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,10 +18,8 @@ import {
   DollarSign,
   Check,
   Upload,
-  Image as ImageIcon,
   Eye,
   Plus,
-  Minus,
   Star,
   ChevronLeft,
   ChevronRight,
@@ -69,7 +67,6 @@ interface StudioProduct {
 
 export default function ProductDetailPage({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = use(params)
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [product, setProduct] = useState<Product | null>(null)
@@ -297,9 +294,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
             <div className="aspect-square bg-gray-100 relative">
               {product.images[currentImageIndex] ? (
                 <div className="relative w-full h-full">
-                  <img 
-                    src={product.images[currentImageIndex]} 
+                  <Image
+                    src={product.images[currentImageIndex]}
                     alt={product.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="w-full h-full object-cover"
                   />
                   
@@ -317,9 +316,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
                         "inset-0"
                       }`}
                     >
-                      <img 
-                        src={logoUrl} 
+                      <Image
+                        src={logoUrl}
                         alt="Your Logo"
+                        fill
+                        sizes="160px"
                         className={`object-contain opacity-80 ${
                           logoPlacement === "front-center" ? "max-w-[40%] max-h-[30%]" :
                           logoPlacement === "front-left" || logoPlacement === "corner" ? "w-full h-full" :
@@ -387,7 +388,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
                     idx === currentImageIndex ? "border-violet-500" : "border-transparent"
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <Image
+                    src={img}
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -582,9 +589,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-xs text-gray-500 mb-2">Your Logo</p>
                         <div className="bg-white border rounded-lg p-4 flex items-center justify-center h-24">
-                          <img 
-                            src={logoUrl} 
-                            alt="Your Logo" 
+                          <Image
+                            src={logoUrl}
+                            alt="Your Logo"
+                            width={96}
+                            height={96}
                             className="max-h-full max-w-full object-contain"
                           />
                         </div>
@@ -664,8 +673,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
     </div>
   )
 }
-
-
 
 
 

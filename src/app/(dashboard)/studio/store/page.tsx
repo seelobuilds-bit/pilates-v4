@@ -13,7 +13,6 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import {
   ShoppingBag,
-  Package,
   Truck,
   DollarSign,
   Plus,
@@ -828,7 +827,6 @@ export default function StudioStorePage() {
     </div>
   )
 }
-
 
 
 

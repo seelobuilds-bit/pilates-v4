@@ -15,7 +15,6 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Ban,
   Trash2,
   Loader2,
@@ -173,7 +172,7 @@ export default function TeacherSchedulePage() {
       })
       
       if (res.ok) {
-        const data = await res.json()
+        await res.json()
         // Refresh blocked times from server
         const weekDates = getWeekDates(weekOffset)
         const start = weekDates[0].toISOString()
@@ -605,7 +604,6 @@ export default function TeacherSchedulePage() {
     </div>
   )
 }
-
 
 
 

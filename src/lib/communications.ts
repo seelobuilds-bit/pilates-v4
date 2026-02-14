@@ -102,6 +102,7 @@ export async function sendSMS(
           direction: "OUTBOUND",
           status: "SENT",
           body: messageBody,
+          fromAddress: smsParams.from || process.env.TWILIO_PHONE_NUMBER || "unknown",
           toAddress: smsParams.to,
           toName: smsParams.toName || null,
           externalId: message.sid,
@@ -197,7 +198,7 @@ export async function sendEmail(
       subject: emailParams.subject,
       html: htmlContent,
       text: emailParams.body,
-      reply_to: replyTo
+      replyTo
     })
 
     if (error) {

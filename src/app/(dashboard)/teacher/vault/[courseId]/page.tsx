@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   MessageSquare,
   CheckCircle,
-  Lock,
   Clock,
   Award
 } from "lucide-react"
@@ -377,7 +376,6 @@ export default function TeacherVaultCoursePage({
     </div>
   )
 }
-
 
 
 

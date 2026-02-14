@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
@@ -37,16 +37,14 @@ function StripePaymentWrapper({
   selectedClass: ClassType | null
   selectedLocation: Location | null
 }) {
-  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
-
-  useEffect(() => {
-    // Load Stripe with the connected account ID
-    const promise = loadStripe(
+  const stripePromise = useMemo(
+    () =>
+      loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
       { stripeAccount: connectedAccountId }
-    )
-    setStripePromise(promise)
-  }, [connectedAccountId])
+      ),
+    [connectedAccountId]
+  )
 
   if (!stripePromise) {
     return (
@@ -491,10 +489,6 @@ export default function BookingPage() {
 
   const availableDates = getAvailableDates()
   const visibleDates = availableDates.slice(dateOffset, dateOffset + 5)
-
-  function goToStep(s: Step) {
-    setStep(s)
-  }
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)

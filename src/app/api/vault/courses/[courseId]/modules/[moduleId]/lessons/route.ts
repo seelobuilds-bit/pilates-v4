@@ -74,8 +74,7 @@ export async function POST(
 
 // PATCH - Update lesson or reorder
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ courseId: string; moduleId: string }> }
+  request: NextRequest
 ) {
   const session = await getSession()
 
@@ -165,7 +164,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete lesson" }, { status: 500 })
   }
 }
-
 
 
 

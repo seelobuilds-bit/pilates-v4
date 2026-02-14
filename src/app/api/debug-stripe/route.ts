@@ -4,9 +4,17 @@ import { getSession } from "@/lib/session"
 import { db } from "@/lib/db"
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+
   const session = await getSession()
-  
-  const debug: any = {
+
+  if (!session?.user || session.user.role !== "HQ_ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const debug: Record<string, unknown> = {
     stripeConfigured: isStripeConfigured(),
     hasSession: !!session,
     hasStudioId: !!session?.user?.studioId,
@@ -33,11 +41,16 @@ export async function GET() {
       const balance = await stripe.balance.retrieve()
       debug.stripeKeyValid = true
       debug.stripeMode = balance.livemode ? "live" : "test"
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const stripeError = error as {
+        message?: string
+        type?: string
+        code?: string
+      }
       debug.stripeKeyValid = false
-      debug.stripeError = error?.message || "Unknown error"
-      debug.stripeErrorType = error?.type
-      debug.stripeErrorCode = error?.code
+      debug.stripeError = stripeError.message || "Unknown error"
+      debug.stripeErrorType = stripeError.type
+      debug.stripeErrorCode = stripeError.code
     }
   }
   

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Mail,
   Globe,
@@ -116,7 +116,7 @@ export default function EmailSettingsPage() {
       } else {
         setMessage({ type: "error", text: data.error || "Failed to save" })
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Failed to save settings" })
     } finally {
       setSaving(false)
@@ -146,7 +146,7 @@ export default function EmailSettingsPage() {
       } else {
         setMessage({ type: "error", text: data.error || "Verification failed" })
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Verification check failed" })
     } finally {
       setVerifying(false)
@@ -269,7 +269,7 @@ export default function EmailSettingsPage() {
                 onChange={(e) => setFromName(e.target.value)}
                 placeholder="Zenith Pilates"
               />
-              <p className="text-xs text-gray-500">The name that appears in the "From" field</p>
+              <p className="text-xs text-gray-500">The name that appears in the &quot;From&quot; field</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="replyToEmail">Reply-To Email *</Label>
@@ -444,7 +444,7 @@ export default function EmailSettingsPage() {
           <h4 className="font-medium text-gray-900 mb-3">💡 How does this work?</h4>
           <div className="space-y-2 text-sm text-gray-600">
             <p>
-              <strong>Reply-To (Required):</strong> When clients reply to your emails, it goes to your Reply-To address (your Gmail, studio inbox, etc.). This is essential so you don't miss any client responses!
+              <strong>Reply-To (Required):</strong> When clients reply to your emails, it goes to your Reply-To address (your Gmail, studio inbox, etc.). This is essential so you don&apos;t miss any client responses!
             </p>
             <p>
               <strong>Without a custom domain:</strong> Emails are sent from <code className="bg-gray-200 px-1 rounded">{subdomain}@notify.thecurrent.app</code>. 
@@ -456,7 +456,7 @@ export default function EmailSettingsPage() {
             </p>
             <p>
               <strong>Google Workspace users:</strong> Adding DNS records does NOT affect your existing email. 
-              You'll continue receiving emails in Gmail normally, and client replies still go to your Reply-To address.
+              You&apos;ll continue receiving emails in Gmail normally, and client replies still go to your Reply-To address.
             </p>
           </div>
         </CardContent>
@@ -464,5 +464,3 @@ export default function EmailSettingsPage() {
     </div>
   )
 }
-
-

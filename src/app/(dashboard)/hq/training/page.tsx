@@ -478,26 +478,26 @@ export default function HQTrainingPage() {
     if (!editingModule) return
     setSaving(true)
     try {
-      const module = editingModule.module
-      const resources = module.resources ? JSON.parse(module.resources) : []
+      const moduleDraft = editingModule.module
+      const resources = moduleDraft.resources ? JSON.parse(moduleDraft.resources) : []
       const res = await fetch("/api/social-media/admin/training", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "module",
-          id: module.id,
-          title: module.title,
-          description: module.description,
-          videoUrl: module.videoUrl,
-          thumbnailUrl: module.thumbnailUrl,
-          duration: module.duration,
-          isLive: module.isLive,
-          liveDate: module.liveDate,
-          liveUrl: module.liveUrl,
-          isInPerson: module.isInPerson,
-          eventLocation: module.eventLocation,
-          eventAddress: module.eventAddress,
-          maxAttendees: module.maxAttendees,
+          id: moduleDraft.id,
+          title: moduleDraft.title,
+          description: moduleDraft.description,
+          videoUrl: moduleDraft.videoUrl,
+          thumbnailUrl: moduleDraft.thumbnailUrl,
+          duration: moduleDraft.duration,
+          isLive: moduleDraft.isLive,
+          liveDate: moduleDraft.liveDate,
+          liveUrl: moduleDraft.liveUrl,
+          isInPerson: moduleDraft.isInPerson,
+          eventLocation: moduleDraft.eventLocation,
+          eventAddress: moduleDraft.eventAddress,
+          maxAttendees: moduleDraft.maxAttendees,
           resources: resources.length > 0 ? resources : null
         })
       })

@@ -73,13 +73,8 @@ export default async function DemoSchedulePage() {
   const endDate = new Date(weekDates[6])
   endDate.setHours(23, 59, 59, 999)
 
-  const [locations, teachers, classTypes, classes] = await Promise.all([
+  const [locations, classes] = await Promise.all([
     db.location.findMany({ where: { studioId: studio.id, isActive: true } }),
-    db.teacher.findMany({ 
-      where: { studioId: studio.id, isActive: true },
-      include: { user: { select: { firstName: true, lastName: true } } }
-    }),
-    db.classType.findMany({ where: { studioId: studio.id } }),
     db.classSession.findMany({
       where: {
         studioId: studio.id,
@@ -319,7 +314,6 @@ export default async function DemoSchedulePage() {
     </div>
   )
 }
-
 
 
 

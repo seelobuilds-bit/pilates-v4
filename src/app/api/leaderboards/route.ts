@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 
 // GET - Fetch leaderboards for studios/teachers
 export async function GET(request: NextRequest) {
@@ -11,17 +12,23 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const participantType = searchParams.get("type") || "STUDIO" // STUDIO or TEACHER
+  const participantTypeParam = searchParams.get("type")
+  const participantType: LeaderboardParticipantType =
+    participantTypeParam === "TEACHER" ? "TEACHER" : "STUDIO"
   const category = searchParams.get("category")
   const featured = searchParams.get("featured") === "true"
+  const categoryFilter =
+    category && Object.values(LeaderboardCategory).includes(category as LeaderboardCategory)
+      ? (category as LeaderboardCategory)
+      : null
 
   try {
     // Get active leaderboards
     const leaderboards = await db.leaderboard.findMany({
       where: {
         isActive: true,
-        participantType: participantType as "STUDIO" | "TEACHER",
-        ...(category && { category: category as any }),
+        participantType,
+        ...(categoryFilter && { category: categoryFilter }),
         ...(featured && { isFeatured: true })
       },
       include: {
@@ -185,7 +192,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
 
 
 

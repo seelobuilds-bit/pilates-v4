@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { db } from "@/lib/db"
+import { SystemEmailType } from "@prisma/client"
 
 // Initialize Resend client
 const resend = process.env.RESEND_API_KEY
@@ -120,7 +121,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ""), // Strip HTML for text version
-      reply_to: finalReplyTo
+      replyTo: finalReplyTo
     })
 
     if (error) {
@@ -413,17 +414,14 @@ export async function verifyDomain(domainId: string): Promise<DomainVerification
   }
 
   try {
-    const { data, error } = await resend.domains.verify(domainId)
+    const { error } = await resend.domains.verify(domainId)
 
     if (error) {
       return { success: false, error: error.message }
     }
 
-    return {
-      success: true,
-      domainId: data?.id,
-      status: data?.status
-    }
+    // Fetch fresh status after verify trigger for consistent typing.
+    return checkDomainStatus(domainId)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return { success: false, error: errorMessage }
@@ -1145,13 +1143,14 @@ export async function sendSystemTemplateEmail(params: {
   variables: Record<string, string>
 }): Promise<SendEmailResult> {
   const { studioId, templateType, to, variables } = params
+  const systemTemplateType = templateType as SystemEmailType
 
   try {
     // Fetch the template for this studio
     let template = await db.systemEmailTemplate.findFirst({
       where: {
         studioId,
-        type: templateType as any,
+        type: systemTemplateType,
         isEnabled: true
       }
     })
@@ -1165,7 +1164,7 @@ export async function sendSystemTemplateEmail(params: {
         template = await db.systemEmailTemplate.create({
           data: {
             studioId,
-            type: templateType as any,
+            type: systemTemplateType,
             name: defaultTemplate.name,
             subject: defaultTemplate.subject,
             body: defaultTemplate.body,
@@ -1179,7 +1178,7 @@ export async function sendSystemTemplateEmail(params: {
         template = await db.systemEmailTemplate.findFirst({
           where: {
             studioId,
-            type: templateType as any,
+            type: systemTemplateType,
             isEnabled: true
           }
         })

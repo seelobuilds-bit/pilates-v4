@@ -48,6 +48,18 @@ interface LocationStats {
   monthlyRevenue: { month: string; revenue: number }[]
 }
 
+const emptyLocationStats: LocationStats = {
+  totalBookings: 0,
+  totalRevenue: 0,
+  activeClients: 0,
+  avgClassSize: 0,
+  topClasses: [],
+  topTeachers: [],
+  recentBookings: [],
+  bookingsByDay: [],
+  monthlyRevenue: []
+}
+
 export default function EditLocationPage({
   params,
 }: {
@@ -76,6 +88,7 @@ export default function EditLocationPage({
         if (res.ok) {
           const data = await res.json()
           setLocation(data)
+          setStats(data.stats || emptyLocationStats)
           setFormData({
             name: data.name,
             address: data.address,
@@ -86,48 +99,6 @@ export default function EditLocationPage({
             isActive: data.isActive
           })
         }
-
-        // Mock stats - in production this would come from an API
-        setStats({
-          totalBookings: 1247,
-          totalRevenue: 45890,
-          activeClients: 156,
-          avgClassSize: 7.2,
-          topClasses: [
-            { name: "Reformer Pilates", bookings: 342 },
-            { name: "Mat Pilates", bookings: 289 },
-            { name: "Tower Class", bookings: 198 },
-            { name: "Beginner Flow", bookings: 156 }
-          ],
-          topTeachers: [
-            { name: "Sarah Johnson", classes: 89, rating: 4.9 },
-            { name: "Mike Chen", classes: 67, rating: 4.8 },
-            { name: "Emily Davis", classes: 54, rating: 4.7 }
-          ],
-          recentBookings: [
-            { clientName: "John Smith", className: "Reformer Pilates", date: "Today, 9:00 AM" },
-            { clientName: "Emma Wilson", className: "Mat Pilates", date: "Today, 10:30 AM" },
-            { clientName: "Alex Brown", className: "Tower Class", date: "Today, 2:00 PM" },
-            { clientName: "Lisa Park", className: "Beginner Flow", date: "Tomorrow, 9:00 AM" }
-          ],
-          bookingsByDay: [
-            { day: "Mon", count: 45 },
-            { day: "Tue", count: 52 },
-            { day: "Wed", count: 48 },
-            { day: "Thu", count: 56 },
-            { day: "Fri", count: 42 },
-            { day: "Sat", count: 68 },
-            { day: "Sun", count: 32 }
-          ],
-          monthlyRevenue: [
-            { month: "Jul", revenue: 6200 },
-            { month: "Aug", revenue: 7100 },
-            { month: "Sep", revenue: 7800 },
-            { month: "Oct", revenue: 8200 },
-            { month: "Nov", revenue: 8400 },
-            { month: "Dec", revenue: 8190 }
-          ]
-        })
       } catch (error) {
         console.error("Error fetching location:", error)
       } finally {
@@ -183,6 +154,13 @@ export default function EditLocationPage({
     )
   }
 
+  const safeStats = stats || emptyLocationStats
+  const hasLocationReportData =
+    safeStats.totalBookings > 0 ||
+    safeStats.totalRevenue > 0 ||
+    safeStats.topClasses.length > 0 ||
+    safeStats.monthlyRevenue.some((month) => month.revenue > 0)
+
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -217,7 +195,7 @@ export default function EditLocationPage({
                   <Calendar className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.totalBookings.toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Total Bookings</p>
                 </div>
               </div>
@@ -231,7 +209,7 @@ export default function EditLocationPage({
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">${safeStats.totalRevenue.toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Total Revenue</p>
                 </div>
               </div>
@@ -245,7 +223,7 @@ export default function EditLocationPage({
                   <Users className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeClients}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
                 </div>
               </div>
@@ -259,7 +237,7 @@ export default function EditLocationPage({
                   <TrendingUp className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.avgClassSize}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgClassSize}</p>
                   <p className="text-sm text-gray-500">Avg. Class Size</p>
                 </div>
               </div>
@@ -283,7 +261,7 @@ export default function EditLocationPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
-          {stats && (
+          {stats && hasLocationReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Classes */}
               <Card className="border-0 shadow-sm">
@@ -293,7 +271,7 @@ export default function EditLocationPage({
                     <h3 className="font-semibold text-gray-900">Top Classes</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.topClasses.map((cls, i) => (
+                    {safeStats.topClasses.map((cls, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
@@ -316,7 +294,7 @@ export default function EditLocationPage({
                     <h3 className="font-semibold text-gray-900">Top Teachers</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.topTeachers.map((teacher, i) => (
+                    {safeStats.topTeachers.map((teacher, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
@@ -329,7 +307,7 @@ export default function EditLocationPage({
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                          <span className="text-gray-900 font-medium">{teacher.rating}</span>
+                          <span className="text-gray-900 font-medium">{teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
                         </div>
                       </div>
                     ))}
@@ -345,8 +323,8 @@ export default function EditLocationPage({
                     <h3 className="font-semibold text-gray-900">Bookings by Day</h3>
                   </div>
                   <div className="flex items-end justify-between h-32 gap-2">
-                    {stats.bookingsByDay.map((day, i) => {
-                      const maxCount = Math.max(...stats.bookingsByDay.map(d => d.count))
+                    {safeStats.bookingsByDay.map((day, i) => {
+                      const maxCount = Math.max(...safeStats.bookingsByDay.map(d => d.count))
                       const height = (day.count / maxCount) * 100
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -370,7 +348,7 @@ export default function EditLocationPage({
                     <h3 className="font-semibold text-gray-900">Recent Bookings</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.recentBookings.map((booking, i) => (
+                    {safeStats.recentBookings.map((booking, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{booking.clientName}</p>
@@ -391,8 +369,8 @@ export default function EditLocationPage({
                     <h3 className="font-semibold text-gray-900">Monthly Revenue</h3>
                   </div>
                   <div className="flex items-end justify-between h-40 gap-4">
-                    {stats.monthlyRevenue.map((month, i) => {
-                      const maxRevenue = Math.max(...stats.monthlyRevenue.map(m => m.revenue))
+                    {safeStats.monthlyRevenue.map((month, i) => {
+                      const maxRevenue = Math.max(...safeStats.monthlyRevenue.map(m => m.revenue))
                       const height = (month.revenue / maxRevenue) * 100
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -409,6 +387,17 @@ export default function EditLocationPage({
                 </CardContent>
               </Card>
             </div>
+          )}
+          {(!stats || !hasLocationReportData) && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-10 text-center">
+                <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <p className="text-gray-500">
+                  This location has no tracked activity yet, so reporting is empty.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 

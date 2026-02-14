@@ -2,7 +2,6 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,14 +15,11 @@ import {
   BookOpen,
   Loader2,
   Users,
-  Star,
-  Play,
   ArrowLeft,
   MessageSquare,
   Settings,
   Save,
   Plus,
-  Trash2,
   GripVertical,
   Eye,
   Crown
@@ -78,17 +74,46 @@ interface Course {
   _count: { enrollments: number; modules: number }
 }
 
+interface Enrollment {
+  id: string
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED"
+  enrolledAt: string
+  progress: Array<{
+    lessonId: string
+    isCompleted: boolean
+  }>
+  client: {
+    firstName: string
+    lastName: string
+    email: string | null
+  } | null
+  teacher: {
+    user: {
+      firstName: string
+      lastName: string
+      email: string
+    }
+  } | null
+  user: {
+    firstName: string
+    lastName: string
+    email: string
+  } | null
+}
+
 export default function StudioVaultCoursePage({ 
   params 
 }: { 
   params: Promise<{ courseId: string }> 
 }) {
   const resolvedParams = use(params)
-  const router = useRouter()
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [course, setCourse] = useState<Course | null>(null)
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false)
+  const [enrollmentsError, setEnrollmentsError] = useState<string | null>(null)
   
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
@@ -128,11 +153,64 @@ export default function StudioVaultCoursePage({
           affiliateCommission: data.affiliateCommission,
           includeInSubscription: data.includeInSubscription
         })
+        await fetchEnrollments(data.id)
       }
     } catch (err) {
       console.error("Failed to fetch course:", err)
     }
     setLoading(false)
+  }
+
+  async function fetchEnrollments(courseId: string) {
+    setEnrollmentsLoading(true)
+    setEnrollmentsError(null)
+    try {
+      const response = await fetch(`/api/vault/enrollments?courseId=${encodeURIComponent(courseId)}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch enrollments")
+      }
+      const data = await response.json()
+      setEnrollments(data.enrollments || [])
+    } catch (error) {
+      console.error("Failed to fetch enrollments:", error)
+      setEnrollmentsError("Could not load enrolled students")
+    } finally {
+      setEnrollmentsLoading(false)
+    }
+  }
+
+  function getEnrollmentIdentity(enrollment: Enrollment) {
+    if (enrollment.client) {
+      return {
+        name: `${enrollment.client.firstName} ${enrollment.client.lastName}`.trim(),
+        email: enrollment.client.email || "No email"
+      }
+    }
+    if (enrollment.teacher) {
+      return {
+        name: `${enrollment.teacher.user.firstName} ${enrollment.teacher.user.lastName}`.trim(),
+        email: enrollment.teacher.user.email
+      }
+    }
+    if (enrollment.user) {
+      return {
+        name: `${enrollment.user.firstName} ${enrollment.user.lastName}`.trim(),
+        email: enrollment.user.email
+      }
+    }
+    return { name: "Unknown user", email: "No email" }
+  }
+
+  function getEnrollmentProgressPercent(enrollment: Enrollment) {
+    if (!course || course.totalLessons <= 0) return 0
+    const completedLessons = enrollment.progress.filter((progress) => progress.isCompleted).length
+    return Math.min(100, Math.round((completedLessons / course.totalLessons) * 100))
+  }
+
+  function getStatusBadgeClass(status: Enrollment["status"]) {
+    if (status === "COMPLETED") return "bg-emerald-100 text-emerald-700"
+    if (status === "CANCELLED") return "bg-gray-100 text-gray-700"
+    return "bg-blue-100 text-blue-700"
   }
 
   async function saveCourse() {
@@ -461,12 +539,62 @@ export default function StudioVaultCoursePage({
         <TabsContent value="students">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Enrolled Students</h3>
-              <div className="text-center py-12 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>{course.enrollmentCount} students enrolled</p>
-                <p className="text-sm">Student management coming soon</p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Enrolled Students</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchEnrollments(course.id)}
+                  disabled={enrollmentsLoading}
+                >
+                  {enrollmentsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+                </Button>
               </div>
+
+              {enrollmentsError && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  {enrollmentsError}
+                </div>
+              )}
+
+              {!enrollmentsLoading && enrollments.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No students enrolled yet</p>
+                  <p className="text-sm">New enrollments will appear here automatically.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {enrollments.map((enrollment) => {
+                    const identity = getEnrollmentIdentity(enrollment)
+                    const progress = getEnrollmentProgressPercent(enrollment)
+                    return (
+                      <div key={enrollment.id} className="rounded-lg border p-4">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{identity.name}</p>
+                            <p className="text-sm text-gray-500">{identity.email}</p>
+                            <p className="text-xs text-gray-400">
+                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className={getStatusBadgeClass(enrollment.status)}>
+                              {enrollment.status.toLowerCase()}
+                            </Badge>
+                            <div className="min-w-28">
+                              <p className="text-xs text-gray-500 mb-1">Progress {progress}%</p>
+                              <div className="h-2 rounded-full bg-gray-100">
+                                <div className="h-2 rounded-full bg-violet-600" style={{ width: `${progress}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -510,8 +638,6 @@ export default function StudioVaultCoursePage({
     </div>
   )
 }
-
-
 
 
 

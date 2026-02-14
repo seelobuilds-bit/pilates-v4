@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,7 +53,6 @@ export default function SalesDemosPage() {
   const [demos, setDemos] = useState<Demo[]>([])
   const [unassignedDemos, setUnassignedDemos] = useState<Demo[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDemo, setSelectedDemo] = useState<Demo | null>(null)
   const [schedulingDemo, setSchedulingDemo] = useState<Demo | null>(null)
   const [scheduleDate, setScheduleDate] = useState("")
   const [meetingLink, setMeetingLink] = useState("")
@@ -138,7 +136,6 @@ export default function SalesDemosPage() {
         body: JSON.stringify({ demoId, status, outcome })
       })
       if (res.ok) {
-        setSelectedDemo(null)
         fetchDemos()
       }
     } catch (error) {
@@ -156,17 +153,6 @@ export default function SalesDemosPage() {
       hour: "numeric",
       minute: "2-digit"
     })
-  }
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-700",
-      scheduled: "bg-blue-100 text-blue-700",
-      completed: "bg-green-100 text-green-700",
-      cancelled: "bg-red-100 text-red-700",
-      no_show: "bg-gray-100 text-gray-700"
-    }
-    return colors[status] || "bg-gray-100 text-gray-700"
   }
 
   const pendingDemos = demos.filter(d => d.status === "pending")
@@ -285,7 +271,7 @@ export default function SalesDemosPage() {
                     </div>
                     {demo.interests && (
                       <p className="text-sm text-gray-500 mt-3 italic border-l-2 border-green-200 pl-3">
-                        "{demo.interests}"
+                        &quot;{demo.interests}&quot;
                       </p>
                     )}
                     <div className="flex items-center justify-between mt-4 pt-3 border-t">
@@ -507,8 +493,6 @@ export default function SalesDemosPage() {
     </div>
   )
 }
-
-
 
 
 

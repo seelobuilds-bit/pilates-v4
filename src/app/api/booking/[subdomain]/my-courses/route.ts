@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 export async function GET(
   request: NextRequest,
@@ -20,14 +17,10 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
@@ -42,10 +35,14 @@ export async function GET(
     }
 
     // Get client's active subscriptions to determine which courses they have access to
+    const now = new Date()
     const subscriptions = await db.vaultSubscriber.findMany({
       where: {
         clientId: client.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       },
       include: {
         plan: true
@@ -120,7 +117,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch courses" }, { status: 500 })
   }
 }
-
 
 
 

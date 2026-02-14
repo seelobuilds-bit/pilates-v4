@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 // GET - Fetch community chat messages
 export async function GET(
@@ -28,35 +25,35 @@ export async function GET(
     }
 
     // Authenticate client
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
     // Check if client has active subscription to this plan
+    const now = new Date()
     const subscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: decoded.clientId,
         planId,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (!subscription) {
-      return NextResponse.json({ error: "No active subscription to this plan" }, { status: 403 })
+      return NextResponse.json({ error: "No active subscription access to this plan" }, { status: 403 })
     }
 
     // Get the plan and chat
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: {
         communityChat: {
           include: {
@@ -118,14 +115,10 @@ export async function POST(
     }
 
     // Authenticate client
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
@@ -139,21 +132,25 @@ export async function POST(
     }
 
     // Check if client has active subscription to this plan
+    const now = new Date()
     const subscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: decoded.clientId,
         planId,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (!subscription) {
-      return NextResponse.json({ error: "No active subscription to this plan" }, { status: 403 })
+      return NextResponse.json({ error: "No active subscription access to this plan" }, { status: 403 })
     }
 
     // Get the plan and chat
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: { communityChat: true }
     })
 
@@ -208,8 +205,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-
-
 
 
 

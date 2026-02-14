@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -122,7 +121,7 @@ export default function TeacherClientsPage() {
         const data = await res.json()
         setSendResult({ success: false, message: data.error || "Failed to send email" })
       }
-    } catch (error) {
+    } catch {
       setSendResult({ success: false, message: "Failed to send email" })
     } finally {
       setSending(false)
@@ -156,7 +155,7 @@ export default function TeacherClientsPage() {
         const data = await res.json()
         setSendResult({ success: false, message: data.error || "Failed to send SMS" })
       }
-    } catch (error) {
+    } catch {
       setSendResult({ success: false, message: "Failed to send SMS" })
     } finally {
       setSending(false)
@@ -421,7 +420,6 @@ export default function TeacherClientsPage() {
     </div>
   )
 }
-
 
 
 

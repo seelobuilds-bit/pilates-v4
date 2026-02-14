@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { getSocialMediaMode } from "@/lib/social-media-mode"
 
 // GET - Fetch social media conversations/messages
 export async function GET(request: NextRequest) {
@@ -91,9 +92,17 @@ export async function GET(request: NextRequest) {
 // POST - Send a message (simulated)
 export async function POST(request: NextRequest) {
   const session = await getSession()
+  const socialMode = getSocialMediaMode()
 
   if (!session?.user?.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (socialMode !== "SIMULATED_BETA") {
+    return NextResponse.json(
+      { error: "Live social DM sending is not enabled in this environment" },
+      { status: 503 }
+    )
   }
 
   try {
@@ -167,7 +176,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to mark as read" }, { status: 500 })
   }
 }
-
 
 
 

@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -224,7 +223,7 @@ export default function StudioDetailPage({
       } else {
         setEmailMessage({ type: "error", text: data.error || "Failed to save" })
       }
-    } catch (error) {
+    } catch {
       setEmailMessage({ type: "error", text: "Failed to save settings" })
     } finally {
       setSavingEmail(false)
@@ -254,7 +253,7 @@ export default function StudioDetailPage({
       } else {
         setEmailMessage({ type: "error", text: data.error || "Verification failed" })
       }
-    } catch (error) {
+    } catch {
       setEmailMessage({ type: "error", text: "Verification check failed" })
     } finally {
       setVerifyingDomain(false)
@@ -515,7 +514,7 @@ export default function StudioDetailPage({
                   </div>
                   {emailConfig.fromEmail ? (
                     <div className="flex items-center gap-2">
-                      {emailConfig.isVerified ? (
+                      {emailConfig.domainStatus === "verified" ? (
                         <Badge className="bg-emerald-100 text-emerald-700">Verified</Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-700">Pending</Badge>

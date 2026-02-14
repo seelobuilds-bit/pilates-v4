@@ -7,9 +7,7 @@ import {
   Plus, 
   MapPin,
   Calendar,
-  Users,
   Clock,
-  Settings,
   ChevronRight
 } from "lucide-react"
 
@@ -188,11 +186,11 @@ export default async function DemoLocationsPage() {
                       </div>
                     </div>
 
-                    {location.timezone && (
+                    {location.phone && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <p className="text-xs text-gray-400 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {location.timezone}
+                          {location.phone}
                         </p>
                       </div>
                     )}
@@ -206,7 +204,5 @@ export default async function DemoLocationsPage() {
     </div>
   )
 }
-
-
 
 

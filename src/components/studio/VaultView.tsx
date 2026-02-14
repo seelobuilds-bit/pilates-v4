@@ -47,7 +47,7 @@ export function VaultView({
   isLoading = false
 }: VaultViewProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [audienceFilter, setAudienceFilter] = useState<string>("all")
+  const [audienceFilter] = useState<string>("all")
   const [selectedTier, setSelectedTier] = useState<"STUDIO_OWNERS" | "TEACHERS" | "CLIENTS">("CLIENTS")
   const [showChatForPlan, setShowChatForPlan] = useState<SubscriptionPlan | null>(null)
 
@@ -755,7 +755,6 @@ export function VaultView({
     </div>
   )
 }
-
 
 
 

@@ -113,7 +113,7 @@ export default function TeacherVaultPage() {
   const [audienceFilter, setAudienceFilter] = useState<string>("all")
   
   // Subscription plans with their courses
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
+  const [, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [allSubscriptionCourses, setAllSubscriptionCourses] = useState<Course[]>([])
   
   // Create course modal
@@ -987,7 +987,6 @@ export default function TeacherVaultPage() {
     </div>
   )
 }
-
 
 
 

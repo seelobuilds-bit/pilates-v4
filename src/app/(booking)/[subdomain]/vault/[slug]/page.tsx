@@ -2,7 +2,8 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,9 +21,6 @@ import {
   ArrowLeft,
   MessageSquare,
   Award,
-  Download,
-  Share2,
-  Heart
 } from "lucide-react"
 
 interface Course {
@@ -93,14 +91,12 @@ export default function CourseDetailPage({
   params: Promise<{ subdomain: string; slug: string }> 
 }) {
   const resolvedParams = use(params)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const affiliateCode = searchParams.get("ref")
   
   const [loading, setLoading] = useState(true)
   const [course, setCourse] = useState<Course | null>(null)
   const [enrolling, setEnrolling] = useState(false)
-  const [selectedLesson, setSelectedLesson] = useState<string | null>(null)
 
   useEffect(() => {
     fetchCourse()
@@ -263,9 +259,11 @@ export default function CourseDetailPage({
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-6">
                   {course.thumbnailUrl && (
-                    <img 
+                    <Image
                       src={course.thumbnailUrl} 
                       alt={course.title}
+                      width={800}
+                      height={450}
                       className="w-full aspect-video object-cover rounded-lg mb-4"
                     />
                   )}
@@ -538,7 +536,6 @@ export default function CourseDetailPage({
     </div>
   )
 }
-
 
 
 

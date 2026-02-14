@@ -3,11 +3,11 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 // GET - Fetch all campaigns for the studio
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getSession()
     
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
     
-    if (!session?.user?.studioId) {
+    if (!session?.user?.studioId || session.user.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

@@ -6,7 +6,7 @@ import { getSession } from "@/lib/session"
 export async function GET(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -29,8 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate date range
-    const now = new Date()
-    let startDate = new Date()
+    const startDate = new Date()
     switch (period) {
       case "24h":
         startDate.setHours(startDate.getHours() - 24)
@@ -213,7 +212,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -257,8 +256,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
-
 
 
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,19 +27,15 @@ import {
   Phone,
   Mail,
   MessageSquare,
-  Send,
   Building2,
   MapPin,
   Clock,
   Calendar,
   User,
-  Edit,
-  Trash2,
   CheckCircle,
   Plus,
   Loader2,
   ExternalLink,
-  Globe,
   DollarSign,
   Target,
   FileText,
@@ -144,7 +139,6 @@ const PRIORITIES = [
 
 export default function LeadDetailPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = use(params)
-  const router = useRouter()
   
   const [lead, setLead] = useState<Lead | null>(null)
   const [loading, setLoading] = useState(true)
@@ -974,7 +968,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     </div>
   )
 }
-
 
 
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -33,20 +33,8 @@ export default function LoginPage() {
       setError("Invalid email or password")
       setLoading(false)
     } else {
-      // Get session to determine redirect based on role
-      const session = await getSession()
-      
-      if (session?.user?.role === "HQ_ADMIN") {
-        router.push("/hq")
-      } else if (session?.user?.role === "SALES_AGENT") {
-        router.push("/sales")
-      } else if (session?.user?.role === "OWNER") {
-        router.push("/studio")
-      } else if (session?.user?.role === "TEACHER") {
-        router.push("/teacher")
-      } else {
-        router.push("/")
-      }
+      // Resolve role on the server after cookie is persisted.
+      router.replace("/post-login")
       router.refresh()
     }
   }
@@ -111,6 +99,5 @@ export default function LoginPage() {
     </Card>
   )
 }
-
 
 

@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
   try {
     // Fetch categories with content
     const categories = await db.classFlowCategory.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(categoryId && { id: categoryId }),
+      },
       include: {
         contents: {
           where: {
@@ -74,7 +77,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch class flows" }, { status: 500 })
   }
 }
-
 
 
 

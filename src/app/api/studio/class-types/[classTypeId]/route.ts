@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -24,7 +24,141 @@ export async function GET(
     return NextResponse.json({ error: "Class type not found" }, { status: 404 })
   }
 
-  return NextResponse.json(classType)
+  const classSessions = await db.classSession.findMany({
+    where: {
+      studioId: session.user.studioId,
+      classTypeId
+    },
+    include: {
+      teacher: {
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          }
+        }
+      },
+      location: {
+        select: { name: true }
+      },
+      _count: {
+        select: { bookings: true }
+      }
+    },
+    orderBy: { startTime: "desc" }
+  })
+
+  const bookings = await db.booking.findMany({
+    where: {
+      studioId: session.user.studioId,
+      classSession: {
+        classTypeId
+      }
+    },
+    include: {
+      classSession: {
+        include: {
+          location: { select: { name: true } }
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  })
+
+  const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
+  const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
+    const amount = booking.paidAmount ?? classType.price ?? 0
+    return sum + amount
+  }, 0)
+
+  const teacherCounts = new Map<string, number>()
+  const locationBookingCounts = new Map<string, number>()
+  const timeSlotCounts = new Map<string, number>()
+
+  for (const session of classSessions) {
+    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`.trim()
+    teacherCounts.set(teacherName, (teacherCounts.get(teacherName) || 0) + 1)
+
+    const slot = new Date(session.startTime).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit"
+    })
+    timeSlotCounts.set(slot, (timeSlotCounts.get(slot) || 0) + 1)
+  }
+
+  for (const booking of nonCancelledBookings) {
+    const locationName = booking.classSession.location.name
+    locationBookingCounts.set(locationName, (locationBookingCounts.get(locationName) || 0) + 1)
+  }
+
+  const now = new Date()
+  const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+    return {
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      count: 0
+    }
+  })
+  const monthlyLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+
+  for (const booking of bookings) {
+    const date = new Date(booking.createdAt)
+    const key = `${date.getFullYear()}-${date.getMonth()}`
+    const bucket = monthlyLookup.get(key)
+    if (bucket) {
+      bucket.count += 1
+    }
+  }
+
+  const recentClasses = classSessions.slice(0, 10).map((session) => ({
+    date: new Date(session.startTime).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    }),
+    teacher: `${session.teacher.user.firstName} ${session.teacher.user.lastName}`.trim(),
+    location: session.location.name,
+    attendance: session._count.bookings,
+    capacity: session.capacity
+  }))
+
+  const stats = {
+    totalBookings: bookings.length,
+    totalRevenue: Math.round(totalRevenue * 100) / 100,
+    avgAttendance:
+      classSessions.length > 0
+        ? Math.round((nonCancelledBookings.length / classSessions.length) * 10) / 10
+        : 0,
+    avgRating: 0,
+    topTeachers: Array.from(teacherCounts.entries())
+      .map(([name, classes]) => ({ name, classes, rating: 0 }))
+      .sort((a, b) => b.classes - a.classes)
+      .slice(0, 5),
+    topLocations: Array.from(locationBookingCounts.entries())
+      .map(([name, bookingsCount]) => ({ name, bookings: bookingsCount }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 5),
+    monthlyBookings: monthlyBuckets.map(({ month, count }) => ({ month, count })),
+    popularTimes: Array.from(timeSlotCounts.entries())
+      .map(([time, count]) => ({ time, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5),
+    recentClasses
+  }
+
+  const locationIds = Array.from(new Set(classSessions.map((session) => session.locationId)))
+  const teacherIds = Array.from(new Set(classSessions.map((session) => session.teacherId)))
+
+  return NextResponse.json({
+    ...classType,
+    stats,
+    locationIds,
+    teacherIds
+  })
 }
 
 export async function PATCH(
@@ -33,7 +167,7 @@ export async function PATCH(
 ) {
   const session = await getSession()
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

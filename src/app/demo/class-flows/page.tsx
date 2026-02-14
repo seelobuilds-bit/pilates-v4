@@ -12,15 +12,11 @@ import {
   BookOpen,
   Plus,
   Eye,
-  Users,
   CheckCircle,
   Clock,
   Star,
   GraduationCap,
-  ChevronRight,
-  Award,
-  TrendingUp,
-  File
+  ChevronRight
 } from "lucide-react"
 
 const demoCategories = [
@@ -284,7 +280,5 @@ export default function DemoClassFlowsPage() {
     </div>
   )
 }
-
-
 
 

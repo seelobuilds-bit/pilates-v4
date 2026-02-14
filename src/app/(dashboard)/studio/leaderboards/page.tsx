@@ -18,7 +18,6 @@ import {
   Flame,
   Target,
   Users,
-  Sparkles,
   Calendar,
   Share2,
   BookOpen,
@@ -659,7 +658,6 @@ export default function StudioLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

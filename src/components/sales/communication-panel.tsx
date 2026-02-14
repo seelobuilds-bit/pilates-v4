@@ -25,7 +25,6 @@ import {
   PhoneOff,
   Mic,
   MicOff,
-  Clock,
   CheckCircle,
   AlertCircle,
   X,
@@ -158,7 +157,7 @@ export function CommunicationPanel({
       } else {
         setResult({ success: false, message: data.error || "Failed to send email" })
       }
-    } catch (error) {
+    } catch {
       setResult({ success: false, message: "Failed to send email" })
     } finally {
       setSending(false)
@@ -197,7 +196,7 @@ export function CommunicationPanel({
       } else {
         setResult({ success: false, message: data.error || "Failed to send SMS" })
       }
-    } catch (error) {
+    } catch {
       setResult({ success: false, message: "Failed to send SMS" })
     } finally {
       setSending(false)
@@ -234,7 +233,7 @@ export function CommunicationPanel({
       if (!res.ok) {
         setResult({ success: false, message: data.error || "Failed to initiate call" })
       }
-    } catch (error) {
+    } catch {
       setResult({ success: false, message: "Failed to initiate call" })
     }
   }
@@ -559,7 +558,6 @@ export function CommunicationPanel({
     </Card>
   )
 }
-
 
 
 

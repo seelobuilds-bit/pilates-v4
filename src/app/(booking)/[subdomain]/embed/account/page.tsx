@@ -100,7 +100,7 @@ export default function EmbedAccountPage() {
         const data = await res.json()
         alert(data.error || "Failed to cancel booking")
       }
-    } catch (error) {
+    } catch {
       alert("Failed to cancel booking")
     } finally {
       setCancellingId(null)

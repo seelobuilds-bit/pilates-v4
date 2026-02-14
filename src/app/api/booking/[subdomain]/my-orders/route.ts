@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 export async function GET(
   request: NextRequest,
@@ -20,14 +17,10 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
@@ -44,7 +37,10 @@ export async function GET(
     // Get client's merch orders
     const orders = await db.merchOrder.findMany({
       where: {
-        clientId: client.id
+        clientId: client.id,
+        store: {
+          studioId: studio.id,
+        },
       },
       include: {
         items: true
@@ -52,13 +48,26 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json({ orders })
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      totalAmount: order.total,
+      createdAt: order.createdAt,
+      items: order.items.map((item) => ({
+        quantity: item.quantity,
+        product: {
+          name: item.productName,
+        },
+      })),
+    }))
+
+    return NextResponse.json({ orders: formattedOrders })
   } catch (error) {
     console.error("Failed to fetch orders:", error)
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }
-
 
 
 

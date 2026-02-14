@@ -23,7 +23,6 @@ import {
   ArrowRight,
   Building2,
   Users,
-  Clock,
   Star
 } from "lucide-react"
 
@@ -126,7 +125,7 @@ export default function BookDemoPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">30-Minute Personalized Demo</h3>
-                  <p className="text-gray-600">Get a walkthrough tailored to your studio's specific needs</p>
+                  <p className="text-gray-600">Get a walkthrough tailored to your studio&apos;s specific needs</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -158,7 +157,7 @@ export default function BookDemoPage() {
                   ))}
                 </div>
                 <p className="text-gray-700 italic mb-4">
-                  "Switching to Current was the best decision we made. Our bookings increased by 40% in the first month, and the social media tools have been a game-changer."
+                  &quot;Switching to Current was the best decision we made. Our bookings increased by 40% in the first month, and the social media tools have been a game-changer.&quot;
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center text-violet-700 font-semibold">
@@ -309,8 +308,6 @@ export default function BookDemoPage() {
     </div>
   )
 }
-
-
 
 
 

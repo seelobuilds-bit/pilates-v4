@@ -10,6 +10,20 @@ export async function GET(request: NextRequest) {
   const courseId = searchParams.get("courseId")
   const myEnrollments = searchParams.get("myEnrollments")
 
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (myEnrollments !== "true") {
+    if (!session.user.studioId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (session.user.role !== "OWNER" && session.user.role !== "HQ_ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+  }
+
   try {
     // Build where clause
     const where: Record<string, unknown> = {}
@@ -337,7 +351,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update enrollment" }, { status: 500 })
   }
 }
-
 
 
 

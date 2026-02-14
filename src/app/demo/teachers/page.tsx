@@ -8,12 +8,10 @@ import {
   Plus, 
   Search, 
   Mail, 
-  Phone,
   Calendar,
   Users,
   Star,
-  Clock,
-  MapPin
+  Clock
 } from "lucide-react"
 
 const DEMO_STUDIO_SUBDOMAIN = "zenith"
@@ -183,12 +181,6 @@ export default async function DemoTeachersPage() {
                           <Mail className="h-3 w-3 flex-shrink-0" />
                           {teacher.user.email}
                         </p>
-                        {teacher.phone && (
-                          <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Phone className="h-3 w-3" />
-                            {teacher.phone}
-                          </p>
-                        )}
                       </div>
                     </div>
 
@@ -229,7 +221,5 @@ export default async function DemoTeachersPage() {
     </div>
   )
 }
-
-
 
 

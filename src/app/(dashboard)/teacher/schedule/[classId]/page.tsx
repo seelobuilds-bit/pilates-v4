@@ -15,7 +15,6 @@ import {
   MapPin, 
   Users, 
   Loader2,
-  User,
   Mail,
   MessageSquare,
   Send,
@@ -448,7 +447,6 @@ export default function TeacherClassDetailPage({
     </div>
   )
 }
-
 
 
 

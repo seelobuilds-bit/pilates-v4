@@ -16,7 +16,7 @@ export async function GET(
     role: session?.user?.role
   })
 
-  if (!session?.user?.studioId) {
+  if (!session?.user?.studioId || session.user.role !== "OWNER") {
     console.log("[Invoice Classes API] No studioId in session!")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

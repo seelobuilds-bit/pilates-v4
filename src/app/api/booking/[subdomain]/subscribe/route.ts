@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 export async function POST(
   request: NextRequest,
@@ -20,14 +17,10 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
@@ -48,9 +41,13 @@ export async function POST(
       return NextResponse.json({ error: "Plan ID and interval required" }, { status: 400 })
     }
 
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 })
+    }
+
     // Get the plan
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: { communityChat: true }
     })
 
@@ -58,21 +55,40 @@ export async function POST(
       return NextResponse.json({ error: "Plan not found or inactive" }, { status: 404 })
     }
 
+    if (client.studioId !== studio.id) {
+      return NextResponse.json({ error: "Invalid client scope" }, { status: 400 })
+    }
+
+    const planPrice = interval === "yearly" ? plan.yearlyPrice : plan.monthlyPrice
+    if (planPrice === null) {
+      return NextResponse.json({ error: "Selected interval is not available for this plan" }, { status: 400 })
+    }
+
+    if (planPrice > 0) {
+      return NextResponse.json(
+        { error: "Paid plans require payment confirmation. Use create-subscription-intent." },
+        { status: 400 }
+      )
+    }
+
     // Check if client already has an active subscription to this plan
+    const now = new Date()
     const existingSubscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: client.id,
         planId: plan.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (existingSubscription) {
-      return NextResponse.json({ error: "Already subscribed to this plan" }, { status: 400 })
+      return NextResponse.json({ error: "Already subscribed or cancellation is pending for this plan" }, { status: 400 })
     }
 
     // Calculate period dates
-    const now = new Date()
     const periodEnd = new Date(now)
     if (interval === "monthly") {
       periodEnd.setMonth(periodEnd.getMonth() + 1)
@@ -88,7 +104,8 @@ export async function POST(
         interval,
         status: "active",
         currentPeriodStart: now,
-        currentPeriodEnd: periodEnd
+        currentPeriodEnd: periodEnd,
+        paidAmount: 0,
       },
       include: {
         plan: {
@@ -120,8 +137,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to subscribe" }, { status: 500 })
   }
 }
-
-
 
 
 

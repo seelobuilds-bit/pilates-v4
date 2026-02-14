@@ -37,13 +37,12 @@ export async function POST(
     const stripe = getStripe()
 
     // Get class session
-    const classSession = await db.classSession.findUnique({
-      where: { id: classSessionId },
+    const classSession = await db.classSession.findFirst({
+      where: { id: classSessionId, studioId: studio.id },
       include: {
         classType: true,
         teacher: { include: { user: true } },
         location: true,
-        _count: { select: { bookings: true } },
       },
     })
 
@@ -51,8 +50,20 @@ export async function POST(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    // Check capacity
-    if (classSession._count.bookings >= classSession.capacity) {
+    // Check if class has started
+    if (new Date(classSession.startTime) < new Date()) {
+      return NextResponse.json({ error: "This class has already started" }, { status: 400 })
+    }
+
+    // Check capacity (active bookings only)
+    const activeBookingsCount = await db.booking.count({
+      where: {
+        classSessionId: classSession.id,
+        status: { in: ["CONFIRMED", "PENDING"] },
+      },
+    })
+
+    if (activeBookingsCount >= classSession.capacity) {
       return NextResponse.json({ error: "Class is full" }, { status: 400 })
     }
 

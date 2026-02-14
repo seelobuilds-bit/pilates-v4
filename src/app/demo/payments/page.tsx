@@ -35,12 +35,13 @@ export default async function DemoPaymentsPage() {
   }
 
   // Mock payment data since real payments would need Stripe integration
+  const demoNow = new Date("2026-02-11T12:00:00Z")
   const mockPayments = [
-    { id: "1", type: "Class Pack", client: "Sarah Johnson", amount: 150, status: "COMPLETED", date: new Date() },
-    { id: "2", type: "Monthly Membership", client: "Mike Chen", amount: 99, status: "COMPLETED", date: new Date(Date.now() - 86400000) },
-    { id: "3", type: "Drop-in Class", client: "Emily Davis", amount: 35, status: "COMPLETED", date: new Date(Date.now() - 172800000) },
-    { id: "4", type: "Private Session", client: "James Wilson", amount: 120, status: "COMPLETED", date: new Date(Date.now() - 259200000) },
-    { id: "5", type: "Monthly Membership", client: "Lisa Park", amount: 99, status: "PENDING", date: new Date(Date.now() - 345600000) },
+    { id: "1", type: "Class Pack", client: "Sarah Johnson", amount: 150, status: "COMPLETED", date: demoNow },
+    { id: "2", type: "Monthly Membership", client: "Mike Chen", amount: 99, status: "COMPLETED", date: new Date(demoNow.getTime() - 86400000) },
+    { id: "3", type: "Drop-in Class", client: "Emily Davis", amount: 35, status: "COMPLETED", date: new Date(demoNow.getTime() - 172800000) },
+    { id: "4", type: "Private Session", client: "James Wilson", amount: 120, status: "COMPLETED", date: new Date(demoNow.getTime() - 259200000) },
+    { id: "5", type: "Monthly Membership", client: "Lisa Park", amount: 99, status: "PENDING", date: new Date(demoNow.getTime() - 345600000) },
   ]
 
   const totalRevenue = mockPayments.filter(p => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0)
@@ -208,7 +209,6 @@ export default async function DemoPaymentsPage() {
     </div>
   )
 }
-
 
 
 

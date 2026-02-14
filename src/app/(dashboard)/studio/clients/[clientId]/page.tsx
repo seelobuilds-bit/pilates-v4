@@ -80,6 +80,23 @@ interface Communication {
   timestamp: string
 }
 
+const emptyClientStats: ClientStats = {
+  totalSpent: 0,
+  totalBookings: 0,
+  completedClasses: 0,
+  cancelRate: 0,
+  avgBookingsPerMonth: 0,
+  membershipType: "No active package",
+  favoriteClass: "No data yet",
+  favoriteTeacher: "No data yet",
+  favoriteLocation: "No data yet",
+  classBreakdown: [],
+  teacherBreakdown: [],
+  locationBreakdown: [],
+  monthlyBookings: [],
+  activityTimeline: []
+}
+
 export default function ClientDetailPage({
   params,
 }: {
@@ -101,85 +118,9 @@ export default function ClientDetailPage({
           const data = await res.json()
           setClient(data.client)
           setBookings(data.bookings || [])
+          setStats(data.stats || emptyClientStats)
+          setCommunications(data.communications || [])
         }
-
-        // Mock stats - in production this would come from the API
-        setStats({
-          totalSpent: 1245,
-          totalBookings: 42,
-          completedClasses: 38,
-          cancelRate: 9.5,
-          avgBookingsPerMonth: 7,
-          membershipType: "Class Pack (10)",
-          favoriteClass: "Reformer Pilates",
-          favoriteTeacher: "Sarah Johnson",
-          favoriteLocation: "Downtown Studio",
-          classBreakdown: [
-            { name: "Reformer Pilates", count: 18 },
-            { name: "Mat Pilates", count: 12 },
-            { name: "Tower Class", count: 8 },
-            { name: "Beginner Flow", count: 4 }
-          ],
-          teacherBreakdown: [
-            { name: "Sarah Johnson", count: 22 },
-            { name: "Mike Chen", count: 12 },
-            { name: "Emily Davis", count: 8 }
-          ],
-          locationBreakdown: [
-            { name: "Downtown Studio", count: 30 },
-            { name: "Westside Location", count: 12 }
-          ],
-          monthlyBookings: [
-            { month: "Jul", count: 5 },
-            { month: "Aug", count: 7 },
-            { month: "Sep", count: 6 },
-            { month: "Oct", count: 8 },
-            { month: "Nov", count: 9 },
-            { month: "Dec", count: 7 }
-          ],
-          activityTimeline: [
-            { date: "Today", action: "Booked", details: "Reformer Pilates - Dec 18, 9:00 AM" },
-            { date: "Yesterday", action: "Completed", details: "Mat Pilates with Sarah J." },
-            { date: "Dec 15", action: "Purchased", details: "10-Class Pack ($250)" },
-            { date: "Dec 14", action: "Completed", details: "Tower Class with Mike C." },
-            { date: "Dec 12", action: "Cancelled", details: "Beginner Flow (24h notice)" }
-          ]
-        })
-
-        // Mock communications
-        setCommunications([
-          {
-            id: "comm-1",
-            type: "email",
-            direction: "outbound",
-            subject: "Class Reminder",
-            content: "Hi! Just a reminder about your Reformer Pilates class tomorrow at 9:00 AM.",
-            timestamp: "Yesterday at 3:00 PM"
-          },
-          {
-            id: "comm-2",
-            type: "email",
-            direction: "inbound",
-            subject: "Re: Class Reminder",
-            content: "Thanks for the reminder! I'll be there.",
-            timestamp: "Yesterday at 4:30 PM"
-          },
-          {
-            id: "comm-3",
-            type: "sms",
-            direction: "outbound",
-            content: "Your booking is confirmed! See you tomorrow at 9 AM.",
-            timestamp: "2 days ago"
-          },
-          {
-            id: "comm-4",
-            type: "email",
-            direction: "outbound",
-            subject: "Welcome to Our Studio!",
-            content: "Welcome to our pilates studio! We're excited to have you join us. Your first class is scheduled for...",
-            timestamp: "2 weeks ago"
-          }
-        ])
       } catch (error) {
         console.error("Error fetching client:", error)
       } finally {
@@ -208,6 +149,27 @@ export default function ClientDetailPage({
         </div>
       </div>
     )
+  }
+
+  const safeStats = stats || emptyClientStats
+  const hasClientReportData =
+    safeStats.totalBookings > 0 ||
+    safeStats.totalSpent > 0 ||
+    safeStats.classBreakdown.length > 0 ||
+    safeStats.teacherBreakdown.length > 0 ||
+    safeStats.monthlyBookings.some((month) => month.count > 0)
+
+  const formatMessageTimestamp = (value: string) => {
+    const parsedDate = new Date(value)
+    if (Number.isNaN(parsedDate.getTime())) {
+      return value
+    }
+    return parsedDate.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    })
   }
 
   return (
@@ -306,7 +268,7 @@ export default function ClientDetailPage({
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalSpent.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">${safeStats.totalSpent.toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Total Spent</p>
                 </div>
               </div>
@@ -320,7 +282,7 @@ export default function ClientDetailPage({
                   <Calendar className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.totalBookings}</p>
                   <p className="text-sm text-gray-500">Total Bookings</p>
                 </div>
               </div>
@@ -334,7 +296,7 @@ export default function ClientDetailPage({
                   <TrendingUp className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stats.avgBookingsPerMonth}</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgBookingsPerMonth}</p>
                   <p className="text-sm text-gray-500">Bookings/Month</p>
                 </div>
               </div>
@@ -384,7 +346,7 @@ export default function ClientDetailPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
-          {stats && (
+          {stats && hasClientReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Preferences */}
               <Card className="border-0 shadow-sm">
@@ -399,28 +361,28 @@ export default function ClientDetailPage({
                         <BookOpen className="h-5 w-5 text-violet-500" />
                         <span className="text-sm text-gray-600">Favorite Class</span>
                       </div>
-                      <span className="font-medium text-violet-700">{stats.favoriteClass}</span>
+                      <span className="font-medium text-violet-700">{safeStats.favoriteClass}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Users className="h-5 w-5 text-blue-500" />
                         <span className="text-sm text-gray-600">Favorite Teacher</span>
                       </div>
-                      <span className="font-medium text-blue-700">{stats.favoriteTeacher}</span>
+                      <span className="font-medium text-blue-700">{safeStats.favoriteTeacher}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <MapPin className="h-5 w-5 text-emerald-500" />
                         <span className="text-sm text-gray-600">Favorite Location</span>
                       </div>
-                      <span className="font-medium text-emerald-700">{stats.favoriteLocation}</span>
+                      <span className="font-medium text-emerald-700">{safeStats.favoriteLocation}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Gift className="h-5 w-5 text-amber-500" />
                         <span className="text-sm text-gray-600">Membership</span>
                       </div>
-                      <span className="font-medium text-amber-700">{stats.membershipType}</span>
+                      <span className="font-medium text-amber-700">{safeStats.membershipType}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -435,11 +397,11 @@ export default function ClientDetailPage({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-emerald-50 rounded-xl text-center">
-                      <p className="text-2xl font-bold text-emerald-600">{stats.completedClasses}</p>
+                      <p className="text-2xl font-bold text-emerald-600">{safeStats.completedClasses}</p>
                       <p className="text-sm text-emerald-700">Classes Completed</p>
                     </div>
                     <div className="p-4 bg-red-50 rounded-xl text-center">
-                      <p className="text-2xl font-bold text-red-600">{stats.cancelRate}%</p>
+                      <p className="text-2xl font-bold text-red-600">{safeStats.cancelRate}%</p>
                       <p className="text-sm text-red-700">Cancel Rate</p>
                     </div>
                   </div>
@@ -454,8 +416,8 @@ export default function ClientDetailPage({
                     <h3 className="font-semibold text-gray-900">Classes Attended</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.classBreakdown.map((cls, i) => {
-                      const total = stats.classBreakdown.reduce((a, c) => a + c.count, 0)
+                    {safeStats.classBreakdown.map((cls, i) => {
+                      const total = safeStats.classBreakdown.reduce((a, c) => a + c.count, 0)
                       const pct = Math.round((cls.count / total) * 100)
                       return (
                         <div key={i}>
@@ -484,7 +446,7 @@ export default function ClientDetailPage({
                     <h3 className="font-semibold text-gray-900">Teachers Booked</h3>
                   </div>
                   <div className="space-y-3">
-                    {stats.teacherBreakdown.map((teacher, i) => (
+                    {safeStats.teacherBreakdown.map((teacher, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
@@ -507,8 +469,8 @@ export default function ClientDetailPage({
                     <h3 className="font-semibold text-gray-900">Booking History</h3>
                   </div>
                   <div className="flex items-end justify-between h-32 gap-4">
-                    {stats.monthlyBookings.map((month, i) => {
-                      const maxCount = Math.max(...stats.monthlyBookings.map(m => m.count))
+                    {safeStats.monthlyBookings.map((month, i) => {
+                      const maxCount = Math.max(...safeStats.monthlyBookings.map(m => m.count))
                       const height = (month.count / maxCount) * 100
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -525,6 +487,17 @@ export default function ClientDetailPage({
                 </CardContent>
               </Card>
             </div>
+          )}
+          {(!stats || !hasClientReportData) && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-10 text-center">
+                <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <p className="text-gray-500">
+                  This client has no tracked booking activity yet, so reporting is empty.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
@@ -574,7 +547,7 @@ export default function ClientDetailPage({
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-400">
                           <Clock className="h-3 w-3" />
-                          {comm.timestamp}
+                          {formatMessageTimestamp(comm.timestamp)}
                           {comm.direction === "outbound" && <Check className="h-3 w-3 ml-1 text-green-500" />}
                         </div>
                       </div>
@@ -659,9 +632,9 @@ export default function ClientDetailPage({
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Activity Timeline</h3>
-              {stats && (
+              {stats && safeStats.activityTimeline.length > 0 && (
                 <div className="space-y-4">
-                  {stats.activityTimeline.map((activity, i) => (
+                  {safeStats.activityTimeline.map((activity, i) => (
                     <div key={i} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className={`w-3 h-3 rounded-full ${
@@ -671,7 +644,7 @@ export default function ClientDetailPage({
                           activity.action === "Cancelled" ? "bg-red-500" :
                           "bg-gray-300"
                         }`} />
-                        {i < stats.activityTimeline.length - 1 && (
+                        {i < safeStats.activityTimeline.length - 1 && (
                           <div className="w-0.5 h-full bg-gray-200 my-1" />
                         )}
                       </div>
@@ -684,6 +657,12 @@ export default function ClientDetailPage({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {(!stats || safeStats.activityTimeline.length === 0) && (
+                <div className="text-center py-10">
+                  <Activity className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                  <p className="text-gray-500">No activity tracked yet</p>
                 </div>
               )}
             </CardContent>

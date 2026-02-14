@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import {
   Search,
   ShoppingBag,
+  ShoppingCart,
   Package,
   Filter,
   Loader2,
-  Star,
   Truck,
   ChevronRight
 } from "lucide-react"
@@ -62,12 +62,9 @@ export default function CustomerStorePage({ params }: { params: Promise<{ subdom
   const [studioName, setStudioName] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [cartCount, setCartCount] = useState(0)
 
-  useEffect(() => {
-    fetchStore()
-  }, [subdomain])
-
-  async function fetchStore() {
+  const fetchStore = useCallback(async () => {
     try {
       const res = await fetch(`/api/booking/${subdomain}/store`)
       if (res.ok) {
@@ -81,7 +78,25 @@ export default function CustomerStorePage({ params }: { params: Promise<{ subdom
       console.error("Failed to fetch store:", err)
     }
     setLoading(false)
-  }
+  }, [subdomain])
+
+  useEffect(() => {
+    void fetchStore()
+  }, [fetchStore])
+
+  useEffect(() => {
+    const key = `store_cart_${subdomain}`
+    const refreshCartCount = () => {
+      if (typeof window === "undefined") return
+      const raw = window.localStorage.getItem(key)
+      const items: Array<{ quantity: number }> = raw ? JSON.parse(raw) : []
+      setCartCount(items.reduce((sum, item) => sum + item.quantity, 0))
+    }
+
+    refreshCartCount()
+    window.addEventListener("storage", refreshCartCount)
+    return () => window.removeEventListener("storage", refreshCartCount)
+  }, [subdomain])
 
   const getCategoryLabel = (cat: string) => {
     const labels: Record<string, string> = {
@@ -196,6 +211,12 @@ export default function CustomerStorePage({ params }: { params: Promise<{ subdom
                 <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
               ))}
             </select>
+            <Link href={`/${subdomain}/store/cart`}>
+              <Button variant="outline" className="whitespace-nowrap">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart {cartCount > 0 ? `(${cartCount})` : ""}
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -321,8 +342,6 @@ export default function CustomerStorePage({ params }: { params: Promise<{ subdom
     </div>
   )
 }
-
-
 
 
 

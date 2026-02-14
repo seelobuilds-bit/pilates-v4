@@ -15,12 +15,9 @@ import {
   DollarSign,
   Calendar,
   Clock,
-  Users,
   Send,
   CheckCircle,
-  XCircle,
-  AlertCircle,
-  ChevronRight
+  XCircle
 } from "lucide-react"
 
 interface PayRate {
@@ -630,8 +627,6 @@ function InvoiceList({
     </div>
   )
 }
-
-
 
 
 

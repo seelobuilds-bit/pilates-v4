@@ -10,7 +10,6 @@ import {
   Calendar,
   DollarSign,
   Download,
-  Clock,
   Target,
   Activity,
   PieChart
@@ -36,7 +35,6 @@ export default async function DemoReportsPage() {
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
   const [
     totalClients,
@@ -290,7 +288,6 @@ export default async function DemoReportsPage() {
     </div>
   )
 }
-
 
 
 

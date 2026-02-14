@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect, useMemo } from "react"
+import { useParams, useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
@@ -37,15 +37,14 @@ function StripePaymentWrapper({
   selectedClass: ClassType | null
   selectedLocation: Location | null
 }) {
-  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null)
-
-  useEffect(() => {
-    const promise = loadStripe(
+  const stripePromise = useMemo(
+    () =>
+      loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
       { stripeAccount: connectedAccountId }
-    )
-    setStripePromise(promise)
-  }, [connectedAccountId])
+      ),
+    [connectedAccountId]
+  )
 
   if (!stripePromise) {
     return (
@@ -312,7 +311,6 @@ interface BookingDetails {
 
 export default function EmbedBookingPage() {
   const params = useParams()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
   

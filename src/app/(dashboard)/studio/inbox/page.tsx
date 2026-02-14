@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Search,
   Mail,
@@ -16,7 +16,6 @@ import {
   Send,
   User,
   Plus,
-  Star,
   RefreshCw,
   Check,
   X,
@@ -463,7 +462,7 @@ export default function InboxPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-[100dvh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -472,9 +471,9 @@ export default function InboxPage() {
   const socialUnread = socialConversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
       {/* Inbox Type Tabs */}
-      <div className="border-b bg-white px-4 pt-4">
+      <div className="border-b bg-white px-4 py-3">
         <Tabs value={inboxTab} onValueChange={(v) => setInboxTab(v as typeof inboxTab)}>
           <TabsList className="bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
@@ -497,9 +496,9 @@ export default function InboxPage() {
 
       {/* Main Content */}
       {inboxTab === "messages" ? (
-      <div className="flex-1 flex">
+      <div className="flex-1 min-h-0 flex">
       {/* Conversations List */}
-      <div className="w-96 border-r border-gray-200 flex flex-col bg-white">
+      <div className="w-96 border-r border-gray-200 flex flex-col min-h-0 bg-white">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -615,7 +614,7 @@ export default function InboxPage() {
       </div>
 
       {/* Message View */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
         {selectedConversation ? (
           <>
             {/* Conversation Header */}
@@ -809,7 +808,7 @@ export default function InboxPage() {
             )}
 
             {/* Compose Area */}
-            <div className="p-4 bg-white border-t border-gray-200">
+            <div className="p-4 md:pr-24 bg-white border-t border-gray-200">
               {/* Message Type Toggle */}
               <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
                 <button
@@ -891,9 +890,9 @@ export default function InboxPage() {
     </div>
       ) : (
         /* ==================== SOCIAL INBOX ==================== */
-        <div className="flex-1 flex">
+        <div className="flex-1 min-h-0 flex">
           {/* Social Conversations List */}
-          <div className="w-96 border-r border-gray-200 flex flex-col bg-white">
+          <div className="w-96 border-r border-gray-200 flex flex-col min-h-0 bg-white">
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -925,7 +924,11 @@ export default function InboxPage() {
 
               {socialAccounts.length === 0 ? (
                 <div className="p-3 bg-pink-50 rounded-lg text-sm text-pink-700">
-                  Connect your Instagram or TikTok in <a href="/studio/marketing/social" className="underline font-medium">Social Media</a> to see DMs here.
+                  Connect your Instagram or TikTok in{" "}
+                  <Link href="/studio/marketing/social" className="underline font-medium">
+                    Social Media
+                  </Link>{" "}
+                  to see DMs here.
                 </div>
               ) : (
                 /* Search & Filter */
@@ -1050,7 +1053,7 @@ export default function InboxPage() {
           </div>
 
           {/* Social Message Thread or Compose */}
-          <div className="flex-1 flex flex-col bg-gray-50">
+          <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
           {socialComposing ? (
             <>
               {/* Compose Header */}
@@ -1159,7 +1162,7 @@ export default function InboxPage() {
               </div>
 
               {/* Send Button */}
-              <div className="p-4 bg-white border-t border-gray-200">
+              <div className="p-4 md:pr-24 bg-white border-t border-gray-200">
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setSocialComposing(false)}>
                     Cancel
@@ -1225,7 +1228,7 @@ export default function InboxPage() {
               </div>
 
               {/* Compose */}
-              <div className="p-4 bg-white border-t">
+              <div className="p-4 md:pr-24 bg-white border-t">
                 <div className="flex items-end gap-3">
                   <Textarea
                     placeholder="Type your message..."

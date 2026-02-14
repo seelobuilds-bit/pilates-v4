@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { sendEmail } from "@/lib/communications"
+import { Role } from "@prisma/client"
+
+const INVITABLE_ROLES = new Set<Role>([Role.HQ_ADMIN, Role.SALES_AGENT])
 
 // POST - Create a new user (for HQ admin)
 export async function POST(request: NextRequest) {
@@ -19,6 +21,15 @@ export async function POST(request: NextRequest) {
 
     if (!email || !firstName || !lastName || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    const normalizedRole = typeof role === "string" ? role.toUpperCase() : ""
+    if (!Object.values(Role).includes(normalizedRole as Role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 })
+    }
+
+    if (!INVITABLE_ROLES.has(normalizedRole as Role)) {
+      return NextResponse.json({ error: "Role is not permitted for invitation" }, { status: 400 })
     }
 
     // Check if user already exists
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         firstName,
         lastName,
-        role,
+        role: normalizedRole as Role,
         password: "", // Empty - will be set via setup link
         resetToken: setupToken,
         resetTokenExpiry: setupTokenExpiry
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
     await sendEmail({
       to: email,
       subject: `Welcome to Current - Set Up Your Account`,
-      body: `Hi ${firstName},\n\nYou've been invited to join Current as a ${role.replace("_", " ")}.\n\nPlease click the link below to set your password and access your account:\n\n${setupUrl}\n\nThis link will expire in 7 days.\n\nBest,\nThe Current Team`
+      body: `Hi ${firstName},\n\nYou've been invited to join Current as a ${normalizedRole.replace("_", " ")}.\n\nPlease click the link below to set your password and access your account:\n\n${setupUrl}\n\nThis link will expire in 7 days.\n\nBest,\nThe Current Team`
     })
 
     return NextResponse.json({ 
@@ -84,9 +95,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const role = searchParams.get("role")
+    const roleFilter = role && Object.values(Role).includes(role as Role) ? (role as Role) : null
 
     const users = await db.user.findMany({
-      where: role ? { role: role as any } : undefined,
+      where: roleFilter ? { role: roleFilter } : undefined,
       select: {
         id: true,
         email: true,

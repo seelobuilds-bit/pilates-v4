@@ -5,14 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  Inbox,
-  MessageSquare,
   Mail,
   Phone,
   Search,
   Send,
-  Users,
-  Clock
 } from "lucide-react"
 
 const DEMO_STUDIO_SUBDOMAIN = "zenith"
@@ -41,6 +37,7 @@ export default async function DemoInboxPage() {
   })
 
   // Mock conversations
+  const demoNow = new Date("2026-02-11T12:00:00Z")
   const conversations = clients.slice(0, 5).map((client, i) => ({
     id: client.id,
     client,
@@ -49,7 +46,7 @@ export default async function DemoInboxPage() {
                  i === 2 ? "What time does the studio open?" :
                  i === 3 ? "Great class yesterday!" : "Hi there!",
     unread: i < 2,
-    timestamp: new Date(Date.now() - i * 3600000)
+    timestamp: new Date(demoNow.getTime() - i * 3600000)
   }))
 
   return (
@@ -129,7 +126,7 @@ export default async function DemoInboxPage() {
 
             <TabsContent value="unread" className="m-0">
               <div className="space-y-2">
-                {conversations.filter(c => c.unread).map((conv, i) => (
+                {conversations.filter(c => c.unread).map((conv) => (
                   <Card 
                     key={conv.id} 
                     className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -261,7 +258,5 @@ export default async function DemoInboxPage() {
     </div>
   )
 }
-
-
 
 

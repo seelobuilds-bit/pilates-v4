@@ -305,7 +305,7 @@ async function main() {
     for (const moduleData of modules) {
       const { lessons, ...moduleInfo } = moduleData
 
-      const module = await prisma.vaultModule.create({
+      const vaultModule = await prisma.vaultModule.create({
         data: {
           ...moduleInfo,
           courseId: course.id,
@@ -318,7 +318,7 @@ async function main() {
         await prisma.vaultLesson.create({
           data: {
             ...lessonData,
-            moduleId: module.id,
+            moduleId: vaultModule.id,
             isPublished: true
           }
         })
@@ -421,7 +421,6 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
-
 
 
 

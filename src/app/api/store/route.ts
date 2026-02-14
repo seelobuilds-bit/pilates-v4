@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 // GET - Get studio's store settings and products
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getSession()
 
   if (!session?.user?.studioId) {
@@ -161,7 +161,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update store" }, { status: 500 })
   }
 }
-
 
 
 

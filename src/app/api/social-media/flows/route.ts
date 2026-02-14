@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 // GET - Fetch social media flows
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getSession()
 
   if (!session?.user?.studioId) {
@@ -139,7 +139,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create flow" }, { status: 500 })
   }
 }
-
 
 
 

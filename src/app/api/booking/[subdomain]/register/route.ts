@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { sign } from "jsonwebtoken"
 import { sendSystemTemplateEmail } from "@/lib/email"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { createClientToken } from "@/lib/client-auth"
 
 export async function POST(
   request: NextRequest,
@@ -49,11 +47,13 @@ export async function POST(
       }
     })
 
-    const token = sign(
-      { clientId: client.id, studioId: studio.id },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    )
+    const token = createClientToken({ clientId: client.id, studioId: studio.id, email: client.email })
+    if (!token) {
+      return NextResponse.json(
+        { error: "Authentication system misconfigured" },
+        { status: 500 }
+      )
+    }
 
     const cookieStore = await cookies()
     cookieStore.set(`client_token_${subdomain}`, token, {

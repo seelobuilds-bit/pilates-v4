@@ -64,7 +64,7 @@ export async function POST(
       orderBy: { order: "desc" }
     })
 
-    const module = await db.vaultModule.create({
+    const createdModule = await db.vaultModule.create({
       data: {
         title,
         description,
@@ -77,7 +77,7 @@ export async function POST(
       }
     })
 
-    return NextResponse.json(module)
+    return NextResponse.json(createdModule)
   } catch (error) {
     console.error("Failed to create module:", error)
     return NextResponse.json({ error: "Failed to create module" }, { status: 500 })
@@ -89,7 +89,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const { courseId } = await params
+  await params
   const session = await getSession()
 
   if (!session?.user?.studioId) {
@@ -116,9 +116,6 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to reorder modules" }, { status: 500 })
   }
 }
-
-
-
 
 
 

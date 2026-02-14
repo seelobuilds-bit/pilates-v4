@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Building2,
-  Users,
   Calendar,
   Settings,
   LogOut,

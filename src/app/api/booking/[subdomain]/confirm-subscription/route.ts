@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
 import { getStripe } from "@/lib/stripe"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 // POST - Confirm subscription payment and create subscription
 export async function POST(
@@ -13,8 +10,6 @@ export async function POST(
 ) {
   try {
     const { subdomain } = await params
-    const body = await request.json()
-    const { paymentIntentId, paymentId } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -25,22 +20,29 @@ export async function POST(
       },
     })
 
-    if (!studio || !studio.stripeAccountId) {
+    if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
     // Authenticate client
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
-
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    if (!studio.stripeAccountId) {
+      return NextResponse.json({ error: "Studio payment setup incomplete" }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { paymentIntentId, paymentId } = body
+
+    if (!paymentIntentId || !paymentId) {
+      return NextResponse.json({ error: "paymentIntentId and paymentId are required" }, { status: 400 })
     }
 
     const stripe = getStripe()
@@ -67,30 +69,60 @@ export async function POST(
       return NextResponse.json({ error: "Payment record not found" }, { status: 404 })
     }
 
+    if (payment.studioId !== studio.id) {
+      return NextResponse.json({ error: "Payment does not belong to this studio" }, { status: 400 })
+    }
+
+    if (payment.clientId !== decoded.clientId) {
+      return NextResponse.json({ error: "Payment does not belong to this client" }, { status: 400 })
+    }
+
+    if (payment.stripePaymentIntentId && payment.stripePaymentIntentId !== paymentIntentId) {
+      return NextResponse.json({ error: "Payment mismatch" }, { status: 400 })
+    }
+
     // Update payment status
     await db.payment.update({
       where: { id: paymentId },
       data: {
         status: "SUCCEEDED",
         stripeChargeId: paymentIntent.latest_charge as string,
+        stripePaymentIntentId: paymentIntentId,
       },
     })
 
     // Get subscription details from metadata
     const planId = paymentIntent.metadata.planId
     const clientId = paymentIntent.metadata.clientId
+    const metadataStudioId = paymentIntent.metadata.studioId
     const interval = paymentIntent.metadata.interval as "monthly" | "yearly"
 
     if (!planId || !clientId) {
       return NextResponse.json({ error: "Missing subscription information" }, { status: 400 })
     }
 
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval metadata" }, { status: 400 })
+    }
+
+    if (clientId !== decoded.clientId) {
+      return NextResponse.json({ error: "Payment metadata client mismatch" }, { status: 400 })
+    }
+
+    if (metadataStudioId && metadataStudioId !== studio.id) {
+      return NextResponse.json({ error: "Payment metadata studio mismatch" }, { status: 400 })
+    }
+
     // Check for existing subscription (idempotency)
+    const now = new Date()
     const existingSubscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId,
         planId,
-        status: "active",
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       },
     })
 
@@ -103,8 +135,8 @@ export async function POST(
     }
 
     // Get the plan
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
       include: { communityChat: true }
     })
 
@@ -113,7 +145,6 @@ export async function POST(
     }
 
     // Calculate period dates
-    const now = new Date()
     const periodEnd = new Date(now)
     if (interval === "monthly") {
       periodEnd.setMonth(periodEnd.getMonth() + 1)
@@ -168,9 +199,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm subscription" }, { status: 500 })
   }
 }
-
-
-
 
 
 

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
 import { getStripe, calculatePlatformFee } from "@/lib/stripe"
-
-const JWT_SECRET = process.env.JWT_SECRET || "studio-client-secret-key"
+import { verifyClientToken } from "@/lib/client-auth"
 
 // POST - Create a PaymentIntent for subscription payment
 export async function POST(
@@ -13,8 +10,6 @@ export async function POST(
 ) {
   try {
     const { subdomain } = await params
-    const body = await request.json()
-    const { planId, interval } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -32,21 +27,11 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    if (!studio.stripeAccountId || !studio.stripeChargesEnabled) {
-      return NextResponse.json({ 
-        error: "This studio has not set up payments yet" 
-      }, { status: 400 })
-    }
-
     // Authenticate client
-    const cookieStore = await cookies()
-    const token = cookieStore.get(`client_token_${subdomain}`)?.value
-
-    if (!token) {
+    const decoded = await verifyClientToken(subdomain)
+    if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const decoded = verify(token, JWT_SECRET) as { clientId: string; studioId: string }
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
@@ -60,9 +45,22 @@ export async function POST(
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
+    const body = await request.json()
+    const { planId, interval } = body
+
+    if (interval !== "monthly" && interval !== "yearly") {
+      return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 })
+    }
+
+    if (!studio.stripeAccountId || !studio.stripeChargesEnabled) {
+      return NextResponse.json({
+        error: "This studio has not set up payments yet"
+      }, { status: 400 })
+    }
+
     // Get plan
-    const plan = await db.vaultSubscriptionPlan.findUnique({
-      where: { id: planId },
+    const plan = await db.vaultSubscriptionPlan.findFirst({
+      where: { id: planId, studioId: studio.id },
     })
 
     if (!plan || !plan.isActive) {
@@ -70,16 +68,20 @@ export async function POST(
     }
 
     // Check if already subscribed
+    const now = new Date()
     const existingSubscription = await db.vaultSubscriber.findFirst({
       where: {
         clientId: client.id,
         planId: plan.id,
-        status: "active"
+        OR: [
+          { status: "active" },
+          { status: "cancelled", currentPeriodEnd: { gt: now } },
+        ],
       }
     })
 
     if (existingSubscription) {
-      return NextResponse.json({ error: "Already subscribed to this plan" }, { status: 400 })
+      return NextResponse.json({ error: "Already subscribed or cancellation is pending for this plan" }, { status: 400 })
     }
 
     const stripe = getStripe()
@@ -162,9 +164,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
-
-
 
 
 

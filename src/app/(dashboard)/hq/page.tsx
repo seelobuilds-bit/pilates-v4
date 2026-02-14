@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Users, Calendar, DollarSign, Plus, ArrowRight, Target } from "lucide-react"
+import { Building2, Users, Calendar, Plus, ArrowRight, Target } from "lucide-react"
 
 export default async function HQDashboardPage() {
   // Count only real studios (exclude demo)

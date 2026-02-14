@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { Prisma, PrizeType } from "@prisma/client"
+
+interface PrizeInput {
+  position?: number
+  name: string
+  description?: string
+  prizeType: PrizeType
+  prizeValue?: number
+  prizeCurrency?: string
+  prizeDetails?: Prisma.InputJsonValue | null
+  imageUrl?: string
+  sponsorName?: string
+  sponsorLogo?: string
+  sponsorUrl?: string
+}
 
 // GET - Fetch all leaderboards for HQ admin
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getSession()
 
   if (session?.user?.role !== "HQ_ADMIN") {
@@ -157,14 +172,17 @@ export async function POST(request: NextRequest) {
         isFeatured: isFeatured ?? false,
         showOnDashboard: showOnDashboard ?? true,
         prizes: prizes?.length > 0 ? {
-          create: prizes.map((prize: any, index: number) => ({
+          create: (prizes as PrizeInput[]).map((prize, index) => ({
             position: prize.position || index + 1,
             name: prize.name,
             description: prize.description,
             prizeType: prize.prizeType,
             prizeValue: prize.prizeValue,
             prizeCurrency: prize.prizeCurrency || "USD",
-            prizeDetails: prize.prizeDetails,
+            prizeDetails:
+              prize.prizeDetails === null
+                ? Prisma.JsonNull
+                : prize.prizeDetails,
             imageUrl: prize.imageUrl,
             sponsorName: prize.sponsorName,
             sponsorLogo: prize.sponsorLogo,
@@ -302,10 +320,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update leaderboard" }, { status: 500 })
   }
 }
-
-
-
-
 
 
 
