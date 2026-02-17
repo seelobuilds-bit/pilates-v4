@@ -750,7 +750,7 @@ export default function BookingPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-center gap-4 pb-6">
+      <div className="flex flex-wrap items-center justify-center gap-3 pb-6">
         {STEPS.map((s, i) => {
           const Icon = stepIcons[s]
           const isCompleted = i < currentStepIndex
@@ -775,7 +775,7 @@ export default function BookingPage() {
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
         <div className="max-w-2xl mx-auto px-4 pb-4">
-          <div className="flex items-center justify-center gap-4 py-2.5 border border-gray-200 rounded-full text-sm bg-white">
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm">
             {selectedLocation && (
               <span className="flex items-center gap-1.5 text-gray-500">
                 <MapPin className="w-4 h-4" />
@@ -818,7 +818,7 @@ export default function BookingPage() {
                   <button
                     key={loc.id}
                     onClick={() => selectLocationAndContinue(loc)}
-                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{loc.name}</p>
@@ -879,7 +879,7 @@ export default function BookingPage() {
               <div className="space-y-3">
                 <button
                   onClick={() => selectTeacherAndContinue(null)}
-                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                 >
                   <div>
                     <p className="font-medium text-gray-900">Any Available Teacher</p>
@@ -891,7 +891,7 @@ export default function BookingPage() {
                   <button
                     key={t.id}
                     onClick={() => selectTeacherAndContinue(t)}
-                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-medium shrink-0">
@@ -974,7 +974,7 @@ export default function BookingPage() {
                 {slotsLoading ? (
                   <p className="text-gray-500 text-center py-8">Loading times...</p>
                 ) : timeSlots.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {timeSlots.map((slot) => (
                       <button
                         key={slot.id}
@@ -1039,7 +1039,7 @@ export default function BookingPage() {
                         bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "recurring" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
@@ -1065,7 +1065,7 @@ export default function BookingPage() {
                         bookingType === "pack" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "pack" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
@@ -1117,7 +1117,7 @@ export default function BookingPage() {
                       <Sparkles className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Choose Your Pack</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {[5, 10, 20].map((size) => {
                         const discount = size === 5 ? 10 : size === 10 ? 20 : 25
                         return (
@@ -1135,8 +1135,8 @@ export default function BookingPage() {
                         )
                       })}
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-3 rounded-lg border bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-2 sm:items-center">
                         <RefreshCw className="w-4 h-4 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium text-gray-900">Auto-renew pack</p>
@@ -1212,7 +1212,7 @@ export default function BookingPage() {
                   <form onSubmit={handleAuth} className="space-y-4">
                     {authError && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">{authError}</div>}
                     {authMode === "register" && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                           <Label>First Name</Label>
                           <Input value={authForm.firstName} onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })} required />
@@ -1253,7 +1253,7 @@ export default function BookingPage() {
               <>
                 {/* Booking As */}
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-4 flex items-center justify-between">
+                  <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-medium text-gray-900">Booking as</p>
                       <p className="text-sm text-violet-600">{client.email}</p>

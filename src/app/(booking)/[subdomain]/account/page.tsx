@@ -219,7 +219,7 @@ function SubscriptionPaymentForm({
       {/* Order Summary */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
         <h4 className="font-medium text-gray-900 mb-2">Order Summary</h4>
-        <div className="flex justify-between text-sm">
+        <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span className="text-gray-600">{planName} ({interval})</span>
           <span className="font-semibold text-gray-900">${(amount / 100).toFixed(2)}</span>
         </div>
@@ -273,7 +273,7 @@ function SubscriptionPaymentForm({
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             type="button"
             variant="outline"
@@ -942,7 +942,7 @@ export default function AccountPage() {
                   </div>
                 )}
                 {authMode === "register" && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
                       <Input
@@ -1078,13 +1078,13 @@ export default function AccountPage() {
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link href={`/${subdomain}`}>
               <h1 className="text-xl font-bold" style={{ color: primaryColor }}>
                 {studio.name}
               </h1>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9">
                   <AvatarFallback style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
@@ -1110,7 +1110,7 @@ export default function AccountPage() {
         {/* Welcome Banner */}
         <Card className="border-0 shadow-sm mb-8 overflow-hidden">
           <div className="p-6 md:p-8" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)` }}>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="text-white">
                 <h2 className="text-2xl font-bold mb-1">Welcome back, {client.firstName}! 👋</h2>
                 <p className="text-white/80">
@@ -1119,17 +1119,17 @@ export default function AccountPage() {
                     : "Ready to book your next class?"}
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link href={`/${subdomain}/book`}>
-                  <Button className="bg-white hover:bg-gray-100" style={{ color: primaryColor }}>
+                  <Button className="w-full bg-white hover:bg-gray-100 sm:w-auto" style={{ color: primaryColor }}>
                     <Calendar className="h-4 w-4 mr-2" />
                     Book a Class
                   </Button>
                 </Link>
                 {studio.hasVault && (
-                  <Link href={`/${subdomain}/vault`} className="group">
+                  <Link href={`/${subdomain}/vault`} className="group w-full sm:w-auto">
                     <Button 
-                      className="bg-transparent text-white border border-white/50 group-hover:bg-white group-hover:border-transparent transition-all"
+                      className="w-full bg-transparent text-white border border-white/50 group-hover:bg-white group-hover:border-transparent transition-all sm:w-auto"
                     >
                       <span className="flex items-center group-hover:text-violet-600" style={{ transition: 'color 0.2s' }}>
                         <BookOpen className="h-4 w-4 mr-2" />
@@ -1144,7 +1144,7 @@ export default function AccountPage() {
         </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -1204,38 +1204,38 @@ export default function AccountPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="bg-white border shadow-sm p-1 flex-wrap">
-            <TabsTrigger value="bookings" className="gap-2">
+          <TabsList className="bg-white border shadow-sm p-1 flex w-full overflow-x-auto whitespace-nowrap">
+            <TabsTrigger value="bookings" className="gap-2 shrink-0">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Bookings</span>
             </TabsTrigger>
             {studio.hasVault && (
-              <TabsTrigger value="vault" className="gap-2">
+              <TabsTrigger value="vault" className="gap-2 shrink-0">
                 <Video className="h-4 w-4" />
                 <span className="hidden sm:inline">The Vault</span>
               </TabsTrigger>
             )}
             {activeSubscriptions.some(s => s.plan.communityChat?.isEnabled) && (
-              <TabsTrigger value="community" className="gap-2">
+              <TabsTrigger value="community" className="gap-2 shrink-0">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Community</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="subscriptions" className="gap-2">
+            <TabsTrigger value="subscriptions" className="gap-2 shrink-0">
               <Crown className="h-4 w-4" />
               <span className="hidden sm:inline">Subscriptions</span>
             </TabsTrigger>
-            <TabsTrigger value="courses" className="gap-2">
+            <TabsTrigger value="courses" className="gap-2 shrink-0">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">My Courses</span>
             </TabsTrigger>
             {studio.hasStore && (
-              <TabsTrigger value="orders" className="gap-2">
+              <TabsTrigger value="orders" className="gap-2 shrink-0">
                 <ShoppingBag className="h-4 w-4" />
                 <span className="hidden sm:inline">Orders</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="profile" className="gap-2">
+            <TabsTrigger value="profile" className="gap-2 shrink-0">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
@@ -1255,8 +1255,8 @@ export default function AccountPage() {
                 {upcomingBookings.length > 0 ? (
                   <div className="space-y-3">
                     {upcomingBookings.map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-4">
+                      <div key={booking.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
                           <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${primaryColor}15` }}>
                             <Calendar className="h-6 w-6" style={{ color: primaryColor }} />
                           </div>
@@ -1278,7 +1278,7 @@ export default function AccountPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between gap-3 w-full sm:w-auto sm:justify-start">
                           <Badge className="bg-green-100 text-green-700 border-0">Confirmed</Badge>
                           <Button 
                             variant="ghost" 
@@ -1316,7 +1316,7 @@ export default function AccountPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {pastBookings.slice(0, 5).map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg opacity-70">
+                      <div key={booking.id} className="flex flex-col gap-2 p-3 rounded-lg opacity-70 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-medium text-gray-700">{booking.classSession.classType.name}</p>
                           <p className="text-sm text-gray-500">
@@ -1430,7 +1430,7 @@ export default function AccountPage() {
                     
                     {activeSubscriptions.filter(s => s.plan.communityChat?.isEnabled).map(sub => (
                       <div key={sub.id} className="border rounded-xl overflow-hidden">
-                        <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+                        <div className="p-4 bg-gray-50 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-3">
                             <div 
                               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -1470,7 +1470,7 @@ export default function AccountPage() {
                 {activeSubscriptions.map(sub => (
                   <Card key={sub.id} className="border-0 shadow-sm overflow-hidden">
                     <div className="p-6" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
                             {sub.plan.audience === "TEACHERS" ? (
@@ -1492,8 +1492,8 @@ export default function AccountPage() {
                           <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
                         )}
                       </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-6 text-sm">
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col items-start gap-2 text-sm sm:flex-row sm:items-center sm:gap-6">
                           <span className="text-gray-600">
                             <span className="font-medium">{sub.status === "cancelled" ? "Ends:" : "Renews:"}</span>{" "}
                             {new Date(sub.currentPeriodEnd).toLocaleDateString()}
@@ -1602,7 +1602,7 @@ export default function AccountPage() {
                               )}
                             </ul>
                             {!isSubscribed && (
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-2 sm:flex-row">
                                 <Button 
                                   className="flex-1"
                                   style={{ backgroundColor: primaryColor }}
@@ -1665,7 +1665,7 @@ export default function AccountPage() {
                               ))}
                             </ul>
                             {!isSubscribed && (
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-2 sm:flex-row">
                                 <Button 
                                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                                   onClick={() => handleSelectPlan(plan, "monthly")}
@@ -1727,7 +1727,7 @@ export default function AccountPage() {
                       </div>
                       <div className="p-4">
                         <h3 className="font-semibold text-gray-900 mb-2">{course.title}</h3>
-                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div className="flex flex-col gap-1 text-sm text-gray-500 mb-4 sm:flex-row sm:items-center sm:justify-between">
                           <span className="flex items-center gap-1">
                             <Play className="h-4 w-4" />
                             {course._count.modules} modules
@@ -1782,8 +1782,8 @@ export default function AccountPage() {
                   {orders.map(order => (
                     <Card key={order.id} className="border-0 shadow-sm">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-start gap-3 sm:items-center sm:gap-4">
                             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                               <Package className="h-6 w-6 text-gray-400" />
                             </div>
@@ -1825,7 +1825,7 @@ export default function AccountPage() {
           <TabsContent value="profile">
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <User className="h-5 w-5" style={{ color: primaryColor }} />
                     Profile Information
@@ -1841,7 +1841,7 @@ export default function AccountPage() {
               <CardContent>
                 {editingProfile ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>First Name</Label>
                         <Input
@@ -1865,7 +1865,7 @@ export default function AccountPage() {
                         placeholder="(555) 123-4567"
                       />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <Button 
                         onClick={handleSaveProfile}
                         disabled={savingProfile}
@@ -1969,14 +1969,14 @@ export default function AccountPage() {
                     <p>This plan is free for the selected billing interval.</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-600">{selectedPlan.name} ({selectedInterval})</span>
                       <span className="font-semibold text-gray-900">
                         ${selectedInterval === "yearly" ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice}
                       </span>
                     </div>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <Button variant="outline" onClick={handleCancelPayment} className="flex-1">
                       Cancel
                     </Button>
@@ -2026,7 +2026,7 @@ export default function AccountPage() {
                   <strong>Note:</strong> You will retain access until <strong>{new Date(subscriptionToCancel.currentPeriodEnd).toLocaleDateString()}</strong>. After that, you will lose access to subscriber-only content and community features.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button 
                   variant="outline" 
                   onClick={() => {
