@@ -447,19 +447,19 @@ export default function TeacherDetailPage({
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
         <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
-          <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="schedule" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Calendar className="h-4 w-4 mr-2" />
             Schedule
           </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="profile" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Users className="h-4 w-4 mr-2" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="invoices" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <FileText className="h-4 w-4 mr-2" />
             Invoices
           </TabsTrigger>

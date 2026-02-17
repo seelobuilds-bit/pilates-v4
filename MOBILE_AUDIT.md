@@ -201,9 +201,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/hq/sales/page.tsx`
   - `src/app/(dashboard)/sales/page.tsx`
   - `src/app/(dashboard)/studio/payments/page.tsx`
+- 2026-02-17 Batch X complete:
+  - `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
+  - `src/app/(dashboard)/studio/locations/[locationId]/page.tsx`
+  - `src/app/(dashboard)/studio/store/catalog/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
-- `src/app/(dashboard)/studio/locations/[locationId]/page.tsx`
-- `src/app/(dashboard)/studio/store/catalog/page.tsx`
+- `src/app/(dashboard)/studio/locations/new/page.tsx`
+- `src/app/(dashboard)/studio/teachers/invite/page.tsx`
+- `src/app/(dashboard)/sales/settings/page.tsx`
