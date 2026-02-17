@@ -248,13 +248,13 @@ export default function SegmentDetailPage({
           Back to Segments
         </Link>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 min-w-0">
             <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
               <Icon className="h-6 w-6 text-violet-600" />
             </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{segment.name}</h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold text-gray-900 truncate">{segment.name}</h1>
                 <Badge variant="secondary">{segment.type}</Badge>
               </div>
               <p className="text-gray-500">{segment.description}</p>
@@ -276,7 +276,7 @@ export default function SegmentDetailPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">

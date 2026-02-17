@@ -212,8 +212,8 @@ export default function EmailSettingsPage() {
       {/* Current Status */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
                 <Mail className="h-5 w-5 text-violet-600" />
               </div>
@@ -260,7 +260,7 @@ export default function EmailSettingsPage() {
           <CardDescription>Basic information shown on outgoing emails</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="fromName">From Name *</Label>
               <Input
@@ -303,7 +303,7 @@ export default function EmailSettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="domain">Your Domain</Label>
               <Input
@@ -336,13 +336,14 @@ export default function EmailSettingsPage() {
           {/* DNS Records */}
           {config?.dnsRecords && config.dnsRecords.length > 0 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h4 className="font-medium text-gray-900">DNS Records</h4>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleVerify}
                   disabled={verifying}
+                  className="w-full sm:w-auto"
                 >
                   {verifying ? (
                     <>
@@ -363,7 +364,8 @@ export default function EmailSettingsPage() {
               </p>
 
               <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
+                <div className="app-scrollbar overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
@@ -411,6 +413,7 @@ export default function EmailSettingsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
@@ -418,11 +421,11 @@ export default function EmailSettingsPage() {
       </Card>
 
       {/* Save Button */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
         <Button
           onClick={handleSave}
           disabled={saving || !fromName}
-          className="bg-violet-600 hover:bg-violet-700"
+          className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
         >
           {saving ? (
             <>

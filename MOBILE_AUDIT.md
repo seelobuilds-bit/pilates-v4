@@ -141,9 +141,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
   - `src/app/(dashboard)/studio/vault/[courseId]/page.tsx`
   - `src/app/(dashboard)/studio/marketing/campaigns/new/page.tsx`
+- 2026-02-17 Batch I complete:
+  - `src/app/(dashboard)/studio/schedule/[classId]/page.tsx`
+  - `src/app/(dashboard)/studio/settings/email/page.tsx`
+  - `src/app/(dashboard)/studio/marketing/segments/[segmentId]/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/studio/schedule/[classId]/page.tsx`
-- `src/app/(dashboard)/studio/settings/email/page.tsx`
-- `src/app/(dashboard)/studio/marketing/segments/[segmentId]/page.tsx`
+- `src/app/(dashboard)/studio/classes/[classTypeId]/page.tsx`
+- `src/app/(dashboard)/studio/store/catalog/[productId]/page.tsx`
+- `src/app/(dashboard)/studio/settings/emails/page.tsx`
