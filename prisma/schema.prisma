@@ -400,9 +400,29 @@ model Automation {
   templateId    String?
   template      MessageTemplate?  @relation(fields: [templateId], references: [id])
   
+  steps         AutomationStep[]
   messages      Message[]
 
   @@index([studioId, status, trigger])
+}
+
+model AutomationStep {
+  id            String          @id @default(cuid())
+  stepId        String
+  stepOrder     Int
+  channel       MessageChannel
+  subject       String?
+  body          String          @db.Text
+  htmlBody      String?         @db.Text
+  delayMinutes  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  automationId  String
+  automation    Automation      @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@unique([automationId, stepId])
+  @@index([automationId, stepOrder])
 }
 
 // Client Segments for targeting

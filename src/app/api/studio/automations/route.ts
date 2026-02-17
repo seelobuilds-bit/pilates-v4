@@ -5,6 +5,7 @@ import {
   fallbackAutomationStep,
   getStepValidationError,
   normalizeAutomationSteps,
+  toPersistedStepPayload,
 } from "@/lib/automation-chain"
 import {
   hasStopOnBookingMarker,
@@ -33,6 +34,10 @@ export async function GET() {
         template: {
           select: { id: true, name: true },
         },
+        steps: {
+          orderBy: { stepOrder: "asc" },
+          select: { id: true },
+        },
         _count: {
           select: { messages: true },
         },
@@ -40,11 +45,15 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      automations: automations.map((automation) => ({
-        ...automation,
-        body: stripAutomationBodyMarkers(automation.body),
-        stopOnBooking: hasStopOnBookingMarker(automation.body),
-      })),
+      automations: automations.map((automation) => {
+        const { steps, ...automationRecord } = automation
+        return {
+          ...automationRecord,
+          stepCount: steps.length || 1,
+          body: stripAutomationBodyMarkers(automation.body),
+          stopOnBooking: hasStopOnBookingMarker(automation.body),
+        }
+      }),
     })
   } catch (error) {
     console.error("Error fetching automations:", error)
@@ -101,38 +110,66 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: stepError }, { status: 400 })
     }
 
-    const createPayload = steps.map((step, index) => ({
-      studioId,
-      name: steps.length > 1 ? `${name} · Step ${index + 1}/${steps.length}` : name,
-      trigger,
-      channel: step.channel,
-      subject: step.subject,
-      body: withAutomationBodyMarkers({
-        body: step.body,
-        stopOnBooking: Boolean(stopOnBooking),
-      }),
-      htmlBody: step.htmlBody,
-      triggerDelay: step.delayMinutes,
-      triggerDays,
-      reminderHours,
-      locationId: locationId || null,
-      templateId: templateId || null,
-      status: "DRAFT" as const,
-    }))
+    const firstStep = steps[0]
+    const persistedSteps = toPersistedStepPayload(steps)
 
-    const created = await db.$transaction(
-      createPayload.map((payload) =>
-        db.automation.create({
-          data: payload,
-          include: {
-            location: true,
-            template: true,
-          },
-        })
-      )
-    )
+    const created = await db.automation.create({
+      data: {
+        studioId,
+        name,
+        trigger,
+        channel: firstStep.channel,
+        subject: firstStep.subject,
+        body: withAutomationBodyMarkers({
+          body: firstStep.body,
+          stopOnBooking: Boolean(stopOnBooking),
+        }),
+        htmlBody: firstStep.htmlBody,
+        triggerDelay: firstStep.delayMinutes,
+        triggerDays,
+        reminderHours,
+        locationId: locationId || null,
+        templateId: templateId || null,
+        status: "DRAFT",
+        steps: {
+          create: persistedSteps.map((step) => ({
+            stepId: step.id,
+            stepOrder: step.order,
+            channel: step.channel,
+            subject: step.subject,
+            body: step.body,
+            htmlBody: step.htmlBody,
+            delayMinutes: step.delayMinutes,
+          })),
+        },
+      },
+      include: {
+        location: true,
+        template: true,
+        steps: {
+          orderBy: { stepOrder: "asc" },
+        },
+      },
+    })
 
-    return NextResponse.json({ automation: created[0], chainCount: created.length, chainIds: created.map((a) => a.id) })
+    return NextResponse.json({
+      automation: {
+        ...created,
+        steps: created.steps.map((step) => ({
+          id: step.stepId,
+          order: step.stepOrder,
+          channel: step.channel,
+          subject: step.subject,
+          body: step.body,
+          htmlBody: step.htmlBody,
+          delayMinutes: step.delayMinutes,
+        })),
+        body: stripAutomationBodyMarkers(created.body),
+        stopOnBooking: hasStopOnBookingMarker(created.body),
+      },
+      chainCount: persistedSteps.length,
+      chainIds: [created.id],
+    })
   } catch (error) {
     console.error("Error creating automation:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

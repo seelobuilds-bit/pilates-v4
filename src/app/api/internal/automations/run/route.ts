@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { sendStudioEmail } from "@/lib/email"
 import { sendSMS } from "@/lib/communications"
-import { Automation, AutomationTrigger, Client, MessageChannel } from "@prisma/client"
+import { Automation, AutomationStep, AutomationTrigger, Client, MessageChannel } from "@prisma/client"
 import {
   AUTOMATION_STEP_WINDOW_MINUTES,
   AutomationChainStep,
@@ -160,6 +160,10 @@ type Candidate = {
   triggeredAt: Date
 }
 
+type AutomationWithSteps = Automation & {
+  steps: AutomationStep[]
+}
+
 function supportsStopOnBooking(trigger: AutomationTrigger) {
   return (
     trigger === "WELCOME" ||
@@ -193,7 +197,21 @@ async function shouldSkipForBooking(params: {
   return Boolean(booking)
 }
 
-function getAutomationSteps(automation: Automation): AutomationChainStep[] {
+function getAutomationSteps(automation: AutomationWithSteps): AutomationChainStep[] {
+  if (automation.steps.length > 0) {
+    return automation.steps
+      .map((step) => ({
+        id: step.stepId,
+        order: step.stepOrder,
+        channel: step.channel,
+        subject: step.subject,
+        body: step.body,
+        htmlBody: step.htmlBody,
+        delayMinutes: step.delayMinutes,
+      }))
+      .sort((a, b) => a.order - b.order)
+  }
+
   const defaultDelayMinutes =
     automation.trigger === "CLASS_FOLLOWUP" ? automation.triggerDelay || 60 : automation.triggerDelay || 0
 
@@ -209,7 +227,7 @@ function getAutomationSteps(automation: Automation): AutomationChainStep[] {
 }
 
 async function getCandidates(
-  automation: Automation,
+  automation: AutomationWithSteps,
   now: Date
 ): Promise<Candidate[]> {
   const studioId = automation.studioId
@@ -525,6 +543,9 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
           },
+        },
+        steps: {
+          orderBy: { stepOrder: "asc" },
         },
       },
     })
