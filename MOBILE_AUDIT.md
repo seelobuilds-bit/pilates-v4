@@ -193,9 +193,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(booking)/[subdomain]/book/page.tsx`
   - `src/app/(booking)/[subdomain]/embed/page.tsx`
   - `src/app/(booking)/[subdomain]/account/page.tsx`
+- 2026-02-17 Batch V complete:
+  - `src/app/(dashboard)/studio/vault/page.tsx`
+  - `src/components/studio/VaultView.tsx`
+  - `src/app/(dashboard)/studio/leaderboards/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/studio/vault/page.tsx`
-- `src/components/studio/VaultView.tsx`
-- `src/app/(dashboard)/studio/leaderboards/page.tsx`
+- `src/app/(dashboard)/hq/sales/page.tsx`
+- `src/app/(dashboard)/sales/page.tsx`
+- `src/app/(dashboard)/studio/payments/page.tsx`

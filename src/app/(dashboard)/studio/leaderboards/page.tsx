@@ -196,7 +196,7 @@ export default function StudioLeaderboardsPage() {
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gradient-to-br from-violet-50/50 to-amber-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl text-white">
@@ -208,10 +208,10 @@ export default function StudioLeaderboardsPage() {
           </div>
           
           {/* Studio vs Teacher Toggle */}
-          <div className="flex bg-white border rounded-xl p-1 shadow-sm">
+          <div className="flex w-full overflow-x-auto rounded-xl border bg-white p-1 shadow-sm sm:w-auto">
             <button
               onClick={() => setActiveTab("studio")}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+              className={`shrink-0 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 sm:px-6 ${
                 activeTab === "studio"
                   ? "bg-violet-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -225,7 +225,7 @@ export default function StudioLeaderboardsPage() {
             </button>
             <button
               onClick={() => setActiveTab("teacher")}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+              className={`shrink-0 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 sm:px-6 ${
                 activeTab === "teacher"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -249,7 +249,7 @@ export default function StudioLeaderboardsPage() {
             : "bg-gradient-to-r from-emerald-600 to-teal-600"
         }`}>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold mb-1">
                   {activeTab === "studio" ? "Studio Rankings" : "Teacher Rankings"}
@@ -260,7 +260,7 @@ export default function StudioLeaderboardsPage() {
                     : "Compete with instructors across all studios!"}
                 </p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-3">
                 {Object.entries(myRanks)
                   .filter(([lbId, rank]) => {
                     const lb = leaderboards.find(l => l.id === lbId)
@@ -320,13 +320,13 @@ export default function StudioLeaderboardsPage() {
                       {lb.currentPeriod.entries.slice(0, 3).map((entry, idx) => (
                         <div 
                           key={entry.id}
-                          className={`flex items-center justify-between p-2 rounded-lg ${
+                          className={`flex flex-col gap-2 p-2 rounded-lg sm:flex-row sm:items-center sm:justify-between ${
                             idx === 0 ? "bg-yellow-50" : "bg-gray-50"
                           }`}
                         >
                           <div className="flex items-center gap-2">
                             {getPositionIcon(idx + 1)}
-                            <span className="text-sm font-medium truncate max-w-[120px]">
+                            <span className="text-sm font-medium truncate max-w-[120px] sm:max-w-[180px]">
                               {entry.participant?.name || "Unknown"}
                             </span>
                           </div>
@@ -351,7 +351,7 @@ export default function StudioLeaderboardsPage() {
 
                   {/* Your Rank */}
                   {myRanks[lb.id] && (
-                    <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                    <div className="mt-3 pt-3 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-sm text-gray-500">Your Rank</span>
                       <span className="font-bold" style={{ color: lb.color || "#7c3aed" }}>
                         #{myRanks[lb.id]?.rank}
@@ -368,9 +368,9 @@ export default function StudioLeaderboardsPage() {
       {/* All Leaderboards by Category */}
       {grouped.length > 0 && (
       <Tabs defaultValue={grouped[0]?.id || "content"} className="space-y-6">
-        <TabsList className="bg-white border flex-wrap h-auto p-1">
+        <TabsList className="bg-white border flex w-full overflow-x-auto whitespace-nowrap p-1">
           {grouped.map(cat => (
-            <TabsTrigger key={cat.id} value={cat.id} className="gap-2">
+            <TabsTrigger key={cat.id} value={cat.id} className="gap-2 shrink-0">
               {getCategoryIcon(cat.icon)}
               {cat.name}
               <Badge variant="secondary" className="ml-1 text-xs">
@@ -414,7 +414,7 @@ export default function StudioLeaderboardsPage() {
                         {lb.currentPeriod.entries.slice(0, 5).map((entry, idx) => (
                           <div 
                             key={entry.id}
-                            className="flex items-center justify-between py-1.5"
+                            className="flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-6 flex justify-center">
@@ -422,7 +422,7 @@ export default function StudioLeaderboardsPage() {
                                   <span className="text-sm text-gray-400">{idx + 1}</span>
                                 )}
                               </div>
-                              <span className="text-sm truncate max-w-[150px]">
+                              <span className="text-sm truncate max-w-[150px] sm:max-w-[220px]">
                                 {entry.participant?.name || "Unknown"}
                               </span>
                               {getRankChange(entry.rank, entry.previousRank)}
@@ -440,7 +440,7 @@ export default function StudioLeaderboardsPage() {
                     )}
 
                     {/* Your Rank & Prize */}
-                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                    <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       {myRanks[lb.id] ? (
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-gray-400" />
@@ -497,7 +497,7 @@ export default function StudioLeaderboardsPage() {
             <CardContent className="space-y-6">
               {/* Period Info */}
               {selectedLeaderboard.currentPeriod && (
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div className="flex flex-col gap-2 rounded-lg bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-400" />
                     <span className="text-sm font-medium">{selectedLeaderboard.currentPeriod.name}</span>
@@ -572,7 +572,7 @@ export default function StudioLeaderboardsPage() {
                   {selectedLeaderboard.currentPeriod?.entries.map((entry, idx) => (
                     <div 
                       key={entry.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
+                      className={`flex flex-col gap-2 p-3 rounded-lg sm:flex-row sm:items-center sm:justify-between ${
                         idx === 0 ? "bg-yellow-50 border border-yellow-200" :
                         idx === 1 ? "bg-gray-50 border border-gray-200" :
                         idx === 2 ? "bg-amber-50 border border-amber-200" :
@@ -608,7 +608,7 @@ export default function StudioLeaderboardsPage() {
                   className="p-4 rounded-xl text-white"
                   style={{ backgroundColor: selectedLeaderboard.color || "#7c3aed" }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm opacity-80">Your Position</p>
                       <p className="text-3xl font-bold">#{myRanks[selectedLeaderboard.id]?.rank}</p>
@@ -658,8 +658,6 @@ export default function StudioLeaderboardsPage() {
     </div>
   )
 }
-
-
 
 
 
