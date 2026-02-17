@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { type ComponentType, useEffect } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
@@ -32,7 +32,18 @@ import {
   Video,
 } from "lucide-react"
 
-const hqLinks = [
+type NavLink = {
+  href: string
+  label: string
+  icon: ComponentType<{ className?: string }>
+}
+
+type NavGroup = {
+  title: string
+  links: NavLink[]
+}
+
+const hqLinks: NavLink[] = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hq/studios", label: "Studios", icon: Building2 },
   { href: "/hq/inbox", label: "Studio Comms", icon: Inbox },
@@ -44,27 +55,60 @@ const hqLinks = [
   { href: "/hq/settings", label: "Settings", icon: Settings },
 ]
 
-const studioLinks = [
-  { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/studio/schedule", label: "Schedule", icon: Calendar },
-  { href: "/studio/classes", label: "Classes", icon: BookOpen },
-  { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
-  { href: "/studio/invoices", label: "Invoices", icon: FileText },
-  { href: "/studio/clients", label: "Clients", icon: UserCircle },
-  { href: "/studio/inbox", label: "Inbox", icon: Inbox },
-  { href: "/studio/community", label: "Community", icon: MessageSquare },
-  { href: "/studio/locations", label: "Locations", icon: MapPin },
-  { href: "/studio/payments", label: "Payments", icon: CreditCard },
-  { href: "/studio/store", label: "Store", icon: ShoppingBag },
-  { href: "/studio/vault", label: "The Vault", icon: Lock },
-  { href: "/studio/class-flows", label: "Class Flows", icon: PlayCircle },
-  { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
-  { href: "/studio/leaderboards", label: "Leaderboards", icon: Trophy },
-  { href: "/studio/reports", label: "Reports", icon: BarChart3 },
-  { href: "/studio/settings", label: "Settings", icon: Settings },
+const studioLinkGroups: NavGroup[] = [
+  {
+    title: "Overview",
+    links: [
+      { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/studio/inbox", label: "Inbox", icon: Inbox },
+      { href: "/studio/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Operations",
+    links: [
+      { href: "/studio/schedule", label: "Schedule", icon: Calendar },
+      { href: "/studio/classes", label: "Classes", icon: BookOpen },
+      { href: "/studio/class-flows", label: "Class Flows", icon: PlayCircle },
+      { href: "/studio/locations", label: "Locations", icon: MapPin },
+    ],
+  },
+  {
+    title: "People",
+    links: [
+      { href: "/studio/clients", label: "Clients", icon: UserCircle },
+      { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
+      { href: "/studio/community", label: "Community", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "Commerce",
+    links: [
+      { href: "/studio/payments", label: "Payments", icon: CreditCard },
+      { href: "/studio/invoices", label: "Invoices", icon: FileText },
+      { href: "/studio/store", label: "Store", icon: ShoppingBag },
+    ],
+  },
+  {
+    title: "Growth",
+    links: [
+      { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
+      { href: "/studio/leaderboards", label: "Leaderboards", icon: Trophy },
+    ],
+  },
+  {
+    title: "Content",
+    links: [{ href: "/studio/vault", label: "The Vault", icon: Lock }],
+  },
+  {
+    title: "Settings",
+    links: [{ href: "/studio/settings", label: "Settings", icon: Settings }],
+  },
 ]
 
-const teacherLinks = [
+const studioLinks = studioLinkGroups.flatMap((group) => group.links)
+
+const teacherLinks: NavLink[] = [
   { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teacher/schedule", label: "My Schedule", icon: Calendar },
   { href: "/teacher/class-flows", label: "Class Flows", icon: PlayCircle },
@@ -78,7 +122,7 @@ const teacherLinks = [
   { href: "/teacher/settings", label: "Settings", icon: Settings },
 ]
 
-const salesAgentLinks = [
+const salesAgentLinks: NavLink[] = [
   { href: "/sales", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sales/leads", label: "My Leads", icon: Target },
   { href: "/sales/demos", label: "Demo Requests", icon: Video },
@@ -93,19 +137,23 @@ export function Sidebar() {
   const role = session?.user?.role
 
   let links = studioLinks
+  let linkGroups: NavGroup[] = studioLinkGroups
   let title = session?.user?.studioName || "Studio"
   let subtitle = "Studio Portal"
 
   if (role === "HQ_ADMIN") {
     links = hqLinks
+    linkGroups = [{ title: "Navigation", links: hqLinks }]
     title = "CURRENT HQ"
     subtitle = "Admin Portal"
   } else if (role === "SALES_AGENT") {
     links = salesAgentLinks
+    linkGroups = [{ title: "Navigation", links: salesAgentLinks }]
     title = "CURRENT"
     subtitle = "Sales Portal"
   } else if (role === "TEACHER") {
     links = teacherLinks
+    linkGroups = [{ title: "Navigation", links: teacherLinks }]
     title = session?.user?.studioName || "Studio"
     subtitle = "Teacher Portal"
   }
@@ -131,27 +179,38 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1">
-        {links.map((link) => {
-          const Icon = link.icon
-          const isActive = pathname === link.href || 
-            (link.href !== "/studio" && link.href !== "/hq" && link.href !== "/teacher" && link.href !== "/sales" && pathname.startsWith(link.href))
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-violet-50 text-violet-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Icon className={cn("h-5 w-5", isActive ? "text-violet-600" : "text-gray-400")} />
-              {link.label}
-            </Link>
-          )
-        })}
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+        {linkGroups.map((group) => (
+          <div key={group.title} className="space-y-1">
+            {linkGroups.length > 1 && (
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                {group.title}
+              </p>
+            )}
+            {group.links.map((link) => {
+              const Icon = link.icon
+              const isRootRoute =
+                link.href === "/studio" || link.href === "/hq" || link.href === "/teacher" || link.href === "/sales"
+              const isActive = pathname === link.href || (!isRootRoute && pathname.startsWith(link.href))
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-violet-50 text-violet-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", isActive ? "text-violet-600" : "text-gray-400")} />
+                  {link.label}
+                </Link>
+              )
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* User Profile */}
