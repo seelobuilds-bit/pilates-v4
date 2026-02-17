@@ -49,7 +49,7 @@ type WidgetId =
   | "recentActivity"
   | "studioStats"
 
-const STORAGE_KEY = "studio-dashboard-layout-v1"
+const STORAGE_KEY_PREFIX = "studio-dashboard-layout-v1"
 
 const DEFAULT_WIDGET_ORDER: WidgetId[] = [
   "overview",
@@ -75,13 +75,14 @@ function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: Widget
 
 export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewProps) {
   const now = new Date()
+  const storageKey = useMemo(() => `${STORAGE_KEY_PREFIX}:${linkPrefix}`, [linkPrefix])
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(DEFAULT_WIDGET_ORDER)
   const [hiddenWidgets, setHiddenWidgets] = useState<WidgetId[]>([])
   const [draggedWidget, setDraggedWidget] = useState<WidgetId | null>(null)
   const [showLayoutControls, setShowLayoutControls] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(storageKey)
     if (!stored) return
 
     try {
@@ -99,17 +100,17 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       setWidgetOrder(DEFAULT_WIDGET_ORDER)
       setHiddenWidgets([])
     }
-  }, [])
+  }, [storageKey])
 
   useEffect(() => {
     localStorage.setItem(
-      STORAGE_KEY,
+      storageKey,
       JSON.stringify({
         order: widgetOrder,
         hidden: hiddenWidgets,
       })
     )
-  }, [widgetOrder, hiddenWidgets])
+  }, [storageKey, widgetOrder, hiddenWidgets])
 
   const visibleWidgets = useMemo(
     () => widgetOrder.filter((widget) => !hiddenWidgets.includes(widget)),
@@ -653,9 +654,10 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       </div>
 
       {showLayoutControls && (
-        <Card className="border-0 shadow-sm mb-6">
+          <Card className="border-0 shadow-sm mb-6">
           <CardContent className="p-4">
             <p className="text-sm font-medium text-gray-900 mb-3">Show / Hide Widgets</p>
+            <p className="text-xs text-gray-500 mb-3">Drag to reorder is enabled while this panel is open.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
               {DEFAULT_WIDGET_ORDER.map((widget) => {
                 const isVisible = !hiddenWidgets.includes(widget)
@@ -684,24 +686,33 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         {visibleWidgets.map((widgetId) => (
           <div
             key={widgetId}
-            draggable
-            onDragStart={() => setDraggedWidget(widgetId)}
-            onDragOver={(e) => e.preventDefault()}
+            draggable={showLayoutControls}
+            onDragStart={() => {
+              if (!showLayoutControls) return
+              setDraggedWidget(widgetId)
+            }}
+            onDragOver={(e) => {
+              if (showLayoutControls) {
+                e.preventDefault()
+              }
+            }}
             onDrop={() => {
-              if (!draggedWidget) return
+              if (!showLayoutControls || !draggedWidget) return
               setWidgetOrder((prev) => reorderWidgets(prev, draggedWidget, widgetId))
               setDraggedWidget(null)
             }}
             onDragEnd={() => setDraggedWidget(null)}
-            className={`${widgetMeta[widgetId].className ?? ""} ${draggedWidget === widgetId ? "opacity-70" : ""}`}
+            className={`${widgetMeta[widgetId].className ?? ""} ${draggedWidget === widgetId ? "opacity-70" : ""} ${showLayoutControls ? "cursor-move" : ""}`}
           >
             <div className="mb-2 flex items-center justify-between text-xs text-gray-400">
               <span>{widgetMeta[widgetId].title}</span>
-              <div className="flex items-center gap-1">
-                <GripVertical className="h-3.5 w-3.5" />
-                <span>Drag to reorder</span>
+              {showLayoutControls && (
+                <div className="flex items-center gap-1">
+                  <GripVertical className="h-3.5 w-3.5" />
+                  <span>Drag to reorder</span>
+                </div>
+              )}
               </div>
-            </div>
             {renderWidget(widgetId)}
           </div>
         ))}
