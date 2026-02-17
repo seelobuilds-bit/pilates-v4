@@ -23,7 +23,7 @@ export default async function DemoInvoicesPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -74,7 +74,7 @@ export default async function DemoInvoicesPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Teacher Invoices</h1>
@@ -82,7 +82,7 @@ export default async function DemoInvoicesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -143,22 +143,22 @@ export default async function DemoInvoicesPage() {
       {/* Filters */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by invoice number or teacher name..."
                 className="pl-9"
               />
             </div>
-            <Button variant="outline">All Status</Button>
+            <Button variant="outline" className="w-full sm:w-auto">All Status</Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Invoices Tabs */}
       <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="pending">
             <Clock className="h-4 w-4 mr-2" />
             Pending Review
@@ -238,8 +238,8 @@ function InvoiceList({
         return (
           <Card key={invoice.id} className="border-0 shadow-sm hover:shadow transition-shadow cursor-pointer">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-4 min-w-0">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                     invoice.status === "PAID" ? "bg-green-100" :
                     invoice.status === "PENDING" ? "bg-amber-100" :
@@ -253,13 +253,13 @@ function InvoiceList({
                       <FileText className="h-5 w-5 text-gray-500" />
                     )}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-gray-900">{invoice.invoiceNumber}</p>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-gray-900 truncate">{invoice.invoiceNumber}</p>
                       {getStatusBadge(invoice.status)}
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 mt-1">
+                      <p className="text-sm text-gray-500 flex items-center gap-1 min-w-0">
                         <User className="h-3 w-3" />
                         {invoice.teacher.user.firstName} {invoice.teacher.user.lastName}
                       </p>
@@ -271,8 +271,8 @@ function InvoiceList({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-4">
+                  <div className="text-left sm:text-right">
                     <p className="font-bold text-lg text-gray-900">${total.toFixed(2)}</p>
                     <p className="text-xs text-gray-500">
                       {lineItems.length} classes
@@ -282,7 +282,7 @@ function InvoiceList({
                   {(invoice.status === "PENDING" || invoice.status === "SENT") && (
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Pay
@@ -303,7 +303,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

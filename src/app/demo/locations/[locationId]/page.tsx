@@ -83,21 +83,21 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
   })
   
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/demo/locations" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Locations
         </Link>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-14 h-14 bg-violet-100 rounded-xl flex items-center justify-center">
               <MapPin className="h-7 w-7 text-violet-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">{location.name}</h1>
-              <p className="text-gray-500">{location.address}, {location.city}</p>
+              <p className="text-gray-500 truncate">{location.address}, {location.city}</p>
             </div>
           </div>
           <Badge className={location.isActive ? "bg-emerald-100 text-emerald-700 border-0" : "bg-gray-100 text-gray-700 border-0"}>
@@ -107,7 +107,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
@@ -190,12 +190,12 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                 </div>
                 <div className="space-y-3">
                   {mockLocationStats.topClasses.map((cls, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
                           {i + 1}
                         </span>
-                        <span className="font-medium text-gray-900">{cls.name}</span>
+                        <span className="font-medium text-gray-900 truncate">{cls.name}</span>
                       </div>
                       <span className="text-gray-500">{cls.bookings} bookings</span>
                     </div>
@@ -213,13 +213,13 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                 </div>
                 <div className="space-y-3">
                   {mockLocationStats.topTeachers.map((teacher, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                           {teacher.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{teacher.name}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{teacher.name}</p>
                           <p className="text-sm text-gray-500">{teacher.classes} classes</p>
                         </div>
                       </div>
@@ -264,7 +264,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                 </div>
                 <div className="space-y-3">
                   {mockLocationStats.recentBookings.map((booking, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{booking.clientName}</p>
                         <p className="text-sm text-gray-500">{booking.className}</p>
@@ -283,7 +283,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                   <DollarSign className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Monthly Revenue</h3>
                 </div>
-                <div className="flex items-end justify-between h-40 gap-4">
+                <div className="flex items-end justify-between h-40 gap-2 sm:gap-4">
                   {mockLocationStats.monthlyRevenue.map((month, i) => {
                     const maxRevenue = Math.max(...mockLocationStats.monthlyRevenue.map(m => m.revenue))
                     const height = (month.revenue / maxRevenue) * 100
@@ -326,7 +326,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
                     <Input
@@ -364,7 +364,7 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">Active Status</p>
                     <p className="text-sm text-gray-500">Allow classes to be scheduled at this location</p>
@@ -375,11 +375,11 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4">
                   <Link href="/demo/locations">
-                    <Button type="button" variant="outline">Cancel</Button>
+                    <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
                   </Link>
-                  <Button type="button" className="bg-violet-600 hover:bg-violet-700">
+                  <Button type="button" className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>
@@ -392,7 +392,6 @@ export default function DemoLocationDetailPage({ params }: { params: Promise<{ l
     </div>
   )
 }
-
 
 
 

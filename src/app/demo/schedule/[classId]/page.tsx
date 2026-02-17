@@ -17,24 +17,24 @@ export default function DemoScheduleDetailPage({ params }: { params: Promise<{ c
   const attendees = demoClients.slice(0, classSession._count.bookings)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href="/demo/schedule">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">{classSession.classType.name}</h1>
           <p className="text-gray-500">
             {new Date(classSession.startTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">Cancel Class</Button>
-          <Button className="bg-violet-600 hover:bg-violet-700">Edit Class</Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button variant="outline" className="w-full sm:w-auto">Cancel Class</Button>
+          <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">Edit Class</Button>
         </div>
       </div>
 
@@ -84,26 +84,26 @@ export default function DemoScheduleDetailPage({ params }: { params: Promise<{ c
 
         {/* Attendees */}
         <Card className="border-0 shadow-sm lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Attendees ({attendees.length})</CardTitle>
-            <Button variant="outline" size="sm">Add Attendee</Button>
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">Add Attendee</Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {attendees.map((client) => (
-                <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div key={client.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
                       {client.firstName[0]}{client.lastName[0]}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
-                      <p className="text-sm text-gray-500">{client.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{client.firstName} {client.lastName}</p>
+                      <p className="text-sm text-gray-500 truncate">{client.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge className="bg-emerald-100 text-emerald-700 border-0">Confirmed</Badge>
-                    <Button variant="ghost" size="sm">Remove</Button>
+                    <Button variant="ghost" size="sm" className="w-full sm:w-auto">Remove</Button>
                   </div>
                 </div>
               ))}
@@ -119,7 +119,6 @@ export default function DemoScheduleDetailPage({ params }: { params: Promise<{ c
     </div>
   )
 }
-
 
 
 
