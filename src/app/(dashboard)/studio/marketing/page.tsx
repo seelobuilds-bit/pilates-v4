@@ -39,6 +39,7 @@ interface Automation {
   status: "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED"
   totalSent: number
   totalOpened: number
+  stopOnBooking?: boolean
   location?: {
     id: string
     name: string
@@ -423,6 +424,9 @@ export default function MarketingPage() {
                             <p className="text-sm text-gray-500">
                               Trigger: {getTriggerLabel(automation.trigger)} • {automation.totalSent} sent
                             </p>
+                            {automation.stopOnBooking && (
+                              <p className="text-xs text-emerald-600 mt-1">Stops automatically after booking</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
