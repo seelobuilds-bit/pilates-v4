@@ -376,9 +376,9 @@ export default function ClientsPage() {
                   
                   {showSegmentDropdown && (
                     <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowSegmentDropdown(false)} 
+                      <div
+                        className="fixed inset-y-0 right-0 left-64 z-40"
+                        onClick={() => setShowSegmentDropdown(false)}
                       />
                       <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                         <div className="p-2">

@@ -424,7 +424,7 @@ export default function ReportsPage() {
             {/* Custom Date Range Picker - positioned under selector, right-aligned */}
             {showCustomDate && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowCustomDate(false)} />
+                <div className="fixed inset-y-0 right-0 left-64 z-40" onClick={() => setShowCustomDate(false)} />
                 <Card 
                   className="absolute z-50 w-[340px] border shadow-xl bg-white"
                   style={{ top: '48px', right: '0' }}
