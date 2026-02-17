@@ -27,7 +27,7 @@ export default async function DemoSettingsPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -37,7 +37,7 @@ export default async function DemoSettingsPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -45,7 +45,7 @@ export default async function DemoSettingsPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="general">
             <Building2 className="h-4 w-4 mr-2" />
             General
@@ -75,7 +75,7 @@ export default async function DemoSettingsPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Studio Information</h3>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Studio Name</Label>
                     <Input value={studio.name} disabled />
@@ -100,7 +100,7 @@ export default async function DemoSettingsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Contact Email</Label>
                     <Input value="hello@zenithpilates.com" disabled />
@@ -117,8 +117,8 @@ export default async function DemoSettingsPage() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t flex justify-end">
-                <Button className="bg-violet-600 hover:bg-violet-700">
+              <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row sm:justify-end">
+                <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
                   <Save className="h-4 w-4 mr-2" />
                   Save Changes
                 </Button>
@@ -134,7 +134,7 @@ export default async function DemoSettingsPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Booking Settings</h3>
               
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Online Booking</p>
                     <p className="text-sm text-gray-500">Allow clients to book classes online</p>
@@ -142,7 +142,7 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Waitlist</p>
                     <p className="text-sm text-gray-500">Enable waitlist for full classes</p>
@@ -150,7 +150,7 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Late Cancellation Fee</p>
                     <p className="text-sm text-gray-500">Charge for cancellations within 24 hours</p>
@@ -158,7 +158,7 @@ export default async function DemoSettingsPage() {
                   <Switch checked={false} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Booking Window (days ahead)</Label>
                     <Input value="30" type="number" disabled />
@@ -192,8 +192,8 @@ export default async function DemoSettingsPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Payment Settings</h3>
               
               <div className="space-y-6">
-                <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
                       <CreditCard className="h-5 w-5 text-violet-600" />
                     </div>
@@ -205,7 +205,7 @@ export default async function DemoSettingsPage() {
                   <Badge className="bg-green-100 text-green-700">Connected</Badge>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Accept Credit Cards</p>
                     <p className="text-sm text-gray-500">Visa, Mastercard, Amex</p>
@@ -213,7 +213,7 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Accept Apple Pay</p>
                     <p className="text-sm text-gray-500">Allow Apple Pay payments</p>
@@ -221,7 +221,7 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Currency</Label>
                     <Input value="USD" disabled />
@@ -243,8 +243,8 @@ export default async function DemoSettingsPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Email Notifications</h3>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Mail className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">Booking Confirmations</p>
@@ -254,8 +254,8 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Bell className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">Class Reminders (24h)</p>
@@ -265,8 +265,8 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Mail className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">Cancellation Notices</p>
@@ -276,8 +276,8 @@ export default async function DemoSettingsPage() {
                   <Switch checked={true} />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Mail className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">Payment Receipts</p>
@@ -320,10 +320,10 @@ export default async function DemoSettingsPage() {
 
                 <div className="space-y-2">
                   <Label>Custom Domain</Label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <LinkIcon className="h-4 w-4 text-gray-400" />
                     <Input value="" placeholder="book.yourstudio.com" disabled />
-                    <Button variant="outline">Configure</Button>
+                    <Button variant="outline" className="w-full sm:w-auto">Configure</Button>
                   </div>
                   <p className="text-xs text-gray-500">Use your own domain for the booking page</p>
                 </div>
@@ -335,5 +335,4 @@ export default async function DemoSettingsPage() {
     </div>
   )
 }
-
 

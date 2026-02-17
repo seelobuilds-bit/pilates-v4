@@ -149,9 +149,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/studio/classes/[classTypeId]/page.tsx`
   - `src/app/(dashboard)/studio/store/catalog/[productId]/page.tsx`
   - `src/app/(dashboard)/studio/settings/emails/page.tsx`
+- 2026-02-17 Batch K complete:
+  - `src/app/demo/settings/page.tsx`
+  - `src/app/demo/inbox/page.tsx`
+  - `src/app/demo/community/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/demo/settings/page.tsx`
-- `src/app/demo/inbox/page.tsx`
-- `src/app/demo/community/page.tsx`
+- `src/app/demo/payments/page.tsx`
+- `src/app/demo/clients/[clientId]/page.tsx`
+- `src/app/demo/teachers/[teacherId]/page.tsx`
