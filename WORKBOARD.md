@@ -15,12 +15,13 @@ Ship high-impact improvements in parallel without conflicts.
 | T-107 Dashboard report datapoints + per-card visibility | mac-mini-agent | mini/T-107-dashboard-reporting-widgets | `src/components/studio/DashboardView.tsx` + related dashboard widget config/types only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/13 |
 | T-108 Demo reports preview build stability | codex-main | codex/T-108-demo-reports-build-stability | `/demo/reports` rendering mode only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/15 |
 | T-109 Studio schedule list view (toggle with existing calendar) | mac-mini-agent | mini/T-109-schedule-list-view | `src/app/(dashboard)/studio/schedule/page.tsx` (+ minimal extracted components under `src/components/studio/schedule/**` only if needed) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/21 |
-| T-110 Marketing automation chains phase 2 (real step model + runner) | codex-main | codex/T-110-automation-chains-backend | `prisma/schema.prisma`, automation APIs, worker runtime | In Progress |  |
-| T-111 Schedule list UX parity (filters + sticky header + actions polish) | mac-mini-agent | mini/T-111-schedule-list-ux-parity | `src/app/(dashboard)/studio/schedule/page.tsx`, `src/components/studio/schedule/**` only | In Progress |  |
+| T-110 Marketing automation chains phase 2 (real step model + runner) | codex-main | codex/T-110-automation-chains-backend | `prisma/schema.prisma`, automation APIs, worker runtime | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/24 |
+| T-111 Schedule list UX parity (filters + sticky header + actions polish) | mac-mini-agent | mini/T-111-schedule-list-ux-parity | `src/app/(dashboard)/studio/schedule/page.tsx`, `src/components/studio/schedule/**` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/25 |
+| T-112 Schedule view simplify (revert day/week/month chips) | mac-mini-agent | mini/T-112-schedule-view-simplify | `src/app/(dashboard)/studio/schedule/page.tsx` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/26 |
+| T-113 Automation edit multi-step parity | codex-main | codex/T-113-automation-edit-multistep | `src/app/(dashboard)/studio/marketing/automations/[automationId]/page.tsx` | In Progress |  |
 
 ## Merge Order
-1. T-110
-2. T-111
+1. T-113
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
