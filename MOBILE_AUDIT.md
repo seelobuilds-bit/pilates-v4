@@ -127,9 +127,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/page.tsx`
   - `src/app/(dashboard)/teacher/schedule/page.tsx`
   - `src/app/(dashboard)/teacher/clients/[clientId]/page.tsx`
+- 2026-02-17 Batch F complete:
+  - `src/app/(dashboard)/teacher/reports/page.tsx`
+  - `src/app/(dashboard)/teacher/leaderboards/page.tsx`
+  - `src/app/(dashboard)/teacher/vault/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/teacher/reports/page.tsx`
-- `src/app/(dashboard)/teacher/leaderboards/page.tsx`
-- `src/app/(dashboard)/teacher/vault/page.tsx`
+- `src/app/(dashboard)/teacher/vault/[courseId]/page.tsx`
+- `src/app/(dashboard)/teacher/invoices/page.tsx`
+- `src/app/(dashboard)/teacher/community/page.tsx`

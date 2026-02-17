@@ -304,28 +304,28 @@ export default function TeacherVaultPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">The Vault</h1>
           <p className="text-gray-500 mt-1">Create courses for the subscription and earn affiliate commissions</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
           <Plus className="h-4 w-4 mr-2" />
           Add Course
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ export default function TeacherVaultPage() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="subscription-courses" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="subscription-courses">
             <Sparkles className="h-4 w-4 mr-2" />
             Subscription Courses
@@ -426,8 +426,8 @@ export default function TeacherVaultPage() {
             </Card>
 
             {/* Filters */}
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search courses..."
@@ -437,7 +437,7 @@ export default function TeacherVaultPage() {
                 />
               </div>
               <Select value={audienceFilter} onValueChange={setAudienceFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -609,7 +609,7 @@ export default function TeacherVaultPage() {
 
         {/* Community Tab */}
         <TabsContent value="community">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ height: "calc(100vh - 350px)" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[calc(100vh-350px)]">
             {/* Community Selector */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Your Communities</h3>
@@ -695,7 +695,7 @@ export default function TeacherVaultPage() {
         {/* Affiliate Links Tab */}
         <TabsContent value="affiliates" className="space-y-6">
           {/* Affiliate Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-pink-50 to-white">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -739,7 +739,7 @@ export default function TeacherVaultPage() {
           {availableForAffiliate.length > 0 && (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">Create Affiliate Link</h3>
                     <p className="text-sm text-gray-500">Earn commissions by promoting courses</p>
@@ -751,7 +751,7 @@ export default function TeacherVaultPage() {
                       setShowAffiliateLinkModal(true)
                     }
                   }}>
-                    <SelectTrigger className="w-64">
+                    <SelectTrigger className="w-full sm:w-64">
                       <SelectValue placeholder="Select a course" />
                     </SelectTrigger>
                     <SelectContent>
@@ -781,13 +781,13 @@ export default function TeacherVaultPage() {
               {affiliateLinks.map(link => (
                 <Card key={link.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
                           <LinkIcon className="h-6 w-6 text-violet-600" />
                         </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">{link.course.title}</h4>
+                        <div className="min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{link.course.title}</h4>
                           <div className="flex items-center gap-2 mt-1">
                             <code className="text-xs bg-gray-100 px-2 py-0.5 rounded">
                               {link.code}
@@ -803,7 +803,7 @@ export default function TeacherVaultPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-8 text-sm">
+                      <div className="grid grid-cols-2 gap-3 text-sm sm:flex sm:items-center sm:gap-8">
                         <div className="text-center">
                           <p className="font-semibold text-gray-900">{link.clicks}</p>
                           <p className="text-gray-500">Clicks</p>
@@ -868,7 +868,7 @@ export default function TeacherVaultPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Target Audience *</Label>
                 <Select value={newCourse.audience} onValueChange={(v) => setNewCourse({ ...newCourse, audience: v })}>
@@ -903,7 +903,7 @@ export default function TeacherVaultPage() {
             </div>
 
             <div className="p-4 bg-violet-50 rounded-lg">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-violet-900">Include in Subscription</p>
                   <p className="text-sm text-violet-700">This course will be available to all subscribers</p>
@@ -915,7 +915,7 @@ export default function TeacherVaultPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Community Chat</p>
                 <p className="text-sm text-gray-500">Enable group chat for students</p>
@@ -987,8 +987,6 @@ export default function TeacherVaultPage() {
     </div>
   )
 }
-
-
 
 
 

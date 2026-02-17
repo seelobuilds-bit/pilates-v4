@@ -40,7 +40,7 @@ export default function TeacherReportsPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
@@ -48,7 +48,7 @@ export default function TeacherReportsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -118,7 +118,7 @@ export default function TeacherReportsPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 bg-emerald-50 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-2">
                   <span className="text-sm font-medium text-emerald-700">Client Retention</span>
                   <span className="text-lg font-bold text-emerald-600">{stats.retentionRate}%</span>
                 </div>
@@ -128,7 +128,7 @@ export default function TeacherReportsPage() {
               </div>
 
               <div className="p-4 bg-blue-50 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-2">
                   <span className="text-sm font-medium text-blue-700">Average Class Fill Rate</span>
                   <span className="text-lg font-bold text-blue-600">{stats.avgFillRate}%</span>
                 </div>
@@ -151,14 +151,14 @@ export default function TeacherReportsPage() {
           <CardContent>
             <div className="space-y-3">
               {stats.topClasses.map((cls, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
                       {i + 1}
                     </span>
-                    <span className="font-medium text-gray-900">{cls.name}</span>
+                    <span className="font-medium text-gray-900 truncate">{cls.name}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 sm:justify-end">
                     <span className="text-sm text-gray-500">{cls.count} classes</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
@@ -180,7 +180,7 @@ export default function TeacherReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end justify-between h-32 gap-4">
+            <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
               {stats.monthlyClasses.map((month, i) => {
                 const maxCount = Math.max(...stats.monthlyClasses.map(m => m.count))
                 const height = (month.count / maxCount) * 100
@@ -208,8 +208,8 @@ export default function TeacherReportsPage() {
             <div className="space-y-4">
               {stats.recentReviews.map((review, i) => (
                 <div key={i} className="p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span className="font-medium text-gray-900">{review.clientName}</span>
                       <div className="flex items-center gap-0.5">
                         {[...Array(5)].map((_, j) => (
@@ -232,7 +232,6 @@ export default function TeacherReportsPage() {
     </div>
   )
 }
-
 
 
 
