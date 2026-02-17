@@ -1,14 +1,20 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2, LayoutGrid, List, Search } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2, LayoutGrid, List, Search, MoreHorizontal, Eye, Pencil, XCircle } from "lucide-react"
 
 interface Location {
   id: string
@@ -102,8 +108,11 @@ function getClassColor(className: string): string {
 }
 
 export default function SchedulePage() {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialTeacher = searchParams.get("teacher") || ""
+  const initialCalendarView = searchParams.get("calendarView")
   
   const [weekOffset, setWeekOffset] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -118,7 +127,10 @@ export default function SchedulePage() {
   const [filterTeacher, setFilterTeacher] = useState<string>(initialTeacher || "all")
   const [filterClassType, setFilterClassType] = useState<string>("all")
   const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
+  const [viewMode, setViewMode] = useState<"calendar" | "list">(initialCalendarView === "list" ? "list" : "calendar")
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(
+    initialCalendarView === "day" || initialCalendarView === "month" ? initialCalendarView : "week"
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [timeScope, setTimeScope] = useState<"upcoming" | "past">("upcoming")
   
@@ -390,6 +402,58 @@ export default function SchedulePage() {
     setFilterClassType("all")
   }
 
+  const updateCalendarRoute = (nextView: "list" | "day" | "week" | "month") => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("calendarView", nextView)
+    const queryString = params.toString()
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname)
+  }
+
+  const handleViewChipSelect = (nextView: "list" | "day" | "week" | "month") => {
+    if (nextView === "list") {
+      setViewMode("list")
+      updateCalendarRoute("list")
+      return
+    }
+
+    setViewMode("calendar")
+    setCalendarView(nextView)
+    updateCalendarRoute(nextView)
+  }
+
+  const handleCancelClass = async (classId: string) => {
+    const selectedClass = classes.find((cls) => cls.id === classId)
+    if (!selectedClass) return
+
+    const hasBookings = selectedClass._count.bookings > 0
+    const confirmMessage = hasBookings
+      ? `Cancel this class and notify ${selectedClass._count.bookings} booked client${selectedClass._count.bookings > 1 ? "s" : ""}?`
+      : "Cancel this class?"
+
+    if (!confirm(confirmMessage)) return
+
+    try {
+      const response = await fetch(`/api/studio/schedule/${classId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || "Failed to cancel class")
+        return
+      }
+
+      const data = await response.json()
+      if (typeof data.notifiedClients === "number") {
+        alert(`Class cancelled. ${data.notifiedClients} client(s) notified.`)
+      }
+      setClasses((prev) => prev.filter((cls) => cls.id !== classId))
+    } catch (error) {
+      console.error("Failed to cancel class:", error)
+      alert("Failed to cancel class")
+    }
+  }
+
   // Get selected teacher name for header
   const selectedTeacher = teachers.find(t => t.id === filterTeacher)
 
@@ -465,20 +529,38 @@ export default function SchedulePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewMode("calendar")}
-              className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              Calendar
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode("list")}
+              onClick={() => handleViewChipSelect("list")}
               className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
             >
               <List className="h-4 w-4 mr-1" />
               List
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChipSelect("day")}
+              className={viewMode === "calendar" && calendarView === "day" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Day
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChipSelect("week")}
+              className={viewMode === "calendar" && calendarView === "week" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Week
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChipSelect("month")}
+              className={viewMode === "calendar" && calendarView === "month" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Month
             </Button>
           </div>
           <Button 
@@ -903,65 +985,103 @@ export default function SchedulePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="hidden md:grid grid-cols-12 gap-3 px-3 pb-2 text-xs uppercase tracking-wide text-gray-500 font-medium border-b">
-                    <div className="col-span-3">Date / Time</div>
-                    <div className="col-span-3">Class</div>
-                    <div className="col-span-2">Instructor</div>
-                    <div className="col-span-2">Location</div>
-                    <div className="col-span-2">Signups</div>
+                  <div className="overflow-x-auto rounded-lg border border-gray-100">
+                    <div className="min-w-[920px]">
+                      <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs uppercase tracking-wide text-gray-500 font-medium bg-white sticky top-0 z-10 border-b">
+                        <div className="col-span-3">Date / Time</div>
+                        <div className="col-span-3">Class</div>
+                        <div className="col-span-2">Instructor</div>
+                        <div className="col-span-2">Location</div>
+                        <div className="col-span-1">Signups</div>
+                        <div className="col-span-1 text-right">Actions</div>
+                      </div>
+
+                      {listFilteredClasses.length === 0 ? (
+                        <div className="px-4 py-12 text-center bg-white">
+                          <p className="text-base font-medium text-gray-700">No classes match your filters.</p>
+                          <p className="text-sm text-gray-500 mt-1">Try adjusting search, time scope, or filter selections.</p>
+                        </div>
+                      ) : (
+                        listFilteredClasses.map((cls) => {
+                          const isSelected = selectedClasses.has(cls.id)
+                          const rowClass = `grid grid-cols-12 gap-3 px-4 py-3 items-center border-b border-gray-100 bg-white hover:bg-violet-50 transition-colors`
+
+                          if (selectMode) {
+                            return (
+                              <div
+                                key={cls.id}
+                                onClick={(e) => toggleSelectClass(cls.id, e)}
+                                className={`${rowClass} cursor-pointer ${isSelected ? 'ring-2 ring-violet-500 bg-violet-50' : ''}`}
+                              >
+                                <div className="col-span-3 text-sm text-gray-700">
+                                  <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                  <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                                </div>
+                                <div className="col-span-3">
+                                  <p className="font-medium text-gray-900">{cls.classType.name}</p>
+                                </div>
+                                <div className="col-span-2 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
+                                <div className="col-span-2 text-sm text-gray-700">{cls.location.name}</div>
+                                <div className="col-span-1 flex items-center gap-2">
+                                  <span className={`text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</span>
+                                </div>
+                                <div className="col-span-1 flex justify-end">
+                                  {isSelected ? <CheckSquare className="h-4 w-4 text-violet-600" /> : <Square className="h-4 w-4 text-gray-300" />}
+                                </div>
+                              </div>
+                            )
+                          }
+
+                          return (
+                            <div key={cls.id} className={rowClass}>
+                              <Link href={`/studio/schedule/${cls.id}`} className="col-span-11 grid grid-cols-11 gap-3 items-center">
+                                <div className="col-span-3 text-sm text-gray-700">
+                                  <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                  <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                                </div>
+                                <div className="col-span-3">
+                                  <p className="font-medium text-gray-900">{cls.classType.name}</p>
+                                </div>
+                                <div className="col-span-2 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
+                                <div className="col-span-2 text-sm text-gray-700">{cls.location.name}</div>
+                                <div className={`col-span-1 text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</div>
+                              </Link>
+                              <div className="col-span-1 flex justify-end">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/studio/schedule/${cls.id}`} className="flex items-center gap-2">
+                                        <Eye className="h-4 w-4" />
+                                        View
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/studio/schedule/${cls.id}`} className="flex items-center gap-2">
+                                        <Pencil className="h-4 w-4" />
+                                        Edit
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-red-600 focus:text-red-600"
+                                      onClick={() => handleCancelClass(cls.id)}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      Cancel
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
                   </div>
-
-                  {listFilteredClasses.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">No classes found for this view.</p>
-                  ) : (
-                    listFilteredClasses.map((cls) => {
-                      const isSelected = selectedClasses.has(cls.id)
-                      const rowClass = `block rounded-lg border border-gray-100 bg-white hover:bg-violet-50 hover:border-violet-200 transition-colors`
-
-                      if (selectMode) {
-                        return (
-                          <div
-                            key={cls.id}
-                            onClick={(e) => toggleSelectClass(cls.id, e)}
-                            className={`${rowClass} cursor-pointer ${isSelected ? 'ring-2 ring-violet-500 bg-violet-50' : ''}`}
-                          >
-                            <div className="p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center">
-                              <div className="md:col-span-3 text-sm text-gray-700">
-                                <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                                <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
-                              </div>
-                              <div className="md:col-span-3 mt-2 md:mt-0">
-                                <p className="font-medium text-gray-900">{cls.classType.name}</p>
-                              </div>
-                              <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
-                              <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.location.name}</div>
-                              <div className="md:col-span-2 mt-1 md:mt-0 flex items-center justify-between md:justify-start gap-2">
-                                <span className={`text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</span>
-                                {isSelected ? <CheckSquare className="h-4 w-4 text-violet-600" /> : <Square className="h-4 w-4 text-gray-300" />}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      return (
-                        <Link key={cls.id} href={`/studio/schedule/${cls.id}`} className={rowClass}>
-                          <div className="p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center">
-                            <div className="md:col-span-3 text-sm text-gray-700">
-                              <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                              <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
-                            </div>
-                            <div className="md:col-span-3 mt-2 md:mt-0">
-                              <p className="font-medium text-gray-900">{cls.classType.name}</p>
-                            </div>
-                            <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
-                            <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.location.name}</div>
-                            <div className={`md:col-span-2 mt-1 md:mt-0 text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</div>
-                          </div>
-                        </Link>
-                      )
-                    })
-                  )}
                 </div>
               )}
 
