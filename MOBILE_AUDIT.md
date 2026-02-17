@@ -181,9 +181,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/studio/class-flows/page.tsx`
   - `src/app/(dashboard)/teacher/schedule/[classId]/page.tsx`
   - `src/app/(dashboard)/studio/marketing/templates/[templateId]/page.tsx`
+- 2026-02-17 Batch S complete:
+  - `src/app/(dashboard)/teacher/page.tsx`
+  - `src/app/(dashboard)/hq/training/page.tsx`
+  - `src/app/(dashboard)/sales/demos/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/teacher/page.tsx`
-- `src/app/(dashboard)/hq/training/page.tsx`
-- `src/app/(dashboard)/sales/demos/page.tsx`
+- `src/app/(dashboard)/hq/sales/calendar/page.tsx`
+- `src/app/(dashboard)/hq/settings/page.tsx`
+- `src/app/(dashboard)/sales/leads/[leadId]/page.tsx`
