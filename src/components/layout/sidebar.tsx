@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
@@ -87,6 +88,7 @@ const salesAgentLinks = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
   const role = session?.user?.role
 
@@ -108,8 +110,15 @@ export function Sidebar() {
     subtitle = "Teacher Portal"
   }
 
+  // Keep the dashboard route warm so top-level nav feels instant.
+  useEffect(() => {
+    if (links[0]?.href) {
+      router.prefetch(links[0].href)
+    }
+  }, [links, router])
+
   return (
-    <div className="relative z-50 flex flex-col h-full w-64 bg-white border-r border-gray-100">
+    <div className="relative z-[70] flex h-full w-64 shrink-0 flex-col border-r border-gray-100 bg-white">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div>
