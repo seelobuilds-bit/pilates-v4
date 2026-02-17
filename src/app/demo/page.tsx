@@ -258,8 +258,8 @@ export default async function DemoDashboardPage() {
         description: "Report datapoint"
       },
       {
-        id: "todayClasses",
-        title: "Today Classes",
+        id: "classesThisMonth",
+        title: "Classes This Month",
         value: classesThisMonth.length,
         description: "Report datapoint"
       },
@@ -286,7 +286,6 @@ export default async function DemoDashboardPage() {
 
   return <DashboardView data={dashboardData} linkPrefix="/demo" />
 }
-
 
 
 

@@ -307,8 +307,8 @@ export default async function StudioDashboardPage() {
         description: "Report datapoint"
       },
       {
-        id: "todayClasses",
-        title: "Today Classes",
+        id: "classesThisMonth",
+        title: "Classes This Month",
         value: classesThisMonth.length,
         description: "Report datapoint"
       },
