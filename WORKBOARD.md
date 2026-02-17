@@ -12,6 +12,7 @@ Ship high-impact improvements in parallel without conflicts.
 | T-104 Mobile optimization (studio app) | codex-main | codex/T-104-mobile-pass | Responsive behavior for studio routes only | Blocked by T-103 | |
 | T-105 Studio currency setting + formatting | codex-main | codex/T-105-currency-setting | Studio settings + currency formatting usage | Ready | |
 | T-106 Marketing automation chains (phase 1) | codex-main | codex/T-106-automation-chains-phase1 | Automation schema/API/UI first slice only | Ready | |
+| T-107 Dashboard report datapoints + per-card visibility | mac-mini-agent | mini/T-107-dashboard-reporting-widgets | `src/components/studio/DashboardView.tsx` + related dashboard widget config/types only | Ready | |
 
 ## Merge Order
 1. T-102
