@@ -15,6 +15,8 @@ import {
   PieChart
 } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 const DEMO_STUDIO_SUBDOMAIN = "zenith"
 
 export default async function DemoReportsPage() {
@@ -288,6 +290,5 @@ export default async function DemoReportsPage() {
     </div>
   )
 }
-
 
 
