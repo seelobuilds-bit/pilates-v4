@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 
+const ALLOWED_CURRENCIES = ["usd", "eur", "gbp", "cad", "aud", "nzd"]
+
 // GET - Fetch studio settings
 export async function GET() {
   const auth = await requireOwnerStudioAccess()
@@ -18,6 +20,7 @@ export async function GET() {
         name: true,
         subdomain: true,
         primaryColor: true,
+        stripeCurrency: true,
       }
     })
 
@@ -42,19 +45,26 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, primaryColor } = body
+    const { name, primaryColor, currency } = body
+
+    const normalizedCurrency = currency ? String(currency).toLowerCase() : undefined
+    if (normalizedCurrency && !ALLOWED_CURRENCIES.includes(normalizedCurrency)) {
+      return NextResponse.json({ error: "Invalid currency code" }, { status: 400 })
+    }
 
     const studio = await db.studio.update({
       where: { id: auth.studioId },
       data: {
         ...(name !== undefined && { name }),
         ...(primaryColor !== undefined && { primaryColor }),
+        ...(normalizedCurrency !== undefined && { stripeCurrency: normalizedCurrency }),
       },
       select: {
         id: true,
         name: true,
         subdomain: true,
         primaryColor: true,
+        stripeCurrency: true,
       }
     })
 

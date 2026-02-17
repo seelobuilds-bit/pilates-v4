@@ -30,6 +30,7 @@ import {
   Trash2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { formatCurrency } from "@/lib/utils"
 
 interface Client {
   id: string
@@ -109,6 +110,7 @@ export default function ClientDetailPage({
   const [bookings, setBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [communications, setCommunications] = useState<Communication[]>([])
+  const [currency, setCurrency] = useState("usd")
 
   useEffect(() => {
     async function fetchClient() {
@@ -128,6 +130,19 @@ export default function ClientDetailPage({
       }
     }
     fetchClient()
+
+    const fetchCurrency = async () => {
+      try {
+        const res = await fetch("/api/studio/settings")
+        if (!res.ok) return
+        const data = await res.json()
+        setCurrency((data.stripeCurrency || "usd").toLowerCase())
+      } catch (error) {
+        console.error("Failed to fetch studio currency:", error)
+      }
+    }
+
+    fetchCurrency()
   }, [resolvedParams.clientId])
 
   if (loading) {
@@ -268,7 +283,7 @@ export default function ClientDetailPage({
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${safeStats.totalSpent.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(safeStats.totalSpent, currency)}</p>
                   <p className="text-sm text-gray-500">Total Spent</p>
                 </div>
               </div>

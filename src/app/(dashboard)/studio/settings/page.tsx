@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Building2, 
   Globe, 
@@ -37,6 +38,10 @@ interface StripeStatus {
   error?: string
 }
 
+const CURRENCY_OPTIONS = ["usd", "eur", "gbp", "cad", "aud", "nzd"] as const
+
+type CurrencyCode = (typeof CURRENCY_OPTIONS)[number]
+
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   const stripeParam = searchParams.get("stripe")
@@ -45,8 +50,11 @@ export default function SettingsPage() {
     name: string
     subdomain: string
     primaryColor: string
+    currency: CurrencyCode
   } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [savingStudio, setSavingStudio] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null)
   const [activeTemplates, setActiveTemplates] = useState(0)
   const [baseUrl, setBaseUrl] = useState("")
@@ -93,7 +101,10 @@ export default function SettingsPage() {
         setStudio({
           name: data.name,
           subdomain: data.subdomain,
-          primaryColor: data.primaryColor || "#7c3aed"
+          primaryColor: data.primaryColor || "#7c3aed",
+          currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
+            ? (data.stripeCurrency || "usd").toLowerCase()
+            : "usd"
         })
       } else if (res.status === 401) {
         // Check if logged in as wrong user type
@@ -186,6 +197,47 @@ export default function SettingsPage() {
       alert("Failed to connect Stripe. Please check your connection and try again.")
     } finally {
       setConnectingStripe(false)
+    }
+  }
+
+  const handleSaveStudioSettings = async () => {
+    if (!studio) return
+
+    setSavingStudio(true)
+    setSaveMessage(null)
+
+    try {
+      const res = await fetch("/api/studio/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: studio.name,
+          primaryColor: studio.primaryColor,
+          currency: studio.currency,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        setSaveMessage({ type: "error", text: data?.error || "Failed to save settings" })
+        return
+      }
+
+      const data = await res.json()
+      setStudio((prev) => prev ? ({
+        ...prev,
+        name: data.name,
+        primaryColor: data.primaryColor || "#7c3aed",
+        currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
+          ? (data.stripeCurrency || "usd").toLowerCase()
+          : "usd",
+      }) : prev)
+      setSaveMessage({ type: "success", text: "Studio settings saved" })
+    } catch (error) {
+      console.error("Error saving studio settings:", error)
+      setSaveMessage({ type: "error", text: "Failed to save settings" })
+    } finally {
+      setSavingStudio(false)
     }
   }
 
@@ -409,19 +461,52 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Studio Name</Label>
-              <Input id="name" defaultValue={studio?.name} />
+              <Input
+                id="name"
+                value={studio?.name || ""}
+                onChange={(e) => setStudio((prev) => prev ? ({ ...prev, name: e.target.value }) : prev)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subdomain">Subdomain</Label>
               <div className="flex items-center gap-2">
-                <Input id="subdomain" defaultValue={studio?.subdomain} />
+                <Input id="subdomain" value={studio?.subdomain || ""} disabled />
                 <span className="text-sm text-gray-500 whitespace-nowrap">.current.studio</span>
               </div>
               <p className="text-xs text-gray-500">
                 Your booking page: {studio?.subdomain}.current.studio
               </p>
             </div>
-            <Button className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Select
+                value={studio?.currency || "usd"}
+                onValueChange={(value) => {
+                  if (!CURRENCY_OPTIONS.includes(value as CurrencyCode)) return
+                  setStudio((prev) => prev ? ({ ...prev, currency: value as CurrencyCode }) : prev)
+                }}
+              >
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {saveMessage && (
+              <p className={`text-sm ${saveMessage.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
+                {saveMessage.text}
+              </p>
+            )}
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">
+              {savingStudio && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Changes
+            </Button>
           </CardContent>
         </Card>
 
@@ -525,16 +610,18 @@ export default function SettingsPage() {
                 <input 
                   type="color" 
                   id="color" 
-                  defaultValue={studio?.primaryColor || "#7c3aed"} 
+                  value={studio?.primaryColor || "#7c3aed"}
+                  onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-12 h-10 rounded border cursor-pointer"
                 />
                 <Input 
-                  defaultValue={studio?.primaryColor || "#7c3aed"} 
+                  value={studio?.primaryColor || "#7c3aed"}
+                  onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-32"
                 />
               </div>
             </div>
-            <Button className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
           </CardContent>
         </Card>
       </div>

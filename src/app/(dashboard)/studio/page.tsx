@@ -13,6 +13,12 @@ export default async function StudioDashboardPage() {
 
   const studioId = session.user.studioId
 
+  const studio = await db.studio.findUnique({
+    where: { id: studioId },
+    select: { stripeCurrency: true }
+  })
+  const studioCurrency = (studio?.stripeCurrency || "usd").toLowerCase()
+
   // Get current date info
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -232,6 +238,7 @@ export default async function StudioDashboardPage() {
   const dashboardData: DashboardData = {
     greeting: getGreeting(),
     currentDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+    currency: studioCurrency,
     stats: {
       monthlyRevenue: revenue.thisMonth,
       revenueChange: revenue.percentChange,
