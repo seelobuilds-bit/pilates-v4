@@ -217,32 +217,27 @@ export default function NewCampaignPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="mb-8 overflow-x-auto">
-        <div className="mx-auto flex min-w-[720px] max-w-3xl items-center justify-between">
+      <div className="mb-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { num: 1, label: "Basics" },
             { num: 2, label: "Audience" },
             { num: 3, label: "Content" },
             { num: 4, label: "Schedule" }
-          ].map((s, i) => (
-            <div key={s.num} className="flex items-center">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-medium text-sm ${
+          ].map((s) => (
+            <div key={s.num} className="flex items-center gap-2 rounded-xl border bg-white p-2">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                 step >= s.num 
                   ? "bg-violet-600 text-white" 
                   : "bg-gray-200 text-gray-500"
               }`}>
                 {s.num}
               </div>
-              <span className={`ml-2 text-sm font-medium ${
+              <span className={`text-xs sm:text-sm font-medium ${
                 step >= s.num ? "text-gray-900" : "text-gray-400"
               }`}>
                 {s.label}
               </span>
-              {i < 3 && (
-                <div className={`w-16 h-0.5 mx-4 ${
-                  step > s.num ? "bg-violet-600" : "bg-gray-200"
-                }`} />
-              )}
             </div>
           ))}
         </div>
@@ -252,7 +247,7 @@ export default function NewCampaignPage() {
         {/* Step 1: Basics */}
         {step === 1 && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-5 sm:p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                   <Sparkles className="h-5 w-5 text-violet-600" />
@@ -309,7 +304,7 @@ export default function NewCampaignPage() {
         {/* Step 2: Audience */}
         {step === 2 && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-5 sm:p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                   <Users className="h-5 w-5 text-blue-600" />
@@ -358,7 +353,7 @@ export default function NewCampaignPage() {
                     key={audience.value}
                     type="button"
                     onClick={() => setCampaign({ ...campaign, targetAudience: audience.value })}
-                    className={`w-full p-4 border-2 rounded-xl text-left transition-all flex items-center justify-between ${
+                    className={`w-full p-4 border-2 rounded-xl text-left transition-all flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
                       campaign.targetAudience === audience.value 
                         ? "border-violet-500 bg-violet-50" 
                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -385,8 +380,8 @@ export default function NewCampaignPage() {
             {/* Email Content */}
             {(campaign.type === "email" || campaign.type === "both") && (
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-8">
-                  <div className="flex items-center justify-between mb-6">
+                <CardContent className="p-5 sm:p-6 lg:p-8">
+                  <div className="flex items-center gap-3 mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                         <Mail className="h-5 w-5 text-violet-600" />
@@ -481,8 +476,8 @@ export default function NewCampaignPage() {
             {/* SMS Content */}
             {(campaign.type === "sms" || campaign.type === "both") && (
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-8">
-                  <div className="flex items-center justify-between mb-6">
+                <CardContent className="p-5 sm:p-6 lg:p-8">
+                  <div className="flex items-center gap-3 mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                         <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -563,7 +558,7 @@ export default function NewCampaignPage() {
         {/* Step 4: Schedule */}
         {step === 4 && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-5 sm:p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
                   <Calendar className="h-5 w-5 text-teal-600" />
