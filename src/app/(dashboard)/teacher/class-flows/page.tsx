@@ -208,7 +208,7 @@ export default function TeacherClassFlowsPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -217,17 +217,17 @@ export default function TeacherClassFlowsPage() {
   // Content Detail View
   if (selectedContent) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Button 
           variant="ghost" 
           onClick={() => setSelectedContent(null)}
-          className="mb-6"
+          className="mb-6 w-full sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Library
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Video/PDF Viewer */}
@@ -252,7 +252,7 @@ export default function TeacherClassFlowsPage() {
                 </div>
               )}
               {selectedContent.type === "PDF" && selectedContent.pdfUrl && (
-                <div className="p-8 text-center">
+                <div className="p-6 text-center sm:p-8">
                   <FileText className="h-16 w-16 text-red-500 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-900 mb-2">PDF Document</h3>
                   <Button asChild>
@@ -273,9 +273,9 @@ export default function TeacherClassFlowsPage() {
             {/* Content Info */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       {selectedContent.category && (
                         <Badge variant="secondary">
                           {selectedContent.category.icon} {selectedContent.category.name}
@@ -288,12 +288,12 @@ export default function TeacherClassFlowsPage() {
                     <h1 className="text-2xl font-bold text-gray-900">{selectedContent.title}</h1>
                   </div>
                   {progress[selectedContent.id]?.isCompleted ? (
-                    <Badge className="bg-emerald-100 text-emerald-700">
+                    <Badge className="w-fit bg-emerald-100 text-emerald-700">
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Completed
                     </Badge>
                   ) : (
-                    <Button onClick={() => markComplete(selectedContent.id)} className="bg-violet-600 hover:bg-violet-700">
+                    <Button onClick={() => markComplete(selectedContent.id)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Mark Complete
                     </Button>
@@ -353,14 +353,14 @@ export default function TeacherClassFlowsPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Class Flows</h1>
           <p className="text-gray-500">Learn new techniques and class formats</p>
         </div>
-        <Button onClick={() => setShowTrainingRequest(true)} className="bg-violet-600 hover:bg-violet-700">
+        <Button onClick={() => setShowTrainingRequest(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <GraduationCap className="h-4 w-4 mr-2" />
           Request Expert Training
         </Button>
@@ -369,14 +369,14 @@ export default function TeacherClassFlowsPage() {
       {/* Progress Banner */}
       <Card className="border-0 shadow-sm bg-gradient-to-r from-violet-600 to-violet-500 text-white mb-8">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-1">Your Learning Journey</h2>
               <p className="text-violet-100">
                 {completedCount} of {totalContent} modules completed
               </p>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-violet-200">Progress</span>
                 <span className="font-medium">
@@ -395,12 +395,12 @@ export default function TeacherClassFlowsPage() {
       </Card>
 
       <Tabs defaultValue="library" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
-          <TabsTrigger value="library" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border-0 bg-white p-1 shadow-sm">
+          <TabsTrigger value="library" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BookOpen className="h-4 w-4 mr-2" />
             Content Library
           </TabsTrigger>
-          <TabsTrigger value="training" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="training" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
             Expert Training
           </TabsTrigger>
@@ -415,7 +415,7 @@ export default function TeacherClassFlowsPage() {
                 <Star className="h-5 w-5 text-amber-500" />
                 Featured Content
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {featured.slice(0, 3).map(content => (
                   <Card 
                     key={content.id}
@@ -455,8 +455,8 @@ export default function TeacherClassFlowsPage() {
           )}
 
           {/* Filters */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="w-full flex-1">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="All Categories" />
@@ -471,7 +471,7 @@ export default function TeacherClassFlowsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div className="w-full flex-1">
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="All Levels" />
@@ -497,7 +497,7 @@ export default function TeacherClassFlowsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredContent.map(content => (
                 <Card 
                   key={content.id}
@@ -574,7 +574,7 @@ export default function TeacherClassFlowsPage() {
                     Take your skills to the next level with personalized training from our expert instructors. 
                     They&apos;ll come to your studio and provide hands-on guidance for you and your team.
                   </p>
-                  <Button onClick={() => setShowTrainingRequest(true)} className="bg-amber-600 hover:bg-amber-700">
+                  <Button onClick={() => setShowTrainingRequest(true)} className="w-full bg-amber-600 hover:bg-amber-700 sm:w-auto">
                     Request Training Session
                   </Button>
                 </div>
@@ -594,20 +594,20 @@ export default function TeacherClassFlowsPage() {
               ) : (
                 <div className="space-y-3">
                   {myRequests.map(request => (
-                    <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={request.id} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h4 className="font-medium text-gray-900">{request.title}</h4>
                         <p className="text-sm text-gray-500">
                           Requested {new Date(request.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <Badge className={
+                      <Badge className={`w-fit ${
                         request.status === "PENDING" ? "bg-amber-100 text-amber-700" :
                         request.status === "APPROVED" ? "bg-blue-100 text-blue-700" :
                         request.status === "SCHEDULED" ? "bg-violet-100 text-violet-700" :
                         request.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
                         "bg-gray-100 text-gray-700"
-                      }>
+                      }`}>
                         {request.status}
                       </Badge>
                     </div>
@@ -623,10 +623,10 @@ export default function TeacherClassFlowsPage() {
       {showTrainingRequest && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowTrainingRequest(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6 flex items-start justify-between gap-3 sm:items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                       <GraduationCap className="h-5 w-5 text-violet-600" />
@@ -682,7 +682,7 @@ export default function TeacherClassFlowsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-2">
                       <Label>Preferred Date 1</Label>
                       <Input
@@ -709,7 +709,7 @@ export default function TeacherClassFlowsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Contact Name</Label>
                       <Input
@@ -729,7 +729,7 @@ export default function TeacherClassFlowsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Email</Label>
                       <Input
@@ -779,14 +779,14 @@ export default function TeacherClassFlowsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button variant="outline" onClick={() => setShowTrainingRequest(false)}>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" onClick={() => setShowTrainingRequest(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
                   <Button 
                     onClick={submitTrainingRequest}
                     disabled={submitting || !trainingForm.title || !trainingForm.description || !trainingForm.contactEmail}
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
                   </Button>
@@ -799,7 +799,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

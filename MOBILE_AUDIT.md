@@ -173,9 +173,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/demo/class-flows/page.tsx`
   - `src/app/demo/teachers/page.tsx`
   - `src/app/demo/marketing/page.tsx`
+- 2026-02-17 Batch Q complete:
+  - `src/app/(dashboard)/studio/store/page.tsx`
+  - `src/app/(dashboard)/studio/clients/page.tsx`
+  - `src/app/(dashboard)/teacher/class-flows/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/studio/store/page.tsx`
-- `src/app/(dashboard)/studio/clients/page.tsx`
-- `src/app/(dashboard)/teacher/class-flows/page.tsx`
+- `src/app/(dashboard)/studio/class-flows/page.tsx`
+- `src/app/(dashboard)/teacher/schedule/[classId]/page.tsx`
+- `src/app/(dashboard)/studio/marketing/templates/[templateId]/page.tsx`

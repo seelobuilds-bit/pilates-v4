@@ -425,100 +425,180 @@ export default function ClientsPage() {
       {filteredClients.length > 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px]">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4 w-12">
+            <div className="border-b border-gray-100 p-3 md:hidden">
+              <button 
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors"
+              >
+                {isAllSelected ? (
+                  <CheckSquare className="h-5 w-5 text-violet-600" />
+                ) : isPartialSelected ? (
+                  <div className="relative">
+                    <Square className="h-5 w-5" />
+                    <Minus className="h-3 w-3 absolute top-1 left-1" />
+                  </div>
+                ) : (
+                  <Square className="h-5 w-5" />
+                )}
+                Select all visible
+              </button>
+            </div>
+
+            <div className="divide-y divide-gray-100 md:hidden">
+              {filteredClients.map((client) => (
+                <div 
+                  key={client.id}
+                  className={`p-4 ${
+                    selectedClients.has(client.id) ? "bg-violet-50/50" : ""
+                  }`}
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-medium text-violet-700">
+                        {client.firstName[0]}{client.lastName[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-gray-900">
+                          {client.firstName} {client.lastName}
+                        </p>
+                        <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-gray-600">
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          {client.email}
+                        </p>
+                      </div>
+                    </Link>
                     <button 
-                      onClick={handleSelectAll}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSelectClient(client.id)
+                      }}
                       className="flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
                     >
-                      {isAllSelected ? (
+                      {selectedClients.has(client.id) ? (
                         <CheckSquare className="h-5 w-5 text-violet-600" />
-                      ) : isPartialSelected ? (
-                        <div className="relative">
-                          <Square className="h-5 w-5" />
-                          <Minus className="h-3 w-3 absolute top-1 left-1" />
-                        </div>
                       ) : (
                         <Square className="h-5 w-5" />
                       )}
                     </button>
-                  </th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Client</th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Email</th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Bookings</th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Credits</th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Status</th>
-                  <th className="text-left text-sm font-medium text-gray-500 px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredClients.map((client) => (
-                  <tr 
-                    key={client.id} 
-                    className={`hover:bg-violet-50 transition-colors ${
-                      selectedClients.has(client.id) ? 'bg-violet-50/50' : ''
-                    }`}
-                  >
-                    <td className="px-6 py-4">
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      {client._count.bookings} bookings
+                    </div>
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <CreditCard className="h-4 w-4 text-gray-400" />
+                      {client.credits} credits
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <Badge variant={client.isActive ? "success" : "secondary"}>
+                      {client.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                    <Link href={`/studio/clients/${client.id}`}>
+                      <span className="text-sm font-medium text-violet-600 hover:underline">View →</span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[760px]">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4 w-12">
                       <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSelectClient(client.id)
-                        }}
+                        onClick={handleSelectAll}
                         className="flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
                       >
-                        {selectedClients.has(client.id) ? (
+                        {isAllSelected ? (
                           <CheckSquare className="h-5 w-5 text-violet-600" />
+                        ) : isPartialSelected ? (
+                          <div className="relative">
+                            <Square className="h-5 w-5" />
+                            <Minus className="h-3 w-3 absolute top-1 left-1" />
+                          </div>
                         ) : (
                           <Square className="h-5 w-5" />
                         )}
                       </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 hover:opacity-70">
-                        <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
-                          {client.firstName[0]}{client.lastName[0]}
-                        </div>
-                        <span className="font-medium text-gray-900">
-                          {client.firstName} {client.lastName}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        {client.email}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        {client._count.bookings}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <CreditCard className="h-4 w-4 text-gray-400" />
-                        {client.credits}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={client.isActive ? "success" : "secondary"}>
-                        {client.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Link href={`/studio/clients/${client.id}`}>
-                        <span className="text-violet-600 text-sm font-medium hover:underline">View →</span>
-                      </Link>
-                    </td>
+                    </th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Client</th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Email</th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Bookings</th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Credits</th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">Status</th>
+                    <th className="text-left text-sm font-medium text-gray-500 px-6 py-4"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredClients.map((client) => (
+                    <tr 
+                      key={client.id} 
+                      className={`hover:bg-violet-50 transition-colors ${
+                        selectedClients.has(client.id) ? 'bg-violet-50/50' : ''
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectClient(client.id)
+                          }}
+                          className="flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
+                        >
+                          {selectedClients.has(client.id) ? (
+                            <CheckSquare className="h-5 w-5 text-violet-600" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 hover:opacity-70">
+                          <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
+                            {client.firstName[0]}{client.lastName[0]}
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {client.firstName} {client.lastName}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          {client.email}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          {client._count.bookings}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <CreditCard className="h-4 w-4 text-gray-400" />
+                          {client.credits}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={client.isActive ? "success" : "secondary"}>
+                          {client.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link href={`/studio/clients/${client.id}`}>
+                          <span className="text-violet-600 text-sm font-medium hover:underline">View →</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
