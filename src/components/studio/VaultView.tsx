@@ -96,15 +96,15 @@ export function VaultView({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">The Vault</h1>
           <p className="text-gray-500 mt-1">Create and manage courses for owners, teachers, and clients</p>
         </div>
         <Link href={`${linkPrefix}/vault/new`}>
-          <Button className="bg-violet-600 hover:bg-violet-700">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Create Course
           </Button>
@@ -112,7 +112,7 @@ export function VaultView({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -186,28 +186,28 @@ export function VaultView({
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="bg-white border">
-          <TabsTrigger value="courses">
+        <TabsList className="bg-white border flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="courses" className="shrink-0">
             <BookOpen className="h-4 w-4 mr-2" />
             Courses
           </TabsTrigger>
-          <TabsTrigger value="subscription">
+          <TabsTrigger value="subscription" className="shrink-0">
             <Crown className="h-4 w-4 mr-2" />
             Subscription
           </TabsTrigger>
-          <TabsTrigger value="community">
+          <TabsTrigger value="community" className="shrink-0">
             <MessageSquare className="h-4 w-4 mr-2" />
             Community
           </TabsTrigger>
-          <TabsTrigger value="enrollments">
+          <TabsTrigger value="enrollments" className="shrink-0">
             <Users className="h-4 w-4 mr-2" />
             Enrollments
           </TabsTrigger>
-          <TabsTrigger value="affiliates">
+          <TabsTrigger value="affiliates" className="shrink-0">
             <LinkIcon className="h-4 w-4 mr-2" />
             Affiliates
           </TabsTrigger>
-          <TabsTrigger value="analytics">
+          <TabsTrigger value="analytics" className="shrink-0">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </TabsTrigger>
@@ -218,7 +218,7 @@ export function VaultView({
           {/* Filters */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -228,7 +228,7 @@ export function VaultView({
                     className="pl-9"
                   />
                 </div>
-                <Button variant="outline">All Audiences</Button>
+                <Button variant="outline" className="w-full sm:w-auto">All Audiences</Button>
               </div>
             </CardContent>
           </Card>
@@ -291,7 +291,7 @@ export function VaultView({
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
                           {course.enrollmentCount} students
@@ -308,7 +308,7 @@ export function VaultView({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Link href={`${linkPrefix}/vault/${course.id}`} className="flex-1">
                           <Button variant="outline" className="w-full" size="sm">
                             <Edit className="h-4 w-4 mr-1" />
@@ -338,7 +338,7 @@ export function VaultView({
         {/* Subscription Tab */}
         <TabsContent value="subscription" className="space-y-6">
           {/* 3 Subscription Tiers Header */}
-          <div className="flex items-center justify-between">
+          <div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Subscription Tiers</h3>
               <p className="text-sm text-gray-500">
@@ -395,7 +395,7 @@ export function VaultView({
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="font-semibold text-gray-900">
                       {selectedTier === "STUDIO_OWNERS" ? "Studio Owners" : selectedTier === "TEACHERS" ? "Teachers" : "At-Home Members"} Plan
                     </h3>
@@ -414,7 +414,7 @@ export function VaultView({
                         <p className="text-sm text-gray-500 mb-1">Description</p>
                         <p className="text-gray-700">{currentPlan.description}</p>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="p-3 bg-gray-50 rounded-lg text-center">
                           <p className="text-2xl font-bold text-gray-900">${currentPlan.monthlyPrice}</p>
                           <p className="text-xs text-gray-500">Monthly</p>
@@ -464,7 +464,7 @@ export function VaultView({
                   
                   <div className="space-y-3">
                     {data.courses.filter(c => c.audience === selectedTier || (c.audience === "CLIENTS" && selectedTier === "CLIENTS")).map(course => (
-                      <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={course.id} className="flex flex-col gap-3 p-3 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
                             {course.includeInSubscription ? (
@@ -542,15 +542,15 @@ export function VaultView({
                   <h3 className="font-semibold text-gray-900 text-sm mb-3">Plan Stats</h3>
                   {currentPlan ? (
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-gray-500">Active Subscribers</span>
                         <span className="font-medium">{currentPlan.activeSubscribers}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-gray-500">Courses Included</span>
                         <span className="font-medium">{currentPlan.includedCourses.length}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-gray-500">Est. Monthly Revenue</span>
                         <span className="font-medium text-green-600">
                           ${(currentPlan.activeSubscribers * currentPlan.monthlyPrice).toFixed(0)}
@@ -568,7 +568,7 @@ export function VaultView({
 
         {/* Community Tab */}
         <TabsContent value="community" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[500px]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:h-[500px]">
             {/* Chat Selector Sidebar */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Communities</h3>
@@ -618,7 +618,7 @@ export function VaultView({
               {showChatForPlan ? (
                 <Card className="border-0 shadow-sm h-full">
                   <CardContent className="p-6 h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <h3 className="font-semibold text-gray-900">{showChatForPlan.name} Community</h3>
                       <Badge className="bg-green-100 text-green-700">{showChatForPlan.activeSubscribers} members</Badge>
                     </div>
@@ -660,8 +660,8 @@ export function VaultView({
               ) : (
                 <div className="space-y-3">
                   {data.enrollments.slice(0, 20).map(enrollment => (
-                    <div key={enrollment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-4">
+                    <div key={enrollment.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center justify-between gap-4 sm:justify-start">
                         <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
                           <Users className="h-5 w-5 text-violet-600" />
                         </div>
@@ -704,7 +704,7 @@ export function VaultView({
               ) : (
                 <div className="space-y-3">
                   {data.affiliateLinks.map(link => (
-                    <div key={link.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={link.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
                           <LinkIcon className="h-5 w-5 text-pink-600" />
@@ -717,7 +717,7 @@ export function VaultView({
                           </code>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6 text-sm">
+                      <div className="flex items-center justify-between gap-4 text-sm sm:justify-start sm:gap-6">
                         <div className="text-center">
                           <p className="font-semibold text-gray-900">{link.clicks}</p>
                           <p className="text-gray-500">Clicks</p>
@@ -755,6 +755,5 @@ export function VaultView({
     </div>
   )
 }
-
 
 

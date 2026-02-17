@@ -135,6 +135,13 @@ export default function SchedulePage() {
   const [showReassignModal, setShowReassignModal] = useState(false)
   const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setViewMode("list")
+    }
+  }, [])
+
   const weekDates = getWeekDates(weekOffset)
   
   // Toggle selection for a class
@@ -437,11 +444,11 @@ export default function SchedulePage() {
   const selectedTeacher = teachers.find(t => t.id === filterTeacher)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Reassign Modal */}
       {showReassignModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <Card className="w-[400px] shadow-xl">
+          <Card className="w-[92vw] max-w-[400px] shadow-xl">
             <CardContent className="p-6">
               <h2 className="font-semibold text-lg text-gray-900 mb-4">
                 Reassign {selectedClasses.size} Classes
@@ -490,7 +497,7 @@ export default function SchedulePage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {selectedTeacher 
@@ -503,23 +510,23 @@ export default function SchedulePage() {
               : 'Manage your class schedule'}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
           <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("calendar")}
-              className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewChipSelect("calendar")}
+                className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+              >
               <Calendar className="h-4 w-4 mr-1" />
               Calendar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("list")}
-              className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewChipSelect("list")}
+                className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+              >
               <List className="h-4 w-4 mr-1" />
               List
             </Button>
@@ -533,7 +540,7 @@ export default function SchedulePage() {
                 setSelectMode(true)
               }
             }}
-            className={selectMode ? "bg-violet-600 hover:bg-violet-700" : ""}
+            className={`w-full sm:w-auto ${selectMode ? "bg-violet-600 hover:bg-violet-700" : ""}`}
           >
             <CheckSquare className="h-4 w-4 mr-2" />
             {selectMode ? "Cancel Select" : "Select Multiple"}
@@ -541,13 +548,13 @@ export default function SchedulePage() {
           <Button 
             variant="outline" 
             onClick={() => fetchSchedule()}
-            className="text-gray-600"
+            className="w-full text-gray-600 sm:w-auto"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Link href="/studio/schedule/new">
-            <Button className="bg-violet-600 hover:bg-violet-700">
+          <Link href="/studio/schedule/new" className="w-full sm:w-auto">
+            <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Add Class
             </Button>
@@ -559,25 +566,26 @@ export default function SchedulePage() {
       {selectMode && selectedClasses.size > 0 && (
         <Card className="border-0 shadow-sm mb-4 bg-violet-50 border-l-4 border-l-violet-500">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <CheckSquare className="h-5 w-5 text-violet-600" />
                 <span className="font-medium text-violet-900">
                   {selectedClasses.size} class{selectedClasses.size > 1 ? 'es' : ''} selected
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={selectAllClasses}
+                  className="w-full sm:w-auto"
                 >
                   Select All ({viewMode === "list" ? listFilteredClasses.length : filteredClasses.length})
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-violet-600 border-violet-200 hover:bg-violet-100"
+                  className="w-full text-violet-600 border-violet-200 hover:bg-violet-100 sm:w-auto"
                   onClick={() => setShowReassignModal(true)}
                   disabled={bulkActionLoading}
                 >
@@ -587,7 +595,7 @@ export default function SchedulePage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50 sm:w-auto"
                   onClick={handleBulkDelete}
                   disabled={bulkActionLoading}
                 >
@@ -604,6 +612,7 @@ export default function SchedulePage() {
                   variant="ghost"
                   size="sm"
                   onClick={clearSelection}
+                  className="w-full sm:w-auto"
                 >
                   <X className="h-4 w-4 mr-1" />
                   Clear
@@ -625,7 +634,7 @@ export default function SchedulePage() {
             
             {/* Location Filter */}
             <Select value={filterLocation} onValueChange={setFilterLocation}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <MapPin className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
@@ -639,7 +648,7 @@ export default function SchedulePage() {
 
             {/* Teacher Filter */}
             <Select value={filterTeacher} onValueChange={setFilterTeacher}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full sm:w-44">
                 <Users className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="All Teachers" />
               </SelectTrigger>
@@ -655,7 +664,7 @@ export default function SchedulePage() {
 
             {/* Class Type Filter */}
             <Select value={filterClassType} onValueChange={setFilterClassType}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="All Classes" />
               </SelectTrigger>
@@ -692,7 +701,7 @@ export default function SchedulePage() {
 
             {/* Location Legend */}
             {hasMultipleLocations && filterLocation === "all" && (
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex w-full items-center gap-2 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
                 {locations.map((location) => (
                   <Badge
                     key={location.id}
@@ -712,16 +721,17 @@ export default function SchedulePage() {
       {/* Week Navigation */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => setWeekOffset(prev => prev - 1)}
+              className="w-full justify-start sm:w-auto"
             >
               <ChevronLeft className="h-5 w-5" />
               Previous
             </Button>
-            <div className="text-center">
+            <div className="text-center sm:flex-1">
               <p className="font-semibold text-gray-900">{formatDateRange()}</p>
               <p className="text-sm text-gray-500">
                 {weekOffset === 0 ? "This Week" : weekOffset > 0 ? `${weekOffset} week${weekOffset > 1 ? 's' : ''} ahead` : `${Math.abs(weekOffset)} week${Math.abs(weekOffset) > 1 ? 's' : ''} ago`}
@@ -729,7 +739,7 @@ export default function SchedulePage() {
             </div>
             <div className="flex items-center gap-2">
               {weekOffset !== 0 && (
-                <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)}>
+                <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)} className="w-full sm:w-auto">
                   Today
                 </Button>
               )}
@@ -737,6 +747,7 @@ export default function SchedulePage() {
                 variant="ghost" 
                 size="sm"
                 onClick={() => setWeekOffset(prev => prev + 1)}
+                className="w-full justify-end sm:w-auto"
               >
                 Next
                 <ChevronRight className="h-5 w-5" />
@@ -764,7 +775,7 @@ export default function SchedulePage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeScope("upcoming")}
-                  className={timeScope === "upcoming" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                  className={`flex-1 ${timeScope === "upcoming" ? "bg-violet-100 text-violet-700" : "text-gray-600"}`}
                 >
                   Upcoming
                 </Button>
@@ -772,7 +783,7 @@ export default function SchedulePage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeScope("past")}
-                  className={timeScope === "past" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                  className={`flex-1 ${timeScope === "past" ? "bg-violet-100 text-violet-700" : "text-gray-600"}`}
                 >
                   Past
                 </Button>
@@ -794,7 +805,7 @@ export default function SchedulePage() {
             <>
               {/* Calendar Grid */}
               {viewMode === "calendar" ? (
-                <div className="grid grid-cols-7 gap-4 overflow-x-auto">
+                <div className="grid grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-1">
                   {/* Day Headers */}
                   {weekDates.map((date, i) => {
                     const isToday = new Date().toDateString() === date.toDateString()
@@ -804,7 +815,7 @@ export default function SchedulePage() {
                     return (
                       <div 
                         key={i}
-                        className={`text-center p-3 rounded-xl min-w-[120px] ${
+                        className={`text-center p-2 sm:p-3 rounded-xl min-w-[104px] sm:min-w-[120px] ${
                           isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
                         }`}
                       >
@@ -833,7 +844,7 @@ export default function SchedulePage() {
 
                   {/* Classes and Blocked Times for each day */}
                   {weekDates.map((_, dayIndex) => (
-                    <div key={dayIndex} className="space-y-2 min-h-[400px] min-w-[120px]">
+                    <div key={dayIndex} className="space-y-2 min-h-[260px] sm:min-h-[400px] min-w-[104px] sm:min-w-[120px]">
                       {/* Blocked Times */}
                       {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
                         <div
@@ -946,8 +957,60 @@ export default function SchedulePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="overflow-x-auto rounded-lg border border-gray-100">
-                    <div className="min-w-[920px]">
+                  <div className="space-y-2 md:hidden">
+                    {listFilteredClasses.length === 0 ? (
+                      <div className="rounded-lg border border-gray-100 bg-white px-4 py-8 text-center">
+                        <p className="text-base font-medium text-gray-700">No classes match your filters.</p>
+                        <p className="text-sm text-gray-500 mt-1">Try adjusting search, time scope, or filter selections.</p>
+                      </div>
+                    ) : (
+                      listFilteredClasses.map((cls) => {
+                        const isSelected = selectedClasses.has(cls.id)
+                        const cardClass = `rounded-lg border border-gray-100 bg-white p-4 ${
+                          selectMode ? "cursor-pointer" : ""
+                        } ${isSelected ? "ring-2 ring-violet-500 bg-violet-50" : ""}`
+                        const content = (
+                          <div className={cardClass}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{cls.classType.name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {new Date(cls.startTime).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                                </p>
+                              </div>
+                              <Badge className={cls._count.bookings >= cls.capacity ? "bg-red-100 text-red-700" : "bg-teal-100 text-teal-700"}>
+                                {cls._count.bookings}/{cls.capacity}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 space-y-1 text-sm text-gray-600">
+                              <p>
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })} -{" "}
+                                {new Date(cls.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                              </p>
+                              <p>{cls.teacher.user.firstName} {cls.teacher.user.lastName}</p>
+                              <p>{cls.location.name}</p>
+                            </div>
+                          </div>
+                        )
+
+                        if (selectMode) {
+                          return (
+                            <div key={cls.id} onClick={(e) => toggleSelectClass(cls.id, e)}>
+                              {content}
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                            {content}
+                          </Link>
+                        )
+                      })
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-100">
+                    <div className="min-w-[820px]">
                       <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs uppercase tracking-wide text-gray-500 font-medium bg-white sticky top-0 z-10 border-b">
                         <div className="col-span-3">Date / Time</div>
                         <div className="col-span-3">Class</div>
@@ -1048,8 +1111,8 @@ export default function SchedulePage() {
 
               {/* Summary */}
               <div className="mt-6 pt-6 border-t border-gray-100">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-6">
+                <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">
                     <span className="text-gray-500">
                       Showing <strong className="text-gray-900">{viewMode === "list" ? listFilteredClasses.length : filteredClasses.length}</strong> classes
                       {hasActiveFilters && ` (filtered from ${classes.length})`}

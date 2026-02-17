@@ -135,7 +135,7 @@ export default function TemplateDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -143,7 +143,7 @@ export default function TemplateDetailPage({
 
   if (!template) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">Template not found</p>
@@ -156,15 +156,15 @@ export default function TemplateDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=templates" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Templates
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
               template.type === "sms" ? "bg-blue-100" : "bg-violet-100"
             }`}>
@@ -176,27 +176,27 @@ export default function TemplateDetailPage({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge variant="secondary">{template.category}</Badge>
                 <span className="text-sm text-gray-500">Used {template.usedCount} times</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Link href={`/studio/marketing/campaigns/new?template=${template.id}`}>
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
                 Use in Campaign
               </Button>
             </Link>
-            <Button variant="outline" className="text-red-600 hover:text-red-700" onClick={handleDelete}>
+            <Button variant="outline" className="w-full text-red-600 hover:text-red-700 sm:w-auto" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl">
+      <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Editor */}
           <div className="space-y-6">
@@ -213,7 +213,7 @@ export default function TemplateDetailPage({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Type</Label>
                       <div className={`p-3 rounded-lg border ${
@@ -270,7 +270,7 @@ export default function TemplateDetailPage({
                   )}
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>{template.type === "sms" ? "Message" : "Body"}</Label>
                       {template.type === "sms" && (
                         <span className={`text-xs ${
@@ -313,14 +313,14 @@ export default function TemplateDetailPage({
 
           {/* Preview */}
           <div>
-            <Card className="border-0 shadow-sm sticky top-8">
+            <Card className="border-0 shadow-sm lg:sticky lg:top-8">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <Eye className="h-5 w-5 text-gray-400" />
                     <h2 className="text-lg font-semibold text-gray-900">Preview</h2>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
                   </Button>
@@ -361,14 +361,14 @@ export default function TemplateDetailPage({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-8">
+        <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/studio/marketing?tab=templates">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

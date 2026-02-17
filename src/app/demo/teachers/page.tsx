@@ -66,21 +66,21 @@ export default async function DemoTeachersPage() {
   const activeTeachers = teachers.filter(t => t.isActive).length
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
           <p className="text-gray-500 mt-1">Manage your teaching staff</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Invite Teacher
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -129,8 +129,8 @@ export default async function DemoTeachersPage() {
       {/* Search */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search teachers..."
@@ -154,7 +154,7 @@ export default async function DemoTeachersPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {teachers.map(teacher => {
             const monthlyClasses = monthlyClassMap.get(teacher.id) || 0
             
@@ -167,7 +167,7 @@ export default async function DemoTeachersPage() {
                         {teacher.user.firstName[0]}{teacher.user.lastName[0]}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-semibold text-gray-900 truncate">
                             {teacher.user.firstName} {teacher.user.lastName}
                           </h3>
@@ -184,8 +184,8 @@ export default async function DemoTeachersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="mt-4 border-t border-gray-100 pt-4">
+                      <div className="flex flex-col gap-2 text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-4">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           {monthlyClasses} this month
@@ -221,5 +221,4 @@ export default async function DemoTeachersPage() {
     </div>
   )
 }
-
 

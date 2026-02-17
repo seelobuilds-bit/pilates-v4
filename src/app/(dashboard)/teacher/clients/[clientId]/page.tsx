@@ -120,7 +120,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -128,7 +128,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
 
   if (!client) {
     return (
-      <div className="p-8">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
         <p>Client not found or you don&apos;t have access.</p>
         <Link href="/teacher/clients">
           <Button variant="outline" className="mt-4">Back to Clients</Button>
@@ -138,10 +138,10 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-full min-h-0 flex flex-col">
       {/* Header */}
-      <div className="p-6 bg-white border-b">
-        <div className="flex items-center gap-4">
+      <div className="p-4 sm:p-6 bg-white border-b">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <Link href="/teacher/clients">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -150,12 +150,12 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
           <div className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center text-lg font-medium text-violet-700">
             {client.firstName[0]}{client.lastName[0]}
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">{client.firstName} {client.lastName}</h1>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{client.firstName} {client.lastName}</h1>
+            <div className="mt-1 flex flex-col gap-1 text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-4">
+              <span className="flex items-center gap-1 min-w-0">
                 <Mail className="h-4 w-4" />
-                {client.email}
+                <span className="truncate">{client.email}</span>
               </span>
               {client.phone && (
                 <span className="flex items-center gap-1">
@@ -165,7 +165,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               )}
             </div>
           </div>
-          <div className="text-right">
+          <div className="ml-auto text-right">
             <p className="text-2xl font-bold text-violet-600">{client.bookingsCount}</p>
             <p className="text-sm text-gray-500">classes with you</p>
           </div>
@@ -176,8 +176,24 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
       <div className="flex-1 flex overflow-hidden">
         {/* Left - Conversation */}
         <div className="flex-1 flex flex-col bg-gray-50">
+          {/* Mobile client snapshot */}
+          <div className="lg:hidden p-4 bg-white border-b">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-gray-500">Member since</p>
+                <p className="font-medium text-gray-900">{new Date(client.createdAt).toLocaleDateString()}</p>
+              </div>
+              {client.lastBooking && (
+                <div>
+                  <p className="text-gray-500">Last class</p>
+                  <p className="font-medium text-gray-900">{new Date(client.lastBooking).toLocaleDateString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Message Type Toggle */}
-          <div className="p-4 bg-white border-b flex items-center gap-4">
+          <div className="p-4 bg-white border-b flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
             <span className="text-sm font-medium text-gray-700">Send via:</span>
             <div className="flex gap-2">
               <Button
@@ -221,7 +237,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                     className={`flex ${msg.direction === "OUTBOUND" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                      className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 ${
                         msg.direction === "OUTBOUND"
                           ? msg.channel === "EMAIL"
                             ? "bg-emerald-600 text-white rounded-br-md"
@@ -279,7 +295,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
           </div>
 
           {/* Compose */}
-          <div className="p-4 bg-white border-t space-y-3">
+          <div className="p-4 pb-24 lg:pb-4 lg:pr-24 bg-white border-t space-y-3">
             {messageType === "email" && (
               <Input
                 placeholder="Subject"
@@ -298,7 +314,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               <Button
                 onClick={sendMessage}
                 disabled={sending || !messageBody.trim() || (messageType === "email" && !emailSubject.trim())}
-                className={messageType === "email" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}
+                className={`shrink-0 ${messageType === "email" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}
               >
                 {sending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -314,7 +330,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
         </div>
 
         {/* Right - Client Info */}
-        <div className="w-80 border-l bg-white overflow-y-auto">
+        <div className="hidden lg:block w-80 border-l bg-white overflow-y-auto">
           <div className="p-4 space-y-4">
             {/* Client Info */}
             <Card className="border-0 shadow-sm">
@@ -391,7 +407,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

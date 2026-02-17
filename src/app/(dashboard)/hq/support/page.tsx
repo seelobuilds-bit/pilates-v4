@@ -243,24 +243,24 @@ export default function HQSupportPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-900 sm:text-3xl">
             <Headphones className="h-7 w-7 text-violet-600" />
             Support Inbox
           </h1>
           <p className="text-gray-500 mt-1">Manage support conversations from studios and teachers</p>
         </div>
-        <Button onClick={fetchConversations} variant="outline">
+        <Button onClick={fetchConversations} variant="outline" className="w-full sm:w-auto">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -308,9 +308,9 @@ export default function HQSupportPage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-320px)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:h-[calc(100vh-320px)]">
         {/* Conversation List */}
-        <Card className="col-span-4 border-0 shadow-sm overflow-hidden flex flex-col">
+        <Card className="flex min-h-[360px] flex-col overflow-hidden border-0 shadow-sm lg:col-span-4 lg:min-h-0">
           <CardHeader className="p-4 border-b">
             <div className="space-y-3">
               <div className="relative">
@@ -322,7 +322,7 @@ export default function HQSupportPage() {
                   className="pl-9"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Status" />
@@ -410,15 +410,15 @@ export default function HQSupportPage() {
         </Card>
 
         {/* Conversation Detail */}
-        <Card className="col-span-8 border-0 shadow-sm overflow-hidden flex flex-col">
+        <Card className="flex min-h-[420px] flex-col overflow-hidden border-0 shadow-sm lg:col-span-8 lg:min-h-0">
           {selectedConversation ? (
             <>
               {/* Header */}
               <CardHeader className="p-4 border-b">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <CardTitle className="text-lg">{selectedConversation.subject}</CardTitle>
-                    <div className="flex items-center gap-3 mt-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
                       <Badge className={getStatusColor(selectedConversation.status)}>
                         {selectedConversation.status.replace("_", " ")}
                       </Badge>
@@ -434,7 +434,7 @@ export default function HQSupportPage() {
                     value={selectedConversation.status} 
                     onValueChange={updateStatus}
                   >
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-full sm:w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -469,7 +469,7 @@ export default function HQSupportPage() {
               </CardHeader>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+              <div className="flex-1 space-y-4 overflow-y-auto bg-gray-50/50 p-4">
                 {selectedConversation.messages.map((msg) => {
                   const isHQ = msg.senderType === "hq"
                   return (
@@ -484,7 +484,7 @@ export default function HQSupportPage() {
                           </span>
                         </div>
                       ) : (
-                        <div className={`max-w-[70%] ${isHQ ? "order-2" : ""}`}>
+                        <div className={`max-w-[85%] sm:max-w-[70%] ${isHQ ? "order-2" : ""}`}>
                           <div className={`flex items-center gap-2 mb-1 ${isHQ ? "justify-end" : ""}`}>
                             <span className="text-xs font-medium text-gray-600">{msg.senderName}</span>
                             <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
@@ -518,7 +518,7 @@ export default function HQSupportPage() {
               {/* Input */}
               {selectedConversation.status !== "CLOSED" && (
                 <div className="p-4 border-t bg-white">
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <Input
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
@@ -534,7 +534,7 @@ export default function HQSupportPage() {
                     <Button
                       onClick={sendMessage}
                       disabled={sending || !message.trim()}
-                      className="bg-violet-600 hover:bg-violet-700"
+                      className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                     >
                       {sending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -543,12 +543,12 @@ export default function HQSupportPage() {
                       )}
                     </Button>
                   </div>
-                  <div className="flex gap-2 mt-2">
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => updateStatus("WAITING_CUSTOMER")}
-                      className="text-xs"
+                      className="w-full text-xs sm:w-auto"
                     >
                       Mark Waiting for Customer
                     </Button>
@@ -556,7 +556,7 @@ export default function HQSupportPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => updateStatus("RESOLVED")}
-                      className="text-xs text-green-600 hover:text-green-700"
+                      className="w-full text-xs text-green-600 hover:text-green-700 sm:w-auto"
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Mark Resolved
@@ -583,7 +583,6 @@ export default function HQSupportPage() {
     </div>
   )
 }
-
 
 
 

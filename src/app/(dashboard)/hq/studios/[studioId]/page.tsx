@@ -381,22 +381,22 @@ export default function StudioDetailPage({
 
   if (!studio) {
     return (
-      <div className="p-8">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
         <p>Studio not found</p>
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       <Link href="/hq/studios" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 mb-6">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Studios
       </Link>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-8">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{studio.name}</h1>
             <Badge variant="secondary">{studio.subdomain}</Badge>
           </div>
@@ -404,11 +404,11 @@ export default function StudioDetailPage({
             Created {new Date(studio.createdAt).toLocaleDateString()}
           </p>
         </div>
-        <Button variant="outline">Edit Studio</Button>
+        <Button variant="outline" className="w-full sm:w-auto">Edit Studio</Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white border shadow-sm">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border shadow-sm">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Overview
@@ -429,7 +429,7 @@ export default function StudioDetailPage({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-center gap-3">
@@ -484,19 +484,19 @@ export default function StudioDetailPage({
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle>Owner</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-medium">
                     {studio.owner.firstName[0]}{studio.owner.lastName[0]}
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{studio.owner.firstName} {studio.owner.lastName}</p>
-                    <p className="text-sm text-gray-500">{studio.owner.email}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{studio.owner.firstName} {studio.owner.lastName}</p>
+                    <p className="text-sm text-gray-500 truncate">{studio.owner.email}</p>
                   </div>
                 </div>
               </CardContent>

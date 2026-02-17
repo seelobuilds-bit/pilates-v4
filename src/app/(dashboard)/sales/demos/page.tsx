@@ -161,16 +161,16 @@ export default function SalesDemosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Video className="h-7 w-7 text-purple-600" />
@@ -184,7 +184,7 @@ export default function SalesDemosPage() {
       {unassignedDemos.length > 0 && (
         <Card className="border-2 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg mb-6">
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-start gap-3 sm:items-center sm:gap-4">
               <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 animate-pulse">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
@@ -203,7 +203,7 @@ export default function SalesDemosPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm bg-green-50">
           <CardContent className="p-4">
             <p className="text-sm text-green-600">Available to Claim</p>
@@ -240,7 +240,7 @@ export default function SalesDemosPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="grid grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
               {unassignedDemos.map(demo => (
                 <Card key={demo.id} className="border border-green-200 bg-white hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
@@ -313,7 +313,35 @@ export default function SalesDemosPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <table className="w-full">
+            <div className="divide-y md:hidden">
+              {pendingDemos.map(demo => (
+                <div key={demo.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{demo.studioName}</p>
+                      <p className="text-sm text-gray-600">{demo.contactName}</p>
+                      <p className="text-xs text-gray-500">{demo.contactEmail}</p>
+                    </div>
+                    <span className="text-xs text-gray-500">{formatDate(demo.createdAt)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                    <span>Size: {demo.studioSize || "-"}</span>
+                    <span className="truncate">Interest: {demo.interests || "-"}</span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    onClick={() => setSchedulingDemo(demo)}
+                  >
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Schedule
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px]">
               <thead className="bg-gray-50 border-y">
                 <tr>
                   <th className="text-left p-4 text-xs font-medium text-gray-500">Studio</th>
@@ -349,6 +377,7 @@ export default function SalesDemosPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -363,7 +392,59 @@ export default function SalesDemosPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <table className="w-full">
+            <div className="divide-y md:hidden">
+              {scheduledDemos.map(demo => (
+                <div key={demo.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{demo.studioName}</p>
+                      <p className="text-sm text-gray-600">{demo.contactName}</p>
+                    </div>
+                    <p className="text-sm font-medium text-blue-600">{formatDate(demo.scheduledDate)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a href={`mailto:${demo.contactEmail}`} className="text-gray-400 hover:text-violet-600">
+                      <Mail className="h-3.5 w-3.5" />
+                    </a>
+                    {demo.contactPhone && (
+                      <a href={`tel:${demo.contactPhone}`} className="text-gray-400 hover:text-violet-600">
+                        <Phone className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                    {demo.meetingLink ? (
+                      <a href={demo.meetingLink} target="_blank" rel="noopener noreferrer" className="ml-auto text-violet-600 hover:underline text-sm flex items-center gap-1">
+                        Join <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <span className="ml-auto text-sm text-gray-400">No link</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-green-600 border-green-300"
+                      onClick={() => updateDemoStatus(demo.id, "completed", "successful")}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Complete
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-red-600 border-red-300"
+                      onClick={() => updateDemoStatus(demo.id, "no_show")}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      No Show
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px]">
               <thead className="bg-gray-50 border-y">
                 <tr>
                   <th className="text-left p-4 text-xs font-medium text-gray-500">Studio</th>
@@ -428,6 +509,7 @@ export default function SalesDemosPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -477,12 +559,12 @@ export default function SalesDemosPage() {
               </div>
             </div>
           )}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setSchedulingDemo(null)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSchedulingDemo(null)}>Cancel</Button>
             <Button 
               onClick={scheduleDemo}
               disabled={saving || !scheduleDate}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Schedule Demo
@@ -493,7 +575,6 @@ export default function SalesDemosPage() {
     </div>
   )
 }
-
 
 
 

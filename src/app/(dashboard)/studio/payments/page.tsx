@@ -151,14 +151,14 @@ export default function PaymentsPage() {
   // Not configured
   if (stripeStatus?.configured === false) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
         </div>
 
         <Card className="border-0 shadow-sm max-w-xl">
-          <CardContent className="p-8">
+          <CardContent className="p-6 sm:p-8">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-6 w-6 text-amber-600 mt-0.5" />
               <div>
@@ -177,14 +177,14 @@ export default function PaymentsPage() {
   // Not connected
   if (!stripeStatus?.connected) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
         </div>
 
         <Card className="border-0 shadow-sm max-w-xl">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center sm:p-8">
             <div className="w-20 h-20 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CreditCard className="h-10 w-10 text-violet-600" />
             </div>
@@ -213,7 +213,7 @@ export default function PaymentsPage() {
             </Button>
 
             <div className="mt-8 pt-6 border-t">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 gap-4 text-center sm:grid-cols-3">
                 <div>
                   <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                     <CheckCircle className="h-5 w-5 text-emerald-600" />
@@ -243,14 +243,14 @@ export default function PaymentsPage() {
   // Onboarding incomplete
   if (!stripeStatus.onboardingComplete) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
         </div>
 
         <Card className="border-0 shadow-sm max-w-xl">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 text-center sm:p-8">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="h-10 w-10 text-amber-600" />
             </div>
@@ -260,7 +260,7 @@ export default function PaymentsPage() {
               Finish the onboarding to start accepting payments.
             </p>
 
-            <div className="grid grid-cols-2 gap-4 mb-6 max-w-xs mx-auto text-left">
+            <div className="mb-6 grid max-w-xs grid-cols-1 gap-4 text-left mx-auto sm:grid-cols-2">
               <div className="flex items-center gap-2">
                 {stripeStatus.chargesEnabled ? (
                   <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -313,8 +313,8 @@ export default function PaymentsPage() {
 
   // Connected - show dashboard
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Manage your payments and payouts</p>
@@ -336,10 +336,10 @@ export default function PaymentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="mb-6 flex gap-2 overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "overview" 
               ? "bg-violet-600 text-white" 
               : "bg-white text-gray-600 hover:bg-gray-100"
@@ -350,7 +350,7 @@ export default function PaymentsPage() {
         </button>
         <button
           onClick={() => setActiveTab("payments")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "payments" 
               ? "bg-violet-600 text-white" 
               : "bg-white text-gray-600 hover:bg-gray-100"
@@ -361,7 +361,7 @@ export default function PaymentsPage() {
         </button>
         <button
           onClick={() => setActiveTab("payouts")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "payouts" 
               ? "bg-violet-600 text-white" 
               : "bg-white text-gray-600 hover:bg-gray-100"

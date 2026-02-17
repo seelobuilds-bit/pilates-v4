@@ -276,7 +276,7 @@ export default function MarketingPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Marketing</h1>
@@ -348,7 +348,7 @@ export default function MarketingPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-white shadow-sm border-0 mb-6">
+        <TabsList className="app-scrollbar mb-6 flex w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="automations" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Zap className="h-4 w-4 mr-2" />
             Automations
@@ -375,13 +375,13 @@ export default function MarketingPage() {
         <TabsContent value="automations">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">Marketing Automations</h3>
                   <p className="text-sm text-gray-500">Set up automated messages based on client behavior</p>
                 </div>
                 <Link href="/studio/marketing/automations/new">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     New Automation
                   </Button>
@@ -395,7 +395,7 @@ export default function MarketingPage() {
                     return (
                       <div 
                         key={automation.id} 
-                        className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-gray-50/50 transition-colors group"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-gray-50/50 transition-colors group"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
@@ -467,7 +467,7 @@ export default function MarketingPage() {
                         <Link
                           key={idx}
                           href={`/studio/marketing/automations/new?trigger=${template.trigger}`}
-                          className="flex items-center justify-between p-4 border border-dashed border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-colors group"
+                          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border border-dashed border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-colors group"
                         >
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-lg ${template.iconBg} flex items-center justify-center`}>
@@ -512,13 +512,13 @@ export default function MarketingPage() {
         <TabsContent value="campaigns">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">Campaigns</h3>
                   <p className="text-sm text-gray-500">One-time email and SMS campaigns</p>
                 </div>
                 <Link href="/studio/marketing/campaigns/new">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     New Campaign
                   </Button>
@@ -531,7 +531,7 @@ export default function MarketingPage() {
                     <Link 
                       key={campaign.id} 
                       href={`/studio/marketing/campaigns/${campaign.id}`}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -593,7 +593,7 @@ export default function MarketingPage() {
                   <Send className="h-12 w-12 text-gray-200 mx-auto mb-4" />
                   <p className="text-gray-500 mb-4">No campaigns yet</p>
                   <Link href="/studio/marketing/campaigns/new">
-                    <Button className="bg-violet-600 hover:bg-violet-700">
+                    <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                       Create your first campaign
                     </Button>
                   </Link>
@@ -607,13 +607,13 @@ export default function MarketingPage() {
         <TabsContent value="segments">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">Audience Segments</h3>
                   <p className="text-sm text-gray-500">Create and manage client segments for targeted campaigns</p>
                 </div>
                 <Link href="/studio/marketing/segments/new">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     New Segment
                   </Button>
@@ -627,7 +627,7 @@ export default function MarketingPage() {
                     <Link
                       key={segment.id}
                       href={`/studio/marketing/segments/${segment.id}`}
-                      className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-gray-50/50 transition-colors group"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-gray-50/50 transition-colors group"
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg ${segment.iconBg} flex items-center justify-center`}>
@@ -671,13 +671,13 @@ export default function MarketingPage() {
         <TabsContent value="templates">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">Message Templates</h3>
                   <p className="text-sm text-gray-500">Reusable templates for campaigns and automations</p>
                 </div>
                 <Link href="/studio/marketing/templates/new">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     New Template
                   </Button>
@@ -750,7 +750,7 @@ export default function MarketingPage() {
                   <FileText className="h-12 w-12 text-gray-200 mx-auto mb-4" />
                   <p className="text-gray-500 mb-4">No templates yet</p>
                   <Link href="/studio/marketing/templates/new">
-                    <Button className="bg-violet-600 hover:bg-violet-700">
+                    <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                       Create your first template
                     </Button>
                   </Link>
@@ -764,7 +764,7 @@ export default function MarketingPage() {
         <TabsContent value="social">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">Social Media Marketing</h3>
                   <p className="text-sm text-gray-500">Training, automation tools, and tracking for Instagram & TikTok</p>

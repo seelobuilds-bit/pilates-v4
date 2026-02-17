@@ -109,18 +109,18 @@ export default function StoreCatalogPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href="/studio/store">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Store
           </Button>
@@ -134,7 +134,7 @@ export default function StoreCatalogPage() {
       {/* Search and Filters */}
       <Card className="border-0 shadow-sm mb-8">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -149,7 +149,7 @@ export default function StoreCatalogPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border rounded-lg text-sm bg-white"
+                className="w-full px-3 py-2 border rounded-lg text-sm bg-white md:w-auto"
               >
                 <option value="all">All Categories</option>
                 {categories.map(c => (
@@ -172,7 +172,7 @@ export default function StoreCatalogPage() {
               <Badge variant="secondary">{categoryProducts.length} products</Badge>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {categoryProducts.map(product => {
                 const isAdded = addedProducts.has(product.id)
                 return (
@@ -224,7 +224,7 @@ export default function StoreCatalogPage() {
                         <p className="text-xs text-gray-500 mb-2">
                           {product.variants.length} variants
                         </p>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-3">
                           <span className="font-semibold text-gray-900">
                             ${product.suggestedRetail}
                           </span>
@@ -250,7 +250,6 @@ export default function StoreCatalogPage() {
     </div>
   )
 }
-
 
 
 

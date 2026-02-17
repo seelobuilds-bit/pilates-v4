@@ -21,7 +21,8 @@ import {
   Edit3,
   AlertCircle,
   Loader2,
-  Instagram
+  Instagram,
+  ChevronLeft
 } from "lucide-react"
 
 interface Message {
@@ -442,18 +443,18 @@ export default function TeacherInboxPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-full min-h-0 flex flex-col">
       {/* Inbox Type Tabs */}
       <div className="border-b bg-white px-4 pt-4">
         <Tabs value={inboxTab} onValueChange={(v) => setInboxTab(v as typeof inboxTab)}>
-          <TabsList className="bg-gray-100/50">
+          <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
               <Mail className="h-4 w-4 mr-2" />
               Email & SMS
@@ -476,7 +477,11 @@ export default function TeacherInboxPage() {
       {inboxTab === "messages" ? (
         <div className="flex-1 flex">
           {/* Conversations List */}
-          <div className="w-96 border-r border-gray-200 flex flex-col bg-white">
+          <div
+            className={`border-r border-gray-200 flex flex-col bg-white w-full lg:w-96 ${
+              selectedConversation ? "hidden lg:flex" : "flex"
+            }`}
+          >
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -507,8 +512,8 @@ export default function TeacherInboxPage() {
               </div>
               
               {/* Search & Filter */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
+              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search conversations..."
@@ -518,7 +523,7 @@ export default function TeacherInboxPage() {
                   />
                 </div>
                 <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-full sm:w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -592,13 +597,22 @@ export default function TeacherInboxPage() {
           </div>
 
           {/* Message View */}
-          <div className="flex-1 flex flex-col bg-gray-50">
+          <div className={`flex-1 flex-col bg-gray-50 ${selectedConversation ? "flex" : "hidden lg:flex"}`}>
             {selectedConversation ? (
               <>
                 {/* Conversation Header */}
                 <div className="p-4 bg-white border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 lg:hidden"
+                        onClick={() => setSelectedConversation(null)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
                         selectedConversation.isDraft ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
                       }`}>
@@ -608,22 +622,22 @@ export default function TeacherInboxPage() {
                           `${selectedClient.firstName[0]}${selectedClient.lastName[0]}`
                         ) : '?'}
                       </div>
-                      <div>
-                        <h2 className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <h2 className="font-semibold text-gray-900 truncate">
                           {selectedConversation.isDraft && !selectedClient 
                             ? "New Message" 
                             : selectedClient 
                               ? `${selectedClient.firstName} ${selectedClient.lastName}`
                               : "Unknown"}
                         </h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 truncate">
                           {selectedConversation.isDraft && !selectedClient 
                             ? "Select a recipient below" 
                             : selectedClient?.email}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2">
                       {selectedConversation.isDraft ? (
                         <Button 
                           variant="outline" 
@@ -797,7 +811,7 @@ export default function TeacherInboxPage() {
                 </div>
 
                 {/* Compose Area */}
-                <div className="p-4 bg-white border-t border-gray-200">
+                <div className="p-4 pb-24 lg:pb-4 lg:pr-24 bg-white border-t border-gray-200">
                   {/* Message Type Toggle */}
                   <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
                     <button
@@ -845,7 +859,7 @@ export default function TeacherInboxPage() {
                     <Button 
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim() || sending || !selectedClient}
-                      className={`self-end ${composeType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      className={`self-end shrink-0 ${composeType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
                     >
                       {sending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -881,7 +895,11 @@ export default function TeacherInboxPage() {
         /* ==================== SOCIAL INBOX ==================== */
         <div className="flex-1 flex">
           {/* Social Conversations List */}
-          <div className="w-96 border-r border-gray-200 flex flex-col bg-white">
+          <div
+            className={`border-r border-gray-200 flex flex-col bg-white w-full lg:w-96 ${
+              selectedSocialConv || socialComposing ? "hidden lg:flex" : "flex"
+            }`}
+          >
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -917,8 +935,8 @@ export default function TeacherInboxPage() {
                 </div>
               ) : (
                 /* Search & Filter */
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
+                <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="Search conversations..."
@@ -928,7 +946,7 @@ export default function TeacherInboxPage() {
                     />
                   </div>
                   <Select value={socialPlatformFilter} onValueChange={(v) => setSocialPlatformFilter(v as typeof socialPlatformFilter)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1038,13 +1056,22 @@ export default function TeacherInboxPage() {
           </div>
 
           {/* Social Message Thread or Compose */}
-          <div className="flex-1 flex flex-col bg-gray-50">
+          <div className={`flex-1 flex-col bg-gray-50 ${selectedSocialConv || socialComposing ? "flex" : "hidden lg:flex"}`}>
             {socialComposing ? (
               <>
                 {/* Compose Header */}
                 <div className="p-4 bg-white border-b border-gray-200">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 lg:hidden"
+                        onClick={() => setSocialComposing(false)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
                       <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center">
                         <Edit3 className="h-5 w-5" />
                       </div>
@@ -1053,7 +1080,7 @@ export default function TeacherInboxPage() {
                         <p className="text-xs text-gray-500">Start a new conversation</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSocialComposing(false)}>
+                    <Button variant="ghost" size="sm" className="hidden lg:inline-flex" onClick={() => setSocialComposing(false)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1062,7 +1089,7 @@ export default function TeacherInboxPage() {
                 {/* Compose Form */}
                 <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                   {/* Platform & Account Selection */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">Platform</label>
                       <div className="flex gap-2">
@@ -1147,8 +1174,8 @@ export default function TeacherInboxPage() {
                 </div>
 
                 {/* Send Button */}
-                <div className="p-4 bg-white border-t border-gray-200">
-                  <div className="flex justify-end gap-3">
+                <div className="p-4 pb-24 lg:pb-4 lg:pr-24 bg-white border-t border-gray-200">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
                     <Button variant="outline" onClick={() => setSocialComposing(false)}>
                       Cancel
                     </Button>
@@ -1170,8 +1197,17 @@ export default function TeacherInboxPage() {
               <>
                 {/* Conversation Header */}
                 <div className="p-4 bg-white border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 lg:hidden"
+                        onClick={() => setSelectedSocialConv(null)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         selectedSocialConv.account?.platform === "INSTAGRAM" 
                           ? "bg-pink-100 text-pink-700" 
@@ -1183,12 +1219,12 @@ export default function TeacherInboxPage() {
                           <span className="font-bold">TT</span>
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">@{selectedSocialConv.platformUsername || "Unknown"}</p>
-                        <p className="text-xs text-gray-500">via {selectedSocialConv.account?.platform || "Social"}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">@{selectedSocialConv.platformUsername || "Unknown"}</p>
+                        <p className="text-xs text-gray-500 truncate">via {selectedSocialConv.account?.platform || "Social"}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedSocialConv(null)}>
+                    <Button variant="ghost" size="sm" className="hidden lg:inline-flex" onClick={() => setSelectedSocialConv(null)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1198,7 +1234,7 @@ export default function TeacherInboxPage() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {socialMessages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.direction === 'OUTBOUND' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                      <div className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2 ${
                         msg.direction === 'OUTBOUND' 
                           ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-br-md' 
                           : 'bg-white shadow-sm rounded-bl-md'
@@ -1213,7 +1249,7 @@ export default function TeacherInboxPage() {
                 </div>
 
                 {/* Compose */}
-                <div className="p-4 bg-white border-t">
+                <div className="p-4 pb-24 lg:pb-4 lg:pr-24 bg-white border-t">
                   <div className="flex items-end gap-3">
                     <Textarea
                       placeholder="Type your message..."
@@ -1260,7 +1296,6 @@ export default function TeacherInboxPage() {
     </div>
   )
 }
-
 
 
 

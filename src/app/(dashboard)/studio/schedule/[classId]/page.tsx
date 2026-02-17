@@ -437,7 +437,7 @@ export default function ClassSessionDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -445,7 +445,7 @@ export default function ClassSessionDetailPage({
 
   if (!classSession) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Class not found</p>
           <Link href="/studio/schedule">
@@ -457,11 +457,11 @@ export default function ClassSessionDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Cancel Confirmation Dialog */}
       {showCancelDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <Card className="w-[400px] shadow-xl">
+          <Card className="w-[92vw] max-w-md shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 text-amber-600 mb-4">
                 <AlertTriangle className="h-6 w-6" />
@@ -473,7 +473,7 @@ export default function ClassSessionDetailPage({
               <p className="text-sm text-gray-500 mb-6">
                 This action cannot be undone.
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Button 
                   variant="outline" 
                   className="flex-1"
@@ -498,9 +498,9 @@ export default function ClassSessionDetailPage({
       {/* Message All Modal */}
       {showMessageModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <Card className="w-[500px] shadow-xl">
+          <Card className="w-[92vw] max-w-lg shadow-xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                     <Send className="h-5 w-5 text-violet-600" />
@@ -530,7 +530,7 @@ export default function ClassSessionDetailPage({
               ) : (
                 <>
                   {/* Message Type Toggle */}
-                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-4">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1 bg-gray-100 rounded-lg mb-4">
                     <button
                       onClick={() => setMessageType("email")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
@@ -601,7 +601,7 @@ export default function ClassSessionDetailPage({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button 
                       variant="outline" 
                       className="flex-1"
@@ -637,7 +637,7 @@ export default function ClassSessionDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Back to Schedule
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{classSession.classType.name}</h1>
             <p className="text-gray-500 mt-1 flex items-center gap-2">
@@ -650,7 +650,7 @@ export default function ClassSessionDetailPage({
               })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             {/* Quick Reassign Dropdown */}
             <Select
               value={selectedTeacher}
@@ -662,7 +662,7 @@ export default function ClassSessionDetailPage({
                 }
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <Users className="h-4 w-4 mr-2 text-gray-500" />
                 <SelectValue placeholder="Reassign..." />
               </SelectTrigger>
@@ -678,7 +678,7 @@ export default function ClassSessionDetailPage({
             
             <Button 
               variant="outline" 
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50"
               onClick={handleCancel}
               disabled={saving}
             >
@@ -686,7 +686,7 @@ export default function ClassSessionDetailPage({
               Delete Class
             </Button>
             <Button 
-              className="bg-violet-600 hover:bg-violet-700"
+              className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
               onClick={handleSave}
               disabled={saving}
             >
@@ -704,7 +704,7 @@ export default function ClassSessionDetailPage({
             <CardContent className="p-6">
               <h2 className="font-semibold text-gray-900 mb-4">Class Details</h2>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Start Time</Label>
                   <Input
@@ -725,7 +725,7 @@ export default function ClassSessionDetailPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <Label>Instructor</Label>
                   <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
@@ -765,7 +765,7 @@ export default function ClassSessionDetailPage({
                   value={capacity}
                   onChange={(e) => setCapacity(parseInt(e.target.value) || 0)}
                   min={classSession._count.bookings}
-                  className="mt-1 w-32"
+                  className="mt-1 w-full sm:w-32"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Minimum: {classSession._count.bookings} (current bookings)
@@ -787,7 +787,7 @@ export default function ClassSessionDetailPage({
                 </div>
               )}
 
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                     <Repeat className="h-5 w-5 text-violet-600" />
@@ -815,7 +815,7 @@ export default function ClassSessionDetailPage({
                   {/* Days of Week */}
                   <div className="space-y-2">
                     <Label>Repeat on</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {DAYS_OF_WEEK.map((day) => (
                         <button
                           key={day.id}
@@ -898,7 +898,7 @@ export default function ClassSessionDetailPage({
                 {/* Reassign Series Modal */}
                 {showReassignSeriesModal && (
                   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-                    <Card className="w-[400px] shadow-xl">
+                    <Card className="w-[92vw] max-w-md shadow-xl">
                       <CardContent className="p-6">
                         <h2 className="font-semibold text-lg text-gray-900 mb-4">
                           Reassign Recurring Series
@@ -946,7 +946,7 @@ export default function ClassSessionDetailPage({
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                       <Repeat className="h-5 w-5 text-blue-600" />
@@ -974,7 +974,7 @@ export default function ClassSessionDetailPage({
                     <p className="text-sm text-gray-600">
                       Perform actions on all <strong>{recurringClassCount}</strong> future classes in this series:
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <Button 
                         variant="outline"
                         className="flex-1 text-violet-600 border-violet-200 hover:bg-violet-50"
@@ -1012,15 +1012,15 @@ export default function ClassSessionDetailPage({
           {/* Booked Clients */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="font-semibold text-gray-900">Booked Clients</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   {classSession.bookings.length > 0 && (
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={openMessageModal}
-                      className="text-violet-600 border-violet-200 hover:bg-violet-50"
+                      className="w-full sm:w-auto text-violet-600 border-violet-200 hover:bg-violet-50"
                     >
                       <Send className="h-4 w-4 mr-1" />
                       Message All
@@ -1036,14 +1036,14 @@ export default function ClassSessionDetailPage({
                 <div className="space-y-2">
                   {classSession.bookings.map((booking) => (
                     <Link key={booking.id} href={`/studio/clients/${booking.id}`}>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 text-sm font-medium">
                             {booking.client.firstName[0]}{booking.client.lastName[0]}
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{booking.client.firstName} {booking.client.lastName}</p>
-                            <p className="text-sm text-gray-500">{booking.client.email}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{booking.client.firstName} {booking.client.lastName}</p>
+                            <p className="text-sm text-gray-500 truncate">{booking.client.email}</p>
                           </div>
                         </div>
                         <Badge variant="outline" className="text-emerald-600 border-emerald-200">

@@ -560,15 +560,15 @@ export default function HQTrainingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Social Media Training Hub</h1>
           <p className="text-gray-500 mt-1">Create courses, upload content, and track teacher progress</p>
@@ -576,16 +576,16 @@ export default function HQTrainingPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="courses" className="flex items-center gap-2">
+        <TabsList className="mb-6 h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+          <TabsTrigger value="courses" className="shrink-0 flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             Training Courses
           </TabsTrigger>
-          <TabsTrigger value="ideas" className="flex items-center gap-2">
+          <TabsTrigger value="ideas" className="shrink-0 flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
             Content Ideas
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="analytics" className="shrink-0 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Analytics
           </TabsTrigger>
@@ -594,7 +594,7 @@ export default function HQTrainingPage() {
         {/* Training Courses Tab */}
         <TabsContent value="courses" className="space-y-6">
           <div className="flex justify-end">
-            <Button onClick={() => setShowAddCategory(true)} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={() => setShowAddCategory(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Add Category
             </Button>
@@ -617,7 +617,7 @@ export default function HQTrainingPage() {
               {categories.map(category => (
                 <Card key={category.id} className="border-0 shadow-sm">
                   <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                           <BookOpen className="h-5 w-5 text-violet-600" />
@@ -650,6 +650,7 @@ export default function HQTrainingPage() {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => setShowAddModule(category.id)}
                       >
                         <Plus className="h-4 w-4 mr-1" />
@@ -672,7 +673,7 @@ export default function HQTrainingPage() {
                               key={module.id} 
                               className="p-4 bg-gray-50 rounded-lg"
                             >
-                              <div className="flex items-start justify-between">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div className="flex items-start gap-3 flex-1">
                                   {module.thumbnailUrl ? (
                                     <img 
@@ -731,7 +732,7 @@ export default function HQTrainingPage() {
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 self-end sm:self-auto">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -782,7 +783,7 @@ export default function HQTrainingPage() {
         {/* Content Ideas Tab */}
         <TabsContent value="ideas" className="space-y-6">
           <div className="flex justify-end">
-            <Button onClick={() => setShowAddIdea(true)} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={() => setShowAddIdea(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Add Content Idea
             </Button>
@@ -801,7 +802,7 @@ export default function HQTrainingPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {contentIdeas.map(idea => (
                 <Card key={idea.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
@@ -859,8 +860,8 @@ export default function HQTrainingPage() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowAddCategory(false)}>Cancel</Button>
             <Button onClick={createCategory} disabled={saving || !newCategory.name.trim()}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Create Category
@@ -871,7 +872,7 @@ export default function HQTrainingPage() {
 
       {/* Add Module Modal - WITH FILE UPLOADS */}
       <Dialog open={!!showAddModule} onOpenChange={(open) => !open && setShowAddModule(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add Training Module</DialogTitle>
           </DialogHeader>
@@ -998,7 +999,7 @@ export default function HQTrainingPage() {
 
             {/* Resources Upload */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <Label className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Resources (PDFs, Documents, etc.)
@@ -1043,7 +1044,7 @@ export default function HQTrainingPage() {
 
             {/* Event Options */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={newModule.isLive}
@@ -1061,7 +1062,7 @@ export default function HQTrainingPage() {
               </div>
 
               {newModule.isLive && (
-                <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg">
+                <div className="grid grid-cols-1 gap-4 rounded-lg bg-red-50 p-4 sm:grid-cols-2">
                   <div>
                     <Label>Live Date & Time</Label>
                     <Input
@@ -1113,8 +1114,8 @@ export default function HQTrainingPage() {
               )}
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowAddModule(null)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowAddModule(null)}>Cancel</Button>
             <Button onClick={createModule} disabled={saving || !newModule.title.trim()}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Create Module
@@ -1192,7 +1193,7 @@ export default function HQTrainingPage() {
                         </Button>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                           <Label className="text-xs">Task Description</Label>
                           <Input
@@ -1224,7 +1225,7 @@ export default function HQTrainingPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                           <Label className="text-xs">Target Quantity</Label>
                           <Input
@@ -1256,7 +1257,7 @@ export default function HQTrainingPage() {
                 Automatic Tracking
               </h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Generate Tracking Links</p>
                     <p className="text-xs text-gray-500">Auto-create UTM-tagged booking links for each teacher</p>
@@ -1266,7 +1267,7 @@ export default function HQTrainingPage() {
                     onCheckedChange={(checked) => setNewHomework({ ...newHomework, trackingEnabled: checked })}
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Auto-Verify Completions</p>
                     <p className="text-xs text-gray-500">Automatically track bookings & link clicks from teacher content</p>
@@ -1280,7 +1281,7 @@ export default function HQTrainingPage() {
             </div>
 
             {/* Points & Due Date */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-amber-500" />
@@ -1309,8 +1310,8 @@ export default function HQTrainingPage() {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowAddHomework(null)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowAddHomework(null)}>Cancel</Button>
             <Button 
               onClick={createHomework} 
               disabled={saving || !newHomework.title.trim() || newHomework.requirements.length === 0}

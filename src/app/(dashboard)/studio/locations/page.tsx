@@ -25,11 +25,11 @@ export default async function LocationsPage() {
   })
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+      <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-3xl font-bold">Locations</h1>
-        <Link href="/studio/locations/new">
-          <Button>
+        <Link href="/studio/locations/new" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Location
           </Button>
@@ -71,6 +71,5 @@ export default async function LocationsPage() {
     </div>
   )
 }
-
 
 

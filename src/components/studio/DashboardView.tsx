@@ -225,23 +225,23 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         return (
           <Card className="border-0 shadow-sm bg-gradient-to-r from-violet-600 to-purple-600">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="text-white">
                   <h2 className="text-lg font-semibold mb-1">Today&apos;s Overview</h2>
                   <p className="text-violet-200 text-sm">
                     {data.todayOverview.classCount} classes scheduled • {data.todayOverview.bookingsCount} bookings • {data.todayOverview.fillRate}% fill rate
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center px-4 border-r border-white/20">
+                <div className="grid w-full grid-cols-3 gap-2 lg:w-auto lg:flex lg:items-center lg:gap-4">
+                  <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.classCount}</p>
                     <p className="text-xs text-violet-200">Classes</p>
                   </div>
-                  <div className="text-center px-4 border-r border-white/20">
+                  <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.bookingsCount}</p>
                     <p className="text-xs text-violet-200">Bookings</p>
                   </div>
-                  <div className="text-center px-4">
+                  <div className="text-center px-2 py-2 lg:px-4">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.fillRate}%</p>
                     <p className="text-xs text-violet-200">Fill Rate</p>
                   </div>
@@ -372,55 +372,55 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
       case "quickActions":
         return (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Link href={`${linkPrefix}/inbox`}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+            <Link href={`${linkPrefix}/inbox`} className="block min-w-0">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                     <MessageSquare className="h-5 w-5 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Messages</p>
-                    <p className="text-xs text-gray-500">View inbox</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-900">Messages</p>
+                    <p className="truncate text-xs text-gray-500">View inbox</p>
                   </div>
                 </CardContent>
               </Card>
             </Link>
-            <Link href={`${linkPrefix}/marketing`}>
+            <Link href={`${linkPrefix}/marketing`} className="block min-w-0">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                     <Mail className="h-5 w-5 text-purple-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Marketing</p>
-                    <p className="text-xs text-gray-500">Campaigns</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-900">Marketing</p>
+                    <p className="truncate text-xs text-gray-500">Campaigns</p>
                   </div>
                 </CardContent>
               </Card>
             </Link>
-            <Link href={`${linkPrefix}/reports`}>
+            <Link href={`${linkPrefix}/reports`} className="block min-w-0">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <BarChart3 className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Reports</p>
-                    <p className="text-xs text-gray-500">Analytics</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-900">Reports</p>
+                    <p className="truncate text-xs text-gray-500">Analytics</p>
                   </div>
                 </CardContent>
               </Card>
             </Link>
-            <Link href={`${linkPrefix}/settings`}>
+            <Link href={`${linkPrefix}/settings`} className="block min-w-0">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
                     <Target className="h-5 w-5 text-gray-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Settings</p>
-                    <p className="text-xs text-gray-500">Configure</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-900">Settings</p>
+                    <p className="truncate text-xs text-gray-500">Configure</p>
                   </div>
                 </CardContent>
               </Card>
@@ -432,17 +432,17 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         return (
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                     <Clock className="h-5 w-5 text-violet-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-semibold text-gray-900">Today&apos;s Schedule</h3>
                     <p className="text-sm text-gray-500">{data.todayClasses.length} classes today</p>
                   </div>
                 </div>
-                <Link href={`${linkPrefix}/schedule`} className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
+                <Link href={`${linkPrefix}/schedule`} className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-700">
                   View full schedule
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -457,36 +457,38 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
                     return (
                       <Link key={cls.id} href={`${linkPrefix}/schedule/${cls.id}`}>
-                        <div className={`flex items-center justify-between p-4 rounded-xl transition-colors cursor-pointer ${
+                        <div className={`cursor-pointer rounded-xl p-4 transition-colors ${
                           isPast ? "bg-gray-50 opacity-60" : "bg-gray-50 hover:bg-violet-50"
                         }`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`text-center min-w-[60px] p-2 rounded-lg ${isPast ? "bg-gray-200" : "bg-violet-100"}`}>
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                              <div className={`rounded-lg p-2 text-center ${isPast ? "bg-gray-200" : "bg-violet-100"}`}>
                               <p className={`text-lg font-bold ${isPast ? "text-gray-500" : "text-violet-600"}`}>
                                 {startTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                               </p>
                             </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{cls.classType.name}</p>
-                              <p className="text-sm text-gray-500">
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-gray-900">{cls.classType.name}</p>
+                                <p className="text-sm text-gray-500">
                                 {cls.teacher.user.firstName} {cls.teacher.user.lastName}
                               </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="secondary" className="text-xs">
+                                <div className="mt-1 flex items-center gap-2">
+                                  <Badge variant="secondary" className="max-w-full text-xs">
                                   <MapPin className="h-3 w-3 mr-1" />
-                                  {cls.location.name}
+                                    <span className="truncate">{cls.location.name}</span>
                                 </Badge>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <div className={`text-lg font-bold ${
+                            <div className="sm:text-right">
+                              <div className={`text-lg font-bold ${
                               fillPercent >= 100 ? "text-red-500" : fillPercent >= 80 ? "text-amber-500" : "text-emerald-500"
                             }`}>
                               {cls._count.bookings}/{cls.capacity}
                             </div>
                             <p className="text-xs text-gray-500">{fillPercent}% full</p>
                             {isPast && <Badge variant="secondary" className="mt-1 text-xs">Completed</Badge>}
+                            </div>
                           </div>
                         </div>
                       </Link>
@@ -740,36 +742,41 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
-      <div className="flex items-start justify-between mb-6">
+    <div className="min-h-screen overflow-x-hidden bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{data.greeting}!</h1>
           <p className="text-gray-500 mt-1">{data.currentDate}</p>
         </div>
 
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-3">
-            <Link href={`${linkPrefix}/clients/new`}>
-              <Button variant="outline" size="sm">
+        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+            <Link href={`${linkPrefix}/clients/new`} className="min-w-0">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Client
               </Button>
             </Link>
-            <Link href={`${linkPrefix}/schedule/new`}>
-              <Button variant="outline" size="sm">
+            <Link href={`${linkPrefix}/schedule/new`} className="min-w-0">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <CalendarPlus className="h-4 w-4 mr-2" />
                 Add Class
               </Button>
             </Link>
-            <Link href={`${linkPrefix}/schedule`}>
-              <Button className="bg-violet-600 hover:bg-violet-700" size="sm">
+            <Link href={`${linkPrefix}/schedule`} className="min-w-0">
+              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto" size="sm">
                 <Calendar className="h-4 w-4 mr-2" />
                 View Schedule
               </Button>
             </Link>
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => setShowLayoutControls((prev) => !prev)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={() => setShowLayoutControls((prev) => !prev)}
+          >
             <Settings2 className="h-4 w-4 mr-2" />
             Customize dashboard
           </Button>
@@ -782,7 +789,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
             <div>
               <p className="text-sm font-medium text-gray-900 mb-3">Show / Hide Widgets</p>
               <p className="text-xs text-gray-500 mb-3">Drag to reorder is enabled while this panel is open.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 {DEFAULT_WIDGET_ORDER.map((widget) => {
                   const isVisible = !hiddenWidgets.includes(widget)
                   return (
@@ -796,7 +803,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                           : "bg-gray-50 border-gray-200 text-gray-500"
                       }`}
                     >
-                      <span>{widgetMeta[widget].title}</span>
+                      <span className="min-w-0 truncate">{widgetMeta[widget].title}</span>
                       {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
                   )
@@ -807,7 +814,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
             <div>
               <p className="text-sm font-medium text-gray-900 mb-3">Stats cards</p>
               <p className="text-xs text-gray-500 mb-3">Show or hide individual cards. Includes report datapoints from Reports.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
                 {statCardOrder.map((card) => {
                   const isVisible = !hiddenStatCards.includes(card)
                   return (
@@ -821,8 +828,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                           : "bg-gray-50 border-gray-200 text-gray-500"
                       }`}
                     >
-                      <span className="flex items-center gap-2">
-                        {statCardMeta[card].title}
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="min-w-0 truncate">{statCardMeta[card].title}</span>
                         {statCardMeta[card].source === "reports" && (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Report</Badge>
                         )}
@@ -837,7 +844,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
         {visibleWidgets.map((widgetId) => (
           <div
             key={widgetId}
@@ -857,7 +864,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
               setDraggedWidget(null)
             }}
             onDragEnd={() => setDraggedWidget(null)}
-            className={`${widgetMeta[widgetId].className ?? ""} ${draggedWidget === widgetId ? "opacity-70" : ""} ${showLayoutControls ? "cursor-move" : ""}`}
+            className={`min-w-0 ${widgetMeta[widgetId].className ?? ""} ${draggedWidget === widgetId ? "opacity-70" : ""} ${showLayoutControls ? "cursor-move" : ""}`}
           >
             <div className="mb-2 flex items-center justify-between text-xs text-gray-400">
               <span>{widgetMeta[widgetId].title}</span>

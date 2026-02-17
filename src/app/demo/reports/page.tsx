@@ -65,14 +65,14 @@ export default async function DemoReportsPage() {
     : 0
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
           <p className="text-gray-500 mt-1">Analytics and insights for your studio</p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" className="w-full sm:w-auto">
           <Download className="h-4 w-4 mr-2" />
           Export Data
         </Button>
@@ -145,20 +145,20 @@ export default async function DemoReportsPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-white border">
-          <TabsTrigger value="overview">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border bg-white p-1">
+          <TabsTrigger value="overview" className="shrink-0">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="revenue">
+          <TabsTrigger value="revenue" className="shrink-0">
             <DollarSign className="h-4 w-4 mr-2" />
             Revenue
           </TabsTrigger>
-          <TabsTrigger value="clients">
+          <TabsTrigger value="clients" className="shrink-0">
             <Users className="h-4 w-4 mr-2" />
             Clients
           </TabsTrigger>
-          <TabsTrigger value="classes">
+          <TabsTrigger value="classes" className="shrink-0">
             <Calendar className="h-4 w-4 mr-2" />
             Classes
           </TabsTrigger>
@@ -171,7 +171,7 @@ export default async function DemoReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Bookings Over Time</h3>
-                <div className="h-64 bg-gradient-to-br from-violet-50 to-purple-50 rounded-lg flex items-center justify-center">
+                <div className="h-52 rounded-lg bg-gradient-to-br from-violet-50 to-purple-50 sm:h-64 flex items-center justify-center">
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 text-violet-300 mx-auto mb-2" />
                     <p className="text-gray-500">Chart visualization</p>
@@ -185,7 +185,7 @@ export default async function DemoReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Class Popularity</h3>
-                <div className="h-64 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg flex items-center justify-center">
+                <div className="h-52 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 sm:h-64 flex items-center justify-center">
                   <div className="text-center">
                     <PieChart className="h-12 w-12 text-blue-300 mx-auto mb-2" />
                     <p className="text-gray-500">Distribution chart</p>
@@ -201,7 +201,7 @@ export default async function DemoReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Top Performing Teachers</h3>
                 <div className="space-y-3">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center text-violet-600 font-medium text-sm">
                           {i}
@@ -211,7 +211,7 @@ export default async function DemoReportsPage() {
                           <p className="text-xs text-gray-500">Based on bookings</p>
                         </div>
                       </div>
-                      <Badge className="bg-violet-100 text-violet-700">
+                      <Badge className="w-fit bg-violet-100 text-violet-700">
                         {100 - i * 15} bookings
                       </Badge>
                     </div>
@@ -226,7 +226,7 @@ export default async function DemoReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Location Performance</h3>
                 <div className="space-y-3">
                   {locations.map((location, i) => (
-                    <div key={location.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={location.id} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                           <Activity className="h-4 w-4 text-blue-600" />
@@ -236,7 +236,7 @@ export default async function DemoReportsPage() {
                           <p className="text-xs text-gray-500">{Math.round(avgFillRate - i * 5)}% fill rate</p>
                         </div>
                       </div>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="w-fit">
                         {Math.round(totalClassesThisMonth / (locations.length || 1))} classes
                       </Badge>
                     </div>
@@ -251,7 +251,7 @@ export default async function DemoReportsPage() {
         <TabsContent value="revenue">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="text-center py-12">
+              <div className="py-8 text-center sm:py-12">
                 <DollarSign className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                 <h3 className="font-medium text-gray-900 mb-2">Revenue Analytics</h3>
                 <p className="text-gray-500">Detailed revenue reports and projections</p>
@@ -290,5 +290,4 @@ export default async function DemoReportsPage() {
     </div>
   )
 }
-
 

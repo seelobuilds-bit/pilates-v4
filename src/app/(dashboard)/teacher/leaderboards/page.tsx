@@ -182,7 +182,7 @@ export default function TeacherLeaderboardsPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     )
@@ -191,10 +191,10 @@ export default function TeacherLeaderboardsPage() {
   const featuredLeaderboards = leaderboards.filter(lb => lb.isFeatured)
 
   return (
-    <div className="p-8 bg-gradient-to-br from-emerald-50/50 to-amber-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gradient-to-br from-emerald-50/50 to-amber-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl text-white">
@@ -206,10 +206,10 @@ export default function TeacherLeaderboardsPage() {
           </div>
           
           {/* Studio vs Teacher Toggle */}
-          <div className="flex bg-white border rounded-xl p-1 shadow-sm">
+          <div className="flex flex-col sm:flex-row bg-white border rounded-xl p-1 shadow-sm w-full xl:w-auto">
             <button
               onClick={() => setActiveTab("studio")}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
                 activeTab === "studio"
                   ? "bg-violet-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -223,7 +223,7 @@ export default function TeacherLeaderboardsPage() {
             </button>
             <button
               onClick={() => setActiveTab("teacher")}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
                 activeTab === "teacher"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -250,7 +250,7 @@ export default function TeacherLeaderboardsPage() {
           <Sparkles className="h-48 w-48" />
         </div>
         <CardContent className="p-6 relative">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-bold mb-2">
                 {activeTab === "studio" ? "🏢 Studio Competitions" : "👩‍🏫 Teacher Competitions"}
@@ -358,7 +358,7 @@ export default function TeacherLeaderboardsPage() {
       {/* All Leaderboards by Category */}
       {grouped.length > 0 && (
       <Tabs defaultValue={grouped[0]?.id || "content"} className="space-y-6">
-        <TabsList className="bg-white border flex-wrap h-auto p-1">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border h-auto p-1">
           {grouped.map(cat => (
             <TabsTrigger key={cat.id} value={cat.id} className="gap-2">
               {getCategoryIcon(cat.icon)}
@@ -428,7 +428,7 @@ export default function TeacherLeaderboardsPage() {
                       </p>
                     )}
 
-                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                    <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       {myRanks[lb.id] ? (
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-gray-400" />
@@ -557,7 +557,7 @@ export default function TeacherLeaderboardsPage() {
                   {selectedLeaderboard.currentPeriod?.entries.map((entry, idx) => (
                     <div 
                       key={entry.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
+                      className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg ${
                         idx === 0 ? "bg-yellow-50 border border-yellow-200" :
                         idx === 1 ? "bg-gray-50 border border-gray-200" :
                         idx === 2 ? "bg-amber-50 border border-amber-200" :
@@ -592,7 +592,7 @@ export default function TeacherLeaderboardsPage() {
                   className="p-4 rounded-xl text-white"
                   style={{ backgroundColor: selectedLeaderboard.color || "#059669" }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm opacity-80">Your Position</p>
                       <p className="text-3xl font-bold">#{myRanks[selectedLeaderboard.id]?.rank}</p>
@@ -630,7 +630,6 @@ export default function TeacherLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

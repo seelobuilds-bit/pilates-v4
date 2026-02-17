@@ -20,7 +20,7 @@ export default async function DemoCommunityPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -41,20 +41,20 @@ export default async function DemoCommunityPage() {
   })
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Community</h1>
           <p className="text-gray-500 mt-1">Manage subscription community chats</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
           <Plus className="h-4 w-4 mr-2" />
           New Chat
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[calc(100vh-200px)]">
         {/* Chat List Sidebar */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Communities</h3>
@@ -124,12 +124,12 @@ export default async function DemoCommunityPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 min-h-[520px] lg:min-h-0">
           <Card className="border-0 shadow-sm h-full flex flex-col">
             <CardContent className="p-6 flex-1 flex flex-col">
               {/* Chat Header */}
-              <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
+              <div className="pb-4 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                     <MessageSquare className="h-5 w-5 text-white" />
                   </div>
@@ -156,7 +156,7 @@ export default async function DemoCommunityPage() {
               </div>
 
               {/* Chat Input */}
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t pb-24 lg:pb-4 lg:pr-24">
                 <div className="flex gap-2">
                   <Input 
                     placeholder="Type a message..." 
@@ -175,7 +175,6 @@ export default async function DemoCommunityPage() {
     </div>
   )
 }
-
 
 
 

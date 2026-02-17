@@ -254,7 +254,7 @@ export default function StudioVaultCoursePage({
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -262,7 +262,7 @@ export default function StudioVaultCoursePage({
 
   if (!course) {
     return (
-      <div className="p-8">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Course not found</h2>
@@ -278,19 +278,19 @@ export default function StudioVaultCoursePage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <Link href="/studio/vault">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge className={course.isPublished ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
                 {course.isPublished ? "Published" : "Draft"}
               </Badge>
@@ -306,12 +306,12 @@ export default function StudioVaultCoursePage({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={togglePublish}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button variant="outline" onClick={togglePublish} className="w-full sm:w-auto">
             <Eye className="h-4 w-4 mr-2" />
             {course.isPublished ? "Unpublish" : "Publish"}
           </Button>
-          <Button onClick={saveCourse} disabled={saving} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={saveCourse} disabled={saving} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
@@ -320,7 +320,7 @@ export default function StudioVaultCoursePage({
 
       {/* Tabs */}
       <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="settings">
             <Settings className="h-4 w-4 mr-2" />
             Settings
@@ -373,7 +373,7 @@ export default function StudioVaultCoursePage({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Category</Label>
                     <Input
@@ -405,7 +405,7 @@ export default function StudioVaultCoursePage({
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold text-gray-900">Features & Settings</h3>
                 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900">Include in Subscription</p>
                     <p className="text-sm text-gray-500">Available to vault subscribers</p>
@@ -416,7 +416,7 @@ export default function StudioVaultCoursePage({
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900">Community Chat</p>
                     <p className="text-sm text-gray-500">Enable group chat for students</p>
@@ -427,7 +427,7 @@ export default function StudioVaultCoursePage({
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900">Certificate</p>
                     <p className="text-sm text-gray-500">Award certificate on completion</p>
@@ -438,7 +438,7 @@ export default function StudioVaultCoursePage({
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900">Affiliate Program</p>
                     <p className="text-sm text-gray-500">Allow teachers to earn commissions</p>
@@ -470,9 +470,9 @@ export default function StudioVaultCoursePage({
         <TabsContent value="content">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-gray-900">Course Content</h3>
-                <Button size="sm" className="bg-violet-600 hover:bg-violet-700">
+                <Button size="sm" className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Module
                 </Button>
@@ -488,8 +488,8 @@ export default function StudioVaultCoursePage({
                 <div className="space-y-4">
                   {course.modules.map((module, i) => (
                     <div key={module.id} className="border rounded-lg">
-                      <div className="p-4 bg-gray-50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="p-4 bg-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start sm:items-center gap-3">
                           <GripVertical className="h-4 w-4 text-gray-400" />
                           <div>
                             <h4 className="font-medium">Module {i + 1}: {module.title}</h4>
@@ -509,8 +509,8 @@ export default function StudioVaultCoursePage({
                       {module.lessons.length > 0 && (
                         <div className="divide-y">
                           {module.lessons.map((lesson, j) => (
-                            <div key={lesson.id} className="p-3 pl-12 flex items-center justify-between hover:bg-gray-50">
-                              <div className="flex items-center gap-3">
+                            <div key={lesson.id} className="p-3 pl-4 sm:pl-12 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-gray-50">
+                              <div className="flex items-start sm:items-center gap-3">
                                 <span className="text-sm text-gray-400">{j + 1}.</span>
                                 <div>
                                   <p className="font-medium text-sm">{lesson.title}</p>
@@ -539,13 +539,14 @@ export default function StudioVaultCoursePage({
         <TabsContent value="students">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-gray-900">Enrolled Students</h3>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => fetchEnrollments(course.id)}
                   disabled={enrollmentsLoading}
+                  className="w-full sm:w-auto"
                 >
                   {enrollmentsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
                 </Button>
@@ -611,7 +612,7 @@ export default function StudioVaultCoursePage({
                   <CardContent className="p-6">
                     <h3 className="font-semibold text-gray-900 mb-4">Chat Settings</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-medium text-gray-900">Chat Enabled</p>
                           <p className="text-sm text-gray-500">Allow members to chat</p>
@@ -638,7 +639,6 @@ export default function StudioVaultCoursePage({
     </div>
   )
 }
-
 
 
 

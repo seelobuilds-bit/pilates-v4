@@ -21,9 +21,10 @@ Ship high-impact improvements in parallel without conflicts.
 | T-113 Automation edit multi-step parity | codex-main | codex/T-113-automation-edit-multistep | `src/app/(dashboard)/studio/marketing/automations/[automationId]/page.tsx` | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/27 |
 | T-114 Owner flow smoke tests | mac-mini-agent | mini/T-114-owner-smoke-tests | `scripts/tests/**`, `package.json`, docs notes only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/28 |
 | T-115 Reporting integrity + empty-state correctness | codex-main | codex/T-115-reporting-integrity-empty-states | Reporting APIs/UI for studio reports + entity report tabs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/29 |
+| T-117 Mobile hardening core pass (studio owner, non-marketing) | codex-main | codex/T-117-mobile-hardening-core | Studio owner layout + non-marketing route responsiveness + support widget mobile behavior | In Progress | https://github.com/seelobuilds-bit/pilates-v4/pull/31 |
 
 ## Merge Order
-1. Next roadmap item to define
+1. T-117 Mobile hardening core pass
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

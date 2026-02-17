@@ -130,7 +130,7 @@ export default function TeacherVaultCoursePage({
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -138,7 +138,7 @@ export default function TeacherVaultCoursePage({
 
   if (!course) {
     return (
-      <div className="p-8">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Course not found</h2>
@@ -156,23 +156,23 @@ export default function TeacherVaultCoursePage({
   const completedLessons = course.enrollment?.progress.filter(p => p.isCompleted).length || 0
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href="/teacher/vault">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
           {course.subtitle && (
             <p className="text-gray-500">{course.subtitle}</p>
           )}
         </div>
         {!course.isEnrolled && (
-          <Button onClick={enroll} disabled={enrolling} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={enroll} disabled={enrolling} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
             {enrolling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             {course.pricingType === "FREE" ? "Enroll for Free" : `Enroll - $${course.price}`}
           </Button>
@@ -183,7 +183,7 @@ export default function TeacherVaultCoursePage({
       {course.isEnrolled && (
         <Card className="border-0 shadow-sm mb-6 bg-gradient-to-r from-violet-50 to-purple-50">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2 text-green-600 mb-2">
                   <CheckCircle className="h-5 w-5" />
@@ -193,7 +193,7 @@ export default function TeacherVaultCoursePage({
                   {completedLessons} of {course.totalLessons} lessons completed
                 </p>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-3xl font-bold text-violet-600">{course.enrollment?.progressPercent || 0}%</p>
                 <p className="text-sm text-gray-500">Progress</p>
               </div>
@@ -210,7 +210,7 @@ export default function TeacherVaultCoursePage({
 
       {/* Tabs */}
       <Tabs defaultValue={course.isEnrolled ? "learn" : "overview"} className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="overview">
             <BookOpen className="h-4 w-4 mr-2" />
             Overview
@@ -328,7 +328,7 @@ export default function TeacherVaultCoursePage({
                           return (
                             <div 
                               key={lesson.id}
-                              className="p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer"
+                              className="p-4 flex items-start gap-3 sm:items-center sm:gap-4 hover:bg-gray-50 cursor-pointer"
                             >
                               <div className="w-8 h-8 flex items-center justify-center">
                                 {isCompleted ? (
@@ -342,7 +342,7 @@ export default function TeacherVaultCoursePage({
                                 <p className="font-medium text-gray-900">
                                   {lessonIndex + 1}. {lesson.title}
                                 </p>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                                   <Badge variant="secondary" className="text-xs">
                                     {lesson.contentType}
                                   </Badge>
@@ -376,7 +376,6 @@ export default function TeacherVaultCoursePage({
     </div>
   )
 }
-
 
 
 

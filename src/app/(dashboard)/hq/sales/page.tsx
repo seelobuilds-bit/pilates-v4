@@ -427,16 +427,16 @@ export default function HQSalesCRMPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Target className="h-7 w-7 text-violet-600" />
@@ -444,18 +444,18 @@ export default function HQSalesCRMPage() {
           </h1>
           <p className="text-gray-500 mt-1">Manage leads, demos, and your sales pipeline</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
           <Link href="/hq/sales/calendar">
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Calendar className="h-4 w-4 mr-2" />
               Calendar
             </Button>
           </Link>
-          <Button variant="outline" onClick={() => setShowImport(true)}>
+          <Button variant="outline" onClick={() => setShowImport(true)} className="w-full sm:w-auto">
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button onClick={() => setShowAddLead(true)} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={() => setShowAddLead(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Lead
           </Button>
@@ -469,7 +469,7 @@ export default function HQSalesCRMPage() {
           {pendingDemos.length > 0 && (
             <Card className="border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-violet-50 shadow-lg">
               <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
                     <Video className="h-6 w-6 text-white" />
                   </div>
@@ -482,7 +482,7 @@ export default function HQSalesCRMPage() {
                     </div>
                     <p className="text-purple-700 text-sm">Assign to sales agents to follow up immediately</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:flex-shrink-0">
                     {pendingDemos.slice(0, 2).map(demo => (
                       <Button
                         key={demo.id}
@@ -508,12 +508,12 @@ export default function HQSalesCRMPage() {
           {/* Unassigned Leads */}
           {unassignedLeads.length > 0 && (
             <Card className="border-orange-200 bg-orange-50">
-              <CardContent className="p-3 flex items-center gap-3">
+              <CardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
                 <Users className="h-5 w-5 text-orange-600" />
                 <span className="text-sm font-medium text-orange-800">
                   {unassignedLeads.length} lead{unassignedLeads.length > 1 ? "s" : ""} need{unassignedLeads.length === 1 ? "s" : ""} to be assigned
                 </span>
-                <Button variant="outline" size="sm" className="ml-auto border-orange-300 text-orange-700" onClick={() => setAssigneeFilter("unassigned")}>
+                <Button variant="outline" size="sm" className="w-full border-orange-300 text-orange-700 sm:ml-auto sm:w-auto" onClick={() => setAssigneeFilter("unassigned")}>
                   View Unassigned
                 </Button>
               </CardContent>
@@ -523,7 +523,7 @@ export default function HQSalesCRMPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Total Leads</p>
@@ -558,10 +558,10 @@ export default function HQSalesCRMPage() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="pipeline" className="px-6">Pipeline</TabsTrigger>
-          <TabsTrigger value="leads" className="px-6">All Leads</TabsTrigger>
-          <TabsTrigger value="demos" className="px-6 relative">
+        <TabsList className="mb-6 flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="pipeline" className="px-4 shrink-0 sm:px-6">Pipeline</TabsTrigger>
+          <TabsTrigger value="leads" className="px-4 shrink-0 sm:px-6">All Leads</TabsTrigger>
+          <TabsTrigger value="demos" className="px-4 shrink-0 sm:px-6 relative">
             Demo Requests
             {pendingDemos.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -569,7 +569,7 @@ export default function HQSalesCRMPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="agents" className="px-6">Sales Team</TabsTrigger>
+          <TabsTrigger value="agents" className="px-4 shrink-0 sm:px-6">Sales Team</TabsTrigger>
         </TabsList>
 
         {/* Pipeline View */}
@@ -659,7 +659,7 @@ export default function HQSalesCRMPage() {
           {/* Filters */}
           <Card className="border-0 shadow-sm mb-4">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -670,7 +670,7 @@ export default function HQSalesCRMPage() {
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full xl:w-40">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -681,7 +681,7 @@ export default function HQSalesCRMPage() {
                   </SelectContent>
                 </Select>
                 <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full xl:w-40">
                     <SelectValue placeholder="Source" />
                   </SelectTrigger>
                   <SelectContent>
@@ -692,7 +692,7 @@ export default function HQSalesCRMPage() {
                   </SelectContent>
                 </Select>
                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full xl:w-40">
                     <SelectValue placeholder="Assignee" />
                   </SelectTrigger>
                   <SelectContent>
@@ -718,7 +718,8 @@ export default function HQSalesCRMPage() {
                   <p className="text-gray-500">No leads found</p>
                 </div>
               ) : (
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                  <table className="min-w-[920px] w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Lead</th>
@@ -770,7 +771,8 @@ export default function HQSalesCRMPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -793,7 +795,7 @@ export default function HQSalesCRMPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {demos.filter(d => d.status === "pending" && !d.assignedTo).map(demo => (
                     <Card key={demo.id} className="border-2 border-purple-200 bg-white hover:shadow-lg transition-shadow">
                       <CardContent className="p-4">
@@ -827,7 +829,7 @@ export default function HQSalesCRMPage() {
                             &quot;{demo.interests}&quot;
                           </p>
                         )}
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                        <div className="mt-4 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
                           <span className="text-xs text-gray-400">
                             <Clock className="h-3 w-3 inline mr-1" />
                             {formatDate(demo.createdAt)}
@@ -853,7 +855,8 @@ export default function HQSalesCRMPage() {
               <h3 className="text-lg font-semibold mb-4">All Demo Requests ({demos.length})</h3>
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-0">
-                  <table className="w-full">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[760px] w-full">
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Studio</th>
@@ -898,7 +901,8 @@ export default function HQSalesCRMPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                    </table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -907,9 +911,9 @@ export default function HQSalesCRMPage() {
 
         {/* Sales Team View */}
         <TabsContent value="agents">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">Sales Team</h2>
-            <div className="flex gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               {/* Show "Add Yourself" button if current user isn't an agent */}
               {agents.length === 0 && (
                 <Button 
@@ -944,7 +948,7 @@ export default function HQSalesCRMPage() {
               </CardContent>
             </Card>
           ) : (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {agents.map(agent => (
               <Card key={agent.id} className="border-0 shadow-sm">
                 <CardContent className="p-6">
@@ -957,7 +961,7 @@ export default function HQSalesCRMPage() {
                       <p className="text-sm text-gray-500">{agent.title || "Sales Agent"}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="grid grid-cols-1 gap-4 text-center sm:grid-cols-2">
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="text-2xl font-bold text-violet-600">{agent._count.leads}</p>
                       <p className="text-xs text-gray-500">Active Leads</p>
@@ -968,7 +972,7 @@ export default function HQSalesCRMPage() {
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-500">Revenue Generated</span>
                       <span className="font-semibold text-green-600">{formatCurrency(agent.totalRevenue)}</span>
                     </div>
@@ -988,7 +992,7 @@ export default function HQSalesCRMPage() {
             <DialogTitle>Add Sales Agent</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>First Name *</Label>
                 <Input
@@ -1040,7 +1044,7 @@ export default function HQSalesCRMPage() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setShowAddAgent(false)}>Cancel</Button>
             <Button 
               onClick={createAgent}
@@ -1065,12 +1069,12 @@ export default function HQSalesCRMPage() {
 
       {/* Add Lead Modal */}
       <Dialog open={showAddLead} onOpenChange={setShowAddLead}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Lead</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Studio Name *</Label>
                 <Input
@@ -1088,7 +1092,7 @@ export default function HQSalesCRMPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Contact Email *</Label>
                 <Input
@@ -1107,7 +1111,7 @@ export default function HQSalesCRMPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label>City</Label>
                 <Input
@@ -1133,7 +1137,7 @@ export default function HQSalesCRMPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label>Source</Label>
                 <Select value={newLead.source} onValueChange={(v) => setNewLead({ ...newLead, source: v })}>
@@ -1176,7 +1180,7 @@ export default function HQSalesCRMPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Studio Size</Label>
                 <Select value={newLead.studioSize} onValueChange={(v) => setNewLead({ ...newLead, studioSize: v })}>
@@ -1211,7 +1215,7 @@ export default function HQSalesCRMPage() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setShowAddLead(false)}>Cancel</Button>
             <Button 
               onClick={createLead}
@@ -1243,7 +1247,7 @@ Jane Smith, jane@studio.com, 555-5678, Core Fitness"
               rows={10}
             />
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setShowImport(false)}>Cancel</Button>
             <Button 
               onClick={importLeads}
@@ -1313,9 +1317,6 @@ Jane Smith, jane@studio.com, 555-5678, Core Fitness"
     </div>
   )
 }
-
-
-
 
 
 

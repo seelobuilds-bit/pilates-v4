@@ -274,7 +274,7 @@ export default function TeacherDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -282,7 +282,7 @@ export default function TeacherDetailPage({
 
   if (!teacher) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Teacher not found</p>
           <Link href="/studio/teachers">
@@ -301,36 +301,36 @@ export default function TeacherDetailPage({
     safeExtendedStats.monthlyClasses.some((month) => month.count > 0)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/teachers" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Teachers
         </Link>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-xl font-semibold text-violet-700">
               {teacher.user.firstName[0]}{teacher.user.lastName[0]}
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">
                 {teacher.user.firstName} {teacher.user.lastName}
               </h1>
-              <p className="text-gray-500 flex items-center gap-1">
+              <p className="text-gray-500 flex items-center gap-1 truncate">
                 <Mail className="h-4 w-4" />
                 {teacher.user.email}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center xl:w-auto">
             <Badge variant={teacher.isActive ? "success" : "secondary"} className="text-sm">
               {teacher.isActive ? "Active" : "Inactive"}
             </Badge>
             <Button
               variant="outline"
               size="sm"
-              className={teacher.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}
+              className={`w-full sm:w-auto ${teacher.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
               onClick={async () => {
                 if (!confirm(teacher.isActive 
                   ? "Remove access? This teacher won't be able to log in or see their schedule." 
@@ -355,7 +355,7 @@ export default function TeacherDetailPage({
             <Button
               variant="outline"
               size="sm"
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50"
               onClick={async () => {
                 if (!confirm("Are you sure you want to delete this teacher? This action cannot be undone.")) return
                 try {
@@ -383,7 +383,7 @@ export default function TeacherDetailPage({
 
       {/* Stats Row */}
       {hasTeacherReportData && (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -446,20 +446,20 @@ export default function TeacherDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
-          <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
+          <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="schedule" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Calendar className="h-4 w-4 mr-2" />
             Schedule
           </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="profile" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Users className="h-4 w-4 mr-2" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="invoices" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <FileText className="h-4 w-4 mr-2" />
             Invoices
           </TabsTrigger>
@@ -476,7 +476,7 @@ export default function TeacherDetailPage({
                     <Award className="h-5 w-5 text-gray-400" />
                     <h3 className="font-semibold text-gray-900">Performance Metrics</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 bg-emerald-50 rounded-xl text-center">
                       <p className="text-2xl font-bold text-emerald-600">{safeExtendedStats.retentionRate}%</p>
                       <p className="text-sm text-emerald-700">Client Retention</p>
@@ -539,14 +539,14 @@ export default function TeacherDetailPage({
                       const total = safeExtendedStats.locationBreakdown.reduce((a, l) => a + l.count, 0)
                       const pct = Math.round((loc.count / total) * 100)
                       return (
-                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
+                        <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                               <MapPin className="h-4 w-4 text-blue-600" />
                             </div>
-                            <span className="font-medium text-gray-900">{loc.name}</span>
+                            <span className="font-medium text-gray-900 truncate">{loc.name}</span>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <p className="font-bold text-gray-900">{loc.count}</p>
                             <p className="text-xs text-gray-500">{pct}%</p>
                           </div>
@@ -566,12 +566,12 @@ export default function TeacherDetailPage({
                   </div>
                   <div className="space-y-3">
                     {safeExtendedStats.topClients.map((client, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
                           <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
                             {i + 1}
                           </span>
-                          <span className="font-medium text-gray-900">{client.name}</span>
+                          <span className="font-medium text-gray-900 truncate">{client.name}</span>
                         </div>
                         <span className="text-gray-500">{client.bookings} bookings</span>
                       </div>
@@ -590,8 +590,8 @@ export default function TeacherDetailPage({
                   <div className="space-y-4">
                     {safeExtendedStats.recentReviews.map((review, i) => (
                       <div key={i} className="p-4 bg-gray-50 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <span className="font-medium text-gray-900">{review.clientName}</span>
                             <div className="flex items-center gap-0.5">
                               {[...Array(5)].map((_, j) => (
@@ -618,7 +618,7 @@ export default function TeacherDetailPage({
                     <TrendingUp className="h-5 w-5 text-gray-400" />
                     <h3 className="font-semibold text-gray-900">Classes Over Time</h3>
                   </div>
-                  <div className="flex items-end justify-between h-32 gap-4">
+                  <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
                     {safeExtendedStats.monthlyClasses.map((month, i) => {
                       const maxCount = Math.max(...safeExtendedStats.monthlyClasses.map(m => m.count))
                       const height = maxCount > 0 ? (month.count / maxCount) * 100 : 0
@@ -654,7 +654,7 @@ export default function TeacherDetailPage({
         {/* Schedule Tab */}
         <TabsContent value="schedule" className="space-y-6">
           {/* Schedule Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{teacher.upcomingClasses.length}</p>
@@ -692,7 +692,7 @@ export default function TeacherDetailPage({
           {/* Weekly Calendar View */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{teacher.user.firstName}&apos;s Weekly Schedule</h2>
                   <p className="text-sm text-gray-500">
@@ -700,7 +700,7 @@ export default function TeacherDetailPage({
                   </p>
                 </div>
                 <Link href={`/studio/schedule?teacher=${resolvedParams.teacherId}`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Calendar className="h-4 w-4 mr-2" />
                     View Full Schedule
                   </Button>
@@ -708,7 +708,7 @@ export default function TeacherDetailPage({
               </div>
 
               {/* Week Navigation */}
-              <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -806,7 +806,55 @@ export default function TeacherDetailPage({
                 return (
                   <>
                     <p className="text-center text-sm font-medium text-gray-700 mb-4">{formatDateRange()}</p>
-                    <div className="grid grid-cols-7 gap-3">
+                    <div className="space-y-3 md:hidden">
+                      {weekDates.map((date, dayIndex) => {
+                        const isToday = today.toDateString() === date.toDateString()
+                        return (
+                          <div key={dayIndex} className="rounded-xl border bg-white p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className={`text-sm font-semibold ${isToday ? "text-violet-700" : "text-gray-900"}`}>
+                                {dayNames[dayIndex]} {date.getDate()}
+                              </p>
+                              {blockedByDay[dayIndex].length > 0 && (
+                                <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">
+                                  <Ban className="h-2.5 w-2.5 mr-1" />
+                                  Blocked
+                                </Badge>
+                              )}
+                            </div>
+
+                            {blockedByDay[dayIndex].map((bt) => (
+                              <div key={bt.id} className="p-2 bg-red-50 rounded-lg border-l-4 border-l-red-500">
+                                <p className="text-xs text-red-700 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} -
+                                  {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                </p>
+                              </div>
+                            ))}
+
+                            {classesByDay[dayIndex].length > 0 ? (
+                              <div className="space-y-2">
+                                {classesByDay[dayIndex].map((cls) => (
+                                  <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                                    <div className="p-2 bg-violet-50 rounded-lg border-l-4 border-l-violet-500 hover:bg-violet-100 transition-colors">
+                                      <p className="font-medium text-xs text-gray-900 truncate">{cls.classType.name}</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                      </p>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : blockedByDay[dayIndex].length === 0 ? (
+                              <p className="text-xs text-gray-400">No classes</p>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="hidden md:grid grid-cols-7 gap-3">
                       {/* Day Headers */}
                       {weekDates.map((date, i) => {
                         const isToday = today.toDateString() === date.toDateString()
@@ -905,17 +953,17 @@ export default function TeacherDetailPage({
         <TabsContent value="profile">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Profile Details</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <Link href="/studio/teachers">
-                    <Button variant="outline" size="sm">Cancel</Button>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">Cancel</Button>
                   </Link>
                   <Button
                     onClick={handleSave}
                     disabled={saving}
                     size="sm"
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -964,7 +1012,7 @@ export default function TeacherDetailPage({
                   <p className="text-xs text-gray-500">Separate multiple specialties with commas</p>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">Active Status</p>
                     <p className="text-sm text-gray-500">Allow this teacher to be assigned to classes</p>
@@ -984,7 +1032,7 @@ export default function TeacherDetailPage({
           {/* Pay Rate Configuration */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Payment Rate</h3>
@@ -993,7 +1041,7 @@ export default function TeacherDetailPage({
                   size="sm"
                   onClick={savePayRate}
                   disabled={savingPayRate}
-                  className="bg-violet-600 hover:bg-violet-700"
+                  className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                 >
                   {savingPayRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   Save Rate
@@ -1061,7 +1109,7 @@ export default function TeacherDetailPage({
           {/* Teacher Submitted Invoices */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Submitted Invoices</h3>
@@ -1082,9 +1130,9 @@ export default function TeacherDetailPage({
                   {invoices.map((invoice) => (
                     <div
                       key={invoice.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           invoice.status === "PAID" ? "bg-emerald-100" :
                           invoice.status === "PENDING" ? "bg-amber-100" :
@@ -1101,9 +1149,9 @@ export default function TeacherDetailPage({
                             <FileText className="h-5 w-5 text-gray-600" />
                           )}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900">{invoice.invoiceNumber}</p>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-gray-900 truncate">{invoice.invoiceNumber}</p>
                             <Badge
                               className={`text-xs ${
                                 invoice.status === "PAID" ? "bg-emerald-100 text-emerald-700" :
@@ -1121,19 +1169,19 @@ export default function TeacherDetailPage({
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-4">
+                        <div className="text-left sm:text-right">
                           <p className="font-semibold text-gray-900">${invoice.total.toFixed(2)}</p>
                           <p className="text-xs text-gray-500">
                             {invoice.lineItems?.length || 0} classes
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {(invoice.status === "SENT" || invoice.status === "PENDING") && (
                             <Button
                               size="sm"
                               onClick={() => markInvoicePaid(invoice.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700"
+                              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Mark Paid
@@ -1144,7 +1192,7 @@ export default function TeacherDetailPage({
                               Paid {new Date(invoice.paidAt).toLocaleDateString()}
                             </span>
                           )}
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" className="w-full sm:w-auto">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>

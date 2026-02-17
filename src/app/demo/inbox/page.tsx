@@ -20,7 +20,7 @@ export default async function DemoInboxPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -50,14 +50,14 @@ export default async function DemoInboxPage() {
   }))
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Inbox</h1>
         <p className="text-gray-500 mt-1">Manage client communications</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[calc(100vh-200px)]">
         {/* Conversations List */}
         <div className="lg:col-span-1 space-y-4">
           <Card className="border-0 shadow-sm">
@@ -70,7 +70,7 @@ export default async function DemoInboxPage() {
           </Card>
 
           <Tabs defaultValue="all" className="space-y-3">
-            <TabsList className="bg-white border w-full justify-start">
+            <TabsList className="app-scrollbar bg-white border w-full justify-start overflow-x-auto">
               <TabsTrigger value="all" className="flex-1">
                 All
                 <Badge className="ml-2 bg-violet-100 text-violet-700">{conversations.length}</Badge>
@@ -162,22 +162,22 @@ export default async function DemoInboxPage() {
         </div>
 
         {/* Conversation View */}
-        <Card className="border-0 shadow-sm lg:col-span-2 flex flex-col">
+        <Card className="border-0 shadow-sm lg:col-span-2 min-h-[520px] lg:min-h-0 flex flex-col">
           <CardContent className="p-0 flex-1 flex flex-col">
             {/* Chat Header */}
             {conversations[0] && (
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="p-4 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
                     <span className="font-medium text-violet-600">
                       {conversations[0].client.firstName[0]}{conversations[0].client.lastName[0]}
                     </span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-gray-900">
                       {conversations[0].client.firstName} {conversations[0].client.lastName}
                     </p>
-                    <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
                       <Mail className="h-3 w-3" />
                       {conversations[0].client.email}
                       {conversations[0].client.phone && (
@@ -190,12 +190,12 @@ export default async function DemoInboxPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Phone className="h-4 w-4 mr-1" />
                     Call
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Mail className="h-4 w-4 mr-1" />
                     Email
                   </Button>
@@ -241,7 +241,7 @@ export default async function DemoInboxPage() {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t pb-24 lg:pb-4 lg:pr-24">
               <div className="flex gap-2">
                 <Input 
                   placeholder="Type your message..." 
@@ -258,5 +258,4 @@ export default async function DemoInboxPage() {
     </div>
   )
 }
-
 

@@ -69,7 +69,7 @@ export default function TeacherDashboardPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
@@ -81,7 +81,7 @@ export default function TeacherDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -143,7 +143,7 @@ export default function TeacherDashboardPage() {
         {/* Today's Schedule */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Clock className="h-5 w-5 text-gray-400" />
                 Today&apos;s Schedule
@@ -163,7 +163,7 @@ export default function TeacherDashboardPage() {
             ) : displayStats.upcomingClasses.length > 0 ? (
               <div className="space-y-3">
                 {displayStats.upcomingClasses.map((cls) => (
-                  <div key={cls.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div key={cls.id} className="flex flex-col gap-3 rounded-xl bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
                       <div className="text-center">
                         <p className="text-lg font-bold text-violet-600">
@@ -178,7 +178,7 @@ export default function TeacherDashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge className={cls._count.bookings >= cls.capacity ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}>
+                    <Badge className={`w-fit ${cls._count.bookings >= cls.capacity ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
                       {cls._count.bookings}/{cls.capacity}
                     </Badge>
                   </div>
@@ -247,7 +247,7 @@ export default function TeacherDashboardPage() {
             <CardTitle className="text-lg">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Link href="/teacher/schedule">
                 <Button variant="outline" className="w-full h-20 flex-col gap-2">
                   <Calendar className="h-6 w-6" />
@@ -279,7 +279,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
 
 
 

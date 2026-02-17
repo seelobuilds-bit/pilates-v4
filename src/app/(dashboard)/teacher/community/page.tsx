@@ -52,7 +52,7 @@ export default function TeacherCommunityPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -88,14 +88,14 @@ export default function TeacherCommunityPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 h-[calc(100vh-4rem)]">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen lg:h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Community</h1>
         <p className="text-gray-500 mt-1">Connect with other teachers and support your clients</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100%-80px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[calc(100%-80px)]">
         {/* Chat Selector Sidebar */}
         <div className="space-y-4">
           {/* Info Banner */}
@@ -177,7 +177,7 @@ export default function TeacherCommunityPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="lg:col-span-3 h-full">
+        <div className="lg:col-span-3 min-h-[460px] lg:min-h-0 lg:h-full">
           {selectedPlan ? (
             <div className="h-full">
               <SubscriptionChat 
@@ -202,7 +202,6 @@ export default function TeacherCommunityPage() {
     </div>
   )
 }
-
 
 
 

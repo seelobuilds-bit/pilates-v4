@@ -180,7 +180,7 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{planName} Community</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className={`${getAudienceColor(audience)} text-xs`}>
                 {getAudienceLabel(audience)}
               </Badge>
@@ -194,7 +194,7 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-gray-500">
             <div className="text-center">
@@ -213,7 +213,7 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
               </Avatar>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span className="font-medium text-gray-900 text-sm">
                     {getMemberName(msg.member.subscriber)}
                   </span>
@@ -235,7 +235,7 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
 
       {/* Message Input */}
       {chatEnabled ? (
-        <form onSubmit={sendMessage} className="p-4 border-t bg-white">
+        <form onSubmit={sendMessage} className="p-3 sm:p-4 border-t bg-white pb-24 lg:pb-4 lg:pr-24">
           <div className="flex items-center gap-2">
             <Input
               value={newMessage}
@@ -265,7 +265,6 @@ export function SubscriptionChat({ planId, planName, audience }: SubscriptionCha
     </Card>
   )
 }
-
 
 
 

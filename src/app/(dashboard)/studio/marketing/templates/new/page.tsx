@@ -41,7 +41,7 @@ export default function NewTemplatePage() {
     (template.type === "sms" || template.subject)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=templates" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
@@ -78,7 +78,7 @@ export default function NewTemplatePage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Type</Label>
                       <Select
@@ -199,7 +199,7 @@ export default function NewTemplatePage() {
 
           {/* Preview */}
           <div>
-            <Card className="border-0 shadow-sm sticky top-8">
+            <Card className="border-0 shadow-sm lg:sticky lg:top-8">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Eye className="h-5 w-5 text-gray-400" />
@@ -248,14 +248,14 @@ export default function NewTemplatePage() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-8">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/studio/marketing?tab=templates">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
           <Button
             onClick={handleSave}
             disabled={!isValid || saving}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

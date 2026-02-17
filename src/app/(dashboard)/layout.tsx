@@ -15,9 +15,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-dvh min-h-screen overflow-x-hidden bg-gray-50">
       <Sidebar />
-      <main className="app-scrollbar flex-1 overflow-auto pt-14 lg:pt-0">
+      <main className="app-scrollbar min-w-0 flex-1 overflow-x-hidden overflow-y-auto pt-14 lg:pt-0">
         {children}
       </main>
       <SupportWidget />

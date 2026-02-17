@@ -48,14 +48,14 @@ export default function NewLocationPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Add New Location</h1>
+    <div className="mx-auto w-full max-w-2xl px-3 py-4 sm:px-4 sm:py-5 lg:px-8 lg:py-8">
+      <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-3xl">Add New Location</h1>
 
       <Card>
         <CardHeader>
           <CardTitle>Location Details</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
@@ -73,7 +73,7 @@ export default function NewLocationPage() {
               <Input id="address" name="address" required placeholder="123 Main St" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input id="city" name="city" required />
@@ -93,11 +93,11 @@ export default function NewLocationPage() {
               <Input id="phone" name="phone" type="tel" />
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? "Creating..." : "Create Location"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button type="button" variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
                 Cancel
               </Button>
             </div>
@@ -107,6 +107,5 @@ export default function NewLocationPage() {
     </div>
   )
 }
-
 
 

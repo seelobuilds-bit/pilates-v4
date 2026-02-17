@@ -286,14 +286,14 @@ export default function AutomationConfigPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-8">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
       <div className="mb-8">
         <Link href="/studio/marketing" className="mb-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900">
           <ArrowLeft className="h-4 w-4" />
@@ -374,7 +374,7 @@ export default function AutomationConfigPage({
                   onChange={(e) => setTriggerDays(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={365}
-                  className="max-w-[220px]"
+                  className="w-full max-w-[220px]"
                 />
               </div>
             )}
@@ -388,12 +388,12 @@ export default function AutomationConfigPage({
                   onChange={(e) => setReminderHours(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={168}
-                  className="max-w-[220px]"
+                  className="w-full max-w-[220px]"
                 />
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <div className="flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-emerald-900">Stop chain if client books</p>
                 <p className="text-xs text-emerald-700">When enabled, this step pauses after qualifying bookings.</p>
@@ -405,9 +405,9 @@ export default function AutomationConfigPage({
 
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Sequence Steps</h2>
-              <Button type="button" variant="outline" onClick={addStep}>
+              <Button type="button" variant="outline" onClick={addStep} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Step
               </Button>
@@ -503,10 +503,10 @@ export default function AutomationConfigPage({
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
-            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
             onClick={handleDelete}
             disabled={deleting || saving}
           >
@@ -514,11 +514,11 @@ export default function AutomationConfigPage({
             Delete
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Link href="/studio/marketing">
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
             </Link>
-            <Button onClick={handleSave} disabled={saving || !canSave} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={handleSave} disabled={saving || !canSave} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save Changes
             </Button>

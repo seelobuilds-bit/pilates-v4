@@ -13,7 +13,7 @@ export default async function DemoMarketingPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -105,7 +105,6 @@ export default async function DemoMarketingPage() {
 
   return <MarketingView data={marketingData} linkPrefix="/demo" />
 }
-
 
 
 

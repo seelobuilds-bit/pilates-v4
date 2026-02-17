@@ -520,16 +520,16 @@ export default function TeacherSocialPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Social Media</h1>
           <p className="text-gray-500">Learn, create, and grow your social presence</p>
@@ -548,8 +548,8 @@ export default function TeacherSocialPage() {
       {/* Progress Banner */}
       <Card className="border-0 shadow-sm bg-gradient-to-r from-pink-500 via-rose-500 to-violet-500 text-white mb-8">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
               <div>
                 <p className="text-3xl font-bold">{totalPoints}</p>
                 <p className="text-sm opacity-80">Total Points</p>
@@ -563,14 +563,14 @@ export default function TeacherSocialPage() {
                 <p className="text-sm opacity-80">Homework Done</p>
               </div>
             </div>
-            <Award className="h-16 w-16 opacity-50" />
+            <Award className="h-12 w-12 sm:h-16 sm:w-16 opacity-50 self-start sm:self-auto" />
           </div>
         </CardContent>
       </Card>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0 p-1">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
           <TabsTrigger value="training" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
             Training
@@ -603,7 +603,7 @@ export default function TeacherSocialPage() {
                   <Lightbulb className="h-5 w-5 text-amber-500" />
                   <h3 className="font-semibold text-gray-900">This Week&apos;s Content Ideas</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {contentIdeas.slice(0, 3).map(idea => (
                     <div key={idea.id} className="p-4 bg-amber-50 rounded-lg">
                       <Badge className="mb-2 bg-amber-100 text-amber-700">{idea.category}</Badge>
@@ -745,9 +745,9 @@ export default function TeacherSocialPage() {
           {/* Filters */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 {/* Search */}
-                <div className="flex-1 min-w-[200px] relative">
+                <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search hashtags, creators..."
@@ -762,7 +762,7 @@ export default function TeacherSocialPage() {
                   value={trendingFilters.platform || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, platform: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full sm:w-[140px]">
                     <SelectValue placeholder="Platform" />
                   </SelectTrigger>
                   <SelectContent>
@@ -777,7 +777,7 @@ export default function TeacherSocialPage() {
                   value={trendingFilters.category || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, category: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -793,7 +793,7 @@ export default function TeacherSocialPage() {
                   value={trendingFilters.contentStyle || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, contentStyle: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Style" />
                   </SelectTrigger>
                   <SelectContent>
@@ -809,7 +809,7 @@ export default function TeacherSocialPage() {
                   value={trendingFilters.timeframe}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, timeframe: value })}
                 >
-                  <SelectTrigger className="w-[130px]">
+                  <SelectTrigger className="w-full sm:w-[130px]">
                     <SelectValue placeholder="Timeframe" />
                   </SelectTrigger>
                   <SelectContent>
@@ -826,7 +826,7 @@ export default function TeacherSocialPage() {
                   value={trendingFilters.sortBy}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, sortBy: value })}
                 >
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1940,9 +1940,6 @@ export default function TeacherSocialPage() {
     </div>
   )
 }
-
-
-
 
 
 

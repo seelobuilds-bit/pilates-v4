@@ -74,20 +74,20 @@ export default function DemoClassFlowsPage() {
   const stats = { totalViews: 1247, completedCount: 89, pendingTrainingRequests: 3 }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Class Flows</h1>
           <p className="text-gray-500 mt-1">Manage your training content and teacher development</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">
+          <Button variant="outline" className="w-full sm:w-auto">
             <GraduationCap className="h-4 w-4 mr-2" />
             Training Requests
             <Badge className="ml-2 bg-violet-100 text-violet-700">{stats.pendingTrainingRequests}</Badge>
           </Button>
-          <Button className="bg-violet-600 hover:bg-violet-700">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Content
           </Button>
@@ -95,7 +95,7 @@ export default function DemoClassFlowsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -152,9 +152,9 @@ export default function DemoClassFlowsPage() {
 
       {/* Main Content */}
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="content">Content Library</TabsTrigger>
-          <TabsTrigger value="requests">Training Requests</TabsTrigger>
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+          <TabsTrigger value="content" className="shrink-0">Content Library</TabsTrigger>
+          <TabsTrigger value="requests" className="shrink-0">Training Requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="content">
@@ -162,7 +162,7 @@ export default function DemoClassFlowsPage() {
             {/* Categories */}
             <Card className="lg:col-span-1">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-semibold">Categories</h3>
                   <Button size="sm" variant="ghost">
                     <Plus className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default function DemoClassFlowsPage() {
                           : "bg-gray-50 hover:bg-gray-100"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{category.icon}</span>
                           <div>
@@ -187,7 +187,7 @@ export default function DemoClassFlowsPage() {
                             <p className="text-xs text-gray-500">{category._count.contents} items</p>
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
                       </div>
                     </button>
                   ))}
@@ -198,11 +198,11 @@ export default function DemoClassFlowsPage() {
             {/* Content */}
             <Card className="lg:col-span-2">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-semibold">
                     {demoCategories.find(c => c.id === selectedCategory)?.name || "Select a category"}
                   </h3>
-                  <Button size="sm" className="bg-violet-600 hover:bg-violet-700">
+                  <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Content
                   </Button>
@@ -210,8 +210,8 @@ export default function DemoClassFlowsPage() {
                 <div className="space-y-3">
                   {demoCategories.find(c => c.id === selectedCategory)?.contents.map((content) => (
                     <div key={content.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-4 sm:items-center">
                           <div className={`p-2 rounded-lg ${content.type === "VIDEO" ? "bg-blue-100" : "bg-amber-100"}`}>
                             {content.type === "VIDEO" ? (
                               <Video className={`h-5 w-5 ${content.type === "VIDEO" ? "text-blue-600" : "text-amber-600"}`} />
@@ -226,7 +226,7 @@ export default function DemoClassFlowsPage() {
                                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                               )}
                             </div>
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                               <Badge variant="outline" className="text-xs">
                                 {content.difficulty}
                               </Badge>
@@ -239,7 +239,7 @@ export default function DemoClassFlowsPage() {
                             </div>
                           </div>
                         </div>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" className="w-full sm:w-auto">
                           <Play className="h-4 w-4" />
                         </Button>
                       </div>
@@ -257,16 +257,16 @@ export default function DemoClassFlowsPage() {
               <div className="space-y-4">
                 {demoTrainingRequests.map((request) => (
                   <div key={request.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h4 className="font-medium">{request.title}</h4>
                         <p className="text-sm text-gray-500">Requested by {request.contactName} • {request.attendeeCount} attendees</p>
                       </div>
-                      <Badge className={
+                      <Badge className={`w-fit ${
                         request.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
                         request.status === "APPROVED" ? "bg-green-100 text-green-800" :
                         "bg-blue-100 text-blue-800"
-                      }>
+                      }`}>
                         {request.status}
                       </Badge>
                     </div>
@@ -280,5 +280,4 @@ export default function DemoClassFlowsPage() {
     </div>
   )
 }
-
 

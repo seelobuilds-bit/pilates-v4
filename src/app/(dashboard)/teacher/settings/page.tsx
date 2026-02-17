@@ -36,10 +36,10 @@ export default function TeacherSettingsPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Settings</h1>
         <p className="text-gray-500 mt-1">Manage your teacher profile and preferences</p>
       </div>
 
@@ -56,7 +56,7 @@ export default function TeacherSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>First Name</Label>
                 <Input value={session?.user?.firstName || ""} disabled className="bg-gray-50" />
@@ -109,7 +109,7 @@ export default function TeacherSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-start justify-between gap-4 rounded-lg bg-gray-50 p-4">
               <div>
                 <p className="font-medium text-gray-900">New Booking Alerts</p>
                 <p className="text-sm text-gray-500">Get notified when a client books your class</p>
@@ -117,7 +117,7 @@ export default function TeacherSettingsPage() {
               <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-start justify-between gap-4 rounded-lg bg-gray-50 p-4">
               <div>
                 <p className="font-medium text-gray-900">Cancellation Alerts</p>
                 <p className="text-sm text-gray-500">Get notified when a client cancels</p>
@@ -125,7 +125,7 @@ export default function TeacherSettingsPage() {
               <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-start justify-between gap-4 rounded-lg bg-gray-50 p-4">
               <div>
                 <p className="font-medium text-gray-900">Daily Schedule Summary</p>
                 <p className="text-sm text-gray-500">Receive a daily email with your schedule</p>
@@ -137,7 +137,7 @@ export default function TeacherSettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={handleSave} disabled={saving} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -155,7 +155,6 @@ export default function TeacherSettingsPage() {
     </div>
   )
 }
-
 
 
 

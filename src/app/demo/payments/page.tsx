@@ -25,7 +25,7 @@ export default async function DemoPaymentsPage() {
 
   if (!studio) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Demo Not Available</h1>
           <p className="text-gray-500">The demo studio has not been set up yet.</p>
@@ -48,21 +48,21 @@ export default async function DemoPaymentsPage() {
   const pendingPayments = mockPayments.filter(p => p.status === "PENDING").length
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Track revenue and manage transactions</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
           <ArrowUpRight className="h-4 w-4 mr-2" />
           Open Stripe Dashboard
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export default async function DemoPaymentsPage() {
       </div>
 
       <Tabs defaultValue="transactions" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="transactions">
             <CreditCard className="h-4 w-4 mr-2" />
             Transactions
@@ -151,8 +151,8 @@ export default async function DemoPaymentsPage() {
             {mockPayments.map(payment => (
               <Card key={payment.id} className="border-0 shadow-sm">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                         payment.status === "COMPLETED" ? "bg-green-100" : "bg-amber-100"
                       }`}>
@@ -162,14 +162,14 @@ export default async function DemoPaymentsPage() {
                           <Clock className="h-5 w-5 text-amber-600" />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{payment.type}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{payment.type}</p>
                         <p className="text-sm text-gray-500">
                           {payment.client} • {payment.date.toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="font-bold text-gray-900">${payment.amount}</p>
                       <Badge className={
                         payment.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
@@ -209,6 +209,5 @@ export default async function DemoPaymentsPage() {
     </div>
   )
 }
-
 
 

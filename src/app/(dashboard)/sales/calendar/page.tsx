@@ -261,7 +261,7 @@ export default function SalesCalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -270,18 +270,18 @@ export default function SalesCalendarPage() {
   const days = getDaysInMonth()
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-900 sm:text-3xl">
             <CalendarIcon className="h-7 w-7 text-violet-600" />
             My Calendar
           </h1>
           <p className="text-gray-500 mt-1">Manage your schedule and demos</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-2 sm:justify-start">
             <Button
               variant="outline"
               size="sm"
@@ -289,7 +289,7 @@ export default function SalesCalendarPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-lg font-medium min-w-[180px] text-center">
+            <span className="min-w-[160px] text-center text-base font-medium sm:min-w-[180px] sm:text-lg">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </span>
             <Button
@@ -311,7 +311,7 @@ export default function SalesCalendarPage() {
               }))
               setShowAddEvent(true)
             }} 
-            className="bg-violet-600 hover:bg-violet-700"
+            className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Event
@@ -321,67 +321,69 @@ export default function SalesCalendarPage() {
 
       {/* Calendar Grid */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-0">
-          {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-              <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar Days */}
-          <div className="grid grid-cols-7">
-            {days.map((day, idx) => {
-              const { events: dayEvents, demos: dayDemos } = getEventsForDay(day.date)
-
-              return (
-                <div
-                  key={idx}
-                  onClick={() => handleDayClick(day.date)}
-                  className={`min-h-[120px] border-b border-r p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    !day.isCurrentMonth ? "bg-gray-50/50" : ""
-                  } ${isToday(day.date) ? "bg-violet-50" : ""}`}
-                >
-                  <div className={`text-sm font-medium mb-1 ${
-                    !day.isCurrentMonth ? "text-gray-400" : isToday(day.date) ? "text-violet-600" : "text-gray-900"
-                  }`}>
-                    {day.date.getDate()}
-                  </div>
-                  <div className="space-y-1">
-                    {dayDemos.map(demo => (
-                      <div
-                        key={demo.id}
-                        className="text-xs p-1.5 rounded bg-purple-100 text-purple-700 truncate flex items-center gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Video className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{demo.studioName}</span>
-                      </div>
-                    ))}
-                    {dayEvents.slice(0, 3).map(event => (
-                      <div
-                        key={event.id}
-                        className={`text-xs p-1.5 rounded truncate flex items-center gap-1 cursor-pointer hover:opacity-80 ${getEventTypeColor(event.eventType)}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedEvent(event)
-                        }}
-                      >
-                        {getEventTypeIcon(event.eventType)}
-                        <span className="truncate">{event.title}</span>
-                      </div>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <div className="text-xs text-gray-500 pl-1">
-                        +{dayEvents.length - 3} more
-                      </div>
-                    )}
-                  </div>
+        <CardContent className="overflow-x-auto p-0">
+          <div className="min-w-[720px]">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 border-b">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                <div key={day} className="bg-gray-50 p-3 text-center text-sm font-medium text-gray-500">
+                  {day}
                 </div>
-              )
-            })}
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7">
+              {days.map((day, idx) => {
+                const { events: dayEvents, demos: dayDemos } = getEventsForDay(day.date)
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => handleDayClick(day.date)}
+                    className={`min-h-[120px] cursor-pointer border-b border-r p-2 transition-colors hover:bg-gray-50 ${
+                      !day.isCurrentMonth ? "bg-gray-50/50" : ""
+                    } ${isToday(day.date) ? "bg-violet-50" : ""}`}
+                  >
+                    <div className={`mb-1 text-sm font-medium ${
+                      !day.isCurrentMonth ? "text-gray-400" : isToday(day.date) ? "text-violet-600" : "text-gray-900"
+                    }`}>
+                      {day.date.getDate()}
+                    </div>
+                    <div className="space-y-1">
+                      {dayDemos.map(demo => (
+                        <div
+                          key={demo.id}
+                          className="flex items-center gap-1 truncate rounded bg-purple-100 p-1.5 text-xs text-purple-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Video className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{demo.studioName}</span>
+                        </div>
+                      ))}
+                      {dayEvents.slice(0, 3).map(event => (
+                        <div
+                          key={event.id}
+                          className={`flex cursor-pointer items-center gap-1 truncate rounded p-1.5 text-xs hover:opacity-80 ${getEventTypeColor(event.eventType)}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedEvent(event)
+                          }}
+                        >
+                          {getEventTypeIcon(event.eventType)}
+                          <span className="truncate">{event.title}</span>
+                        </div>
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <div className="pl-1 text-xs text-gray-500">
+                          +{dayEvents.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -410,7 +412,7 @@ export default function SalesCalendarPage() {
 
             return allItems.map((item, idx) => (
               <Card key={idx} className="border-0 shadow-sm">
-                <CardContent className="p-4 flex items-center gap-4">
+                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     item.type === "demo" ? "bg-purple-100" : "bg-blue-100"
                   }`}>
@@ -435,7 +437,7 @@ export default function SalesCalendarPage() {
                       </>
                     )}
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     <p className="font-medium text-violet-600">{formatTime(item.time)}</p>
                     <Badge className={item.type === "demo" ? "bg-purple-100 text-purple-700" : getEventTypeColor((item.data as CalendarEvent).eventType)}>
                       {item.type === "demo" ? "Demo" : (item.data as CalendarEvent).eventType}
@@ -450,7 +452,7 @@ export default function SalesCalendarPage() {
 
       {/* Add Event Modal */}
       <Dialog open={showAddEvent} onOpenChange={setShowAddEvent}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Event</DialogTitle>
           </DialogHeader>
@@ -476,7 +478,7 @@ export default function SalesCalendarPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start Time *</Label>
                 <Input
@@ -523,12 +525,12 @@ export default function SalesCalendarPage() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowAddEvent(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setShowAddEvent(false)} className="w-full sm:w-auto">Cancel</Button>
             <Button 
               onClick={createEvent}
               disabled={saving || !newEvent.title || !newEvent.startTime}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Event
@@ -539,7 +541,7 @@ export default function SalesCalendarPage() {
 
       {/* Event Detail Modal */}
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedEvent && getEventTypeIcon(selectedEvent.eventType)}
@@ -582,23 +584,22 @@ export default function SalesCalendarPage() {
               )}
             </div>
           )}
-          <div className="flex justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <Button 
               variant="destructive" 
               onClick={() => selectedEvent && deleteEvent(selectedEvent.id)}
+              className="w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
-            <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
+            <Button variant="outline" onClick={() => setSelectedEvent(null)} className="w-full sm:w-auto">Close</Button>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-
-
 
 
 

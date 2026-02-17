@@ -308,7 +308,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -316,7 +316,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
   if (!lead) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <p>Lead not found or you don&apos;t have access to it.</p>
         <Link href="/sales">
           <Button variant="outline" className="mt-4">Back to Dashboard</Button>
@@ -326,10 +326,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
           <Link href="/sales">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -337,11 +337,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{lead.studioName}</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <Badge className={getStatusColor(lead.status)}>
+            <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <Badge className={`w-fit ${getStatusColor(lead.status)}`}>
                 {LEAD_STATUSES.find(s => s.value === lead.status)?.label}
               </Badge>
-              <Badge className={getPriorityColor(lead.priority)}>
+              <Badge className={`w-fit ${getPriorityColor(lead.priority)}`}>
                 {lead.priority} Priority
               </Badge>
               {lead.city && (
@@ -353,38 +353,38 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowCallModal(true)}>
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end xl:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowCallModal(true)}>
             <Phone className="h-4 w-4 mr-2" />
             Log Call
           </Button>
-          <Button variant="outline" onClick={() => setShowEmailModal(true)}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowEmailModal(true)}>
             <Mail className="h-4 w-4 mr-2" />
             Log Email
           </Button>
-          <Button variant="outline" onClick={() => setShowSmsModal(true)}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowSmsModal(true)}>
             <MessageSquare className="h-4 w-4 mr-2" />
             Log SMS
           </Button>
-          <Button variant="outline" onClick={() => setShowNoteModal(true)}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowNoteModal(true)}>
             <FileText className="h-4 w-4 mr-2" />
             Add Note
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Left Column - Lead Info */}
-        <div className="col-span-2 space-y-6">
+        <div className="space-y-6 xl:col-span-2">
           {/* Quick Actions */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <Select
                   value={lead.status}
                   onValueChange={(v) => updateLead({ status: v })}
                 >
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -397,7 +397,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                   value={lead.priority}
                   onValueChange={(v) => updateLead({ priority: v })}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -413,9 +413,9 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
           {/* Activity & Schedule Tabs */}
           <Tabs defaultValue="activity" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="activity">Activity ({lead.activities?.length || 0})</TabsTrigger>
-              <TabsTrigger value="schedule">
+            <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+              <TabsTrigger value="activity" className="shrink-0">Activity ({lead.activities?.length || 0})</TabsTrigger>
+              <TabsTrigger value="schedule" className="shrink-0">
                 <Calendar className="h-4 w-4 mr-1" />
                 Schedule ({lead.calendarEvents?.length || 0})
               </TabsTrigger>
@@ -434,7 +434,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                             {getActivityIcon(activity.type)}
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                               <span className="font-medium text-sm text-gray-900">
                                 {activity.type.replace("_", " ")}
                                 {activity.subject && `: ${activity.subject}`}
@@ -467,12 +467,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
             <TabsContent value="schedule">
               <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Upcoming Events
                   </CardTitle>
-                  <Button size="sm" onClick={() => setShowEventModal(true)}>
+                  <Button size="sm" className="w-full sm:w-auto" onClick={() => setShowEventModal(true)}>
                     <Plus className="h-4 w-4 mr-1" />
                     Schedule Event
                   </Button>
@@ -519,7 +519,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                               <p className="text-xs text-gray-500 mt-1 truncate">{event.description}</p>
                             )}
                           </div>
-                          <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
+                          <Badge variant="outline" className="w-fit text-xs capitalize flex-shrink-0">
                             {event.type}
                           </Badge>
                         </div>
@@ -768,12 +768,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowCallModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowCallModal(false)}>Cancel</Button>
             <Button 
               onClick={() => logActivity("CALL")}
               disabled={saving || !activityContent}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Log Call
@@ -810,12 +810,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowEmailModal(false)}>Cancel</Button>
             <Button 
               onClick={() => logActivity("EMAIL")}
               disabled={saving || !activityContent}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Log Email
@@ -844,12 +844,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowSmsModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowSmsModal(false)}>Cancel</Button>
             <Button 
               onClick={() => logActivity("SMS")}
               disabled={saving || !activityContent}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Log SMS
@@ -878,11 +878,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowNoteModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowNoteModal(false)}>Cancel</Button>
             <Button 
               onClick={() => logActivity("NOTE")}
               disabled={saving || !activityContent}
+              className="w-full sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Note
@@ -924,7 +925,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start Time *</Label>
                 <Input
@@ -952,12 +953,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowEventModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowEventModal(false)}>Cancel</Button>
             <Button 
               onClick={createEvent}
               disabled={saving || !newEvent.title || !newEvent.startTime}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Schedule Event
@@ -968,8 +969,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     </div>
   )
 }
-
-
 
 
 

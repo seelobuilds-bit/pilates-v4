@@ -8,9 +8,9 @@ export default function SalesSettingsPage() {
   const { data: session } = useSession()
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:px-8 lg:py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+        <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-900 sm:text-3xl">
           <Settings className="h-7 w-7 text-violet-600" />
           Settings
         </h1>
@@ -22,7 +22,7 @@ export default function SalesSettingsPage() {
           <CardTitle className="text-base">Profile Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="text-sm text-gray-500">Name</p>
               <p className="font-medium">{session?.user?.firstName} {session?.user?.lastName}</p>
@@ -41,7 +41,6 @@ export default function SalesSettingsPage() {
     </div>
   )
 }
-
 
 
 

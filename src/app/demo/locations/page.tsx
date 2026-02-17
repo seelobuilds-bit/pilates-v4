@@ -66,21 +66,21 @@ export default async function DemoLocationsPage() {
   const activeLocations = locations.filter(l => l.isActive).length
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Locations</h1>
           <p className="text-gray-500 mt-1">Manage your studio locations</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Location
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default async function DemoLocationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {locations.map(location => {
             const stats = monthlyClassMap.get(location.id)
             
@@ -147,13 +147,13 @@ export default async function DemoLocationsPage() {
               <Link key={location.id} href={`/demo/locations/${location.id}`}>
                 <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
                   <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="mb-4 flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center text-white">
                           <MapPin className="h-6 w-6" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h3 className="font-semibold text-gray-900">{location.name}</h3>
                             {location.isActive ? (
                               <Badge className="bg-green-100 text-green-700 text-xs">Active</Badge>
@@ -162,13 +162,13 @@ export default async function DemoLocationsPage() {
                             )}
                           </div>
                           {location.address && (
-                            <p className="text-sm text-gray-500 mt-0.5 truncate max-w-[200px]">
+                            <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">
                               {location.address}
                             </p>
                           )}
                         </div>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-gray-300" />
+                      <ChevronRight className="h-5 w-5 shrink-0 text-gray-300" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
@@ -204,5 +204,4 @@ export default async function DemoLocationsPage() {
     </div>
   )
 }
-
 

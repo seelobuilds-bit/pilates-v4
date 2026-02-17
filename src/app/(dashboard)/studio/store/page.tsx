@@ -312,32 +312,32 @@ export default function StudioStorePage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Store</h1>
           <p className="text-gray-500 mt-1">Manage your merchandise store and products</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end xl:w-auto">
           {subdomain && store?.isEnabled && (
             <a href={`/${subdomain}/store`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View Store
               </Button>
             </a>
           )}
-          <Button variant="outline" onClick={openSampleOrder}>
+          <Button variant="outline" onClick={openSampleOrder} className="w-full sm:w-auto">
             <Box className="h-4 w-4 mr-2" />
             Order Samples
           </Button>
-          <Button variant="outline" onClick={() => setShowSettings(true)}>
+          <Button variant="outline" onClick={() => setShowSettings(true)} className="w-full sm:w-auto">
             <Settings className="h-4 w-4 mr-2" />
             Store Settings
           </Button>
           <Link href="/studio/store/catalog">
-            <Button className="bg-violet-600 hover:bg-violet-700">
+            <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Browse Catalog
             </Button>
@@ -346,7 +346,7 @@ export default function StudioStorePage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -407,8 +407,8 @@ export default function StudioStorePage() {
       {/* Store Status Banner */}
       {store?.isEnabled && subdomain ? (
         <Card className="border-0 shadow-sm mb-6 bg-green-50 border-green-200">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3 sm:items-center">
               <Store className="h-5 w-5 text-green-600" />
               <div>
                 <p className="font-medium text-green-800">Your store is live!</p>
@@ -418,7 +418,7 @@ export default function StudioStorePage() {
               </div>
             </div>
             <a href={`/${subdomain}/store`} target="_blank" rel="noopener noreferrer">
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="w-full bg-green-600 hover:bg-green-700 sm:w-auto">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View Store
               </Button>
@@ -427,15 +427,15 @@ export default function StudioStorePage() {
         </Card>
       ) : (
         <Card className="border-0 shadow-sm mb-6 bg-amber-50 border-amber-200">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3 sm:items-center">
               <Store className="h-5 w-5 text-amber-600" />
               <div>
                 <p className="font-medium text-amber-800">Your store is not live yet</p>
                 <p className="text-sm text-amber-600">Enable your store in settings to start selling</p>
               </div>
             </div>
-            <Button onClick={() => setShowSettings(true)} variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+            <Button onClick={() => setShowSettings(true)} variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-100 sm:w-auto">
               Enable Store
             </Button>
           </CardContent>
@@ -444,16 +444,16 @@ export default function StudioStorePage() {
 
       {/* Main Content */}
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="bg-white border">
-          <TabsTrigger value="products">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border bg-white p-1">
+          <TabsTrigger value="products" className="shrink-0">
             <ShoppingBag className="h-4 w-4 mr-2" />
             My Products
           </TabsTrigger>
-          <TabsTrigger value="orders">
+          <TabsTrigger value="orders" className="shrink-0">
             <ShoppingCart className="h-4 w-4 mr-2" />
             Orders
           </TabsTrigger>
-          <TabsTrigger value="samples">
+          <TabsTrigger value="samples" className="shrink-0">
             <Box className="h-4 w-4 mr-2" />
             Sample Orders
           </TabsTrigger>
@@ -476,7 +476,7 @@ export default function StudioStorePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {store?.products.map(sp => (
                 <Card key={sp.id} className="border-0 shadow-sm overflow-hidden">
                   <Link href={`/studio/store/catalog/${sp.product.id}`}>
@@ -568,19 +568,19 @@ export default function StudioStorePage() {
               ) : (
                 <div className="space-y-4">
                   {store?.orders.map(order => (
-                    <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={order.id} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-medium text-gray-900">Order #{order.orderNumber}</p>
                         <p className="text-sm text-gray-500">{order.customerName}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="font-medium">${order.total.toFixed(2)}</p>
-                        <Badge className={
+                        <Badge className={`w-fit ${
                           order.status === "DELIVERED" ? "bg-green-100 text-green-700" :
                           order.status === "SHIPPED" ? "bg-blue-100 text-blue-700" :
                           order.status === "PROCESSING" ? "bg-amber-100 text-amber-700" :
                           "bg-gray-100 text-gray-700"
-                        }>
+                        }`}>
                           {order.status}
                         </Badge>
                       </div>
@@ -607,20 +607,20 @@ export default function StudioStorePage() {
               ) : (
                 <div className="space-y-4">
                   {store?.sampleOrders.map(order => (
-                    <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={order.id} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-medium text-gray-900">Sample Order</p>
                         <p className="text-sm text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="font-medium">${order.total.toFixed(2)}</p>
-                        <Badge className={
+                        <Badge className={`w-fit ${
                           order.status === "DELIVERED" ? "bg-green-100 text-green-700" :
                           order.status === "SHIPPED" ? "bg-blue-100 text-blue-700" :
                           "bg-amber-100 text-amber-700"
-                        }>
+                        }`}>
                           {order.status}
                         </Badge>
                       </div>
@@ -635,13 +635,13 @@ export default function StudioStorePage() {
 
       {/* Store Settings Modal */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Store Settings</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">Enable Store</p>
                 <p className="text-sm text-gray-500">Make your store visible to customers</p>
@@ -671,7 +671,7 @@ export default function StudioStorePage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Free Shipping Threshold ($)</Label>
                 <Input
@@ -719,7 +719,7 @@ export default function StudioStorePage() {
 
       {/* Sample Order Modal */}
       <Dialog open={showSampleOrder} onOpenChange={setShowSampleOrder}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Order Samples</DialogTitle>
           </DialogHeader>
@@ -732,7 +732,7 @@ export default function StudioStorePage() {
 
             <div className="space-y-2">
               <Label>Select Products</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+              <div className="grid max-h-48 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
                 {sampleCatalog.map(product => (
                   <div 
                     key={product.id}
@@ -768,7 +768,7 @@ export default function StudioStorePage() {
                 value={sampleShipping.shippingAddress}
                 onChange={(e) => setSampleShipping({ ...sampleShipping, shippingAddress: e.target.value })}
               />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Input
                   placeholder="City"
                   value={sampleShipping.shippingCity}
@@ -827,7 +827,6 @@ export default function StudioStorePage() {
     </div>
   )
 }
-
 
 
 

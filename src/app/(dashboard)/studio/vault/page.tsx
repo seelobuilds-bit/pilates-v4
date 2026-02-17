@@ -459,21 +459,21 @@ export default function StudioVaultPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">The Vault</h1>
           <p className="text-gray-500 mt-1">Create and manage courses for owners, teachers, and clients</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
+        <Button onClick={() => setShowCreateModal(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Create Course
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -547,28 +547,28 @@ export default function StudioVaultPage() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="bg-white border">
-          <TabsTrigger value="courses">
+        <TabsList className="bg-white border flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="courses" className="shrink-0">
             <BookOpen className="h-4 w-4 mr-2" />
             Courses
           </TabsTrigger>
-          <TabsTrigger value="subscription">
+          <TabsTrigger value="subscription" className="shrink-0">
             <Crown className="h-4 w-4 mr-2" />
             Subscription
           </TabsTrigger>
-          <TabsTrigger value="community">
+          <TabsTrigger value="community" className="shrink-0">
             <MessageSquare className="h-4 w-4 mr-2" />
             Community
           </TabsTrigger>
-          <TabsTrigger value="enrollments">
+          <TabsTrigger value="enrollments" className="shrink-0">
             <Users className="h-4 w-4 mr-2" />
             Enrollments
           </TabsTrigger>
-          <TabsTrigger value="affiliates">
+          <TabsTrigger value="affiliates" className="shrink-0">
             <LinkIcon className="h-4 w-4 mr-2" />
             Affiliates
           </TabsTrigger>
-          <TabsTrigger value="analytics">
+          <TabsTrigger value="analytics" className="shrink-0">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </TabsTrigger>
@@ -579,7 +579,7 @@ export default function StudioVaultPage() {
           {/* Filters */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -590,7 +590,7 @@ export default function StudioVaultPage() {
                   />
                 </div>
                 <Select value={audienceFilter} onValueChange={setAudienceFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full md:w-40">
                     <SelectValue placeholder="Audience" />
                   </SelectTrigger>
                   <SelectContent>
@@ -603,7 +603,7 @@ export default function StudioVaultPage() {
                 </Select>
                 {categories.length > 0 && (
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-full md:w-40">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -680,7 +680,7 @@ export default function StudioVaultPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
                           {course.enrollmentCount} students
@@ -697,7 +697,7 @@ export default function StudioVaultPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Link href={`/studio/vault/${course.id}`} className="flex-1">
                           <Button variant="outline" className="w-full" size="sm">
                             <Edit className="h-4 w-4 mr-1" />
@@ -727,7 +727,7 @@ export default function StudioVaultPage() {
         {/* Subscription Tab */}
         <TabsContent value="subscription" className="space-y-6">
           {/* 3 Subscription Tiers Header */}
-          <div className="flex items-center justify-between">
+          <div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Subscription Tiers</h3>
               <p className="text-sm text-gray-500">
@@ -785,7 +785,7 @@ export default function StudioVaultPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="font-semibold text-gray-900">
                       {selectedTier === "STUDIO_OWNERS" ? "Studio Owners" : selectedTier === "TEACHERS" ? "Teachers" : "At-Home Members"} Plan
                     </h3>
@@ -814,7 +814,7 @@ export default function StudioVaultPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Monthly ($)</Label>
                         <Input
@@ -845,14 +845,14 @@ export default function StudioVaultPage() {
                       <Label>Features (bullet points)</Label>
                       <div className="space-y-2">
                         {editingPlan.features.map((feature, i) => (
-                          <div key={i} className="flex items-center gap-2">
+                        <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <Input value={feature} disabled className="flex-1" />
                             <Button variant="ghost" size="sm" onClick={() => removeFeature(i)}>
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         ))}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                           <Input
                             value={newFeature}
                             onChange={(e) => setNewFeature(e.target.value)}
@@ -891,7 +891,7 @@ export default function StudioVaultPage() {
                   
                   <div className="space-y-3">
                     {courses.filter(c => c.audience === selectedTier || c.audience === "ALL").map(course => (
-                      <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={course.id} className="flex flex-col gap-3 p-3 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
                             {course.includeInSubscription ? (
@@ -962,15 +962,15 @@ export default function StudioVaultPage() {
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-gray-900 text-sm mb-3">Plan Stats</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-500">Active Subscribers</span>
                       <span className="font-medium">{subscriptionPlans.find(p => p.audience === selectedTier)?.activeSubscribers || 0}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-500">Courses Included</span>
                       <span className="font-medium">{courses.filter(c => c.audience === selectedTier && c.includeInSubscription).length}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-500">Est. Monthly Revenue</span>
                       <span className="font-medium text-green-600">
                         ${((subscriptionPlans.find(p => p.audience === selectedTier)?.activeSubscribers || 0) * editingPlan.monthlyPrice).toFixed(0)}
@@ -985,7 +985,7 @@ export default function StudioVaultPage() {
 
         {/* Community Tab */}
         <TabsContent value="community" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-280px)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:h-[calc(100vh-280px)]">
             {/* Chat Selector Sidebar */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Communities</h3>
@@ -1034,7 +1034,7 @@ export default function StudioVaultPage() {
             </div>
 
             {/* Full Screen Chat Area */}
-            <div className="lg:col-span-3 h-full">
+            <div className="lg:col-span-3 lg:h-full">
               {showChatForPlan ? (
                 <div className="h-full">
                   <SubscriptionChat 
@@ -1072,7 +1072,7 @@ export default function StudioVaultPage() {
               ) : (
                 <div className="space-y-3">
                   {enrollments.slice(0, 20).map(enrollment => (
-                    <div key={enrollment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={enrollment.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
                           <Users className="h-5 w-5 text-violet-600" />
@@ -1091,7 +1091,7 @@ export default function StudioVaultPage() {
                           <p className="text-sm text-gray-500">{enrollment.course.title}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between gap-4 sm:justify-start">
                         <div className="text-right">
                           <Badge className={enrollment.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
                             {enrollment.status}
@@ -1125,7 +1125,7 @@ export default function StudioVaultPage() {
               ) : (
                 <div className="space-y-3">
                   {affiliateLinks.map(link => (
-                    <div key={link.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={link.id} className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
                           <LinkIcon className="h-5 w-5 text-pink-600" />
@@ -1140,7 +1140,7 @@ export default function StudioVaultPage() {
                           </code>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6 text-sm">
+                      <div className="flex items-center justify-between gap-4 text-sm sm:justify-start sm:gap-6">
                         <div className="text-center">
                           <p className="font-semibold text-gray-900">{link.clicks}</p>
                           <p className="text-gray-500">Clicks</p>
@@ -1216,7 +1216,7 @@ export default function StudioVaultPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Target Audience</Label>
                   <Select value={newCourse.audience} onValueChange={(v) => setNewCourse({ ...newCourse, audience: v })}>
@@ -1288,7 +1288,7 @@ export default function StudioVaultPage() {
               )}
 
               {newCourse.pricingType === "SUBSCRIPTION" && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Subscription Price ($)</Label>
                     <Input
@@ -1345,7 +1345,7 @@ export default function StudioVaultPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Include in Subscription</p>
                   <p className="text-sm text-gray-500">Include this course in the subscription vault for its audience</p>
@@ -1372,7 +1372,7 @@ export default function StudioVaultPage() {
             <div className="space-y-4 border-t pt-4">
               <h4 className="font-medium text-gray-900">Affiliate Program</h4>
               
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Enable Affiliates</p>
                   <p className="text-sm text-gray-500">Allow teachers to earn commissions</p>
@@ -1398,7 +1398,7 @@ export default function StudioVaultPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row">
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
               Cancel
             </Button>
@@ -1416,7 +1416,6 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
 
 
 

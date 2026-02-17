@@ -711,7 +711,7 @@ export default function EmbedBookingPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-center gap-3 pb-4">
+      <div className="flex flex-wrap items-center justify-center gap-3 pb-4">
         {STEPS.map((s, i) => {
           const Icon = stepIcons[s]
           const isCompleted = i < currentStepIndex
@@ -736,7 +736,7 @@ export default function EmbedBookingPage() {
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
         <div className="max-w-xl mx-auto px-4 pb-3">
-          <div className="flex items-center justify-center gap-3 py-2 border border-gray-200 rounded-full text-xs bg-white">
+          <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs">
             {selectedLocation && (
               <span className="flex items-center gap-1 text-gray-500">
                 <MapPin className="w-3 h-3" />
@@ -779,7 +779,7 @@ export default function EmbedBookingPage() {
                   <button
                     key={loc.id}
                     onClick={() => selectLocationAndContinue(loc)}
-                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div>
                       <p className="font-medium text-gray-900 text-sm">{loc.name}</p>
@@ -840,7 +840,7 @@ export default function EmbedBookingPage() {
               <div className="space-y-2">
                 <button
                   onClick={() => selectTeacherAndContinue(null)}
-                  className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                  className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                 >
                   <div>
                     <p className="font-medium text-gray-900 text-sm">Any Available Teacher</p>
@@ -852,7 +852,7 @@ export default function EmbedBookingPage() {
                   <button
                     key={t.id}
                     onClick={() => selectTeacherAndContinue(t)}
-                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-center justify-between text-left"
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-medium">
@@ -920,7 +920,7 @@ export default function EmbedBookingPage() {
                 {slotsLoading ? (
                   <p className="text-gray-500 text-center py-6 text-sm">Loading times...</p>
                 ) : timeSlots.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {timeSlots.map((slot) => (
                       <button
                         key={slot.id}
@@ -960,7 +960,7 @@ export default function EmbedBookingPage() {
                   <div className="space-y-2">
                     <button
                       onClick={() => setBookingType("single")}
-                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                      className={`w-full p-3 border rounded-lg transition-all flex flex-col gap-2 text-left sm:flex-row sm:items-center sm:justify-between ${
                         bookingType === "single" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
                     >
@@ -973,7 +973,7 @@ export default function EmbedBookingPage() {
 
                     <button
                       onClick={() => setBookingType("recurring")}
-                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                      className={`w-full p-3 border rounded-lg transition-all flex flex-col gap-2 text-left sm:flex-row sm:items-center sm:justify-between ${
                         bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
                     >
@@ -987,7 +987,7 @@ export default function EmbedBookingPage() {
 
                     <button
                       onClick={() => setBookingType("pack")}
-                      className={`w-full p-3 border rounded-lg transition-all flex items-center justify-between ${
+                      className={`w-full p-3 border rounded-lg transition-all flex flex-col gap-2 text-left sm:flex-row sm:items-center sm:justify-between ${
                         bookingType === "pack" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
                     >
@@ -1002,7 +1002,7 @@ export default function EmbedBookingPage() {
 
                 {bookingType === "pack" && (
                   <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-3">
                       {[5, 10, 20].map((size) => {
                         const discount = size === 5 ? 10 : size === 10 ? 20 : 25
                         return (
@@ -1019,7 +1019,7 @@ export default function EmbedBookingPage() {
                         )
                       })}
                     </div>
-                    <div className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div className="flex flex-col gap-2 p-2 bg-white rounded border sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-xs text-gray-600">Auto-renew</span>
                       <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
                     </div>
@@ -1028,17 +1028,17 @@ export default function EmbedBookingPage() {
 
                 {/* Summary */}
                 <div className="border-t pt-3 space-y-1.5 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-gray-500">Class</span>
                     <span className="text-gray-900">{selectedClass?.name}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-gray-500">When</span>
                     <span className="text-gray-900">
                       {selectedSlot && new Date(selectedSlot.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {selectedSlot && new Date(selectedSlot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                     </span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t">
+                  <div className="flex flex-col gap-1 pt-2 border-t sm:flex-row sm:items-center sm:justify-between">
                     <span className="font-medium text-gray-900">Total</span>
                     <span className="font-semibold text-violet-600">${calculatePrice().toFixed(2)}</span>
                   </div>
@@ -1054,7 +1054,7 @@ export default function EmbedBookingPage() {
                   <form onSubmit={handleAuth} className="space-y-3">
                     {authError && <div className="p-2 text-xs text-red-600 bg-red-50 rounded">{authError}</div>}
                     {authMode === "register" && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <div>
                           <Label className="text-xs">First Name</Label>
                           <Input className="h-9 text-sm" value={authForm.firstName} onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })} required />
@@ -1094,7 +1094,7 @@ export default function EmbedBookingPage() {
             ) : (
               <>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-3 flex items-center justify-between">
+                  <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs text-gray-500">Booking as</p>
                       <p className="text-sm text-violet-600">{client.email}</p>

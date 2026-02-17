@@ -519,16 +519,16 @@ export default function SocialMediaPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Social Media Marketing</h1>
           <p className="text-gray-500">Training, tools, and automation for Instagram & TikTok</p>
@@ -546,7 +546,7 @@ export default function SocialMediaPage() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0 p-1">
+        <TabsList className="app-scrollbar flex w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
           <TabsTrigger value="training" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
             Training
@@ -568,7 +568,7 @@ export default function SocialMediaPage() {
         {/* ==================== TRAINING TAB ==================== */}
         <TabsContent value="training" className="space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-pink-500 to-rose-500 text-white">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -629,7 +629,7 @@ export default function SocialMediaPage() {
                   <Lightbulb className="h-5 w-5 text-amber-500" />
                   <h3 className="font-semibold text-gray-900">This Week&apos;s Content Ideas</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {contentIdeas.slice(0, 3).map(idea => (
                     <div key={idea.id} className="p-4 bg-amber-50 rounded-lg">
                       <Badge className="mb-2 bg-amber-100 text-amber-700">{idea.category}</Badge>
@@ -739,7 +739,7 @@ export default function SocialMediaPage() {
                   <Flame className="h-5 w-5 text-white" />
                   <h3 className="font-semibold text-white">🔥 Trending Now</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   {featuredContent.slice(0, 5).map(content => (
                     <a
                       key={content.id}
@@ -781,7 +781,7 @@ export default function SocialMediaPage() {
             <CardContent className="p-4">
               <div className="flex flex-wrap items-center gap-4">
                 {/* Search */}
-                <div className="flex-1 min-w-[200px] relative">
+                <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search hashtags, creators..."
@@ -796,7 +796,7 @@ export default function SocialMediaPage() {
                   value={trendingFilters.platform || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, platform: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full sm:w-[140px]">
                     <SelectValue placeholder="Platform" />
                   </SelectTrigger>
                   <SelectContent>
@@ -811,7 +811,7 @@ export default function SocialMediaPage() {
                   value={trendingFilters.category || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, category: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -827,7 +827,7 @@ export default function SocialMediaPage() {
                   value={trendingFilters.contentStyle || "all"}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, contentStyle: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Style" />
                   </SelectTrigger>
                   <SelectContent>
@@ -843,7 +843,7 @@ export default function SocialMediaPage() {
                   value={trendingFilters.timeframe}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, timeframe: value })}
                 >
-                  <SelectTrigger className="w-[130px]">
+                  <SelectTrigger className="w-full sm:w-[130px]">
                     <SelectValue placeholder="Timeframe" />
                   </SelectTrigger>
                   <SelectContent>
@@ -860,7 +860,7 @@ export default function SocialMediaPage() {
                   value={trendingFilters.sortBy}
                   onValueChange={(value) => setTrendingFilters({ ...trendingFilters, sortBy: value })}
                 >
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1833,7 +1833,6 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-
 
 
 

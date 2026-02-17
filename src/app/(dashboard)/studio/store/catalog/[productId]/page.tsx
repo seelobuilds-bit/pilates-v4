@@ -229,7 +229,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -237,7 +237,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
 
   if (!product) {
     return (
-      <div className="p-8 text-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 text-center">
         <Package className="h-16 w-16 mx-auto mb-4 text-gray-200" />
         <h2 className="text-lg font-medium text-gray-900">Product not found</h2>
         <Link href="/studio/store/catalog">
@@ -251,18 +251,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href="/studio/store/catalog">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Catalog
           </Button>
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900 truncate">{product.name}</h1>
             {studioProduct && (
               <Badge className="bg-green-100 text-green-700">In Your Store</Badge>
             )}
@@ -272,7 +272,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
         <Button 
           onClick={handleSave} 
           disabled={saving}
-          className="bg-violet-600 hover:bg-violet-700"
+          className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
           size="lg"
         >
           {saving ? (
@@ -406,7 +406,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
               <h3 className="font-semibold text-gray-900 mb-3">Product Details</h3>
               <p className="text-gray-600 text-sm mb-4">{product.description}</p>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {product.materials && (
                   <div>
                     <span className="text-gray-500">Materials</span>
@@ -471,7 +471,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
               </h3>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Your Price ($)</Label>
                     <Input
@@ -523,7 +523,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
           {product.canAddLogo && (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Palette className="h-5 w-5 text-violet-600" />
                     Logo Customization
@@ -538,7 +538,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Logo URL</Label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           value={logoUrl}
                           onChange={(e) => setLogoUrl(e.target.value)}
@@ -638,7 +638,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
           {studioProduct && (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold text-gray-900">Product Status</h3>
                     <p className="text-sm text-gray-500">Show this product in your store</p>
@@ -673,7 +673,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ produc
     </div>
   )
 }
-
 
 
 

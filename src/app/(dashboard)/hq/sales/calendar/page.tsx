@@ -300,10 +300,10 @@ export default function SalesCalendarPage() {
   const monthName = currentDate.toLocaleString("default", { month: "long", year: "numeric" })
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
           <Link href="/hq/sales">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -317,7 +317,7 @@ export default function SalesCalendarPage() {
             <p className="text-gray-500 mt-1">Schedule and manage your sales activities</p>
           </div>
         </div>
-        <Button onClick={() => setShowAddEvent(true)} className="bg-violet-600 hover:bg-violet-700">
+        <Button onClick={() => setShowAddEvent(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Event
         </Button>
@@ -326,8 +326,8 @@ export default function SalesCalendarPage() {
       {/* Calendar Controls */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={prevMonth}>
                   <ChevronLeft className="h-4 w-4" />
@@ -337,10 +337,10 @@ export default function SalesCalendarPage() {
                 </Button>
               </div>
               <h2 className="text-xl font-semibold">{monthName}</h2>
-              <Button variant="ghost" size="sm" onClick={today}>Today</Button>
+              <Button variant="ghost" size="sm" onClick={today} className="w-full sm:w-auto">Today</Button>
             </div>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filter by agent" />
               </SelectTrigger>
               <SelectContent>
@@ -364,7 +364,8 @@ export default function SalesCalendarPage() {
               <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
             </div>
           ) : (
-            <div className="grid grid-cols-7">
+            <div className="overflow-x-auto">
+            <div className="grid min-w-[780px] grid-cols-7">
               {/* Header */}
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
                 <div key={day} className="p-3 text-center font-medium text-gray-600 border-b bg-gray-50">
@@ -410,6 +411,7 @@ export default function SalesCalendarPage() {
                 )
               })}
             </div>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -418,7 +420,7 @@ export default function SalesCalendarPage() {
 
       {/* Add Event Modal */}
       <Dialog open={showAddEvent} onOpenChange={setShowAddEvent}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Event</DialogTitle>
           </DialogHeader>
@@ -439,7 +441,7 @@ export default function SalesCalendarPage() {
                 onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start Time</Label>
                 <Input
@@ -505,12 +507,12 @@ export default function SalesCalendarPage() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowAddEvent(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowAddEvent(false)}>Cancel</Button>
             <Button 
               onClick={createEvent}
               disabled={saving || !newEvent.title || !newEvent.startDate}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Event
@@ -575,23 +577,25 @@ export default function SalesCalendarPage() {
               </div>
             </div>
           )}
-          <div className="flex justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <Button 
               variant="destructive" 
+              className="w-full sm:w-auto"
               onClick={() => selectedEvent && deleteEvent(selectedEvent.id)}
             >
               Delete
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               {selectedEvent?.status !== "completed" && (
                 <Button 
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => selectedEvent && updateEvent(selectedEvent.id, { status: "completed" })}
                 >
                   Mark Complete
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setSelectedEvent(null)}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedEvent(null)}>
                 Close
               </Button>
             </div>
@@ -601,7 +605,6 @@ export default function SalesCalendarPage() {
     </div>
   )
 }
-
 
 
 

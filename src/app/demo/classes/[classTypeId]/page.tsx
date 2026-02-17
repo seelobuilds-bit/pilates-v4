@@ -99,14 +99,14 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <Link href="/demo/classes" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Classes
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{classType.name}</h1>
             <p className="text-gray-500 mt-1">{formData.duration} min • ${formData.price} • {formData.capacity} spots</p>
@@ -118,7 +118,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -178,12 +178,12 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
 
       {/* Tabs */}
       <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
-          <TabsTrigger value="settings" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border-0 bg-white p-1 shadow-sm">
+          <TabsTrigger value="settings" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
           </TabsTrigger>
@@ -191,7 +191,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
-          <div className="max-w-3xl space-y-6">
+          <div className="w-full max-w-3xl space-y-6">
             {/* Basic Info */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
@@ -217,7 +217,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-2">
                       <Label htmlFor="duration">Duration (min)</Label>
                       <div className="relative">
@@ -260,7 +260,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-medium text-gray-900">Active</p>
                       <p className="text-sm text-gray-500">Allow this class to be scheduled and booked</p>
@@ -277,12 +277,12 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
             {/* Location Assignment */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-violet-500" />
                     <h2 className="text-lg font-semibold text-gray-900">Available Locations</h2>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedLocations(demoLocations.map(l => l.id))}>
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setSelectedLocations(demoLocations.map(l => l.id))}>
                     Select All
                   </Button>
                 </div>
@@ -302,7 +302,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-3 sm:items-center">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                             selectedLocations.includes(location.id) ? "bg-violet-500" : "bg-gray-100"
@@ -326,12 +326,12 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
             {/* Teacher Assignment */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-5 w-5 text-blue-500" />
                     <h2 className="text-lg font-semibold text-gray-900">Assigned Teachers</h2>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedTeachers(demoTeachers.map(t => t.id))}>
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setSelectedTeachers(demoTeachers.map(t => t.id))}>
                     Select All
                   </Button>
                 </div>
@@ -351,7 +351,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-3 sm:items-center">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                             selectedTeachers.includes(teacher.id) 
@@ -384,11 +384,11 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
             </Card>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
               <Link href="/demo/classes">
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
               </Link>
-              <Button className="bg-violet-600 hover:bg-violet-700">
+              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
@@ -408,7 +408,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                 </div>
                 <div className="space-y-3">
                   {mockClassTypeStats.topTeachers.map((teacher, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                           {teacher.name.split(' ').map(n => n[0]).join('')}
@@ -418,7 +418,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                           <p className="text-sm text-gray-500">{teacher.classes} classes</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex w-fit items-center gap-1">
                         <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                         <span className="font-medium text-gray-900">{teacher.rating}</span>
                       </div>
@@ -464,7 +464,7 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                 </div>
                 <div className="space-y-3">
                   {mockClassTypeStats.popularTimes.map((slot, i) => (
-                    <div key={i} className="flex items-center justify-between">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-medium">
                           {i + 1}
@@ -487,12 +487,12 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                 </div>
                 <div className="space-y-3">
                   {mockClassTypeStats.recentClasses.map((cls, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex flex-col gap-2 rounded-lg bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-medium text-gray-900">{cls.date}</p>
                         <p className="text-sm text-gray-500">{cls.teacher} • {cls.location}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <span className={`text-sm font-medium ${
                           cls.attendance >= cls.capacity ? "text-emerald-600" : "text-gray-900"
                         }`}>
@@ -513,18 +513,20 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
                   <TrendingUp className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Booking Trends</h3>
                 </div>
-                <div className="flex items-end justify-between h-40 gap-4">
-                  {mockClassTypeStats.monthlyBookings.map((month, i) => {
-                    const maxCount = Math.max(...mockClassTypeStats.monthlyBookings.map(m => m.count))
-                    const height = (month.count / maxCount) * 100
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{month.count}</span>
-                        <div className="w-full bg-violet-500 rounded-t" style={{ height: `${height}%` }} />
-                        <span className="text-xs text-gray-500">{month.month}</span>
-                      </div>
-                    )
-                  })}
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex h-40 min-w-[440px] items-end justify-between gap-4">
+                    {mockClassTypeStats.monthlyBookings.map((month, i) => {
+                      const maxCount = Math.max(...mockClassTypeStats.monthlyBookings.map(m => m.count))
+                      const height = (month.count / maxCount) * 100
+                      return (
+                        <div key={i} className="flex flex-1 flex-col items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{month.count}</span>
+                          <div className="w-full rounded-t bg-violet-500" style={{ height: `${height}%` }} />
+                          <span className="text-xs text-gray-500">{month.month}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -534,7 +536,6 @@ export default function DemoClassTypeDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

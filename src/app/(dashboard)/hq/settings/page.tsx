@@ -15,7 +15,7 @@ export default function HQSettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -63,14 +63,14 @@ export default function HQSettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Require 2FA for all admin users</p>
               </div>
               <Switch />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Session Timeout</p>
                 <p className="text-sm text-gray-500">Auto logout after 30 minutes of inactivity</p>
@@ -89,7 +89,7 @@ export default function HQSettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Email Notifications</p>
                 <p className="text-sm text-gray-500">Receive email alerts for new studios</p>
@@ -99,7 +99,7 @@ export default function HQSettingsPage() {
                 onCheckedChange={setEmailNotifications}
               />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Weekly Reports</p>
                 <p className="text-sm text-gray-500">Get weekly platform summary emails</p>
@@ -130,9 +130,9 @@ export default function HQSettingsPage() {
             </div>
             <div className="pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-500 mb-3">Database Actions</p>
-              <div className="flex gap-3">
-                <Button variant="outline" size="sm">Export Data</Button>
-                <Button variant="outline" size="sm">Clear Cache</Button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">Export Data</Button>
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">Clear Cache</Button>
               </div>
             </div>
           </CardContent>
@@ -140,7 +140,7 @@ export default function HQSettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button className="bg-violet-600 hover:bg-violet-700">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             Save Changes
           </Button>
         </div>

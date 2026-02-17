@@ -135,7 +135,7 @@ export default function EditLocationPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -143,7 +143,7 @@ export default function EditLocationPage({
 
   if (!location) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Location not found</h1>
           <Link href="/studio/locations" className="text-violet-600 hover:text-violet-700 mt-4 inline-block">
@@ -162,14 +162,14 @@ export default function EditLocationPage({
     safeStats.monthlyRevenue.some((month) => month.revenue > 0)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/locations" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Locations
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-violet-100 rounded-xl flex items-center justify-center">
               <MapPin className="h-7 w-7 text-violet-600" />
@@ -187,7 +187,7 @@ export default function EditLocationPage({
 
       {/* Stats Row */}
       {stats && hasLocationReportData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -248,12 +248,12 @@ export default function EditLocationPage({
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
-          <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="bg-white shadow-sm border-0 flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
           </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="settings" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <MapPin className="h-4 w-4 mr-2" />
             Settings
           </TabsTrigger>
@@ -272,7 +272,7 @@ export default function EditLocationPage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.topClasses.map((cls, i) => (
-                      <div key={i} className="flex items-center justify-between">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
                             {i + 1}
@@ -295,7 +295,7 @@ export default function EditLocationPage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.topTeachers.map((teacher, i) => (
-                      <div key={i} className="flex items-center justify-between">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                             {teacher.name.split(' ').map(n => n[0]).join('')}
@@ -349,7 +349,7 @@ export default function EditLocationPage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.recentBookings.map((booking, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={i} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-medium text-gray-900">{booking.clientName}</p>
                           <p className="text-sm text-gray-500">{booking.className}</p>
@@ -368,7 +368,7 @@ export default function EditLocationPage({
                     <DollarSign className="h-5 w-5 text-gray-400" />
                     <h3 className="font-semibold text-gray-900">Monthly Revenue</h3>
                   </div>
-                  <div className="flex items-end justify-between h-40 gap-4">
+                  <div className="flex items-end justify-between h-40 gap-2 sm:gap-4">
                     {safeStats.monthlyRevenue.map((month, i) => {
                       const maxRevenue = Math.max(...safeStats.monthlyRevenue.map(m => m.revenue))
                       const height = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0
@@ -428,7 +428,7 @@ export default function EditLocationPage({
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
                     <Input
@@ -469,7 +469,7 @@ export default function EditLocationPage({
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col gap-3 p-4 bg-gray-50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-gray-900">Active Status</p>
                     <p className="text-sm text-gray-500">Allow classes to be scheduled at this location</p>
@@ -480,13 +480,13 @@ export default function EditLocationPage({
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
                   <Link href="/studio/locations">
-                    <Button type="button" variant="outline">Cancel</Button>
+                    <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
                   </Link>
                   <Button 
                     type="submit" 
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                     disabled={saving}
                   >
                     {saving ? (
