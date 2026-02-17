@@ -39,15 +39,15 @@ export default async function HQDashboardPage() {
   })
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">HQ Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">HQ Dashboard</h1>
           <p className="text-gray-500 mt-1">Platform overview and management</p>
         </div>
-        <Link href="/hq/studios/new">
-          <Button className="bg-violet-600 hover:bg-violet-700">
+        <Link href="/hq/studios/new" className="w-full sm:w-auto">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Studio
           </Button>
@@ -55,9 +55,9 @@ export default async function HQDashboardPage() {
       </div>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Total Studios</p>
@@ -71,7 +71,7 @@ export default async function HQDashboardPage() {
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Total Clients</p>
@@ -85,7 +85,7 @@ export default async function HQDashboardPage() {
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Active Leads</p>
@@ -99,7 +99,7 @@ export default async function HQDashboardPage() {
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Total Classes</p>
@@ -116,8 +116,8 @@ export default async function HQDashboardPage() {
 
       {/* Recent Studios */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold text-gray-900">Recent Studios</h3>
             <Link href="/hq/studios" className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
               View all <ArrowRight className="h-4 w-4" />
@@ -127,8 +127,8 @@ export default async function HQDashboardPage() {
           {recentStudios.length > 0 ? (
             <div className="space-y-4">
               {recentStudios.map((studio) => (
-                <div key={studio.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-4">
+                <div key={studio.id} className="flex flex-col gap-3 rounded-xl bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-violet-600" />
                     </div>
@@ -139,7 +139,7 @@ export default async function HQDashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 sm:text-right">
                     <p>{studio._count.locations} locations</p>
                     <p>{studio._count.teachers} teachers • {studio._count.clients} clients</p>
                   </div>

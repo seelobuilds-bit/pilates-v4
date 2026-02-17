@@ -109,18 +109,18 @@ export default function SalesLeadsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-900 sm:text-3xl">
             <Target className="h-7 w-7 text-violet-600" />
             My Leads
           </h1>
@@ -129,8 +129,8 @@ export default function SalesLeadsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-md">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search leads..."
@@ -140,7 +140,7 @@ export default function SalesLeadsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -153,7 +153,7 @@ export default function SalesLeadsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Total Leads</p>
@@ -195,87 +195,88 @@ export default function SalesLeadsPage() {
               <p className="text-gray-500">No leads assigned to you</p>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Lead</th>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Contact</th>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Priority</th>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Value</th>
-                  <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Follow Up</th>
-                  <th className="p-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {leads.map(lead => (
-                  <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium">{lead.studioName}</p>
-                        {lead.city && lead.state && (
-                          <p className="text-sm text-gray-500">{lead.city}, {lead.state}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <p className="text-sm">{lead.contactName}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <a href={`mailto:${lead.contactEmail}`} className="text-gray-400 hover:text-violet-600">
-                            <Mail className="h-4 w-4" />
-                          </a>
-                          {lead.contactPhone && (
-                            <a href={`tel:${lead.contactPhone}`} className="text-gray-400 hover:text-violet-600">
-                              <Phone className="h-4 w-4" />
-                            </a>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[920px]">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Lead</th>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Contact</th>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Priority</th>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Value</th>
+                    <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Follow Up</th>
+                    <th className="p-4"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {leads.map(lead => (
+                    <tr key={lead.id} className="hover:bg-gray-50">
+                      <td className="p-4">
+                        <div>
+                          <p className="font-medium">{lead.studioName}</p>
+                          {lead.city && lead.state && (
+                            <p className="text-sm text-gray-500">{lead.city}, {lead.state}</p>
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <Badge className={`text-xs ${getStatusColor(lead.status)}`}>
-                        {lead.status.replace(/_/g, " ")}
-                      </Badge>
-                    </td>
-                    <td className="p-4">
-                      <Badge className={`text-xs ${getPriorityColor(lead.priority)}`}>
-                        {lead.priority}
-                      </Badge>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-medium">{formatCurrency(lead.estimatedValue)}</span>
-                    </td>
-                    <td className="p-4">
-                      {lead.nextFollowUpAt ? (
-                        <span className={`text-sm flex items-center gap-1 ${
-                          new Date(lead.nextFollowUpAt) < new Date() ? "text-red-600" : "text-gray-600"
-                        }`}>
-                          <Clock className="h-3 w-3" />
-                          {formatDate(lead.nextFollowUpAt)}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">Not set</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <Link href={`/sales/leads/${lead.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="p-4">
+                        <div>
+                          <p className="text-sm">{lead.contactName}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <a href={`mailto:${lead.contactEmail}`} className="text-gray-400 hover:text-violet-600">
+                              <Mail className="h-4 w-4" />
+                            </a>
+                            {lead.contactPhone && (
+                              <a href={`tel:${lead.contactPhone}`} className="text-gray-400 hover:text-violet-600">
+                                <Phone className="h-4 w-4" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <Badge className={`text-xs ${getStatusColor(lead.status)}`}>
+                          {lead.status.replace(/_/g, " ")}
+                        </Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge className={`text-xs ${getPriorityColor(lead.priority)}`}>
+                          {lead.priority}
+                        </Badge>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-medium">{formatCurrency(lead.estimatedValue)}</span>
+                      </td>
+                      <td className="p-4">
+                        {lead.nextFollowUpAt ? (
+                          <span className={`text-sm flex items-center gap-1 ${
+                            new Date(lead.nextFollowUpAt) < new Date() ? "text-red-600" : "text-gray-600"
+                          }`}>
+                            <Clock className="h-3 w-3" />
+                            {formatDate(lead.nextFollowUpAt)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">Not set</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <Link href={`/sales/leads/${lead.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
     </div>
   )
 }
-
 
 
 

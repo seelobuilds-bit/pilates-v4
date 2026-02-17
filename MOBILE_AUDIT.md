@@ -205,9 +205,24 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
   - `src/app/(dashboard)/studio/locations/[locationId]/page.tsx`
   - `src/app/(dashboard)/studio/store/catalog/page.tsx`
+- 2026-02-17 Batch Y complete:
+  - `src/app/(dashboard)/studio/locations/new/page.tsx`
+  - `src/app/(dashboard)/studio/teachers/invite/page.tsx`
+  - `src/app/(dashboard)/sales/settings/page.tsx`
+  - `src/app/(dashboard)/hq/page.tsx`
+  - `src/app/(dashboard)/sales/leads/page.tsx`
+  - `src/app/(dashboard)/teacher/clients/page.tsx`
+- 2026-02-17 Batch Z complete:
+  - `src/app/(dashboard)/hq/support/page.tsx`
+  - `src/app/(dashboard)/teacher/settings/page.tsx`
+  - `src/app/(dashboard)/sales/calendar/page.tsx`
+- 2026-02-17 Batch AA complete:
+  - `src/app/(dashboard)/hq/studios/new/page.tsx`
+  - `src/app/(dashboard)/studio/classes/new/page.tsx`
+  - `src/app/(dashboard)/studio/clients/new/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/studio/locations/new/page.tsx`
-- `src/app/(dashboard)/studio/teachers/invite/page.tsx`
-- `src/app/(dashboard)/sales/settings/page.tsx`
+- `src/app/(dashboard)/hq/studios/page.tsx`
+- `src/app/(dashboard)/studio/locations/page.tsx`
+- `src/app/(dashboard)/studio/teachers/page.tsx`

@@ -163,16 +163,16 @@ export default function TeacherClientsPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">My Clients</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">My Clients</h1>
         <p className="text-gray-500 mt-1">Students who have taken classes with you - reach out via Email or SMS</p>
       </div>
 
       {/* Search */}
       <div className="mb-6">
-        <div className="relative max-w-md">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input 
             placeholder="Search clients..." 
@@ -235,7 +235,7 @@ export default function TeacherClientsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Client List</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
@@ -243,21 +243,25 @@ export default function TeacherClientsPage() {
           ) : filteredClients.length > 0 ? (
             <div className="space-y-3">
               {filteredClients.map((client) => (
-                <div key={client.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-                  <Link href={`/teacher/clients/${client.id}`} className="flex items-center gap-4 flex-1">
+                <div key={client.id} className="group flex flex-col gap-3 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between">
+                  <Link href={`/teacher/clients/${client.id}`} className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                     <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center text-sm font-medium text-violet-700">
                       {client.firstName[0]}{client.lastName[0]}
                     </div>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-900 group-hover:text-violet-600 transition-colors">
                         {client.firstName} {client.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">{client.email}</p>
+                      <p className="truncate text-sm text-gray-500">{client.email}</p>
                       {client.phone && (
                         <p className="text-xs text-gray-400">{client.phone}</p>
                       )}
+                      <p className="mt-1 text-xs text-gray-500 sm:hidden">
+                        {client.bookingsCount} classes
+                        {client.lastBooking ? ` • Last: ${new Date(client.lastBooking).toLocaleDateString()}` : ""}
+                      </p>
                     </div>
-                    <div className="text-right mr-4">
+                    <div className="mr-2 hidden text-right sm:block">
                       <p className="font-medium text-gray-900">{client.bookingsCount} classes</p>
                       {client.lastBooking && (
                         <p className="text-sm text-gray-500">
@@ -265,9 +269,9 @@ export default function TeacherClientsPage() {
                         </p>
                       )}
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
+                    <ChevronRight className="hidden h-5 w-5 text-gray-400 transition-colors group-hover:text-violet-600 sm:block" />
                   </Link>
-                  <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                  <div className="flex items-center gap-2 border-t pt-3 sm:ml-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                     {/* Quick Communication Buttons */}
                     <Button
                       size="sm"
@@ -303,7 +307,7 @@ export default function TeacherClientsPage() {
 
       {/* Email Modal */}
       <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-emerald-600" />
@@ -345,12 +349,12 @@ export default function TeacherClientsPage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setShowEmailModal(false)} className="w-full sm:w-auto">Cancel</Button>
             <Button 
               onClick={sendEmail}
               disabled={sending || !emailSubject || !emailBody}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 sm:w-auto"
             >
               {sending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -365,7 +369,7 @@ export default function TeacherClientsPage() {
 
       {/* SMS Modal */}
       <Dialog open={showSmsModal} onOpenChange={setShowSmsModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -378,7 +382,7 @@ export default function TeacherClientsPage() {
               <Input value={selectedClient?.phone || ""} disabled className="bg-gray-50" />
             </div>
             <div>
-              <Label>Message * <span className="text-gray-400 text-xs">({smsMessage.length}/160 characters)</span></Label>
+              <Label>Message * <span className="text-xs text-gray-400">({smsMessage.length}/160 characters)</span></Label>
               <Textarea
                 value={smsMessage}
                 onChange={(e) => setSmsMessage(e.target.value)}
@@ -400,12 +404,12 @@ export default function TeacherClientsPage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowSmsModal(false)}>Cancel</Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setShowSmsModal(false)} className="w-full sm:w-auto">Cancel</Button>
             <Button 
               onClick={sendSms}
               disabled={sending || !smsMessage}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
             >
               {sending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -420,7 +424,6 @@ export default function TeacherClientsPage() {
     </div>
   )
 }
-
 
 
 

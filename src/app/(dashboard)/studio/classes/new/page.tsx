@@ -53,19 +53,19 @@ export default function NewClassTypePage() {
   }
 
   return (
-    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:px-8 lg:py-8">
       {/* Header */}
-      <div className="mb-8">
-        <Link href="/studio/classes" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
+      <div className="mb-6 sm:mb-8">
+        <Link href="/studio/classes" className="mb-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900">
           <ArrowLeft className="h-4 w-4" />
           Back to Classes
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Add Class Type</h1>
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Add Class Type</h1>
         <p className="text-gray-500 mt-1">Create a new class type for your studio</p>
       </div>
 
       <Card className="border-0 shadow-sm max-w-xl">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div className="space-y-2">
@@ -92,7 +92,7 @@ export default function NewClassTypePage() {
             </div>
 
             {/* Duration, Capacity, Price */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (min)</Label>
                 <div className="relative">
@@ -142,13 +142,13 @@ export default function NewClassTypePage() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Link href="/studio/classes">
-                <Button type="button" variant="outline">Cancel</Button>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end sm:pt-4">
+              <Link href="/studio/classes" className="w-full sm:w-auto">
+                <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
               </Link>
               <Button 
                 type="submit" 
-                className="bg-violet-600 hover:bg-violet-700"
+                className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                 disabled={loading}
               >
                 {loading ? "Creating..." : "Create Class Type"}

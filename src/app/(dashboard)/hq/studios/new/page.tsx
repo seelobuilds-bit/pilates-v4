@@ -47,14 +47,14 @@ export default function NewStudioPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Create New Studio</h1>
+    <div className="mx-auto w-full max-w-2xl px-3 py-4 sm:px-4 sm:py-5 lg:px-8 lg:py-8">
+      <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-3xl">Create New Studio</h1>
 
       <Card>
         <CardHeader>
           <CardTitle>Studio Details</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
@@ -64,7 +64,7 @@ export default function NewStudioPage() {
 
             <div className="space-y-4">
               <h3 className="font-medium">Studio Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Studio Name</Label>
                   <Input id="name" name="name" required />
@@ -78,7 +78,7 @@ export default function NewStudioPage() {
 
             <div className="space-y-4">
               <h3 className="font-medium">Owner Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="ownerFirstName">First Name</Label>
                   <Input id="ownerFirstName" name="ownerFirstName" required />
@@ -97,11 +97,11 @@ export default function NewStudioPage() {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? "Creating..." : "Create Studio"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button type="button" variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
                 Cancel
               </Button>
             </div>
@@ -111,6 +111,5 @@ export default function NewStudioPage() {
     </div>
   )
 }
-
 
 
