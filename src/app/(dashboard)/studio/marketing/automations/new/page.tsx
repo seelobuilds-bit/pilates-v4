@@ -1,9 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, Loader2, Mail, MessageSquare, Plus, Trash2, Zap } from "lucide-react"
+import {
+  ArrowLeft,
+  Bell,
+  CalendarClock,
+  Gift,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Plus,
+  Trash2,
+  UserPlus,
+  UserX,
+  Zap,
+} from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,22 +24,80 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import {
+  DELAY_UNIT_OPTIONS,
+  DelayUnit,
+  formatDelayLabel,
+  splitDelayMinutes,
+  toDelayMinutes,
+} from "@/lib/automation-delay"
 
 const TRIGGERS = [
-  { value: "WELCOME", label: "Client Signs Up" },
-  { value: "BOOKING_CONFIRMED", label: "Booking Confirmed" },
-  { value: "BOOKING_CANCELLED", label: "Booking Cancelled" },
-  { value: "CLASS_REMINDER", label: "Class Reminder" },
-  { value: "CLASS_FOLLOWUP", label: "Class Follow-up" },
-  { value: "CLIENT_INACTIVE", label: "Client Inactive" },
-  { value: "BIRTHDAY", label: "Birthday" },
-  { value: "MEMBERSHIP_EXPIRING", label: "Membership Expiring" },
+  {
+    value: "WELCOME",
+    label: "Client Signs Up",
+    description: "Start onboarding when a new client joins",
+    icon: UserPlus,
+    badgeClass: "bg-violet-100 text-violet-700",
+  },
+  {
+    value: "BOOKING_CONFIRMED",
+    label: "Booking Confirmed",
+    description: "Send sequence after a booking is made",
+    icon: CalendarClock,
+    badgeClass: "bg-blue-100 text-blue-700",
+  },
+  {
+    value: "BOOKING_CANCELLED",
+    label: "Booking Cancelled",
+    description: "Recover cancelled bookings with follow-ups",
+    icon: UserX,
+    badgeClass: "bg-rose-100 text-rose-700",
+  },
+  {
+    value: "CLASS_REMINDER",
+    label: "Class Reminder",
+    description: "Remind clients before upcoming classes",
+    icon: Bell,
+    badgeClass: "bg-amber-100 text-amber-700",
+  },
+  {
+    value: "CLASS_FOLLOWUP",
+    label: "Class Follow-up",
+    description: "Send message after class completion",
+    icon: MessageSquare,
+    badgeClass: "bg-teal-100 text-teal-700",
+  },
+  {
+    value: "CLIENT_INACTIVE",
+    label: "Client Inactive",
+    description: "Win-back clients inactive for X days",
+    icon: Zap,
+    badgeClass: "bg-orange-100 text-orange-700",
+  },
+  {
+    value: "BIRTHDAY",
+    label: "Birthday",
+    description: "Celebrate clients on their birthday",
+    icon: Gift,
+    badgeClass: "bg-pink-100 text-pink-700",
+  },
+  {
+    value: "MEMBERSHIP_EXPIRING",
+    label: "Membership Expiring",
+    description: "Nudge renewals before plan expiry",
+    icon: CalendarClock,
+    badgeClass: "bg-indigo-100 text-indigo-700",
+  },
 ] as const
+
+type TriggerValue = (typeof TRIGGERS)[number]["value"]
 
 type StepForm = {
   id: string
   channel: "EMAIL" | "SMS"
-  delayMinutes: number
+  delayValue: number
+  delayUnit: DelayUnit
   subject: string
   body: string
 }
@@ -38,10 +109,13 @@ type Location = {
 }
 
 function makeStep(index: number): StepForm {
+  const seedDelay = index === 0 ? 0 : index * 24 * 60
+  const initialDelay = splitDelayMinutes(seedDelay)
   return {
     id: `step-${index + 1}`,
     channel: index % 2 === 0 ? "EMAIL" : "SMS",
-    delayMinutes: index === 0 ? 0 : index * 24 * 60,
+    delayValue: initialDelay.value,
+    delayUnit: initialDelay.unit,
     subject: index === 0 ? "Welcome to {{studioName}}" : "",
     body: "",
   }
@@ -49,8 +123,10 @@ function makeStep(index: number): StepForm {
 
 export default function NewAutomationPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [name, setName] = useState("")
-  const [trigger, setTrigger] = useState<(typeof TRIGGERS)[number]["value"]>("WELCOME")
+  const [trigger, setTrigger] = useState<TriggerValue>("WELCOME")
   const [triggerDays, setTriggerDays] = useState(30)
   const [reminderHours, setReminderHours] = useState(24)
   const [stopOnBooking, setStopOnBooking] = useState(true)
@@ -60,10 +136,25 @@ export default function NewAutomationPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const selectedTrigger = useMemo(
+    () => TRIGGERS.find((item) => item.value === trigger) ?? TRIGGERS[0],
+    [trigger]
+  )
+
   const locationOptions = useMemo(
     () => [{ id: "all", name: "All locations" }, ...locations.filter((loc) => loc.isActive !== false)],
     [locations]
   )
+
+  useEffect(() => {
+    const triggerFromQuery = searchParams.get("trigger")
+    if (!triggerFromQuery) return
+
+    const matched = TRIGGERS.find((item) => item.value === triggerFromQuery)
+    if (!matched) return
+
+    setTrigger(matched.value)
+  }, [searchParams])
 
   useEffect(() => {
     async function fetchLocations() {
@@ -101,6 +192,7 @@ export default function NewAutomationPage() {
     steps.every((step) => {
       if (!step.body.trim()) return false
       if (step.channel === "EMAIL" && !step.subject.trim()) return false
+      if (step.delayValue < 0) return false
       return true
     })
 
@@ -128,7 +220,7 @@ export default function NewAutomationPage() {
           subject: step.channel === "EMAIL" ? step.subject.trim() : null,
           body: step.body,
           htmlBody: null,
-          delayMinutes: Math.max(0, Math.floor(step.delayMinutes || 0)),
+          delayMinutes: toDelayMinutes(step.delayValue, step.delayUnit),
         })),
       }
 
@@ -161,14 +253,29 @@ export default function NewAutomationPage() {
           Back to Marketing
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Create Automation Chain</h1>
-        <p className="mt-1 text-gray-500">Build multi-step email/SMS follow-ups from one trigger.</p>
+        <p className="mt-1 text-gray-500">Build multi-step email and SMS sequences from one trigger.</p>
       </div>
 
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-5xl space-y-6">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Step 1</p>
+            <p className="text-sm font-medium text-violet-900">Choose Trigger</p>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Step 2</p>
+            <p className="text-sm font-medium text-blue-900">Build Sequence</p>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Step 3</p>
+            <p className="text-sm font-medium text-emerald-900">Activate</p>
+          </div>
+        </div>
+
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-violet-600" />
+              <selectedTrigger.icon className="h-5 w-5 text-violet-600" />
               <h2 className="text-lg font-semibold text-gray-900">Trigger & Rules</h2>
             </div>
 
@@ -178,27 +285,43 @@ export default function NewAutomationPage() {
                 id="automation-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. New Lead Nurture (7 days)"
+                placeholder="e.g. New Client Onboarding"
+                className="text-base"
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Trigger</Label>
-                <Select value={trigger} onValueChange={(value) => setTrigger(value as (typeof TRIGGERS)[number]["value"])}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select trigger" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TRIGGERS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-3">
+              <Label>Trigger</Label>
+              <div className="grid gap-3 md:grid-cols-2">
+                {TRIGGERS.map((item) => {
+                  const Icon = item.icon
+                  const isActive = trigger === item.value
 
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setTrigger(item.value)}
+                      className={`rounded-xl border p-4 text-left transition-all ${
+                        isActive
+                          ? "border-violet-400 bg-violet-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-violet-300 hover:bg-violet-50/40"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${item.badgeClass}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-900">{item.label}</p>
+                      <p className="mt-1 text-xs text-gray-500">{item.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Select value={locationId} onValueChange={setLocationId}>
@@ -217,7 +340,7 @@ export default function NewAutomationPage() {
             </div>
 
             {(trigger === "CLIENT_INACTIVE" || trigger === "MEMBERSHIP_EXPIRING") && (
-              <div className="space-y-2">
+              <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <Label>{trigger === "CLIENT_INACTIVE" ? "Inactive days" : "Days before expiry"}</Label>
                 <Input
                   type="number"
@@ -225,13 +348,13 @@ export default function NewAutomationPage() {
                   onChange={(e) => setTriggerDays(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={365}
-                  className="max-w-[220px]"
+                  className="max-w-[220px] bg-white"
                 />
               </div>
             )}
 
             {trigger === "CLASS_REMINDER" && (
-              <div className="space-y-2">
+              <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <Label>Hours before class</Label>
                 <Input
                   type="number"
@@ -239,15 +362,15 @@ export default function NewAutomationPage() {
                   onChange={(e) => setReminderHours(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={168}
-                  className="max-w-[220px]"
+                  className="max-w-[220px] bg-white"
                 />
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">Stop chain if client books</p>
-                <p className="text-xs text-gray-500">Recommended for nurture and reactivation sequences.</p>
+                <p className="text-sm font-medium text-emerald-900">Stop chain if client books</p>
+                <p className="text-xs text-emerald-700">Recommended for nurture and reactivation sequences.</p>
               </div>
               <Switch checked={stopOnBooking} onCheckedChange={setStopOnBooking} />
             </div>
@@ -257,7 +380,7 @@ export default function NewAutomationPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Chain Steps</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Sequence Steps</h2>
               <Button type="button" variant="outline" onClick={addStep}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Step
@@ -281,8 +404,8 @@ export default function NewAutomationPage() {
                     </Button>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
+                  <div className="grid gap-4 md:grid-cols-5">
+                    <div className="space-y-2 md:col-span-2">
                       <Label>Channel</Label>
                       <Select value={step.channel} onValueChange={(value) => updateStep(step.id, { channel: value as "EMAIL" | "SMS" })}>
                         <SelectTrigger>
@@ -305,16 +428,35 @@ export default function NewAutomationPage() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Send after trigger (minutes)</Label>
-                      <Input
-                        type="number"
-                        value={step.delayMinutes}
-                        min={0}
-                        onChange={(e) => updateStep(step.id, { delayMinutes: Math.max(0, Number(e.target.value || 0)) })}
-                      />
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Send after trigger</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          value={step.delayValue}
+                          min={0}
+                          onChange={(e) => updateStep(step.id, { delayValue: Math.max(0, Number(e.target.value || 0)) })}
+                        />
+                        <Select
+                          value={step.delayUnit}
+                          onValueChange={(value) => updateStep(step.id, { delayUnit: value as DelayUnit })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DELAY_UNIT_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option[0].toUpperCase() + option.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
+
+                  <p className="mt-2 text-xs text-gray-500">This step sends {formatDelayLabel(step.delayValue, step.delayUnit)} after trigger.</p>
 
                   {step.channel === "EMAIL" && (
                     <div className="mt-4 space-y-2">

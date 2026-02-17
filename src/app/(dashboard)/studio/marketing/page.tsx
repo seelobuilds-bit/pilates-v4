@@ -388,9 +388,9 @@ export default function MarketingPage() {
                 </Link>
               </div>
 
-              {automations.length > 0 ? (
-                <div className="space-y-3">
-                  {automations.map((automation) => {
+              <div className="space-y-3">
+                {automations.length > 0 ? (
+                  automations.map((automation) => {
                     const Icon = getTriggerIcon(automation.trigger)
                     return (
                       <div 
@@ -449,59 +449,61 @@ export default function MarketingPage() {
                         </div>
                       </div>
                     )
-                  })}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="text-center py-8 bg-gray-50 rounded-xl mb-6">
+                  })
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-xl mb-3">
                     <AlertCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                     <p className="text-gray-500">No automations set up yet</p>
                     <p className="text-sm text-gray-400">Create your first automation to get started</p>
                   </div>
-                  
+                )}
+
+                <div className="mt-6 pt-6 border-t border-gray-100">
                   <p className="text-sm font-medium text-gray-500 mb-3">Suggested Automations:</p>
-                  {defaultAutomationTemplates.map((template, idx) => {
-                    const Icon = template.icon
-                    return (
-                      <Link
-                        key={idx}
-                        href={`/studio/marketing/automations/new?trigger=${template.trigger}`}
-                        className="flex items-center justify-between p-4 border border-dashed border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-colors group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-lg ${template.iconBg} flex items-center justify-center`}>
-                            <Icon className="h-5 w-5 text-gray-600" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900">{template.title}</p>
-                              <div className="flex gap-1">
-                                {template.emailEnabled && (
-                                  <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 border-0">
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    Email
-                                  </Badge>
-                                )}
-                                {template.smsEnabled && (
-                                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-0">
-                                    <MessageSquare className="h-3 w-3 mr-1" />
-                                    SMS
-                                  </Badge>
-                                )}
-                              </div>
+                  <div className="space-y-3">
+                    {defaultAutomationTemplates.map((template, idx) => {
+                      const Icon = template.icon
+                      return (
+                        <Link
+                          key={idx}
+                          href={`/studio/marketing/automations/new?trigger=${template.trigger}`}
+                          className="flex items-center justify-between p-4 border border-dashed border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/50 transition-colors group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-lg ${template.iconBg} flex items-center justify-center`}>
+                              <Icon className="h-5 w-5 text-gray-600" />
                             </div>
-                            <p className="text-sm text-gray-500">{template.description}</p>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-gray-900">{template.title}</p>
+                                <div className="flex gap-1">
+                                  {template.emailEnabled && (
+                                    <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 border-0">
+                                      <Mail className="h-3 w-3 mr-1" />
+                                      Email
+                                    </Badge>
+                                  )}
+                                  {template.smsEnabled && (
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-0">
+                                      <MessageSquare className="h-3 w-3 mr-1" />
+                                      SMS
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-500">{template.description}</p>
+                            </div>
                           </div>
-                        </div>
-                        <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Set Up
-                        </Button>
-                      </Link>
-                    )
-                  })}
+                          <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Set Up
+                          </Button>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

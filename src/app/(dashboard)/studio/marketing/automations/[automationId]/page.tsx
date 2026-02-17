@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { use, useEffect, useMemo, useState } from "react"
-import { ArrowLeft, Loader2, Mail, MessageSquare } from "lucide-react"
+import { ArrowLeft, Loader2, Mail, MessageSquare, Settings2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,11 +11,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import {
+  DELAY_UNIT_OPTIONS,
+  DelayUnit,
+  formatDelayLabel,
+  splitDelayMinutes,
+  toDelayMinutes,
+} from "@/lib/automation-delay"
 
 type StepForm = {
-  id: string
   channel: "EMAIL" | "SMS"
-  delayMinutes: number
+  delayValue: number
+  delayUnit: DelayUnit
   subject: string
   body: string
 }
@@ -54,6 +61,7 @@ type AutomationResponse = {
     body: string
     delayMinutes: number
   }>
+  triggerDelay?: number
 }
 
 const TRIGGERS = [
@@ -67,11 +75,11 @@ const TRIGGERS = [
   { value: "MEMBERSHIP_EXPIRING", label: "Membership Expiring" },
 ] as const
 
-function makeStep(index: number): StepForm {
+function getDefaultStep(): StepForm {
   return {
-    id: `step-${index + 1}`,
-    channel: index % 2 === 0 ? "EMAIL" : "SMS",
-    delayMinutes: index === 0 ? 0 : index * 24 * 60,
+    channel: "EMAIL",
+    delayValue: 0,
+    delayUnit: "minutes",
     subject: "",
     body: "",
   }
@@ -92,7 +100,7 @@ export default function AutomationConfigPage({
   const [reminderHours, setReminderHours] = useState(24)
   const [stopOnBooking, setStopOnBooking] = useState(true)
   const [locationId, setLocationId] = useState<string>("all")
-  const [steps, setSteps] = useState<StepForm[]>([makeStep(0)])
+  const [step, setStep] = useState<StepForm>(getDefaultStep())
   const [locations, setLocations] = useState<Location[]>([])
 
   const [loading, setLoading] = useState(true)
@@ -129,28 +137,24 @@ export default function AutomationConfigPage({
         setStopOnBooking(Boolean(automation.stopOnBooking))
         setLocationId(automation.locationId ?? "all")
 
-        const normalizedSteps =
+        const primaryStep =
           Array.isArray(automation.steps) && automation.steps.length > 0
-            ? automation.steps
-                .sort((a, b) => a.order - b.order)
-                .map((step, index) => ({
-                  id: step.id || `step-${index + 1}`,
-                  channel: step.channel,
-                  delayMinutes: Number(step.delayMinutes || 0),
-                  subject: step.subject || "",
-                  body: step.body || "",
-                }))
-            : [
-                {
-                  id: "step-1",
-                  channel: automation.channel,
-                  delayMinutes: 0,
-                  subject: automation.subject || "",
-                  body: automation.body || "",
-                },
-              ]
+            ? [...automation.steps].sort((a, b) => a.order - b.order)[0]
+            : {
+                channel: automation.channel,
+                subject: automation.subject,
+                body: automation.body,
+                delayMinutes: Number(automation.triggerDelay || 0),
+              }
 
-        setSteps([normalizedSteps[0] || makeStep(0)])
+        const splitDelay = splitDelayMinutes(Number(primaryStep.delayMinutes || 0))
+        setStep({
+          channel: primaryStep.channel,
+          delayValue: splitDelay.value,
+          delayUnit: splitDelay.unit,
+          subject: primaryStep.subject || "",
+          body: primaryStep.body || "",
+        })
 
         if (locationsRes.ok) {
           const data = await locationsRes.json()
@@ -167,18 +171,7 @@ export default function AutomationConfigPage({
     load()
   }, [automationId])
 
-  const updateStep = (stepId: string, patch: Partial<StepForm>) => {
-    setSteps((prev) => prev.map((step) => (step.id === stepId ? { ...step, ...patch } : step)))
-  }
-
-  const canSave =
-    name.trim().length > 0 &&
-    steps.length > 0 &&
-    steps.every((step) => {
-      if (!step.body.trim()) return false
-      if (step.channel === "EMAIL" && !step.subject.trim()) return false
-      return true
-    })
+  const canSave = name.trim().length > 0 && step.body.trim().length > 0 && (step.channel !== "EMAIL" || step.subject.trim().length > 0)
 
   const buildPayload = () => ({
     name: name.trim(),
@@ -192,11 +185,11 @@ export default function AutomationConfigPage({
       {
         id: "step-1",
         order: 0,
-        channel: steps[0].channel,
-        subject: steps[0].channel === "EMAIL" ? steps[0].subject.trim() : null,
-        body: steps[0].body,
+        channel: step.channel,
+        subject: step.channel === "EMAIL" ? step.subject.trim() : null,
+        body: step.body,
         htmlBody: null,
-        delayMinutes: Math.max(0, Math.floor(steps[0].delayMinutes || 0)),
+        delayMinutes: toDelayMinutes(step.delayValue, step.delayUnit),
       },
     ],
   })
@@ -270,13 +263,18 @@ export default function AutomationConfigPage({
           <ArrowLeft className="h-4 w-4" />
           Back to Marketing
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Automation Chain</h1>
-        <p className="mt-1 text-gray-500">Update triggers, chain steps, and stop rules.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Automation</h1>
+        <p className="mt-1 text-gray-500">Update trigger rules, timing, and message content.</p>
       </div>
 
       <div className="max-w-4xl space-y-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-violet-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Automation Settings</h2>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="automation-name">Automation Name</Label>
               <Input id="automation-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -359,10 +357,10 @@ export default function AutomationConfigPage({
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">Stop chain if client books</p>
-                <p className="text-xs text-gray-500">When enabled, future steps stop after a qualifying booking.</p>
+                <p className="text-sm font-medium text-emerald-900">Stop chain if client books</p>
+                <p className="text-xs text-emerald-700">When enabled, this step pauses after qualifying bookings.</p>
               </div>
               <Switch checked={stopOnBooking} onCheckedChange={setStopOnBooking} />
             </div>
@@ -371,63 +369,72 @@ export default function AutomationConfigPage({
 
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Automation Step</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Message Step</h2>
 
-            <div className="space-y-4">
-              {steps.map((step, index) => (
-                <div key={step.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-900">Step {index + 1}</p>
-                  </div>
+            <div className="grid gap-4 md:grid-cols-5">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Channel</Label>
+                <Select value={step.channel} onValueChange={(value) => setStep((prev) => ({ ...prev, channel: value as "EMAIL" | "SMS" }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EMAIL">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        Email
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="SMS">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        SMS
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label>Channel</Label>
-                      <Select value={step.channel} onValueChange={(value) => updateStep(step.id, { channel: value as "EMAIL" | "SMS" })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="EMAIL">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4" />
-                              Email
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="SMS">
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="h-4 w-4" />
-                              SMS
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Send after trigger (minutes)</Label>
-                      <Input
-                        type="number"
-                        value={step.delayMinutes}
-                        min={0}
-                        onChange={(e) => updateStep(step.id, { delayMinutes: Math.max(0, Number(e.target.value || 0)) })}
-                      />
-                    </div>
-                  </div>
-
-                  {step.channel === "EMAIL" && (
-                    <div className="mt-4 space-y-2">
-                      <Label>Subject</Label>
-                      <Input value={step.subject} onChange={(e) => updateStep(step.id, { subject: e.target.value })} />
-                    </div>
-                  )}
-
-                  <div className="mt-4 space-y-2">
-                    <Label>Message</Label>
-                    <Textarea rows={5} value={step.body} onChange={(e) => updateStep(step.id, { body: e.target.value })} />
-                  </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Send after trigger</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    value={step.delayValue}
+                    min={0}
+                    onChange={(e) => setStep((prev) => ({ ...prev, delayValue: Math.max(0, Number(e.target.value || 0)) }))}
+                  />
+                  <Select
+                    value={step.delayUnit}
+                    onValueChange={(value) => setStep((prev) => ({ ...prev, delayUnit: value as DelayUnit }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DELAY_UNIT_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option[0].toUpperCase() + option.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500">This step sends {formatDelayLabel(step.delayValue, step.delayUnit)} after trigger.</p>
+
+            {step.channel === "EMAIL" && (
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input value={step.subject} onChange={(e) => setStep((prev) => ({ ...prev, subject: e.target.value }))} />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea rows={6} value={step.body} onChange={(e) => setStep((prev) => ({ ...prev, body: e.target.value }))} />
             </div>
           </CardContent>
         </Card>
