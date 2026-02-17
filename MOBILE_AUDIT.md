@@ -153,9 +153,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/demo/settings/page.tsx`
   - `src/app/demo/inbox/page.tsx`
   - `src/app/demo/community/page.tsx`
+- 2026-02-17 Batch L complete:
+  - `src/app/demo/payments/page.tsx`
+  - `src/app/demo/clients/[clientId]/page.tsx`
+  - `src/app/demo/teachers/[teacherId]/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/demo/payments/page.tsx`
-- `src/app/demo/clients/[clientId]/page.tsx`
-- `src/app/demo/teachers/[teacherId]/page.tsx`
+- `src/app/demo/invoices/page.tsx`
+- `src/app/demo/locations/[locationId]/page.tsx`
+- `src/app/demo/schedule/[classId]/page.tsx`

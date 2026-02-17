@@ -117,23 +117,23 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/demo/teachers" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Teachers
         </Link>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-xl font-semibold text-violet-700">
               {teacher.user.firstName[0]}{teacher.user.lastName[0]}
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">
                 {teacher.user.firstName} {teacher.user.lastName}
               </h1>
-              <p className="text-gray-500 flex items-center gap-1">
+              <p className="text-gray-500 flex items-center gap-1 truncate">
                 <Mail className="h-4 w-4" />
                 {teacher.user.email}
               </p>
@@ -146,7 +146,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -206,7 +206,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
@@ -231,7 +231,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                   <Award className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Performance Metrics</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-emerald-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-emerald-600">{mockExtendedStats.retentionRate}%</p>
                     <p className="text-sm text-emerald-700">Client Retention</p>
@@ -291,14 +291,14 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                     const total = mockExtendedStats.locationBreakdown.reduce((a, l) => a + l.count, 0)
                     const pct = Math.round((loc.count / total) * 100)
                     return (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                             <MapPin className="h-4 w-4 text-blue-600" />
                           </div>
-                          <span className="font-medium text-gray-900">{loc.name}</span>
+                          <span className="font-medium text-gray-900 truncate">{loc.name}</span>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="font-bold text-gray-900">{loc.count}</p>
                           <p className="text-xs text-gray-500">{pct}%</p>
                         </div>
@@ -318,12 +318,12 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                 </div>
                 <div className="space-y-3">
                   {mockExtendedStats.topClients.map((client, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
                           {i + 1}
                         </span>
-                        <span className="font-medium text-gray-900">{client.name}</span>
+                        <span className="font-medium text-gray-900 truncate">{client.name}</span>
                       </div>
                       <span className="text-gray-500">{client.bookings} bookings</span>
                     </div>
@@ -342,8 +342,8 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                 <div className="space-y-4">
                   {mockExtendedStats.recentReviews.map((review, i) => (
                     <div key={i} className="p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span className="font-medium text-gray-900">{review.clientName}</span>
                           <div className="flex items-center gap-0.5">
                             {[...Array(5)].map((_, j) => (
@@ -367,7 +367,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                   <TrendingUp className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Classes Over Time</h3>
                 </div>
-                <div className="flex items-end justify-between h-32 gap-4">
+                <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
                   {mockExtendedStats.monthlyClasses.map((month, i) => {
                     const maxCount = Math.max(...mockExtendedStats.monthlyClasses.map(m => m.count))
                     const height = (month.count / maxCount) * 100
@@ -388,7 +388,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
         {/* Schedule Tab */}
         <TabsContent value="schedule" className="space-y-6">
           {/* Schedule Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{teacherClasses.length}</p>
@@ -426,7 +426,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
           {/* Weekly Calendar View */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{teacher.user.firstName}&apos;s Weekly Schedule</h2>
                   <p className="text-sm text-gray-500">
@@ -434,7 +434,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                   </p>
                 </div>
                 <Link href={`/demo/schedule`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Calendar className="h-4 w-4 mr-2" />
                     View Full Schedule
                   </Button>
@@ -442,7 +442,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
               </div>
 
               {/* Week Navigation */}
-              <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                 <Button variant="ghost" size="sm" onClick={() => setScheduleWeekOffset(prev => prev - 1)}>
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
@@ -463,7 +463,33 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
               <p className="text-center text-sm font-medium text-gray-700 mb-4">{formatDateRange()}</p>
 
               {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-3">
+              <div className="space-y-3 md:hidden">
+                {weekDates.map((date, dayIndex) => (
+                  <div key={dayIndex} className="rounded-xl border bg-white p-3 space-y-2">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {dayNames[dayIndex]} {date.getDate()}
+                    </p>
+                    {classesByDay[dayIndex].length > 0 ? (
+                      <div className="space-y-2">
+                        {classesByDay[dayIndex].map((cls) => (
+                          <Link key={cls.id} href={`/demo/schedule/${cls.id}`}>
+                            <div className="p-2 bg-violet-50 rounded-lg border-l-4 border-l-violet-500 hover:bg-violet-100 transition-colors">
+                              <p className="font-medium text-xs text-gray-900 truncate">{cls.classType.name}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">No classes</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:grid grid-cols-7 gap-3">
                 {/* Day Headers */}
                 {weekDates.map((date, i) => {
                   const isToday = new Date().toDateString() === date.toDateString()
@@ -517,13 +543,13 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
         <TabsContent value="profile">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Profile Details</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <Link href="/demo/teachers">
-                    <Button variant="outline" size="sm">Cancel</Button>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">Cancel</Button>
                   </Link>
-                  <Button size="sm" className="bg-violet-600 hover:bg-violet-700">
+                  <Button size="sm" className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
                     <Save className="h-4 w-4 mr-2" />
                     Save
                   </Button>
@@ -566,7 +592,7 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
                   <p className="text-xs text-gray-500">Separate multiple specialties with commas</p>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">Active Status</p>
                     <p className="text-sm text-gray-500">Allow this teacher to be assigned to classes</p>
@@ -581,7 +607,6 @@ export default function DemoTeacherDetailPage({ params }: { params: Promise<{ te
     </div>
   )
 }
-
 
 
 

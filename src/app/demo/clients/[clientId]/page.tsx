@@ -114,15 +114,15 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
   const client = demoClients.find(c => c.id === clientId) || demoClients[0]
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/demo/clients" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Clients
         </Link>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-xl font-semibold text-violet-700">
               {client.firstName[0]}{client.lastName[0]}
             </div>
@@ -133,12 +133,12 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
               <p className="text-gray-500">Client since {new Date(client.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Badge className={client.isActive ? "bg-emerald-100 text-emerald-700 border-0" : "bg-gray-100 text-gray-700 border-0"}>
               {client.isActive ? "Active" : "Inactive"}
             </Badge>
             <Link href="/demo/inbox">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <Mail className="h-4 w-4 mr-2" />
                 Send Message
               </Button>
@@ -148,7 +148,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
@@ -242,29 +242,29 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                   <h3 className="font-semibold text-gray-900">Preferences</h3>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-violet-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-violet-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <BookOpen className="h-5 w-5 text-violet-500" />
                       <span className="text-sm text-gray-600">Favorite Class</span>
                     </div>
                     <span className="font-medium text-violet-700">{mockClientStats.favoriteClass}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Users className="h-5 w-5 text-blue-500" />
                       <span className="text-sm text-gray-600">Favorite Teacher</span>
                     </div>
                     <span className="font-medium text-blue-700">{mockClientStats.favoriteTeacher}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-emerald-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <MapPin className="h-5 w-5 text-emerald-500" />
                       <span className="text-sm text-gray-600">Favorite Location</span>
                     </div>
                     <span className="font-medium text-emerald-700">{mockClientStats.favoriteLocation}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-amber-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Gift className="h-5 w-5 text-amber-500" />
                       <span className="text-sm text-gray-600">Membership</span>
                     </div>
@@ -281,7 +281,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                   <TrendingUp className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Performance</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-emerald-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-emerald-600">{mockClientStats.completedClasses}</p>
                     <p className="text-sm text-emerald-700">Classes Completed</p>
@@ -330,12 +330,12 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                 </div>
                 <div className="space-y-3">
                   {mockClientStats.teacherBreakdown.map((teacher, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                           {teacher.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <span className="font-medium text-gray-900">{teacher.name}</span>
+                        <span className="font-medium text-gray-900 truncate">{teacher.name}</span>
                       </div>
                       <span className="text-gray-500">{teacher.count} classes</span>
                     </div>
@@ -351,7 +351,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                   <Calendar className="h-5 w-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900">Booking History</h3>
                 </div>
-                <div className="flex items-end justify-between h-32 gap-4">
+                <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
                   {mockClientStats.monthlyBookings.map((month, i) => {
                     const maxCount = Math.max(...mockClientStats.monthlyBookings.map(m => m.count))
                     const height = (month.count / maxCount) * 100
@@ -373,10 +373,10 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
         <TabsContent value="communications">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-gray-900">Message History</h3>
                 <Link href="/demo/inbox">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
@@ -388,11 +388,11 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                   <Link key={comm.id} href="/demo/inbox">
                     <div className={`p-4 rounded-lg cursor-pointer transition-all hover:shadow-md ${
                       comm.direction === "outbound" 
-                        ? "bg-violet-50 ml-8 hover:bg-violet-100" 
-                        : "bg-gray-50 mr-8 hover:bg-gray-100"
+                        ? "bg-violet-50 sm:ml-8 hover:bg-violet-100" 
+                        : "bg-gray-50 sm:mr-8 hover:bg-gray-100"
                     }`}>
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
                           {comm.type === "email" ? (
                             <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                               <Mail className="h-3 w-3 mr-1" />
@@ -434,7 +434,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
               <h3 className="font-semibold text-gray-900 mb-4">Recent Bookings</h3>
               <div className="space-y-3">
                 {demoRecentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={booking.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{booking.classSession.classType.name}</p>
                       <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
@@ -454,7 +454,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                         </span>
                       </p>
                     </div>
-                    <Badge className={`${
+                    <Badge className={`w-fit ${
                       booking.status === "CONFIRMED" ? "bg-emerald-100 text-emerald-700" : 
                       booking.status === "CANCELLED" ? "bg-red-100 text-red-700" : 
                       booking.status === "COMPLETED" ? "bg-blue-100 text-blue-700" :
@@ -490,7 +490,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                       )}
                     </div>
                     <div className="flex-1 pb-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <p className="font-medium text-gray-900">{activity.action}</p>
                         <span className="text-sm text-gray-500">{activity.date}</span>
                       </div>
@@ -539,15 +539,15 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Account Details</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <CreditCard className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Credits Balance</span>
                     </div>
                     <span className="font-bold text-gray-900">{client.credits}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Activity className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Status</span>
                     </div>
@@ -556,11 +556,11 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                     </Badge>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-                  <Button variant="outline" className="flex-1">
+                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" className="w-full sm:flex-1">
                     Add Credits
                   </Button>
-                  <Link href="/demo/inbox" className="flex-1">
+                  <Link href="/demo/inbox" className="w-full sm:flex-1">
                     <Button className="w-full bg-violet-600 hover:bg-violet-700">
                       Send Message
                     </Button>
@@ -574,7 +574,6 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
     </div>
   )
 }
-
 
 
 
