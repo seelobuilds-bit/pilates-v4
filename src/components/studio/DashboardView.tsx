@@ -31,7 +31,6 @@ import {
   Eye,
   EyeOff,
   Settings2,
-  Percent,
 } from "lucide-react"
 import { DashboardData } from "./types"
 
@@ -50,15 +49,8 @@ type WidgetId =
   | "recentActivity"
   | "studioStats"
 
-type StatCardId =
-  | "monthlyRevenue"
-  | "activeClients"
-  | "weekBookings"
-  | "atRiskClients"
-  | "revenueGrowth"
-  | "avgFillRate"
-  | "todayClasses"
-  | "totalClients"
+type BaseStatCardId = "monthlyRevenue" | "activeClients" | "weekBookings" | "atRiskClients"
+type StatCardId = BaseStatCardId | string
 
 const STORAGE_KEY_PREFIX = "studio-dashboard-layout-v1"
 
@@ -73,23 +65,14 @@ const DEFAULT_WIDGET_ORDER: WidgetId[] = [
   "studioStats",
 ]
 
-const DEFAULT_STAT_CARD_ORDER: StatCardId[] = [
+const DEFAULT_BASE_STAT_CARD_ORDER: BaseStatCardId[] = [
   "monthlyRevenue",
   "activeClients",
   "weekBookings",
   "atRiskClients",
-  "revenueGrowth",
-  "avgFillRate",
-  "todayClasses",
-  "totalClients",
 ]
 
-const DEFAULT_VISIBLE_STAT_CARDS: StatCardId[] = [
-  "monthlyRevenue",
-  "activeClients",
-  "weekBookings",
-  "atRiskClients",
-]
+const DEFAULT_VISIBLE_STAT_CARDS: BaseStatCardId[] = DEFAULT_BASE_STAT_CARD_ORDER
 
 function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: WidgetId) {
   if (draggedId === targetId) return order
@@ -105,18 +88,31 @@ function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: Widget
 export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewProps) {
   const now = new Date()
   const storageKey = useMemo(() => `${STORAGE_KEY_PREFIX}:${linkPrefix}`, [linkPrefix])
+  const reportStatCardIds = useMemo(() => data.reportDatapoints.map((datapoint) => datapoint.id), [data.reportDatapoints])
+  const availableStatCardIds = useMemo<StatCardId[]>(
+    () => [...DEFAULT_BASE_STAT_CARD_ORDER, ...reportStatCardIds],
+    [reportStatCardIds]
+  )
+
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(DEFAULT_WIDGET_ORDER)
   const [hiddenWidgets, setHiddenWidgets] = useState<WidgetId[]>([])
-  const [statCardOrder, setStatCardOrder] = useState<StatCardId[]>(DEFAULT_STAT_CARD_ORDER)
+  const [statCardOrder, setStatCardOrder] = useState<StatCardId[]>(availableStatCardIds)
   const [hiddenStatCards, setHiddenStatCards] = useState<StatCardId[]>(
-    DEFAULT_STAT_CARD_ORDER.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id))
+    availableStatCardIds.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id as BaseStatCardId))
   )
   const [draggedWidget, setDraggedWidget] = useState<WidgetId | null>(null)
   const [showLayoutControls, setShowLayoutControls] = useState(false)
 
   useEffect(() => {
+    const defaultHiddenStats = availableStatCardIds.filter(
+      (id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id as BaseStatCardId)
+    )
     const stored = localStorage.getItem(storageKey)
-    if (!stored) return
+    if (!stored) {
+      setStatCardOrder(availableStatCardIds)
+      setHiddenStatCards(defaultHiddenStats)
+      return
+    }
 
     try {
       const parsed = JSON.parse(stored) as {
@@ -133,12 +129,12 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       const storedHidden = (parsed.hidden ?? []).filter((id): id is WidgetId => DEFAULT_WIDGET_ORDER.includes(id))
 
       const storedStatOrder = parsed.statOrder ?? []
-      const validStoredStatOrder = storedStatOrder.filter((id): id is StatCardId => DEFAULT_STAT_CARD_ORDER.includes(id))
-      const missingStatCards = DEFAULT_STAT_CARD_ORDER.filter((id) => !validStoredStatOrder.includes(id))
+      const validStoredStatOrder = storedStatOrder.filter((id): id is StatCardId => availableStatCardIds.includes(id))
+      const missingStatCards = availableStatCardIds.filter((id) => !validStoredStatOrder.includes(id))
       const mergedStatOrder = [...validStoredStatOrder, ...missingStatCards]
 
-      const storedHiddenStats = (parsed.hiddenStats ?? []).filter((id): id is StatCardId =>
-        DEFAULT_STAT_CARD_ORDER.includes(id)
+      const storedHiddenStats = (parsed.hiddenStats ?? defaultHiddenStats).filter((id): id is StatCardId =>
+        availableStatCardIds.includes(id)
       )
 
       setWidgetOrder(mergedOrder)
@@ -148,10 +144,10 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     } catch {
       setWidgetOrder(DEFAULT_WIDGET_ORDER)
       setHiddenWidgets([])
-      setStatCardOrder(DEFAULT_STAT_CARD_ORDER)
-      setHiddenStatCards(DEFAULT_STAT_CARD_ORDER.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id)))
+      setStatCardOrder(availableStatCardIds)
+      setHiddenStatCards(availableStatCardIds.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id as BaseStatCardId)))
     }
-  }, [storageKey])
+  }, [storageKey, availableStatCardIds])
 
   useEffect(() => {
     localStorage.setItem(
@@ -187,16 +183,29 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     )
   }
 
-  const statCardMeta: Record<StatCardId, { title: string; source: "dashboard" | "reports" }> = {
-    monthlyRevenue: { title: "Monthly Revenue", source: "dashboard" },
-    activeClients: { title: "Active Clients", source: "dashboard" },
-    weekBookings: { title: "This Week Bookings", source: "dashboard" },
-    atRiskClients: { title: "At Risk Clients", source: "dashboard" },
-    revenueGrowth: { title: "Revenue Growth", source: "reports" },
-    avgFillRate: { title: "Avg Fill Rate", source: "reports" },
-    todayClasses: { title: "Today Classes", source: "reports" },
-    totalClients: { title: "Total Clients", source: "reports" },
-  }
+  const statCardMeta = useMemo<Record<StatCardId, { title: string; source: "dashboard" | "reports" }>>(() => {
+    const baseMeta: Record<BaseStatCardId, { title: string; source: "dashboard" }> = {
+      monthlyRevenue: { title: "Monthly Revenue", source: "dashboard" },
+      activeClients: { title: "Active Clients", source: "dashboard" },
+      weekBookings: { title: "This Week Bookings", source: "dashboard" },
+      atRiskClients: { title: "At Risk Clients", source: "dashboard" },
+    }
+
+    const reportMeta = data.reportDatapoints.reduce<Record<string, { title: string; source: "reports" }>>((acc, datapoint) => {
+      acc[datapoint.id] = { title: datapoint.title, source: "reports" }
+      return acc
+    }, {})
+
+    return {
+      ...baseMeta,
+      ...reportMeta,
+    }
+  }, [data.reportDatapoints])
+
+  const reportDatapointsById = useMemo(
+    () => new Map(data.reportDatapoints.map((datapoint) => [datapoint.id, datapoint])),
+    [data.reportDatapoints]
+  )
 
   const widgetMeta: Record<WidgetId, { title: string; className?: string }> = {
     overview: { title: "Today's Overview", className: "lg:col-span-3" },
@@ -334,80 +343,27 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     </Card>
                   )
 
-                case "revenueGrowth":
-                  return (
-                    <Card key={cardId} className="border-0 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Revenue Growth</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.stats.revenueChange > 0 ? "+" : ""}{data.stats.revenueChange}%</p>
-                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
-                          </div>
-                          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                            <TrendingUp className="h-5 w-5 text-emerald-500" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
+                default: {
+                  const reportDatapoint = reportDatapointsById.get(cardId)
+                  if (!reportDatapoint) return null
 
-                case "avgFillRate":
                   return (
                     <Card key={cardId} className="border-0 shadow-sm">
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-sm text-gray-500 mb-1">Avg Fill Rate</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.todayOverview.fillRate}%</p>
-                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
+                            <p className="text-sm text-gray-500 mb-1">{reportDatapoint.title}</p>
+                            <p className="text-2xl font-bold text-gray-900">{reportDatapoint.value}</p>
+                            <p className="text-sm mt-1.5 text-gray-400">{reportDatapoint.description ?? "Report datapoint"}</p>
                           </div>
                           <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                            <Percent className="h-5 w-5 text-violet-500" />
+                            <BarChart3 className="h-5 w-5 text-violet-500" />
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   )
-
-                case "todayClasses":
-                  return (
-                    <Card key={cardId} className="border-0 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Today Classes</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.todayOverview.classCount}</p>
-                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
-                          </div>
-                          <div className="w-11 h-11 rounded-xl bg-teal-50 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-teal-500" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-
-                case "totalClients":
-                  return (
-                    <Card key={cardId} className="border-0 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">Total Clients</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.studioStats.totalClients}</p>
-                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
-                          </div>
-                          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <Users className="h-5 w-5 text-blue-500" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-
-                default:
-                  return null
+                }
               }
             })}
           </div>

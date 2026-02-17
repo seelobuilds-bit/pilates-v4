@@ -109,6 +109,12 @@ export interface DashboardData {
     totalClients: number
     totalBookings: number
   }
+  reportDatapoints: Array<{
+    id: string
+    title: string
+    value: string | number
+    description?: string
+  }>
 }
 
 // Marketing Data Types

@@ -20,6 +20,8 @@ export default async function StudioDashboardPage() {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
   const [
     clientCount, 
     totalClients, 
@@ -32,7 +34,8 @@ export default async function StudioDashboardPage() {
     newClientsThisWeek,
     locations,
     teachers,
-    classTypes
+    classTypes,
+    classesThisMonth
   ] = await Promise.all([
     db.client.count({ where: { studioId, isActive: true } }),
     db.client.count({ where: { studioId } }),
@@ -96,7 +99,17 @@ export default async function StudioDashboardPage() {
       where: { studioId, isActive: true },
       include: { user: true }
     }),
-    db.classType.findMany({ where: { studioId } })
+    db.classType.findMany({ where: { studioId } }),
+    db.classSession.findMany({
+      where: {
+        studioId,
+        startTime: { gte: startOfMonth }
+      },
+      select: {
+        capacity: true,
+        _count: { select: { bookings: true } }
+      }
+    })
   ])
 
   // Calculate churn (clients who haven't booked in 30 days)
@@ -118,6 +131,10 @@ export default async function StudioDashboardPage() {
   const todayTotalCapacity = todayClasses.reduce((sum, c) => sum + c.capacity, 0)
   const todayTotalBookings = todayClasses.reduce((sum, c) => sum + c._count.bookings, 0)
   const todayFillRate = todayTotalCapacity > 0 ? Math.round((todayTotalBookings / todayTotalCapacity) * 100) : 0
+
+  const reportPeriodCapacity = classesThisMonth.reduce((sum, c) => sum + c.capacity, 0)
+  const reportPeriodBookings = classesThisMonth.reduce((sum, c) => sum + c._count.bookings, 0)
+  const reportPeriodFillRate = reportPeriodCapacity > 0 ? Math.round((reportPeriodBookings / reportPeriodCapacity) * 100) : 0
 
   // Get at-risk clients (haven't booked in 21+ days but were active before)
   const atRiskClients = await db.client.findMany({
@@ -144,8 +161,7 @@ export default async function StudioDashboardPage() {
   }
 
   // ====== REAL REVENUE CALCULATION ======
-  // Get start of current month and previous month for comparison
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  // Get start of previous month for comparison
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
 
@@ -276,7 +292,45 @@ export default async function StudioDashboardPage() {
       classTypes: classTypes.length,
       totalClients: totalClients,
       totalBookings: bookingCount
-    }
+    },
+    reportDatapoints: [
+      {
+        id: "revenueGrowth",
+        title: "Revenue Growth",
+        value: `${revenue.percentChange > 0 ? "+" : ""}${revenue.percentChange}%`,
+        description: "Report datapoint"
+      },
+      {
+        id: "avgFillRate",
+        title: "Avg Fill Rate",
+        value: `${reportPeriodFillRate}%`,
+        description: "Report datapoint"
+      },
+      {
+        id: "todayClasses",
+        title: "Today Classes",
+        value: classesThisMonth.length,
+        description: "Report datapoint"
+      },
+      {
+        id: "totalClients",
+        title: "Total Clients",
+        value: totalClients,
+        description: "Report datapoint"
+      },
+      {
+        id: "bookingsThisMonth",
+        title: "Bookings This Month",
+        value: reportPeriodBookings,
+        description: "Report datapoint"
+      },
+      {
+        id: "activeTeachers",
+        title: "Active Teachers",
+        value: teachers.length,
+        description: "Report datapoint"
+      }
+    ]
   }
 
   return <DashboardView data={dashboardData} linkPrefix="/studio" />
