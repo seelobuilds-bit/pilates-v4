@@ -241,7 +241,12 @@ export default function HomePage() {
             </div>
 
             {/* Mobile menu button */}
-            <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <button
+              type="button"
+              className="md:hidden p-2"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -438,9 +443,9 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Card 1 */}
-            <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
+            <div className="bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                 <Zap className="w-7 h-7 text-white" />
               </div>
@@ -451,7 +456,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-gradient-to-br from-violet-50 to-white p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
+            <div className="bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
@@ -462,7 +467,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-gradient-to-br from-amber-50 to-white p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
+            <div className="bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
                 <Target className="w-7 h-7 text-white" />
               </div>
@@ -712,9 +717,9 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
             <Card className="border-0 shadow-lg bg-white">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/30">
                   <BarChart3 className="w-8 h-8 text-white" />
                 </div>
@@ -726,7 +731,7 @@ export default function HomePage() {
             </Card>
 
             <Card className="border-0 shadow-lg bg-white">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/30">
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
@@ -738,7 +743,7 @@ export default function HomePage() {
             </Card>
 
             <Card className="border-0 shadow-lg bg-white">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-amber-500/30">
                   <Heart className="w-8 h-8 text-white" />
                 </div>
@@ -965,7 +970,7 @@ export default function HomePage() {
           />
           
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             {/* Close button */}
             <button 
               className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 transition-colors z-10"
@@ -986,7 +991,7 @@ export default function HomePage() {
 
                 {/* Form */}
                 <form onSubmit={handleDemoSubmit} className="p-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="demo-first-name">First Name</Label>
                       <Input id="demo-first-name" name="firstName" required placeholder="Sarah" />

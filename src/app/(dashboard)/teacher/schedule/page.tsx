@@ -233,9 +233,9 @@ export default function TeacherSchedulePage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Schedule</h1>
           <p className="text-gray-500 mt-1">View and manage your upcoming classes</p>
@@ -243,7 +243,7 @@ export default function TeacherSchedulePage() {
         <Button 
           onClick={openBlockModal}
           variant="outline"
-          className="border-red-200 text-red-600 hover:bg-red-50"
+          className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50"
         >
           <Ban className="h-4 w-4 mr-2" />
           Block Time Off
@@ -253,7 +253,7 @@ export default function TeacherSchedulePage() {
       {/* Week Navigation */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button variant="ghost" onClick={() => setWeekOffset(prev => prev - 1)}>
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous Week
@@ -280,7 +280,7 @@ export default function TeacherSchedulePage() {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-900">{classes.length}</p>
@@ -323,7 +323,83 @@ export default function TeacherSchedulePage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-3">
+            <>
+              <div className="space-y-3 md:hidden">
+                {weekDates.map((date, i) => {
+                  const dayClasses = classesByDay[i]
+                  const dayBlocked = blockedByDay[i]
+                  const isToday = new Date().toDateString() === date.toDateString()
+                  return (
+                    <div
+                      key={i}
+                      className={`rounded-xl border p-3 ${
+                        isToday ? "border-violet-200 bg-violet-50/60" : "border-gray-100 bg-white"
+                      }`}
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{dayNames[i]}</p>
+                          <p className="text-xs text-gray-500">{date.toLocaleDateString()}</p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {dayClasses.length} class{dayClasses.length === 1 ? "" : "es"}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-2">
+                        {dayBlocked.map((bt) => (
+                          <div key={bt.id} className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500 group">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 text-red-600">
+                                <Ban className="h-3 w-3" />
+                                <span className="text-xs font-medium">Blocked</span>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteBlockedTime(bt.id)}
+                                disabled={deletingId === bt.id}
+                                className="p-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100"
+                              >
+                                {deletingId === bt.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin text-red-500" />
+                                ) : (
+                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                )}
+                              </button>
+                            </div>
+                            <p className="text-xs text-red-700 mt-1">
+                              {new Date(bt.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} -{" "}
+                              {new Date(bt.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                            </p>
+                          </div>
+                        ))}
+
+                        {dayClasses.map((cls) => (
+                          <Link key={cls.id} href={`/teacher/schedule/${cls.id}`}>
+                            <div className="p-3 bg-violet-50 rounded-lg border-l-4 border-l-violet-500">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-medium text-sm text-gray-900">{cls.classType.name}</p>
+                                <span className="text-xs font-medium text-gray-600">
+                                  {cls._count.bookings}/{cls.capacity}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">{cls.location.name}</p>
+                            </div>
+                          </Link>
+                        ))}
+
+                        {dayClasses.length === 0 && dayBlocked.length === 0 && (
+                          <p className="text-xs text-gray-400 py-2">No classes</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="hidden md:grid grid-cols-7 gap-3">
               {/* Day Headers */}
               {weekDates.map((date, i) => {
                 const isToday = new Date().toDateString() === date.toDateString()
@@ -360,7 +436,7 @@ export default function TeacherSchedulePage() {
                         <button 
                           onClick={() => handleDeleteBlockedTime(bt.id)}
                           disabled={deletingId === bt.id}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded"
+                          className="p-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100"
                         >
                           {deletingId === bt.id ? (
                             <Loader2 className="h-3 w-3 animate-spin text-red-500" />
@@ -415,7 +491,8 @@ export default function TeacherSchedulePage() {
                   ) : null}
                 </div>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -424,7 +501,7 @@ export default function TeacherSchedulePage() {
       {showBlockModal && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowBlockModal(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+          <div className="fixed inset-x-3 top-1/2 z-50 -translate-y-1/2 sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -489,7 +566,7 @@ export default function TeacherSchedulePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label>Start Date</Label>
                         <div className="relative mt-1.5">
@@ -525,7 +602,7 @@ export default function TeacherSchedulePage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>{blockMode === "range" ? "Daily Start Time" : "Start Time"}</Label>
                       <div className="relative mt-1.5">
@@ -604,7 +681,6 @@ export default function TeacherSchedulePage() {
     </div>
   )
 }
-
 
 
 

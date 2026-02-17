@@ -123,9 +123,13 @@ Generated: 2026-02-17T19:46:41.791Z
 - 2026-02-17 Batch D complete:
   - `src/app/(dashboard)/hq/analytics/page.tsx`
   - `src/app/(dashboard)/hq/studios/[studioId]/page.tsx`
+- 2026-02-17 Batch E complete:
+  - `src/app/page.tsx`
+  - `src/app/(dashboard)/teacher/schedule/page.tsx`
+  - `src/app/(dashboard)/teacher/clients/[clientId]/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/page.tsx`
-- `src/app/(dashboard)/teacher/schedule/page.tsx`
-- `src/app/(dashboard)/teacher/clients/[clientId]/page.tsx`
+- `src/app/(dashboard)/teacher/reports/page.tsx`
+- `src/app/(dashboard)/teacher/leaderboards/page.tsx`
+- `src/app/(dashboard)/teacher/vault/page.tsx`
