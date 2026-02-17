@@ -5,6 +5,7 @@ import {
   fallbackAutomationStep,
   getStepValidationError,
   normalizeAutomationSteps,
+  toPersistedStepPayload,
 } from "@/lib/automation-chain"
 import {
   hasStopOnBookingMarker,
@@ -32,6 +33,9 @@ export async function GET(
       include: {
         location: true,
         template: true,
+        steps: {
+          orderBy: { stepOrder: "asc" },
+        },
         messages: {
           take: 100,
           orderBy: { createdAt: "desc" },
@@ -46,6 +50,18 @@ export async function GET(
     return NextResponse.json({
       automation: {
         ...automation,
+        steps:
+          automation.steps.length > 0
+            ? automation.steps.map((step) => ({
+                id: step.stepId,
+                order: step.stepOrder,
+                channel: step.channel,
+                subject: step.subject,
+                body: step.body,
+                htmlBody: step.htmlBody,
+                delayMinutes: step.delayMinutes,
+              }))
+            : [],
         body: stripAutomationBodyMarkers(automation.body),
         stopOnBooking: hasStopOnBookingMarker(automation.body),
       },
@@ -74,6 +90,11 @@ export async function PATCH(
 
     const existingAutomation = await db.automation.findFirst({
       where: { id: automationId, studioId },
+      include: {
+        steps: {
+          orderBy: { stepOrder: "asc" },
+        },
+      },
     })
 
     if (!existingAutomation) {
@@ -92,42 +113,114 @@ export async function PATCH(
           })
         : null
 
-    const steps = fallbackStep ? [fallbackStep] : normalizedSteps
+    const existingSteps = existingAutomation.steps.map((step) => ({
+      id: step.stepId,
+      order: step.stepOrder,
+      channel: step.channel,
+      subject: step.subject,
+      body: step.body,
+      htmlBody: step.htmlBody,
+      delayMinutes: step.delayMinutes,
+    }))
+
+    const requestedSteps = fallbackStep ? [fallbackStep] : normalizedSteps
+    const shouldPreserveExistingTail =
+      existingSteps.length > 1 &&
+      requestedSteps.length === 1 &&
+      body.replaceAllSteps !== true
+
+    const steps = shouldPreserveExistingTail
+      ? [
+          {
+            ...requestedSteps[0],
+            id: existingSteps[0]?.id ?? requestedSteps[0].id,
+            order: 0,
+          },
+          ...existingSteps.slice(1).map((step, index) => ({
+            ...step,
+            order: index + 1,
+          })),
+        ]
+      : requestedSteps
+
     const stepError = getStepValidationError(steps)
     if (stepError) {
       return NextResponse.json({ error: stepError }, { status: 400 })
     }
 
     const firstStep = steps[0]
+    const persistedSteps = toPersistedStepPayload(steps)
     const stopOnBooking =
       typeof body.stopOnBooking === "boolean" ? body.stopOnBooking : hasStopOnBookingMarker(existingAutomation.body)
+    await db.$transaction([
+      db.automation.update({
+        where: { id: automationId },
+        data: {
+          name: body.name,
+          trigger: body.trigger,
+          channel: firstStep.channel,
+          subject: firstStep.subject,
+          body: withAutomationBodyMarkers({
+            body: firstStep.body,
+            stopOnBooking,
+          }),
+          htmlBody: firstStep.htmlBody,
+          triggerDelay: firstStep.delayMinutes,
+          triggerDays: body.triggerDays,
+          reminderHours: body.reminderHours,
+          locationId: body.locationId,
+          templateId: body.templateId,
+          status: body.status,
+        },
+      }),
+      db.automationStep.deleteMany({
+        where: { automationId },
+      }),
+      db.automationStep.createMany({
+        data: persistedSteps.map((step) => ({
+          automationId,
+          stepId: step.id,
+          stepOrder: step.order,
+          channel: step.channel,
+          subject: step.subject,
+          body: step.body,
+          htmlBody: step.htmlBody,
+          delayMinutes: step.delayMinutes,
+        })),
+      }),
+    ])
 
-    const automation = await db.automation.update({
+    const automation = await db.automation.findUnique({
       where: { id: automationId },
-      data: {
-        name: body.name,
-        trigger: body.trigger,
-        channel: firstStep.channel,
-        subject: firstStep.subject,
-        body: withAutomationBodyMarkers({
-          body: firstStep.body,
-          stopOnBooking,
-        }),
-        htmlBody: firstStep.htmlBody,
-        triggerDelay: firstStep.delayMinutes,
-        triggerDays: body.triggerDays,
-        reminderHours: body.reminderHours,
-        locationId: body.locationId,
-        templateId: body.templateId,
-        status: body.status,
-      },
       include: {
         location: true,
         template: true,
+        steps: {
+          orderBy: { stepOrder: "asc" },
+        },
       },
     })
 
-    return NextResponse.json({ automation })
+    if (!automation) {
+      return NextResponse.json({ error: "Automation not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      automation: {
+        ...automation,
+        steps: automation.steps.map((step) => ({
+          id: step.stepId,
+          order: step.stepOrder,
+          channel: step.channel,
+          subject: step.subject,
+          body: step.body,
+          htmlBody: step.htmlBody,
+          delayMinutes: step.delayMinutes,
+        })),
+        body: stripAutomationBodyMarkers(automation.body),
+        stopOnBooking: hasStopOnBookingMarker(automation.body),
+      },
+    })
   } catch (error) {
     console.error("Error updating automation:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
