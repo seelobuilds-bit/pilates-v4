@@ -175,16 +175,16 @@ export default function SalesDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Target className="h-7 w-7 text-violet-600" />
@@ -193,7 +193,7 @@ export default function SalesDashboardPage() {
           <p className="text-gray-500 mt-1">Welcome back, {session?.user?.firstName}! Here&apos;s your pipeline.</p>
         </div>
         <Link href="/sales/calendar">
-          <Button variant="outline">
+          <Button variant="outline" className="w-full sm:w-auto">
             <Calendar className="h-4 w-4 mr-2" />
             My Calendar
           </Button>
@@ -204,7 +204,7 @@ export default function SalesDashboardPage() {
       {scheduledDemos.length > 0 && (
         <Card className="border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-violet-50 shadow-lg mb-6">
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
                 <Video className="h-6 w-6 text-white" />
               </div>
@@ -215,7 +215,7 @@ export default function SalesDashboardPage() {
                 <p className="text-purple-700 text-sm">Check your calendar for scheduled demo calls</p>
               </div>
               <Link href="/sales/demos">
-                <Button className="bg-purple-600 hover:bg-purple-700">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto">
                   View Demos
                 </Button>
               </Link>
@@ -225,7 +225,7 @@ export default function SalesDashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 uppercase tracking-wide">My Leads</p>
@@ -260,10 +260,10 @@ export default function SalesDashboardPage() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="pipeline" className="px-6">Pipeline</TabsTrigger>
-          <TabsTrigger value="leads" className="px-6">All Leads</TabsTrigger>
-          <TabsTrigger value="demos" className="px-6 relative">
+        <TabsList className="mb-6 flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="pipeline" className="px-4 shrink-0 sm:px-6">Pipeline</TabsTrigger>
+          <TabsTrigger value="leads" className="px-4 shrink-0 sm:px-6">All Leads</TabsTrigger>
+          <TabsTrigger value="demos" className="px-4 shrink-0 sm:px-6 relative">
             My Demos
             {pendingDemos.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -358,7 +358,7 @@ export default function SalesDashboardPage() {
           {/* Filters */}
           <Card className="border-0 shadow-sm mb-4">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -369,7 +369,7 @@ export default function SalesDashboardPage() {
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -392,7 +392,8 @@ export default function SalesDashboardPage() {
                   <p className="text-gray-500">No leads assigned to you yet</p>
                 </div>
               ) : (
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                  <table className="min-w-[760px] w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Lead</th>
@@ -463,7 +464,8 @@ export default function SalesDashboardPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -479,7 +481,7 @@ export default function SalesDashboardPage() {
                   <Bell className="h-5 w-5 text-yellow-600" />
                   Needs Scheduling ({pendingDemos.length})
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {pendingDemos.map(demo => (
                     <Card key={demo.id} className="border-2 border-yellow-200 bg-yellow-50">
                       <CardContent className="p-4">
@@ -519,7 +521,7 @@ export default function SalesDashboardPage() {
                   <Video className="h-5 w-5 text-purple-600" />
                   Upcoming Demos ({scheduledDemos.length})
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {scheduledDemos.map(demo => (
                     <Card key={demo.id} className="border-2 border-purple-200 bg-purple-50">
                       <CardContent className="p-4">
@@ -563,7 +565,6 @@ export default function SalesDashboardPage() {
     </div>
   )
 }
-
 
 
 

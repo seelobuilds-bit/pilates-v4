@@ -197,9 +197,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/studio/vault/page.tsx`
   - `src/components/studio/VaultView.tsx`
   - `src/app/(dashboard)/studio/leaderboards/page.tsx`
+- 2026-02-17 Batch W complete:
+  - `src/app/(dashboard)/hq/sales/page.tsx`
+  - `src/app/(dashboard)/sales/page.tsx`
+  - `src/app/(dashboard)/studio/payments/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/hq/sales/page.tsx`
-- `src/app/(dashboard)/sales/page.tsx`
-- `src/app/(dashboard)/studio/payments/page.tsx`
+- `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
+- `src/app/(dashboard)/studio/locations/[locationId]/page.tsx`
+- `src/app/(dashboard)/studio/store/catalog/page.tsx`
