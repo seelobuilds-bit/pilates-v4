@@ -209,9 +209,6 @@ export function Sidebar() {
         .map((href) => {
           const link = studioLinksByHref.get(href)
           if (!link) return null
-          if (href === "/studio/reports") {
-            return { ...link, label: "Overview" }
-          }
           return link
         })
         .filter((link): link is NavLink => link !== null),
@@ -438,7 +435,7 @@ export function Sidebar() {
                   >
                     {studioLinks.map((link) => (
                       <option key={link.href} value={link.href}>
-                        {link.href === "/studio/reports" ? "Overview" : link.label}
+                        {link.label}
                       </option>
                     ))}
                   </select>
