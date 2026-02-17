@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2, LayoutGrid, List, Search } from "lucide-react"
 
 interface Location {
   id: string
@@ -117,6 +118,9 @@ export default function SchedulePage() {
   const [filterTeacher, setFilterTeacher] = useState<string>(initialTeacher || "all")
   const [filterClassType, setFilterClassType] = useState<string>("all")
   const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [timeScope, setTimeScope] = useState<"upcoming" | "past">("upcoming")
   
   // Multi-select state
   const [selectMode, setSelectMode] = useState(false)
@@ -144,7 +148,8 @@ export default function SchedulePage() {
   
   // Select all visible classes
   const selectAllClasses = () => {
-    setSelectedClasses(new Set(filteredClasses.map(c => c.id)))
+    const visibleClasses = viewMode === "list" ? listFilteredClasses : filteredClasses
+    setSelectedClasses(new Set(visibleClasses.map(c => c.id)))
   }
   
   // Clear selection
@@ -312,6 +317,29 @@ export default function SchedulePage() {
     return true
   })
 
+  const listFilteredClasses = useMemo(() => {
+    const now = new Date()
+    const query = searchQuery.trim().toLowerCase()
+
+    return filteredClasses
+      .filter((cls) => {
+        const classStart = new Date(cls.startTime)
+        if (timeScope === "upcoming" && classStart < now) return false
+        if (timeScope === "past" && classStart >= now) return false
+        return true
+      })
+      .filter((cls) => {
+        if (!query) return true
+        const instructor = `${cls.teacher.user.firstName} ${cls.teacher.user.lastName}`.toLowerCase()
+        return (
+          cls.classType.name.toLowerCase().includes(query) ||
+          instructor.includes(query) ||
+          cls.location.name.toLowerCase().includes(query)
+        )
+      })
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+  }, [filteredClasses, searchQuery, timeScope])
+
   // Group classes by day
   const classesByDay: Record<number, ClassSession[]> = {}
   for (let i = 0; i < 7; i++) {
@@ -432,7 +460,27 @@ export default function SchedulePage() {
               : 'Manage your class schedule'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("calendar")}
+              className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Calendar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <List className="h-4 w-4 mr-1" />
+              List
+            </Button>
+          </div>
           <Button 
             variant={selectMode ? "default" : "outline"}
             onClick={() => {
@@ -481,7 +529,7 @@ export default function SchedulePage() {
                   size="sm"
                   onClick={selectAllClasses}
                 >
-                  Select All ({filteredClasses.length})
+                  Select All ({viewMode === "list" ? listFilteredClasses.length : filteredClasses.length})
                 </Button>
                 <Button 
                   variant="outline" 
@@ -655,6 +703,42 @@ export default function SchedulePage() {
         </CardContent>
       </Card>
 
+      {viewMode === "list" && (
+        <Card className="border-0 shadow-sm mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+              <div className="relative w-full md:max-w-md">
+                <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search class, instructor, or location"
+                  className="pl-9"
+                />
+              </div>
+              <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 self-start">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTimeScope("upcoming")}
+                  className={timeScope === "upcoming" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                >
+                  Upcoming
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTimeScope("past")}
+                  className={timeScope === "past" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                >
+                  Past
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Weekly View */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
@@ -666,167 +750,231 @@ export default function SchedulePage() {
           ) : (
             <>
               {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-4">
-                {/* Day Headers */}
-                {weekDates.map((date, i) => {
-                  const isToday = new Date().toDateString() === date.toDateString()
-                  const dayClasses = classesByDay[i] || []
-                  const dayBlocked = blockedByDay[i] || []
-                  const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
-                  return (
-                    <div 
-                      key={i}
-                      className={`text-center p-3 rounded-xl ${
-                        isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
-                      }`}
-                    >
-                      <p className={`text-xs font-medium ${
-                        isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-500'
-                      }`}>
-                        {dayNames[i]}
-                      </p>
-                      <p className={`text-xl font-bold ${
-                        isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-900'
-                      }`}>
-                        {date.getDate()}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {dayClasses.length} class{dayClasses.length !== 1 ? 'es' : ''}
-                      </p>
-                      {hasBlockedTime && (
-                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 mt-1">
-                          <Ban className="h-2.5 w-2.5 mr-1" />
-                          {dayBlocked.length} blocked
-                        </Badge>
-                      )}
-                    </div>
-                  )
-                })}
-
-                {/* Classes and Blocked Times for each day */}
-                {weekDates.map((_, dayIndex) => (
-                  <div key={dayIndex} className="space-y-2 min-h-[400px]">
-                    {/* Blocked Times */}
-                    {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
-                      <div
-                        key={bt.id}
-                        className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500 shadow-sm"
+              {viewMode === "calendar" ? (
+                <div className="grid grid-cols-7 gap-4 overflow-x-auto">
+                  {/* Day Headers */}
+                  {weekDates.map((date, i) => {
+                    const isToday = new Date().toDateString() === date.toDateString()
+                    const dayClasses = classesByDay[i] || []
+                    const dayBlocked = blockedByDay[i] || []
+                    const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
+                    return (
+                      <div 
+                        key={i}
+                        className={`text-center p-3 rounded-xl min-w-[120px] ${
+                          isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
+                        }`}
                       >
-                        <div className="flex items-center gap-1 text-red-600">
-                          <Ban className="h-3 w-3" />
-                          <span className="text-xs font-medium">Blocked</span>
-                        </div>
-                        <p className="text-xs text-red-700 flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - 
-                          {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        <p className={`text-xs font-medium ${
+                          isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-500'
+                        }`}>
+                          {dayNames[i]}
                         </p>
-                        <p className="text-xs text-red-500 mt-1">
-                          {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
+                        <p className={`text-xl font-bold ${
+                          isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-900'
+                        }`}>
+                          {date.getDate()}
                         </p>
-                        {bt.reason && (
-                          <p className="text-xs text-red-400 mt-1 truncate">{bt.reason}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {dayClasses.length} class{dayClasses.length !== 1 ? 'es' : ''}
+                        </p>
+                        {hasBlockedTime && (
+                          <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 mt-1">
+                            <Ban className="h-2.5 w-2.5 mr-1" />
+                            {dayBlocked.length} blocked
+                          </Badge>
                         )}
                       </div>
-                    ))}
-                    
-                    {/* Classes */}
-                    {(classesByDay[dayIndex] || []).length > 0 ? (
-                      (classesByDay[dayIndex] || []).map((cls) => {
-                        const isSelected = selectedClasses.has(cls.id)
-                        
-                        if (selectMode) {
-                          return (
-                            <div
-                              key={cls.id}
-                              onClick={(e) => toggleSelectClass(cls.id, e)}
-                              className={`p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-pointer ${getClassColor(cls.classType.name)} ${
-                                isSelected 
-                                  ? 'bg-violet-100 ring-2 ring-violet-500' 
-                                  : 'bg-white hover:bg-violet-50'
-                              }`}
-                            >
-                              <div className="flex items-start justify-between">
-                                <p className="font-medium text-sm text-gray-900 truncate flex-1">{cls.classType.name}</p>
-                                {isSelected ? (
-                                  <CheckSquare className="h-4 w-4 text-violet-600 shrink-0" />
-                                ) : (
-                                  <Square className="h-4 w-4 text-gray-300 shrink-0" />
+                    )
+                  })}
+
+                  {/* Classes and Blocked Times for each day */}
+                  {weekDates.map((_, dayIndex) => (
+                    <div key={dayIndex} className="space-y-2 min-h-[400px] min-w-[120px]">
+                      {/* Blocked Times */}
+                      {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
+                        <div
+                          key={bt.id}
+                          className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500 shadow-sm"
+                        >
+                          <div className="flex items-center gap-1 text-red-600">
+                            <Ban className="h-3 w-3" />
+                            <span className="text-xs font-medium">Blocked</span>
+                          </div>
+                          <p className="text-xs text-red-700 flex items-center gap-1 mt-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - 
+                            {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </p>
+                          <p className="text-xs text-red-500 mt-1">
+                            {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
+                          </p>
+                          {bt.reason && (
+                            <p className="text-xs text-red-400 mt-1 truncate">{bt.reason}</p>
+                          )}
+                        </div>
+                      ))}
+                      
+                      {/* Classes */}
+                      {(classesByDay[dayIndex] || []).length > 0 ? (
+                        (classesByDay[dayIndex] || []).map((cls) => {
+                          const isSelected = selectedClasses.has(cls.id)
+                          
+                          if (selectMode) {
+                            return (
+                              <div
+                                key={cls.id}
+                                onClick={(e) => toggleSelectClass(cls.id, e)}
+                                className={`p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-pointer ${getClassColor(cls.classType.name)} ${
+                                  isSelected 
+                                    ? 'bg-violet-100 ring-2 ring-violet-500' 
+                                    : 'bg-white hover:bg-violet-50'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <p className="font-medium text-sm text-gray-900 truncate flex-1">{cls.classType.name}</p>
+                                  {isSelected ? (
+                                    <CheckSquare className="h-4 w-4 text-violet-600 shrink-0" />
+                                  ) : (
+                                    <Square className="h-4 w-4 text-gray-300 shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                                </p>
+                                {hasMultipleLocations && filterLocation === "all" && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
+                                  >
+                                    <MapPin className="h-2.5 w-2.5 mr-1" />
+                                    {cls.location.name}
+                                  </Badge>
                                 )}
+                                <p className={`text-xs mt-1 ${
+                                  cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
+                                }`}>
+                                  {cls._count.bookings}/{cls.capacity}
+                                </p>
                               </div>
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
-                              </p>
-                              {hasMultipleLocations && filterLocation === "all" && (
-                                <Badge 
-                                  variant="secondary" 
-                                  className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
-                                >
-                                  <MapPin className="h-2.5 w-2.5 mr-1" />
-                                  {cls.location.name}
-                                </Badge>
-                              )}
-                              <p className={`text-xs mt-1 ${
-                                cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
-                              }`}>
-                                {cls._count.bookings}/{cls.capacity}
-                              </p>
-                            </div>
+                            )
+                          }
+                          
+                          return (
+                            <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                              <div
+                                className={`p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md hover:bg-violet-50 transition-all cursor-pointer ${getClassColor(cls.classType.name)}`}
+                              >
+                                <p className="font-medium text-sm text-gray-900 truncate">{cls.classType.name}</p>
+                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                                </p>
+                                {hasMultipleLocations && filterLocation === "all" && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
+                                  >
+                                    <MapPin className="h-2.5 w-2.5 mr-1" />
+                                    {cls.location.name}
+                                  </Badge>
+                                )}
+                                <p className={`text-xs mt-1 ${
+                                  cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
+                                }`}>
+                                  {cls._count.bookings}/{cls.capacity}
+                                </p>
+                              </div>
+                            </Link>
                           )
-                        }
-                        
-                        return (
-                          <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
-                            <div
-                              className={`p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md hover:bg-violet-50 transition-all cursor-pointer ${getClassColor(cls.classType.name)}`}
-                            >
-                              <p className="font-medium text-sm text-gray-900 truncate">{cls.classType.name}</p>
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
-                              </p>
-                              {hasMultipleLocations && filterLocation === "all" && (
-                                <Badge 
-                                  variant="secondary" 
-                                  className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
-                                >
-                                  <MapPin className="h-2.5 w-2.5 mr-1" />
-                                  {cls.location.name}
-                                </Badge>
-                              )}
-                              <p className={`text-xs mt-1 ${
-                                cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
-                              }`}>
-                                {cls._count.bookings}/{cls.capacity}
-                              </p>
-                            </div>
-                          </Link>
-                        )
-                      })
-                    ) : (blockedByDay[dayIndex] || []).length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center pt-4">No classes</p>
-                    ) : null}
+                        })
+                      ) : (blockedByDay[dayIndex] || []).length === 0 ? (
+                        <p className="text-xs text-gray-400 text-center pt-4">No classes</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="hidden md:grid grid-cols-12 gap-3 px-3 pb-2 text-xs uppercase tracking-wide text-gray-500 font-medium border-b">
+                    <div className="col-span-3">Date / Time</div>
+                    <div className="col-span-3">Class</div>
+                    <div className="col-span-2">Instructor</div>
+                    <div className="col-span-2">Location</div>
+                    <div className="col-span-2">Signups</div>
                   </div>
-                ))}
-              </div>
+
+                  {listFilteredClasses.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-8">No classes found for this view.</p>
+                  ) : (
+                    listFilteredClasses.map((cls) => {
+                      const isSelected = selectedClasses.has(cls.id)
+                      const rowClass = `block rounded-lg border border-gray-100 bg-white hover:bg-violet-50 hover:border-violet-200 transition-colors`
+
+                      if (selectMode) {
+                        return (
+                          <div
+                            key={cls.id}
+                            onClick={(e) => toggleSelectClass(cls.id, e)}
+                            className={`${rowClass} cursor-pointer ${isSelected ? 'ring-2 ring-violet-500 bg-violet-50' : ''}`}
+                          >
+                            <div className="p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center">
+                              <div className="md:col-span-3 text-sm text-gray-700">
+                                <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                              </div>
+                              <div className="md:col-span-3 mt-2 md:mt-0">
+                                <p className="font-medium text-gray-900">{cls.classType.name}</p>
+                              </div>
+                              <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
+                              <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.location.name}</div>
+                              <div className="md:col-span-2 mt-1 md:mt-0 flex items-center justify-between md:justify-start gap-2">
+                                <span className={`text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</span>
+                                {isSelected ? <CheckSquare className="h-4 w-4 text-violet-600" /> : <Square className="h-4 w-4 text-gray-300" />}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <Link key={cls.id} href={`/studio/schedule/${cls.id}`} className={rowClass}>
+                          <div className="p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center">
+                            <div className="md:col-span-3 text-sm text-gray-700">
+                              <p className="font-medium">{new Date(cls.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                              <p className="text-xs text-gray-500">{new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                            </div>
+                            <div className="md:col-span-3 mt-2 md:mt-0">
+                              <p className="font-medium text-gray-900">{cls.classType.name}</p>
+                            </div>
+                            <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.teacher.user.firstName} {cls.teacher.user.lastName}</div>
+                            <div className="md:col-span-2 mt-1 md:mt-0 text-sm text-gray-700">{cls.location.name}</div>
+                            <div className={`md:col-span-2 mt-1 md:mt-0 text-sm font-medium ${cls._count.bookings >= cls.capacity ? 'text-red-600' : 'text-teal-600'}`}>{cls._count.bookings}/{cls.capacity}</div>
+                          </div>
+                        </Link>
+                      )
+                    })
+                  )}
+                </div>
+              )}
 
               {/* Summary */}
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-6">
                     <span className="text-gray-500">
-                      Showing <strong className="text-gray-900">{filteredClasses.length}</strong> classes
+                      Showing <strong className="text-gray-900">{viewMode === "list" ? listFilteredClasses.length : filteredClasses.length}</strong> classes
                       {hasActiveFilters && ` (filtered from ${classes.length})`}
                     </span>
                     <span className="text-gray-500">
-                      Total bookings: <strong className="text-gray-900">{filteredClasses.reduce((sum, c) => sum + c._count.bookings, 0)}</strong>
+                      Total bookings: <strong className="text-gray-900">{(viewMode === "list" ? listFilteredClasses : filteredClasses).reduce((sum, c) => sum + c._count.bookings, 0)}</strong>
                     </span>
                   </div>
                 </div>
