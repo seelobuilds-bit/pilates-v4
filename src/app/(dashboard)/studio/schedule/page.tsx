@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2, LayoutGrid, List, Search, MoreHorizontal, Eye, Pencil, XCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Clock, Plus, MapPin, Filter, X, Users, RefreshCw, Ban, CheckSquare, Square, Trash2, UserCog, Loader2, List, Search, MoreHorizontal, Eye, Pencil, XCircle } from "lucide-react"
 
 interface Location {
   id: string
@@ -108,11 +108,8 @@ function getClassColor(className: string): string {
 }
 
 export default function SchedulePage() {
-  const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialTeacher = searchParams.get("teacher") || ""
-  const initialCalendarView = searchParams.get("calendarView")
   
   const [weekOffset, setWeekOffset] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -127,10 +124,7 @@ export default function SchedulePage() {
   const [filterTeacher, setFilterTeacher] = useState<string>(initialTeacher || "all")
   const [filterClassType, setFilterClassType] = useState<string>("all")
   const [showBlockedTimes, setShowBlockedTimes] = useState<boolean>(true)
-  const [viewMode, setViewMode] = useState<"calendar" | "list">(initialCalendarView === "list" ? "list" : "calendar")
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(
-    initialCalendarView === "day" || initialCalendarView === "month" ? initialCalendarView : "week"
-  )
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
   const [searchQuery, setSearchQuery] = useState("")
   const [timeScope, setTimeScope] = useState<"upcoming" | "past">("upcoming")
   
@@ -402,23 +396,8 @@ export default function SchedulePage() {
     setFilterClassType("all")
   }
 
-  const updateCalendarRoute = (nextView: "list" | "day" | "week" | "month") => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("calendarView", nextView)
-    const queryString = params.toString()
-    router.replace(queryString ? `${pathname}?${queryString}` : pathname)
-  }
-
-  const handleViewChipSelect = (nextView: "list" | "day" | "week" | "month") => {
-    if (nextView === "list") {
-      setViewMode("list")
-      updateCalendarRoute("list")
-      return
-    }
-
-    setViewMode("calendar")
-    setCalendarView(nextView)
-    updateCalendarRoute(nextView)
+  const handleViewChipSelect = (nextView: "calendar" | "list") => {
+    setViewMode(nextView)
   }
 
   const handleCancelClass = async (classId: string) => {
@@ -529,38 +508,20 @@ export default function SchedulePage() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => handleViewChipSelect("calendar")}
+              className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Calendar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleViewChipSelect("list")}
               className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
             >
               <List className="h-4 w-4 mr-1" />
               List
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("day")}
-              className={viewMode === "calendar" && calendarView === "day" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
-              <Calendar className="h-4 w-4 mr-1" />
-              Day
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("week")}
-              className={viewMode === "calendar" && calendarView === "week" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              Week
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("month")}
-              className={viewMode === "calendar" && calendarView === "month" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
-              <Calendar className="h-4 w-4 mr-1" />
-              Month
             </Button>
           </div>
           <Button 
