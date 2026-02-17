@@ -64,21 +64,21 @@ export default async function DemoStorePage() {
   const pendingOrders = orders.filter(o => o.status === "PENDING" || o.status === "PROCESSING").length
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Store</h1>
           <p className="text-gray-500 mt-1">Manage your merchandise and orders</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -137,12 +137,12 @@ export default async function DemoStorePage() {
       </div>
 
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="bg-white border">
-          <TabsTrigger value="products">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border bg-white p-1">
+          <TabsTrigger value="products" className="shrink-0">
             <Package className="h-4 w-4 mr-2" />
             Products
           </TabsTrigger>
-          <TabsTrigger value="orders">
+          <TabsTrigger value="orders" className="shrink-0">
             <ShoppingBag className="h-4 w-4 mr-2" />
             Orders
             {pendingOrders > 0 && (
@@ -174,7 +174,7 @@ export default async function DemoStorePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {products.map(product => (
                 <Card key={product.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
@@ -193,7 +193,7 @@ export default async function DemoStorePage() {
                     <div className="p-4">
                       <h3 className="font-semibold text-gray-900">{product.customTitle || product.product.name}</h3>
                       <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.customDescription || product.product.description}</p>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="mt-3 flex items-center justify-between gap-3">
                         <p className="font-bold text-violet-600">${Number(product.price).toFixed(2)}</p>
                         {product.compareAtPrice && (
                           <p className="text-sm text-gray-400 line-through">${Number(product.compareAtPrice).toFixed(2)}</p>
@@ -221,8 +221,8 @@ export default async function DemoStorePage() {
               {orders.map(order => (
                 <Card key={order.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-3 sm:items-center sm:gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           order.status === "DELIVERED" ? "bg-green-100" :
                           order.status === "PENDING" ? "bg-amber-100" : "bg-gray-100"
@@ -240,13 +240,13 @@ export default async function DemoStorePage() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="font-bold text-gray-900">${Number(order.total).toFixed(2)}</p>
-                        <Badge className={
+                        <Badge className={`w-fit ${
                           order.status === "DELIVERED" ? "bg-green-100 text-green-700" :
                           order.status === "PENDING" ? "bg-amber-100 text-amber-700" :
                           "bg-gray-100 text-gray-700"
-                        }>
+                        }`}>
                           {order.status.toLowerCase()}
                         </Badge>
                       </div>
@@ -261,5 +261,3 @@ export default async function DemoStorePage() {
     </div>
   )
 }
-
-
