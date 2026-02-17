@@ -109,7 +109,7 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col h-full w-64 bg-white border-r border-gray-100">
+    <div className="relative z-50 flex flex-col h-full w-64 bg-white border-r border-gray-100">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div>
