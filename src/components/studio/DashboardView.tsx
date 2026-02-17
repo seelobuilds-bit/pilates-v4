@@ -31,6 +31,7 @@ import {
   Eye,
   EyeOff,
   Settings2,
+  Percent,
 } from "lucide-react"
 import { DashboardData } from "./types"
 
@@ -49,6 +50,16 @@ type WidgetId =
   | "recentActivity"
   | "studioStats"
 
+type StatCardId =
+  | "monthlyRevenue"
+  | "activeClients"
+  | "weekBookings"
+  | "atRiskClients"
+  | "revenueGrowth"
+  | "avgFillRate"
+  | "todayClasses"
+  | "totalClients"
+
 const STORAGE_KEY_PREFIX = "studio-dashboard-layout-v1"
 
 const DEFAULT_WIDGET_ORDER: WidgetId[] = [
@@ -60,6 +71,24 @@ const DEFAULT_WIDGET_ORDER: WidgetId[] = [
   "comingUp",
   "recentActivity",
   "studioStats",
+]
+
+const DEFAULT_STAT_CARD_ORDER: StatCardId[] = [
+  "monthlyRevenue",
+  "activeClients",
+  "weekBookings",
+  "atRiskClients",
+  "revenueGrowth",
+  "avgFillRate",
+  "todayClasses",
+  "totalClients",
+]
+
+const DEFAULT_VISIBLE_STAT_CARDS: StatCardId[] = [
+  "monthlyRevenue",
+  "activeClients",
+  "weekBookings",
+  "atRiskClients",
 ]
 
 function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: WidgetId) {
@@ -78,6 +107,10 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   const storageKey = useMemo(() => `${STORAGE_KEY_PREFIX}:${linkPrefix}`, [linkPrefix])
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(DEFAULT_WIDGET_ORDER)
   const [hiddenWidgets, setHiddenWidgets] = useState<WidgetId[]>([])
+  const [statCardOrder, setStatCardOrder] = useState<StatCardId[]>(DEFAULT_STAT_CARD_ORDER)
+  const [hiddenStatCards, setHiddenStatCards] = useState<StatCardId[]>(
+    DEFAULT_STAT_CARD_ORDER.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id))
+  )
   const [draggedWidget, setDraggedWidget] = useState<WidgetId | null>(null)
   const [showLayoutControls, setShowLayoutControls] = useState(false)
 
@@ -86,7 +119,12 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     if (!stored) return
 
     try {
-      const parsed = JSON.parse(stored) as { order?: WidgetId[]; hidden?: WidgetId[] }
+      const parsed = JSON.parse(stored) as {
+        order?: WidgetId[]
+        hidden?: WidgetId[]
+        statOrder?: StatCardId[]
+        hiddenStats?: StatCardId[]
+      }
       const storedOrder = parsed.order ?? []
       const validStoredOrder = storedOrder.filter((id): id is WidgetId => DEFAULT_WIDGET_ORDER.includes(id))
       const missing = DEFAULT_WIDGET_ORDER.filter((id) => !validStoredOrder.includes(id))
@@ -94,11 +132,24 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
       const storedHidden = (parsed.hidden ?? []).filter((id): id is WidgetId => DEFAULT_WIDGET_ORDER.includes(id))
 
+      const storedStatOrder = parsed.statOrder ?? []
+      const validStoredStatOrder = storedStatOrder.filter((id): id is StatCardId => DEFAULT_STAT_CARD_ORDER.includes(id))
+      const missingStatCards = DEFAULT_STAT_CARD_ORDER.filter((id) => !validStoredStatOrder.includes(id))
+      const mergedStatOrder = [...validStoredStatOrder, ...missingStatCards]
+
+      const storedHiddenStats = (parsed.hiddenStats ?? []).filter((id): id is StatCardId =>
+        DEFAULT_STAT_CARD_ORDER.includes(id)
+      )
+
       setWidgetOrder(mergedOrder)
       setHiddenWidgets(storedHidden)
+      setStatCardOrder(mergedStatOrder)
+      setHiddenStatCards(storedHiddenStats)
     } catch {
       setWidgetOrder(DEFAULT_WIDGET_ORDER)
       setHiddenWidgets([])
+      setStatCardOrder(DEFAULT_STAT_CARD_ORDER)
+      setHiddenStatCards(DEFAULT_STAT_CARD_ORDER.filter((id) => !DEFAULT_VISIBLE_STAT_CARDS.includes(id)))
     }
   }, [storageKey])
 
@@ -108,9 +159,11 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       JSON.stringify({
         order: widgetOrder,
         hidden: hiddenWidgets,
+        statOrder: statCardOrder,
+        hiddenStats: hiddenStatCards,
       })
     )
-  }, [storageKey, widgetOrder, hiddenWidgets])
+  }, [storageKey, widgetOrder, hiddenWidgets, statCardOrder, hiddenStatCards])
 
   const visibleWidgets = useMemo(
     () => widgetOrder.filter((widget) => !hiddenWidgets.includes(widget)),
@@ -121,6 +174,28 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     setHiddenWidgets((prev) =>
       prev.includes(widget) ? prev.filter((id) => id !== widget) : [...prev, widget]
     )
+  }
+
+  const visibleStatCards = useMemo(
+    () => statCardOrder.filter((card) => !hiddenStatCards.includes(card)),
+    [statCardOrder, hiddenStatCards]
+  )
+
+  const toggleStatCardVisibility = (card: StatCardId) => {
+    setHiddenStatCards((prev) =>
+      prev.includes(card) ? prev.filter((id) => id !== card) : [...prev, card]
+    )
+  }
+
+  const statCardMeta: Record<StatCardId, { title: string; source: "dashboard" | "reports" }> = {
+    monthlyRevenue: { title: "Monthly Revenue", source: "dashboard" },
+    activeClients: { title: "Active Clients", source: "dashboard" },
+    weekBookings: { title: "This Week Bookings", source: "dashboard" },
+    atRiskClients: { title: "At Risk Clients", source: "dashboard" },
+    revenueGrowth: { title: "Revenue Growth", source: "reports" },
+    avgFillRate: { title: "Avg Fill Rate", source: "reports" },
+    todayClasses: { title: "Today Classes", source: "reports" },
+    totalClients: { title: "Total Clients", source: "reports" },
   }
 
   const widgetMeta: Record<WidgetId, { title: string; className?: string }> = {
@@ -169,81 +244,172 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       case "stats":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">${data.stats.monthlyRevenue.toLocaleString()}</p>
-                    <p className="text-sm mt-1.5 flex items-center gap-1">
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-medium">+{data.stats.revenueChange}%</span>
-                      <span className="text-gray-400">vs last month</span>
-                    </p>
-                  </div>
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-emerald-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {visibleStatCards.map((cardId) => {
+              switch (cardId) {
+                case "monthlyRevenue":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
+                            <p className="text-2xl font-bold text-gray-900">${data.stats.monthlyRevenue.toLocaleString()}</p>
+                            <p className="text-sm mt-1.5 flex items-center gap-1">
+                              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                              <span className="text-emerald-500 font-medium">+{data.stats.revenueChange}%</span>
+                              <span className="text-gray-400">vs last month</span>
+                            </p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
+                            <DollarSign className="h-5 w-5 text-emerald-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
 
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Active Clients</p>
-                    <p className="text-2xl font-bold text-gray-900">{data.stats.activeClients}</p>
-                    <p className="text-sm mt-1.5 flex items-center gap-1">
-                      <UserPlus className="h-3.5 w-3.5 text-blue-500" />
-                      <span className="text-blue-500 font-medium">+{data.stats.newClientsThisWeek}</span>
-                      <span className="text-gray-400">this week</span>
-                    </p>
-                  </div>
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-blue-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                case "activeClients":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Active Clients</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.stats.activeClients}</p>
+                            <p className="text-sm mt-1.5 flex items-center gap-1">
+                              <UserPlus className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="text-blue-500 font-medium">+{data.stats.newClientsThisWeek}</span>
+                              <span className="text-gray-400">this week</span>
+                            </p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-blue-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
 
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">This Week</p>
-                    <p className="text-2xl font-bold text-gray-900">{data.stats.weekBookings} bookings</p>
-                    <p className="text-sm mt-1.5 flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5 text-violet-500" />
-                      <span className="text-violet-500 font-medium">{data.stats.todayBookings}</span>
-                      <span className="text-gray-400">today</span>
-                    </p>
-                  </div>
-                  <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-violet-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                case "weekBookings":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">This Week</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.stats.weekBookings} bookings</p>
+                            <p className="text-sm mt-1.5 flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5 text-violet-500" />
+                              <span className="text-violet-500 font-medium">{data.stats.todayBookings}</span>
+                              <span className="text-gray-400">today</span>
+                            </p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
+                            <Calendar className="h-5 w-5 text-violet-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
 
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">At Risk</p>
-                    <p className="text-2xl font-bold text-gray-900">{data.stats.atRiskClientsCount} clients</p>
-                    <p className="text-sm mt-1.5 flex items-center gap-1">
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="text-amber-500 font-medium">{data.stats.churnRate}%</span>
-                      <span className="text-gray-400">churn rate</span>
-                    </p>
-                  </div>
-                  <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-amber-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                case "atRiskClients":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">At Risk</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.stats.atRiskClientsCount} clients</p>
+                            <p className="text-sm mt-1.5 flex items-center gap-1">
+                              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                              <span className="text-amber-500 font-medium">{data.stats.churnRate}%</span>
+                              <span className="text-gray-400">churn rate</span>
+                            </p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                            <AlertCircle className="h-5 w-5 text-amber-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+
+                case "revenueGrowth":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Revenue Growth</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.stats.revenueChange > 0 ? "+" : ""}{data.stats.revenueChange}%</p>
+                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
+                            <TrendingUp className="h-5 w-5 text-emerald-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+
+                case "avgFillRate":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Avg Fill Rate</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.todayOverview.fillRate}%</p>
+                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
+                            <Percent className="h-5 w-5 text-violet-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+
+                case "todayClasses":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Today Classes</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.todayOverview.classCount}</p>
+                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-teal-50 flex items-center justify-center">
+                            <Clock className="h-5 w-5 text-teal-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+
+                case "totalClients":
+                  return (
+                    <Card key={cardId} className="border-0 shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 mb-1">Total Clients</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.studioStats.totalClients}</p>
+                            <p className="text-sm mt-1.5 text-gray-400">Report datapoint</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-blue-500" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+
+                default:
+                  return null
+              }
+            })}
           </div>
         )
 
@@ -655,28 +821,60 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
       {showLayoutControls && (
           <Card className="border-0 shadow-sm mb-6">
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-gray-900 mb-3">Show / Hide Widgets</p>
-            <p className="text-xs text-gray-500 mb-3">Drag to reorder is enabled while this panel is open.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-              {DEFAULT_WIDGET_ORDER.map((widget) => {
-                const isVisible = !hiddenWidgets.includes(widget)
-                return (
-                  <button
-                    key={widget}
-                    type="button"
-                    onClick={() => toggleWidgetVisibility(widget)}
-                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
-                      isVisible
-                        ? "bg-white border-gray-200 text-gray-800"
-                        : "bg-gray-50 border-gray-200 text-gray-500"
-                    }`}
-                  >
-                    <span>{widgetMeta[widget].title}</span>
-                    {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                )
-              })}
+          <CardContent className="p-4 space-y-5">
+            <div>
+              <p className="text-sm font-medium text-gray-900 mb-3">Show / Hide Widgets</p>
+              <p className="text-xs text-gray-500 mb-3">Drag to reorder is enabled while this panel is open.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                {DEFAULT_WIDGET_ORDER.map((widget) => {
+                  const isVisible = !hiddenWidgets.includes(widget)
+                  return (
+                    <button
+                      key={widget}
+                      type="button"
+                      onClick={() => toggleWidgetVisibility(widget)}
+                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+                        isVisible
+                          ? "bg-white border-gray-200 text-gray-800"
+                          : "bg-gray-50 border-gray-200 text-gray-500"
+                      }`}
+                    >
+                      <span>{widgetMeta[widget].title}</span>
+                      {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-900 mb-3">Stats cards</p>
+              <p className="text-xs text-gray-500 mb-3">Show or hide individual cards. Includes report datapoints from Reports.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                {statCardOrder.map((card) => {
+                  const isVisible = !hiddenStatCards.includes(card)
+                  return (
+                    <button
+                      key={card}
+                      type="button"
+                      onClick={() => toggleStatCardVisibility(card)}
+                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+                        isVisible
+                          ? "bg-white border-gray-200 text-gray-800"
+                          : "bg-gray-50 border-gray-200 text-gray-500"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        {statCardMeta[card].title}
+                        {statCardMeta[card].source === "reports" && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Report</Badge>
+                        )}
+                      </span>
+                      {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
