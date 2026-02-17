@@ -3,6 +3,12 @@ import { db } from "@/lib/db"
 import { sendStudioEmail } from "@/lib/email"
 import { sendSMS } from "@/lib/communications"
 import { Automation, AutomationTrigger, Client, MessageChannel } from "@prisma/client"
+import {
+  AUTOMATION_STEP_WINDOW_MINUTES,
+  AutomationChainStep,
+  fallbackAutomationStep,
+} from "@/lib/automation-chain"
+import { hasStopOnBookingMarker, stripAutomationBodyMarkers } from "@/lib/automation-metadata"
 
 function renderTemplate(template: string, vars: Record<string, string>) {
   return template.replace(/\{\{(\w+)\}\}/g, (_full, key: string) => vars[key] ?? "")
@@ -26,12 +32,13 @@ function toTimeLabel(date: Date) {
 
 async function sendAutomationMessage(params: {
   automation: Automation
+  step: AutomationChainStep
   studioName: string
   client: Client
   idempotencyKey: string
   vars: Record<string, string>
 }) {
-  const { automation, studioName, client, idempotencyKey, vars } = params
+  const { automation, step, studioName, client, idempotencyKey, vars } = params
 
   const existing = await db.message.findFirst({
     where: {
@@ -46,30 +53,30 @@ async function sendAutomationMessage(params: {
     return { sent: false, reason: "duplicate" as const }
   }
 
-  const renderedSubject = automation.subject ? renderTemplate(automation.subject, vars) : null
-  const renderedBody = renderTemplate(automation.body, vars)
-  const renderedHtmlBody = automation.htmlBody ? renderTemplate(automation.htmlBody, vars) : null
+  const renderedSubject = step.subject ? renderTemplate(step.subject, vars) : null
+  const renderedBody = renderTemplate(step.body, vars)
+  const renderedHtmlBody = step.htmlBody ? renderTemplate(step.htmlBody, vars) : null
 
   const targetEmail = client.email?.trim()
   const targetPhone = client.phone?.trim()
 
-  if (automation.channel === "EMAIL" && !targetEmail) {
+  if (step.channel === "EMAIL" && !targetEmail) {
     return { sent: false, reason: "no_email" as const }
   }
-  if (automation.channel === "SMS" && !targetPhone) {
+  if (step.channel === "SMS" && !targetPhone) {
     return { sent: false, reason: "no_phone" as const }
   }
 
   const queued = await db.message.create({
     data: {
-      channel: automation.channel,
+      channel: step.channel,
       direction: "OUTBOUND",
       status: "QUEUED",
       subject: renderedSubject,
       body: renderedBody,
       htmlBody: renderedHtmlBody,
-      fromAddress: automation.channel === "EMAIL" ? `automation@${automation.studioId}.local` : "automation",
-      toAddress: automation.channel === "EMAIL" ? targetEmail! : targetPhone!,
+      fromAddress: step.channel === "EMAIL" ? `automation@${automation.studioId}.local` : "automation",
+      toAddress: step.channel === "EMAIL" ? targetEmail! : targetPhone!,
       fromName: `${studioName} Automations`,
       toName: `${client.firstName} ${client.lastName}`.trim(),
       threadId: idempotencyKey,
@@ -79,7 +86,7 @@ async function sendAutomationMessage(params: {
     },
   })
 
-  if (automation.channel === "EMAIL") {
+  if (step.channel === "EMAIL") {
     const emailResult = await sendStudioEmail(automation.studioId, {
       to: targetEmail!,
       subject: renderedSubject || automation.name,
@@ -108,7 +115,7 @@ async function sendAutomationMessage(params: {
     })
   }
 
-  if (automation.channel === "SMS") {
+  if (step.channel === "SMS") {
     const smsResult = await sendSMS({
       to: targetPhone!,
       body: renderedBody,
@@ -150,6 +157,55 @@ type Candidate = {
   client: Client
   vars: Record<string, string>
   idempotencyKey: string
+  triggeredAt: Date
+}
+
+function supportsStopOnBooking(trigger: AutomationTrigger) {
+  return (
+    trigger === "WELCOME" ||
+    trigger === "CLIENT_INACTIVE" ||
+    trigger === "BIRTHDAY" ||
+    trigger === "MEMBERSHIP_EXPIRING" ||
+    trigger === "BOOKING_CANCELLED"
+  )
+}
+
+async function shouldSkipForBooking(params: {
+  automation: Automation
+  clientId: string
+  triggeredAt: Date
+}) {
+  const { automation, clientId, triggeredAt } = params
+  if (!hasStopOnBookingMarker(automation.body) || !supportsStopOnBooking(automation.trigger)) {
+    return false
+  }
+
+  const booking = await db.booking.findFirst({
+    where: {
+      studioId: automation.studioId,
+      clientId,
+      status: { in: ["CONFIRMED", "COMPLETED"] },
+      createdAt: { gt: triggeredAt },
+    },
+    select: { id: true },
+  })
+
+  return Boolean(booking)
+}
+
+function getAutomationSteps(automation: Automation): AutomationChainStep[] {
+  const defaultDelayMinutes =
+    automation.trigger === "CLASS_FOLLOWUP" ? automation.triggerDelay || 60 : automation.triggerDelay || 0
+
+  return [
+    fallbackAutomationStep({
+      channel: automation.channel,
+      subject: automation.subject,
+      body: stripAutomationBodyMarkers(automation.body),
+      htmlBody: automation.htmlBody,
+      delayMinutes: defaultDelayMinutes,
+    }),
+  ]
 }
 
 async function getCandidates(
@@ -177,6 +233,7 @@ async function getCandidates(
         lastName: client.lastName,
       },
       idempotencyKey: `automation:${automation.id}:welcome:${client.id}`,
+      triggeredAt: new Date(client.createdAt),
     }))
   }
 
@@ -216,6 +273,7 @@ async function getCandidates(
           teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
         },
         idempotencyKey: `automation:${automation.id}:booking_confirmed:${booking.id}`,
+        triggeredAt: new Date(booking.createdAt),
       }))
   }
 
@@ -256,6 +314,7 @@ async function getCandidates(
           teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
         },
         idempotencyKey: `automation:${automation.id}:booking_cancelled:${booking.id}`,
+        triggeredAt: booking.cancelledAt ? new Date(booking.cancelledAt) : new Date(booking.updatedAt),
       }))
   }
 
@@ -286,11 +345,6 @@ async function getCandidates(
 
     return bookings
       .filter((booking) => !automation.locationId || booking.classSession.locationId === automation.locationId)
-      .filter((booking) => {
-        const classStart = new Date(booking.classSession.startTime).getTime()
-        const reminderAt = classStart - reminderHours * 60 * 60 * 1000
-        return now.getTime() >= reminderAt && now.getTime() < reminderAt + 30 * 60 * 1000
-      })
       .map((booking) => ({
         client: booking.client,
         vars: {
@@ -304,11 +358,11 @@ async function getCandidates(
           teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
         },
         idempotencyKey: `automation:${automation.id}:class_reminder:${booking.id}:${reminderHours}`,
+        triggeredAt: new Date(new Date(booking.classSession.startTime).getTime() - reminderHours * 60 * 60 * 1000),
       }))
   }
 
   if (automation.trigger === "CLASS_FOLLOWUP") {
-    const followUpDelayMinutes = automation.triggerDelay || 60
     const bookings = await db.booking.findMany({
       where: {
         studioId,
@@ -335,10 +389,6 @@ async function getCandidates(
 
     return bookings
       .filter((booking) => !automation.locationId || booking.classSession.locationId === automation.locationId)
-      .filter((booking) => {
-        const followupAt = new Date(booking.classSession.endTime).getTime() + followUpDelayMinutes * 60 * 1000
-        return now.getTime() >= followupAt && now.getTime() < followupAt + 30 * 60 * 1000
-      })
       .map((booking) => ({
         client: booking.client,
         vars: {
@@ -351,7 +401,8 @@ async function getCandidates(
           locationName: booking.classSession.location.name,
           teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
         },
-        idempotencyKey: `automation:${automation.id}:class_followup:${booking.id}:${followUpDelayMinutes}`,
+        idempotencyKey: `automation:${automation.id}:class_followup:${booking.id}`,
+        triggeredAt: new Date(booking.classSession.endTime),
       }))
   }
 
@@ -381,6 +432,7 @@ async function getCandidates(
         lastName: client.lastName,
       },
       idempotencyKey: `automation:${automation.id}:client_inactive:${client.id}:${bucket}`,
+      triggeredAt: new Date(`${bucket}T00:00:00.000Z`),
     }))
   }
 
@@ -412,6 +464,7 @@ async function getCandidates(
           lastName: client.lastName,
         },
         idempotencyKey: `automation:${automation.id}:birthday:${client.id}:${year}`,
+        triggeredAt: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
       }))
   }
 
@@ -444,6 +497,7 @@ async function getCandidates(
           membershipEndDate: toDateLabel(new Date(subscription.currentPeriodEnd)),
         },
         idempotencyKey: `automation:${automation.id}:membership_expiring:${subscription.id}:${subscription.currentPeriodEnd.toISOString().slice(0, 10)}`,
+        triggeredAt: new Date(subscription.currentPeriodEnd.getTime() - days * 24 * 60 * 60 * 1000),
       }))
   }
 
@@ -479,40 +533,68 @@ export async function POST(request: NextRequest) {
       automationId: string
       trigger: AutomationTrigger
       channel: MessageChannel
+      steps: number
       processed: number
       sent: number
       skipped: number
     }> = []
 
     for (const automation of activeAutomations) {
+      const steps = getAutomationSteps(automation)
       const candidates = await getCandidates(automation, now)
+      let processed = 0
       let sent = 0
       let skipped = 0
 
       for (const candidate of candidates) {
-        const result = await sendAutomationMessage({
+        const stopForBooking = await shouldSkipForBooking({
           automation,
-          studioName: automation.studio.name,
-          client: candidate.client,
-          idempotencyKey: candidate.idempotencyKey,
-          vars: {
-            ...candidate.vars,
-            studioName: automation.studio.name,
-          },
+          clientId: candidate.client.id,
+          triggeredAt: candidate.triggeredAt,
         })
 
-        if (result.sent) {
-          sent += 1
-        } else {
-          skipped += 1
+        for (const step of steps) {
+          const dueAt = candidate.triggeredAt.getTime() + step.delayMinutes * 60 * 1000
+          if (
+            now.getTime() < dueAt ||
+            now.getTime() >= dueAt + AUTOMATION_STEP_WINDOW_MINUTES * 60 * 1000
+          ) {
+            continue
+          }
+
+          processed += 1
+
+          if (stopForBooking) {
+            skipped += 1
+            continue
+          }
+
+          const result = await sendAutomationMessage({
+            automation,
+            step,
+            studioName: automation.studio.name,
+            client: candidate.client,
+            idempotencyKey: `${candidate.idempotencyKey}:step:${step.id}`,
+            vars: {
+              ...candidate.vars,
+              studioName: automation.studio.name,
+            },
+          })
+
+          if (result.sent) {
+            sent += 1
+          } else {
+            skipped += 1
+          }
         }
       }
 
       summary.push({
         automationId: automation.id,
         trigger: automation.trigger,
-        channel: automation.channel,
-        processed: candidates.length,
+        channel: steps[0]?.channel || automation.channel,
+        steps: steps.length,
+        processed,
         sent,
         skipped,
       })

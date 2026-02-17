@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import {
+  fallbackAutomationStep,
+  getStepValidationError,
+  normalizeAutomationSteps,
+} from "@/lib/automation-chain"
+import {
+  hasStopOnBookingMarker,
+  stripAutomationBodyMarkers,
+  withAutomationBodyMarkers,
+} from "@/lib/automation-metadata"
 
 // GET - Fetch a specific automation
 export async function GET(
@@ -33,7 +43,13 @@ export async function GET(
       return NextResponse.json({ error: "Automation not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ automation })
+    return NextResponse.json({
+      automation: {
+        ...automation,
+        body: stripAutomationBodyMarkers(automation.body),
+        stopOnBooking: hasStopOnBookingMarker(automation.body),
+      },
+    })
   } catch (error) {
     console.error("Error fetching automation:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -64,16 +80,41 @@ export async function PATCH(
       return NextResponse.json({ error: "Automation not found" }, { status: 404 })
     }
 
+    const normalizedSteps = normalizeAutomationSteps(body.steps)
+    const fallbackStep =
+      normalizedSteps.length === 0 && body.channel && body.body
+        ? fallbackAutomationStep({
+            channel: body.channel,
+            subject: body.subject ?? null,
+            body: body.body,
+            htmlBody: body.htmlBody ?? null,
+            delayMinutes: body.triggerDelay || 0,
+          })
+        : null
+
+    const steps = fallbackStep ? [fallbackStep] : normalizedSteps
+    const stepError = getStepValidationError(steps)
+    if (stepError) {
+      return NextResponse.json({ error: stepError }, { status: 400 })
+    }
+
+    const firstStep = steps[0]
+    const stopOnBooking =
+      typeof body.stopOnBooking === "boolean" ? body.stopOnBooking : hasStopOnBookingMarker(existingAutomation.body)
+
     const automation = await db.automation.update({
       where: { id: automationId },
       data: {
         name: body.name,
         trigger: body.trigger,
-        channel: body.channel,
-        subject: body.subject,
-        body: body.body,
-        htmlBody: body.htmlBody,
-        triggerDelay: body.triggerDelay,
+        channel: firstStep.channel,
+        subject: firstStep.subject,
+        body: withAutomationBodyMarkers({
+          body: firstStep.body,
+          stopOnBooking,
+        }),
+        htmlBody: firstStep.htmlBody,
+        triggerDelay: firstStep.delayMinutes,
         triggerDays: body.triggerDays,
         reminderHours: body.reminderHours,
         locationId: body.locationId,
