@@ -70,12 +70,12 @@
 /* Sidebar scrollbar */
 .app-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
 }
 
 .app-scrollbar::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 .app-scrollbar::-webkit-scrollbar-track {
@@ -83,24 +83,22 @@
 }
 
 .app-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(165, 180, 252, 0.9), rgba(148, 163, 184, 0.7));
+  background: rgba(148, 163, 184, 0.45);
   border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  border: 1px solid transparent;
 }
 
 .app-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.95), rgba(100, 116, 139, 0.8));
-  background-clip: padding-box;
+  background: rgba(100, 116, 139, 0.6);
 }
 
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
 }
 
 .sidebar-scroll::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-track {
@@ -108,13 +106,11 @@
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(165, 180, 252, 0.9), rgba(148, 163, 184, 0.7));
+  background: rgba(148, 163, 184, 0.45);
   border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  border: 1px solid transparent;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(129, 140, 248, 0.95), rgba(100, 116, 139, 0.8));
-  background-clip: padding-box;
+  background: rgba(100, 116, 139, 0.6);
 }

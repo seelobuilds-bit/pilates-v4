@@ -463,7 +463,7 @@ export default function InboxPage() {
 
   if (loading) {
     return (
-      <div className="h-full min-h-0 flex items-center justify-center">
+      <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center bg-gray-50 lg:min-h-dvh">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -472,9 +472,9 @@ export default function InboxPage() {
   const socialUnread = socialConversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col overflow-hidden bg-gray-50 lg:h-dvh lg:min-h-dvh">
       {/* Inbox Type Tabs */}
-      <div className="border-b bg-white px-4 py-3">
+      <div className="shrink-0 border-b bg-white px-4 py-3">
         <Tabs value={inboxTab} onValueChange={(v) => setInboxTab(v as typeof inboxTab)}>
           <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
@@ -497,9 +497,9 @@ export default function InboxPage() {
 
       {/* Main Content */}
       {inboxTab === "messages" ? (
-      <div className="flex-1 min-h-0 flex">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
       {/* Conversations List */}
-      <div className={`${selectedConversation ? "hidden md:flex" : "flex"} w-full md:w-96 border-r border-gray-200 flex-col min-h-0 bg-white`}>
+      <div className={`${selectedConversation ? "hidden md:flex" : "flex"} min-h-0 w-full shrink-0 flex-col border-r border-gray-200 bg-white md:w-[22rem] lg:w-96`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -615,13 +615,13 @@ export default function InboxPage() {
       </div>
 
       {/* Message View */}
-      <div className={`${selectedConversation ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 bg-gray-50`}>
+      <div className={`${selectedConversation ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-1 flex-col bg-gray-50`}>
         {selectedConversation ? (
           <>
             {/* Conversation Header */}
             <div className="p-4 bg-white border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -639,34 +639,35 @@ export default function InboxPage() {
                       `${selectedClient.firstName[0]}${selectedClient.lastName[0]}`
                     ) : '?'}
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold text-gray-900">
                       {selectedConversation.isDraft && !selectedClient 
                         ? "New Message" 
                         : selectedClient 
                           ? `${selectedClient.firstName} ${selectedClient.lastName}`
                           : "Unknown"}
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="truncate text-sm text-gray-500">
                       {selectedConversation.isDraft && !selectedClient 
                         ? "Select a recipient below" 
                         : selectedClient?.email}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
                   {selectedConversation.isDraft ? (
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className="w-full sm:w-auto"
                       onClick={handleCancelDraft}
                     >
                       <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
                   ) : selectedClient && (
-                    <Link href={`/studio/clients/${selectedClient.id}`}>
-                      <Button variant="outline" size="sm">
+                    <Link href={`/studio/clients/${selectedClient.id}`} className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         <User className="h-4 w-4 mr-2" />
                         View Profile
                       </Button>
@@ -730,14 +731,14 @@ export default function InboxPage() {
             {/* Selected Client Badge */}
             {selectedConversation.isDraft && selectedClient && (
               <div className="p-4 bg-white border-b border-gray-200">
-                <div className="p-3 bg-violet-50 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-2 rounded-lg bg-violet-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 text-sm font-medium">
                       {selectedClient.firstName[0]}{selectedClient.lastName[0]}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{selectedClient.firstName} {selectedClient.lastName}</p>
-                      <p className="text-sm text-gray-500">{selectedClient.email}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-gray-900">{selectedClient.firstName} {selectedClient.lastName}</p>
+                      <p className="truncate text-sm text-gray-500">{selectedClient.email}</p>
                     </div>
                   </div>
                   <Button 
@@ -755,7 +756,7 @@ export default function InboxPage() {
             )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
               {loadingMessages ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
@@ -780,17 +781,17 @@ export default function InboxPage() {
                     key={msg.id}
                     className={`flex ${msg.direction === 'OUTBOUND' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-lg rounded-lg p-4 ${
+                    <div className={`max-w-[85%] rounded-lg p-4 sm:max-w-lg ${
                       msg.direction === 'OUTBOUND' 
                         ? msg.channel === 'EMAIL' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
                         : 'bg-white border border-gray-200'
                     }`}>
                       {msg.subject && (
-                        <p className={`font-medium mb-2 ${msg.direction === 'OUTBOUND' ? 'text-white' : 'text-gray-900'}`}>
+                        <p className={`mb-2 break-words font-medium ${msg.direction === 'OUTBOUND' ? 'text-white' : 'text-gray-900'}`}>
                           {msg.subject}
                         </p>
                       )}
-                      <p className={`whitespace-pre-wrap text-sm ${msg.direction === 'OUTBOUND' ? 'text-white' : 'text-gray-700'}`}>
+                      <p className={`whitespace-pre-wrap break-words text-sm ${msg.direction === 'OUTBOUND' ? 'text-white' : 'text-gray-700'}`}>
                         {msg.body}
                       </p>
                       <div className={`flex items-center gap-2 mt-2 text-xs ${
@@ -817,7 +818,7 @@ export default function InboxPage() {
             )}
 
             {/* Compose Area */}
-            <div className="p-4 lg:pr-24 bg-white border-t border-gray-200">
+            <div className="shrink-0 border-t border-gray-200 bg-white p-3 pb-20 sm:p-4 sm:pb-4 lg:pr-28">
               {/* Message Type Toggle */}
               <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
                 <button
@@ -854,7 +855,7 @@ export default function InboxPage() {
                 />
               )}
               
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                 <Textarea
                   placeholder={`Type your ${composeType === 'email' ? 'email' : 'SMS'} message...`}
                   value={newMessage}
@@ -865,7 +866,7 @@ export default function InboxPage() {
                 <Button 
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim() || sending || !selectedClient}
-                  className={`self-end ${composeType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+                  className={`w-full sm:w-auto ${composeType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -886,7 +887,7 @@ export default function InboxPage() {
               <p className="text-lg font-medium">Select a conversation</p>
               <p className="text-sm">Choose a conversation from the list to view messages</p>
               <Button 
-                className="mt-4 bg-violet-600 hover:bg-violet-700"
+                className="mt-4 w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                 onClick={handleCompose}
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -899,9 +900,9 @@ export default function InboxPage() {
     </div>
       ) : (
         /* ==================== SOCIAL INBOX ==================== */
-        <div className="flex-1 min-h-0 flex">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           {/* Social Conversations List */}
-          <div className={`${selectedSocialConv || socialComposing ? "hidden md:flex" : "flex"} w-full md:w-96 border-r border-gray-200 flex-col min-h-0 bg-white`}>
+          <div className={`${selectedSocialConv || socialComposing ? "hidden md:flex" : "flex"} min-h-0 w-full shrink-0 flex-col border-r border-gray-200 bg-white md:w-[22rem] lg:w-96`}>
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1062,21 +1063,21 @@ export default function InboxPage() {
           </div>
 
           {/* Social Message Thread or Compose */}
-          <div className={`${selectedSocialConv || socialComposing ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 bg-gray-50`}>
+          <div className={`${selectedSocialConv || socialComposing ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-1 flex-col bg-gray-50`}>
           {socialComposing ? (
             <>
               {/* Compose Header */}
               <div className="p-4 bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSocialComposing(false)}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center">
                       <Edit3 className="h-5 w-5" />
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">New Message</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-gray-900">New Message</p>
                       <p className="text-xs text-gray-500">Start a new conversation</p>
                     </div>
                   </div>
@@ -1174,7 +1175,7 @@ export default function InboxPage() {
               </div>
 
               {/* Send Button */}
-              <div className="p-4 lg:pr-24 bg-white border-t border-gray-200">
+              <div className="shrink-0 border-t border-gray-200 bg-white p-3 pb-20 sm:p-4 sm:pb-4 lg:pr-28">
                 <div className="flex flex-col justify-end gap-3 sm:flex-row">
                   <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSocialComposing(false)}>
                     Cancel
@@ -1197,8 +1198,8 @@ export default function InboxPage() {
             <>
               {/* Conversation Header */}
               <div className="p-4 bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedSocialConv(null)}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -1213,8 +1214,8 @@ export default function InboxPage() {
                         <span className="font-bold">TT</span>
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">@{selectedSocialConv.platformUsername || "Unknown"}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-gray-900">@{selectedSocialConv.platformUsername || "Unknown"}</p>
                       <p className="text-xs text-gray-500">via {selectedSocialConv.account?.platform || "Social"}</p>
                     </div>
                   </div>
@@ -1225,15 +1226,15 @@ export default function InboxPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
                 {socialMessages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.direction === 'OUTBOUND' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2 sm:max-w-[70%] ${
                       msg.direction === 'OUTBOUND' 
                         ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-br-md' 
                         : 'bg-white shadow-sm rounded-bl-md'
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <p className={`text-xs mt-1 ${msg.direction === 'OUTBOUND' ? 'text-white/70' : 'text-gray-400'}`}>
                         {new Date(msg.createdAt).toLocaleString()}
                       </p>
@@ -1243,8 +1244,8 @@ export default function InboxPage() {
               </div>
 
               {/* Compose */}
-              <div className="p-4 lg:pr-24 bg-white border-t">
-                <div className="flex items-end gap-3">
+              <div className="shrink-0 border-t bg-white p-3 pb-20 sm:p-4 sm:pb-4 lg:pr-28">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <Textarea
                     placeholder="Type your message..."
                     value={newSocialMessage}
@@ -1255,7 +1256,7 @@ export default function InboxPage() {
                   <Button 
                     onClick={handleSendSocialMessage}
                     disabled={!newSocialMessage.trim() || sending}
-                    className="bg-pink-600 hover:bg-pink-700"
+                    className="w-full bg-pink-600 hover:bg-pink-700 sm:w-auto"
                   >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1274,7 +1275,7 @@ export default function InboxPage() {
                 <p className="text-sm">Choose a conversation from the list to view messages</p>
                 {socialAccounts.length > 0 && (
                   <Button 
-                    className="mt-4 bg-pink-600 hover:bg-pink-700"
+                    className="mt-4 w-full bg-pink-600 hover:bg-pink-700 sm:w-auto"
                     onClick={handleStartSocialCompose}
                   >
                     <Plus className="h-4 w-4 mr-2" />

@@ -220,6 +220,12 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/hq/studios/new/page.tsx`
   - `src/app/(dashboard)/studio/classes/new/page.tsx`
   - `src/app/(dashboard)/studio/clients/new/page.tsx`
+- 2026-02-17 Batch AB complete (critical dashboard/inbox pass):
+  - `src/app/(dashboard)/layout.tsx`
+  - `src/components/support/support-widget.tsx`
+  - `src/components/studio/DashboardView.tsx`
+  - `src/app/(dashboard)/studio/inbox/page.tsx`
+  - `src/app/globals.css`
 
 ## Next Priority Queue
 

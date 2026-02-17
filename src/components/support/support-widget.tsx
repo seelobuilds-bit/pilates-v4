@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -41,6 +42,7 @@ interface Message {
 
 export function SupportWidget() {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [view, setView] = useState<"list" | "chat" | "new">("list")
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -194,9 +196,10 @@ export function SupportWidget() {
   }
 
   const unreadCount = conversations.filter(c => c.unreadByUser).length
+  const isInboxRoute = pathname?.includes("/inbox")
 
   // Don't render for HQ admins or Sales agents (internal staff)
-  if (session?.user?.role === "HQ_ADMIN" || session?.user?.role === "SALES_AGENT") {
+  if (session?.user?.role === "HQ_ADMIN" || session?.user?.role === "SALES_AGENT" || isInboxRoute) {
     return null
   }
 
@@ -460,7 +463,6 @@ export function SupportWidget() {
     </>
   )
 }
-
 
 
 
