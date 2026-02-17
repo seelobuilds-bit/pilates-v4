@@ -135,7 +135,7 @@ export default function TemplateDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -143,7 +143,7 @@ export default function TemplateDetailPage({
 
   if (!template) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">Template not found</p>
@@ -156,15 +156,15 @@ export default function TemplateDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=templates" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Templates
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
               template.type === "sms" ? "bg-blue-100" : "bg-violet-100"
             }`}>
@@ -182,14 +182,14 @@ export default function TemplateDetailPage({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Link href={`/studio/marketing/campaigns/new?template=${template.id}`}>
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
                 Use in Campaign
               </Button>
             </Link>
-            <Button variant="outline" className="text-red-600 hover:text-red-700" onClick={handleDelete}>
+            <Button variant="outline" className="w-full text-red-600 hover:text-red-700 sm:w-auto" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -213,7 +213,7 @@ export default function TemplateDetailPage({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Type</Label>
                       <div className={`p-3 rounded-lg border ${
@@ -313,7 +313,7 @@ export default function TemplateDetailPage({
 
           {/* Preview */}
           <div>
-            <Card className="border-0 shadow-sm sticky top-8">
+            <Card className="border-0 shadow-sm lg:sticky lg:top-8">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">

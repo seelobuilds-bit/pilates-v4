@@ -246,7 +246,7 @@ export default function NewAutomationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-8">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
       <div className="mb-8">
         <Link href="/studio/marketing" className="mb-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900">
           <ArrowLeft className="h-4 w-4" />
@@ -348,7 +348,7 @@ export default function NewAutomationPage() {
                   onChange={(e) => setTriggerDays(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={365}
-                  className="max-w-[220px] bg-white"
+                  className="w-full max-w-[220px] bg-white"
                 />
               </div>
             )}
@@ -362,12 +362,12 @@ export default function NewAutomationPage() {
                   onChange={(e) => setReminderHours(Math.max(1, Number(e.target.value || 1)))}
                   min={1}
                   max={168}
-                  className="max-w-[220px] bg-white"
+                  className="w-full max-w-[220px] bg-white"
                 />
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <div className="flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-emerald-900">Stop chain if client books</p>
                 <p className="text-xs text-emerald-700">Recommended for nurture and reactivation sequences.</p>
@@ -379,9 +379,9 @@ export default function NewAutomationPage() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="space-y-5 p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Sequence Steps</h2>
-              <Button type="button" variant="outline" onClick={addStep}>
+              <Button type="button" variant="outline" onClick={addStep} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Step
               </Button>
@@ -486,11 +486,11 @@ export default function NewAutomationPage() {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
           <Link href="/studio/marketing">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
-          <Button onClick={handleSave} disabled={saving || !canSave} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={handleSave} disabled={saving || !canSave} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Create Automation
           </Button>

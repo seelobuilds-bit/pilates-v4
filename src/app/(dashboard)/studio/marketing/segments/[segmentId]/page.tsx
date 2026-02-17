@@ -166,7 +166,7 @@ export default function SegmentDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -174,7 +174,7 @@ export default function SegmentDetailPage({
 
   if (!segment) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <Filter className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">Segment not found</p>
@@ -240,15 +240,15 @@ export default function SegmentDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=segments" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Segments
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
               <Icon className="h-6 w-6 text-violet-600" />
             </div>
@@ -260,13 +260,13 @@ export default function SegmentDetailPage({
               <p className="text-gray-500">{segment.description}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
             <Link href={`/studio/marketing/campaigns/new?segment=${segment.id}`}>
-              <Button className="bg-violet-600 hover:bg-violet-700">
+              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
                 Send Campaign
               </Button>
@@ -358,18 +358,19 @@ export default function SegmentDetailPage({
       {selectedClients.size > 0 && (
         <Card className="border-0 shadow-sm mb-4 bg-red-50 border-l-4 border-l-red-500">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <CheckSquare className="h-5 w-5 text-red-600" />
                 <span className="font-medium text-red-900">
                   {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} selected
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <Button 
                   variant="destructive"
                   onClick={() => setShowRemoveConfirm(true)}
                   disabled={removing}
+                  className="w-full sm:w-auto"
                 >
                   {removing ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -381,6 +382,7 @@ export default function SegmentDetailPage({
                 <Button 
                   variant="outline"
                   onClick={() => setSelectedClients(new Set())}
+                  className="w-full sm:w-auto"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Selection
@@ -395,7 +397,7 @@ export default function SegmentDetailPage({
       {showRemoveConfirm && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowRemoveConfirm(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+          <div className="fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
@@ -412,14 +414,15 @@ export default function SegmentDetailPage({
                   Are you sure you want to remove {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} from the <strong>{segment.name}</strong> segment?
                 </p>
 
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setShowRemoveConfirm(false)}>
+                <div className="flex flex-col justify-end gap-3 sm:flex-row">
+                  <Button variant="outline" onClick={() => setShowRemoveConfirm(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
                   <Button 
                     variant="destructive" 
                     onClick={handleRemoveFromSegment}
                     disabled={removing}
+                    className="w-full sm:w-auto"
                   >
                     {removing ? (
                       <>
@@ -443,7 +446,7 @@ export default function SegmentDetailPage({
       {/* Client List */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <h3 className="font-semibold text-gray-900">Clients in Segment</h3>
               {segment.type === "static" && (
@@ -452,7 +455,7 @@ export default function SegmentDetailPage({
                 </Badge>
               )}
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search clients..."
@@ -465,7 +468,7 @@ export default function SegmentDetailPage({
 
           {filteredClients.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[760px]">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-3 px-4 w-12">

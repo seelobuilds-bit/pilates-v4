@@ -127,7 +127,7 @@ export default function NewSegmentPage() {
   const isValid = name && conditions.every(c => c.field && c.operator && c.value)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
@@ -188,10 +188,10 @@ export default function NewSegmentPage() {
 
             {/* Match Type */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <span className="text-sm text-gray-600">Include clients who match</span>
                 <Select value={matchType} onValueChange={(v: "all" | "any") => setMatchType(v)}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -206,7 +206,7 @@ export default function NewSegmentPage() {
             {/* Condition Rows */}
             <div className="space-y-3">
               {conditions.map((condition, index) => (
-                <div key={condition.id} className="flex items-center gap-3">
+                <div key={condition.id} className="grid gap-2 sm:grid-cols-[3rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center">
                   {index > 0 && (
                     <span className="text-sm text-gray-400 w-12 text-center">
                       {matchType === "all" ? "AND" : "OR"}
@@ -218,7 +218,7 @@ export default function NewSegmentPage() {
                     value={condition.field}
                     onValueChange={(v) => updateCondition(condition.id, { field: v, operator: "", value: "" })}
                   >
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select field" />
                     </SelectTrigger>
                     <SelectContent>
@@ -235,7 +235,7 @@ export default function NewSegmentPage() {
                     onValueChange={(v) => updateCondition(condition.id, { operator: v })}
                     disabled={!condition.field}
                   >
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select operator" />
                     </SelectTrigger>
                     <SelectContent>
@@ -251,7 +251,7 @@ export default function NewSegmentPage() {
                     value={condition.value}
                     onChange={(e) => updateCondition(condition.id, { value: e.target.value })}
                     placeholder="Value"
-                    className="w-32"
+                    className="w-full"
                     disabled={!condition.operator}
                   />
 
@@ -283,12 +283,12 @@ export default function NewSegmentPage() {
         {/* Preview */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Preview</h2>
                 <p className="text-sm text-gray-500">See how many clients match your criteria</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
                 {estimatedCount !== null && (
                   <div className="text-right">
                     <p className="text-3xl font-bold text-violet-600">{estimatedCount}</p>
@@ -304,14 +304,14 @@ export default function NewSegmentPage() {
         </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/studio/marketing">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
           <Button
             onClick={handleSave}
             disabled={!isValid || saving}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

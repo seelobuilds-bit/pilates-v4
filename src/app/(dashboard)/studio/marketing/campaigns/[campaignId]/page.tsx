@@ -87,7 +87,7 @@ export default function CampaignDetailPage({
 
   if (!campaign) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <p className="text-gray-500">Campaign not found</p>
           <Link href="/studio/marketing" className="text-violet-600 hover:text-violet-700 mt-4 inline-block">
@@ -103,15 +103,15 @@ export default function CampaignDetailPage({
   const bounceRate = campaign.sent > 0 ? Math.round((campaign.bounced / campaign.sent) * 100) : 0
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=campaigns" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Campaigns
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
               campaign.type === "email" ? "bg-violet-100" : 
               campaign.type === "sms" ? "bg-blue-100" : "bg-teal-100"
@@ -153,9 +153,9 @@ export default function CampaignDetailPage({
             </div>
           </div>
           {campaign.status === "scheduled" && (
-            <div className="flex gap-3">
-              <Button variant="outline">Edit</Button>
-              <Button variant="outline" className="text-red-600 hover:text-red-700">Cancel</Button>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              <Button variant="outline" className="w-full sm:w-auto">Edit</Button>
+              <Button variant="outline" className="w-full text-red-600 hover:text-red-700 sm:w-auto">Cancel</Button>
             </div>
           )}
         </div>

@@ -205,7 +205,7 @@ export default function NewCampaignPage() {
   ]
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/marketing?tab=campaigns" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
@@ -217,8 +217,8 @@ export default function NewCampaignPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="max-w-3xl mx-auto mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-8 overflow-x-auto">
+        <div className="mx-auto flex min-w-[720px] max-w-3xl items-center justify-between">
           {[
             { num: 1, label: "Basics" },
             { num: 2, label: "Audience" },
@@ -248,7 +248,7 @@ export default function NewCampaignPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto">
+      <div className="mx-auto max-w-3xl">
         {/* Step 1: Basics */}
         {step === 1 && (
           <Card className="border-0 shadow-sm">
@@ -276,7 +276,7 @@ export default function NewCampaignPage() {
 
                 <div className="space-y-3">
                   <Label>Campaign Type</Label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {[
                       { value: "email", label: "Email Only", icon: Mail, color: "violet", desc: "Send via email" },
                       { value: "sms", label: "SMS Only", icon: MessageSquare, color: "blue", desc: "Send via text" },
@@ -575,7 +575,7 @@ export default function NewCampaignPage() {
               </div>
 
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => setCampaign({ ...campaign, scheduleType: "now" })}
@@ -610,7 +610,7 @@ export default function NewCampaignPage() {
                 </div>
 
                 {campaign.scheduleType === "scheduled" && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-xl md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Date</Label>
                       <Input
@@ -634,7 +634,7 @@ export default function NewCampaignPage() {
                 {/* Summary */}
                 <div className="p-4 bg-violet-50 rounded-xl border border-violet-200">
                   <h3 className="font-medium text-violet-900 mb-3">Campaign Summary</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                     <div>
                       <p className="text-violet-600">Name</p>
                       <p className="font-medium text-violet-900">{campaign.name || "-"}</p>
@@ -675,7 +675,7 @@ export default function NewCampaignPage() {
         )}
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
             onClick={() => step > 1 ? setStep(step - 1) : router.push("/studio/marketing?tab=campaigns")}
@@ -684,9 +684,9 @@ export default function NewCampaignPage() {
             {step === 1 ? "Cancel" : "Back"}
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             {step === 4 && (
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
@@ -696,7 +696,7 @@ export default function NewCampaignPage() {
               <Button
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
               >
                 Continue
               </Button>
@@ -704,7 +704,7 @@ export default function NewCampaignPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={!canProceed() || saving}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
               >
                 {saving ? "Sending..." : campaign.scheduleType === "now" ? "Send Campaign" : "Schedule Campaign"}
               </Button>
