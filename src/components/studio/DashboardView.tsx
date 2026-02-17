@@ -740,36 +740,41 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
-      <div className="flex items-start justify-between mb-6">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{data.greeting}!</h1>
           <p className="text-gray-500 mt-1">{data.currentDate}</p>
         </div>
 
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
             <Link href={`${linkPrefix}/clients/new`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Client
               </Button>
             </Link>
             <Link href={`${linkPrefix}/schedule/new`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <CalendarPlus className="h-4 w-4 mr-2" />
                 Add Class
               </Button>
             </Link>
             <Link href={`${linkPrefix}/schedule`}>
-              <Button className="bg-violet-600 hover:bg-violet-700" size="sm">
+              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto" size="sm">
                 <Calendar className="h-4 w-4 mr-2" />
                 View Schedule
               </Button>
             </Link>
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => setShowLayoutControls((prev) => !prev)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={() => setShowLayoutControls((prev) => !prev)}
+          >
             <Settings2 className="h-4 w-4 mr-2" />
             Customize dashboard
           </Button>

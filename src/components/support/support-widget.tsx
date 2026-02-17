@@ -205,7 +205,7 @@ export function SupportWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-violet-600 to-purple-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 group"
+        className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-violet-600 to-purple-600 text-white p-3.5 sm:bottom-6 sm:right-6 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 group"
       >
         {isOpen ? (
           <X className="h-6 w-6" />
@@ -223,7 +223,7 @@ export function SupportWidget() {
 
       {/* Chat Panel */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 z-50 w-[380px] h-[520px] shadow-2xl border-0 overflow-hidden flex flex-col">
+        <Card className="fixed inset-x-3 bottom-20 top-[4.5rem] z-50 shadow-2xl border-0 overflow-hidden flex flex-col sm:inset-x-auto sm:top-auto sm:bottom-24 sm:right-6 sm:w-[380px] sm:h-[520px]">
           {/* Header */}
           <CardHeader className="p-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
             <div className="flex items-center justify-between">
@@ -460,7 +460,6 @@ export function SupportWidget() {
     </>
   )
 }
-
 
 
 

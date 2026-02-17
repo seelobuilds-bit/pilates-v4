@@ -151,7 +151,7 @@ export default function PaymentsPage() {
   // Not configured
   if (stripeStatus?.configured === false) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
@@ -177,7 +177,7 @@ export default function PaymentsPage() {
   // Not connected
   if (!stripeStatus?.connected) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
@@ -243,7 +243,7 @@ export default function PaymentsPage() {
   // Onboarding incomplete
   if (!stripeStatus.onboardingComplete) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
@@ -313,7 +313,7 @@ export default function PaymentsPage() {
 
   // Connected - show dashboard
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>

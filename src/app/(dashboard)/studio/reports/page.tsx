@@ -411,28 +411,29 @@ export default function ReportsPage() {
     reportData.revenue.monthly.some((month) => month.amount > 0)
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
           <p className="text-gray-500 mt-1">
             Showing data for <span className="font-medium text-gray-700">{getPeriodDisplay()}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
             disabled={refreshing}
+            className="w-full sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Select value={period.includes('to') ? 'custom' : period} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="w-[180px] bg-white">
+              <SelectTrigger className="w-full bg-white sm:w-[180px]">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="Select period" />
           </SelectTrigger>
@@ -448,10 +449,9 @@ export default function ReportsPage() {
             {/* Custom Date Range Picker - positioned under selector, right-aligned */}
             {showCustomDate && (
               <>
-                <div className="fixed inset-y-0 right-0 left-64 z-40" onClick={() => setShowCustomDate(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => setShowCustomDate(false)} />
                 <Card 
-                  className="absolute z-50 w-[340px] border shadow-xl bg-white"
-                  style={{ top: '48px', right: '0' }}
+                  className="fixed inset-x-3 top-24 z-50 border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]"
                 >
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">

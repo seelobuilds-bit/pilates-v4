@@ -147,7 +147,7 @@ export default function ClientDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -155,7 +155,7 @@ export default function ClientDetailPage({
 
   if (!client) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Client not found</p>
           <Link href="/studio/clients">
@@ -188,7 +188,7 @@ export default function ClientDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <Link href="/studio/clients" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">

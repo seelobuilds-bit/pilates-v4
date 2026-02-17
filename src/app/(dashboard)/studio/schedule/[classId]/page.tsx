@@ -437,7 +437,7 @@ export default function ClassSessionDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -445,7 +445,7 @@ export default function ClassSessionDetailPage({
 
   if (!classSession) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Class not found</p>
           <Link href="/studio/schedule">
@@ -457,7 +457,7 @@ export default function ClassSessionDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Cancel Confirmation Dialog */}
       {showCancelDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">

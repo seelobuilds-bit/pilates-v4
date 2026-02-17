@@ -48,7 +48,7 @@ export default function NewLocationPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Add New Location</h1>
 
       <Card>

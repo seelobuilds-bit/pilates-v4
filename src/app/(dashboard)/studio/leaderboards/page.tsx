@@ -193,7 +193,7 @@ export default function StudioLeaderboardsPage() {
   const featuredLeaderboards = leaderboards.filter(lb => lb.isFeatured)
 
   return (
-    <div className="p-8 bg-gradient-to-br from-violet-50/50 to-amber-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gradient-to-br from-violet-50/50 to-amber-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">

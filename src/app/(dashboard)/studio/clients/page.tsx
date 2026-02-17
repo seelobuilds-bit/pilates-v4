@@ -215,16 +215,16 @@ export default function ClientsPage() {
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-500 mt-1">
@@ -232,8 +232,8 @@ export default function ClientsPage() {
             {hasActiveFilters && " (filtered)"}
           </p>
         </div>
-        <Link href="/studio/clients/new">
-          <Button className="bg-violet-600 hover:bg-violet-700">
+        <Link href="/studio/clients/new" className="w-full sm:w-auto">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Client
           </Button>
@@ -243,9 +243,9 @@ export default function ClientsPage() {
       {/* Search and Filters */}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="relative w-full flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input 
                 placeholder="Search clients by name or email..." 
@@ -259,7 +259,7 @@ export default function ClientsPage() {
             <Button 
               variant={showFilters ? "default" : "outline"} 
               onClick={() => setShowFilters(!showFilters)}
-              className={showFilters ? "bg-violet-600 hover:bg-violet-700" : ""}
+              className={`w-full sm:w-auto ${showFilters ? "bg-violet-600 hover:bg-violet-700" : ""}`}
             >
               <Filter className="h-4 w-4 mr-2" />
               Filters
@@ -272,7 +272,7 @@ export default function ClientsPage() {
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -287,8 +287,8 @@ export default function ClientsPage() {
           {/* Filter Panel */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:items-end">
+                <div>
                   <Label className="text-sm text-gray-500 mb-1.5 block">Status</Label>
                   <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
                     <SelectTrigger>
@@ -302,7 +302,7 @@ export default function ClientsPage() {
                   </Select>
                 </div>
 
-                <div className="flex-1">
+                <div>
                   <Label className="text-sm text-gray-500 mb-1.5 block">Bookings</Label>
                   <Select value={bookingsFilter} onValueChange={(v) => setBookingsFilter(v as typeof bookingsFilter)}>
                     <SelectTrigger>
@@ -318,7 +318,7 @@ export default function ClientsPage() {
                   </Select>
                 </div>
 
-                <div className="flex-1">
+                <div>
                   <Label className="text-sm text-gray-500 mb-1.5 block">Segment</Label>
                   <Select value={segmentFilter} onValueChange={setSegmentFilter}>
                     <SelectTrigger>
@@ -335,7 +335,7 @@ export default function ClientsPage() {
                 </div>
 
                 {hasActiveFilters && (
-                  <Button variant="ghost" onClick={clearFilters} className="text-gray-500">
+                  <Button variant="ghost" onClick={clearFilters} className="w-full text-gray-500 md:w-auto">
                     <X className="h-4 w-4 mr-2" />
                     Clear
                   </Button>
@@ -350,18 +350,18 @@ export default function ClientsPage() {
       {selectedClients.size > 0 && (
         <Card className="border-0 shadow-sm mb-4 bg-violet-50 border-l-4 border-l-violet-500">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <CheckSquare className="h-5 w-5 text-violet-600" />
                 <span className="font-medium text-violet-900">
                   {selectedClients.size} client{selectedClients.size > 1 ? 's' : ''} selected
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {/* Add to Segment Dropdown */}
                 <div className="relative">
                   <Button 
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                     onClick={() => setShowSegmentDropdown(!showSegmentDropdown)}
                     disabled={addingToSegment}
                   >
@@ -377,10 +377,10 @@ export default function ClientsPage() {
                   {showSegmentDropdown && (
                     <>
                       <div
-                        className="fixed inset-y-0 right-0 left-64 z-40"
+                        className="fixed inset-0 z-40"
                         onClick={() => setShowSegmentDropdown(false)}
                       />
-                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                      <div className="absolute right-0 top-full mt-2 w-[min(20rem,80vw)] sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                         <div className="p-2">
                           <p className="text-xs font-medium text-gray-500 px-3 py-2">SELECT SEGMENT</p>
                           {availableSegments.map(segment => (
@@ -410,6 +410,7 @@ export default function ClientsPage() {
                 <Button 
                   variant="outline"
                   onClick={() => setSelectedClients(new Set())}
+                  className="w-full sm:w-auto"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Selection
@@ -424,7 +425,8 @@ export default function ClientsPage() {
       {filteredClients.length > 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px]">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <th className="text-left text-sm font-medium text-gray-500 px-6 py-4 w-12">
@@ -517,6 +519,7 @@ export default function ClientsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       ) : (

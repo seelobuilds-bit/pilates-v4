@@ -26,15 +26,15 @@ export default async function TeachersPage() {
   })
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
           <p className="text-gray-500 mt-1">Manage your teaching staff</p>
         </div>
-        <Link href="/studio/teachers/invite">
-          <Button className="bg-violet-600 hover:bg-violet-700">
+        <Link href="/studio/teachers/invite" className="w-full sm:w-auto">
+          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Invite Teacher
           </Button>

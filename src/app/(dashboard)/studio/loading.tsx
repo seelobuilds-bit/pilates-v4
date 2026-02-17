@@ -1,6 +1,6 @@
 export default function StudioLoading() {
   return (
-    <div className="min-h-screen bg-gray-50/50 p-8">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
       <div className="mb-6 space-y-2">
         <div className="h-8 w-56 animate-pulse rounded bg-gray-200" />
         <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
