@@ -195,25 +195,26 @@ export default function ClientDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Back to Clients
         </Link>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-xl font-semibold text-violet-700">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-violet-100 rounded-full flex items-center justify-center text-lg sm:text-xl font-semibold text-violet-700">
               {client.firstName[0]}{client.lastName[0]}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {client.firstName} {client.lastName}
               </h1>
               <p className="text-gray-500">Client since {new Date(client.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant={client.isActive ? "success" : "secondary"} className="text-sm">
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
+            <Badge variant={client.isActive ? "success" : "secondary"} className="text-sm shrink-0">
               {client.isActive ? "Active" : "Inactive"}
             </Badge>
             <Button 
               variant="outline" 
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => router.push(`/studio/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
             >
               <Mail className="h-4 w-4 mr-2" />
@@ -222,7 +223,7 @@ export default function ClientDetailPage({
             <Button
               variant="outline"
               size="sm"
-              className={client.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}
+              className={`w-full sm:w-auto ${client.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
               onClick={async () => {
                 if (!confirm(client.isActive 
                   ? "Remove access? This client won't be able to log in or book classes." 
@@ -247,7 +248,7 @@ export default function ClientDetailPage({
             <Button
               variant="outline"
               size="sm"
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50"
               onClick={async () => {
                 if (!confirm("Are you sure you want to delete this client? This will also delete their booking history. This action cannot be undone.")) return
                 try {
@@ -275,7 +276,7 @@ export default function ClientDetailPage({
 
       {/* Stats Row */}
       {stats && hasClientReportData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -336,7 +337,7 @@ export default function ClientDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="reports" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
@@ -371,33 +372,33 @@ export default function ClientDetailPage({
                     <h3 className="font-semibold text-gray-900">Preferences</h3>
                   </div>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-violet-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-violet-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
                         <BookOpen className="h-5 w-5 text-violet-500" />
                         <span className="text-sm text-gray-600">Favorite Class</span>
                       </div>
-                      <span className="font-medium text-violet-700">{safeStats.favoriteClass}</span>
+                      <span className="font-medium text-violet-700 truncate">{safeStats.favoriteClass}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Users className="h-5 w-5 text-blue-500" />
                         <span className="text-sm text-gray-600">Favorite Teacher</span>
                       </div>
-                      <span className="font-medium text-blue-700">{safeStats.favoriteTeacher}</span>
+                      <span className="font-medium text-blue-700 truncate">{safeStats.favoriteTeacher}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-emerald-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
                         <MapPin className="h-5 w-5 text-emerald-500" />
                         <span className="text-sm text-gray-600">Favorite Location</span>
                       </div>
-                      <span className="font-medium text-emerald-700">{safeStats.favoriteLocation}</span>
+                      <span className="font-medium text-emerald-700 truncate">{safeStats.favoriteLocation}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-amber-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Gift className="h-5 w-5 text-amber-500" />
                         <span className="text-sm text-gray-600">Membership</span>
                       </div>
-                      <span className="font-medium text-amber-700">{safeStats.membershipType}</span>
+                      <span className="font-medium text-amber-700 truncate">{safeStats.membershipType}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -520,10 +521,10 @@ export default function ClientDetailPage({
         <TabsContent value="communications">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Message History</h3>
                 <Button 
-                  className="bg-violet-600 hover:bg-violet-700"
+                  className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                   onClick={() => router.push(`/studio/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
                 >
                   <Send className="h-4 w-4 mr-2" />
@@ -539,8 +540,8 @@ export default function ClientDetailPage({
                       onClick={() => router.push(`/studio/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
                       className={`p-4 rounded-lg cursor-pointer transition-all hover:shadow-md ${
                         comm.direction === "outbound" 
-                          ? "bg-violet-50 ml-8 hover:bg-violet-100" 
-                          : "bg-gray-50 mr-8 hover:bg-gray-100"
+                          ? "bg-violet-50 ml-2 sm:ml-8 hover:bg-violet-100" 
+                          : "bg-gray-50 mr-2 sm:mr-8 hover:bg-gray-100"
                       }`}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -599,8 +600,8 @@ export default function ClientDetailPage({
               {bookings.length > 0 ? (
                 <div className="space-y-3">
                   {bookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div key={booking.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="min-w-0">
                         <p className="font-medium text-gray-900">{booking.classSession.classType.name}</p>
                         <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3" />
@@ -720,14 +721,14 @@ export default function ClientDetailPage({
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Account Details</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Credits Balance</span>
                     </div>
                     <span className="font-bold text-gray-900">{client.credits}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Activity className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Status</span>
@@ -737,11 +738,11 @@ export default function ClientDetailPage({
                     </Badge>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-                  <Button variant="outline" className="flex-1">
+                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" className="flex-1 w-full">
                     Add Credits
                   </Button>
-                  <Button className="flex-1 bg-violet-600 hover:bg-violet-700">
+                  <Button className="flex-1 w-full bg-violet-600 hover:bg-violet-700">
                     Send Message
                   </Button>
                 </div>

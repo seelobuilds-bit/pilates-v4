@@ -238,9 +238,9 @@ export default function HQInboxPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex">
+    <div className="h-full min-h-0 flex">
       {/* Sidebar - Conversations List */}
-      <div className="w-96 border-r bg-white flex flex-col">
+      <div className={`border-r bg-white flex flex-col w-full lg:w-96 ${selectedContact ? "hidden lg:flex" : "flex"}`}>
         <div className="p-4 border-b">
           <h1 className="text-xl font-bold text-gray-900 mb-4">Communications</h1>
           
@@ -336,7 +336,7 @@ export default function HQInboxPage() {
       </div>
 
       {/* Main - Messages Panel */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className={`flex-1 flex-col bg-gray-50 ${selectedContact ? "flex" : "hidden lg:flex"}`}>
         {!selectedContact ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500">
@@ -356,21 +356,21 @@ export default function HQInboxPage() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                   selectedContact.type === "studio" ? "bg-violet-100" : "bg-blue-100"
                 }`}>
                   {selectedContact.type === "studio" ? (
-                    <Building2 className="h-6 w-6 text-violet-600" />
+                    <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-violet-600" />
                   ) : (
-                    <Users className="h-6 w-6 text-blue-600" />
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="font-semibold text-gray-900">{selectedContact.name}</h2>
+                    <h2 className="font-semibold text-gray-900 truncate">{selectedContact.name}</h2>
                     {selectedContact.status && getStatusBadge(selectedContact.status)}
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 truncate">
                     {selectedContact.contactName} • {selectedContact.contactEmail}
                   </p>
                 </div>
@@ -404,7 +404,7 @@ export default function HQInboxPage() {
                     className={`flex ${msg.direction === "OUTBOUND" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-lg rounded-lg p-4 ${
+                      className={`max-w-[85%] sm:max-w-lg rounded-lg p-4 ${
                         msg.direction === "OUTBOUND"
                           ? "bg-violet-600 text-white"
                           : "bg-white border shadow-sm"
@@ -430,10 +430,10 @@ export default function HQInboxPage() {
             </div>
 
             {/* Compose */}
-            <div className="bg-white border-t p-4">
+            <div className="bg-white border-t p-4 pb-24 lg:pb-4 lg:pr-24">
               <div className="space-y-3">
                 {/* Reply/New Email Toggle */}
-                <div className="flex items-center gap-2 pb-2 border-b">
+                <div className="flex flex-wrap items-center gap-2 pb-2 border-b">
                   <Button
                     variant={isReply ? "default" : "outline"}
                     size="sm"
@@ -451,7 +451,7 @@ export default function HQInboxPage() {
                   >
                     New Email
                   </Button>
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-gray-500">
                     {isReply ? "Continuing conversation thread" : "Starting a new conversation"}
                   </span>
                 </div>
@@ -494,4 +494,3 @@ export default function HQInboxPage() {
     </div>
   )
 }
-

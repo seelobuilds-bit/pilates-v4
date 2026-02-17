@@ -225,23 +225,23 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         return (
           <Card className="border-0 shadow-sm bg-gradient-to-r from-violet-600 to-purple-600">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="text-white">
                   <h2 className="text-lg font-semibold mb-1">Today&apos;s Overview</h2>
                   <p className="text-violet-200 text-sm">
                     {data.todayOverview.classCount} classes scheduled • {data.todayOverview.bookingsCount} bookings • {data.todayOverview.fillRate}% fill rate
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center px-4 border-r border-white/20">
+                <div className="grid w-full grid-cols-3 gap-2 lg:w-auto lg:flex lg:items-center lg:gap-4">
+                  <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.classCount}</p>
                     <p className="text-xs text-violet-200">Classes</p>
                   </div>
-                  <div className="text-center px-4 border-r border-white/20">
+                  <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.bookingsCount}</p>
                     <p className="text-xs text-violet-200">Bookings</p>
                   </div>
-                  <div className="text-center px-4">
+                  <div className="text-center px-2 py-2 lg:px-4">
                     <p className="text-3xl font-bold text-white">{data.todayOverview.fillRate}%</p>
                     <p className="text-xs text-violet-200">Fill Rate</p>
                   </div>
@@ -372,7 +372,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
       case "quickActions":
         return (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <Link href={`${linkPrefix}/inbox`}>
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
@@ -461,7 +461,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                           isPast ? "bg-gray-50 opacity-60" : "bg-gray-50 hover:bg-violet-50"
                         }`}>
                           <div className="flex items-center gap-4">
-                            <div className={`text-center min-w-[60px] p-2 rounded-lg ${isPast ? "bg-gray-200" : "bg-violet-100"}`}>
+                            <div className={`text-center p-2 rounded-lg ${isPast ? "bg-gray-200" : "bg-violet-100"}`}>
                               <p className={`text-lg font-bold ${isPast ? "text-gray-500" : "text-violet-600"}`}>
                                 {startTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                               </p>

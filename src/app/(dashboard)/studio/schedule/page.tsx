@@ -135,6 +135,13 @@ export default function SchedulePage() {
   const [showReassignModal, setShowReassignModal] = useState(false)
   const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setViewMode("list")
+    }
+  }, [])
+
   const weekDates = getWeekDates(weekOffset)
   
   // Toggle selection for a class
@@ -505,21 +512,21 @@ export default function SchedulePage() {
         </div>
         <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
           <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("calendar")}
-              className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewChipSelect("calendar")}
+                className={viewMode === "calendar" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+              >
               <Calendar className="h-4 w-4 mr-1" />
               Calendar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChipSelect("list")}
-              className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
-            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewChipSelect("list")}
+                className={viewMode === "list" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+              >
               <List className="h-4 w-4 mr-1" />
               List
             </Button>
@@ -768,7 +775,7 @@ export default function SchedulePage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeScope("upcoming")}
-                  className={timeScope === "upcoming" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                  className={`flex-1 ${timeScope === "upcoming" ? "bg-violet-100 text-violet-700" : "text-gray-600"}`}
                 >
                   Upcoming
                 </Button>
@@ -776,7 +783,7 @@ export default function SchedulePage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeScope("past")}
-                  className={timeScope === "past" ? "bg-violet-100 text-violet-700" : "text-gray-600"}
+                  className={`flex-1 ${timeScope === "past" ? "bg-violet-100 text-violet-700" : "text-gray-600"}`}
                 >
                   Past
                 </Button>
@@ -798,7 +805,7 @@ export default function SchedulePage() {
             <>
               {/* Calendar Grid */}
               {viewMode === "calendar" ? (
-                <div className="grid grid-cols-7 gap-4 overflow-x-auto">
+                <div className="grid grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-1">
                   {/* Day Headers */}
                   {weekDates.map((date, i) => {
                     const isToday = new Date().toDateString() === date.toDateString()
@@ -808,7 +815,7 @@ export default function SchedulePage() {
                     return (
                       <div 
                         key={i}
-                        className={`text-center p-3 rounded-xl min-w-[120px] ${
+                        className={`text-center p-2 sm:p-3 rounded-xl min-w-[104px] sm:min-w-[120px] ${
                           isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
                         }`}
                       >
@@ -837,7 +844,7 @@ export default function SchedulePage() {
 
                   {/* Classes and Blocked Times for each day */}
                   {weekDates.map((_, dayIndex) => (
-                    <div key={dayIndex} className="space-y-2 min-h-[400px] min-w-[120px]">
+                    <div key={dayIndex} className="space-y-2 min-h-[260px] sm:min-h-[400px] min-w-[104px] sm:min-w-[120px]">
                       {/* Blocked Times */}
                       {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
                         <div
@@ -950,7 +957,59 @@ export default function SchedulePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="overflow-x-auto rounded-lg border border-gray-100">
+                  <div className="space-y-2 md:hidden">
+                    {listFilteredClasses.length === 0 ? (
+                      <div className="rounded-lg border border-gray-100 bg-white px-4 py-8 text-center">
+                        <p className="text-base font-medium text-gray-700">No classes match your filters.</p>
+                        <p className="text-sm text-gray-500 mt-1">Try adjusting search, time scope, or filter selections.</p>
+                      </div>
+                    ) : (
+                      listFilteredClasses.map((cls) => {
+                        const isSelected = selectedClasses.has(cls.id)
+                        const cardClass = `rounded-lg border border-gray-100 bg-white p-4 ${
+                          selectMode ? "cursor-pointer" : ""
+                        } ${isSelected ? "ring-2 ring-violet-500 bg-violet-50" : ""}`
+                        const content = (
+                          <div className={cardClass}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{cls.classType.name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {new Date(cls.startTime).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                                </p>
+                              </div>
+                              <Badge className={cls._count.bookings >= cls.capacity ? "bg-red-100 text-red-700" : "bg-teal-100 text-teal-700"}>
+                                {cls._count.bookings}/{cls.capacity}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 space-y-1 text-sm text-gray-600">
+                              <p>
+                                {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })} -{" "}
+                                {new Date(cls.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                              </p>
+                              <p>{cls.teacher.user.firstName} {cls.teacher.user.lastName}</p>
+                              <p>{cls.location.name}</p>
+                            </div>
+                          </div>
+                        )
+
+                        if (selectMode) {
+                          return (
+                            <div key={cls.id} onClick={(e) => toggleSelectClass(cls.id, e)}>
+                              {content}
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                            {content}
+                          </Link>
+                        )
+                      })
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-100">
                     <div className="min-w-[820px]">
                       <div className="grid grid-cols-12 gap-3 px-4 py-3 text-xs uppercase tracking-wide text-gray-500 font-medium bg-white sticky top-0 z-10 border-b">
                         <div className="col-span-3">Date / Time</div>

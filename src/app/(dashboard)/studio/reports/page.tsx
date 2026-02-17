@@ -461,7 +461,7 @@ export default function ReportsPage() {
                       </Button>
                     </div>
                     <div className="p-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="start-date" className="text-xs font-medium text-gray-500 uppercase">From</Label>
                           <Input 
@@ -509,12 +509,12 @@ export default function ReportsPage() {
       </div>
 
       {/* Quick Insights Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-14 h-14 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mr-6">
-                <TrendingUp className="h-7 w-7 text-emerald-600" />
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <p className="text-gray-500 text-sm font-medium">Revenue Growth</p>
@@ -530,9 +530,9 @@ export default function ReportsPage() {
         <Link href="/studio/clients?filter=at-risk">
           <Card className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer h-full">
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 mr-6">
-                  <Users className="h-7 w-7 text-amber-600" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">At Risk Clients</p>
@@ -547,9 +547,9 @@ export default function ReportsPage() {
         <Link href="/studio/schedule">
           <Card className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer h-full">
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-14 h-14 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0 mr-6">
-                  <Calendar className="h-7 w-7 text-violet-600" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="h-6 w-6 text-violet-600" />
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">Peak Time</p>
@@ -564,7 +564,7 @@ export default function ReportsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0 p-1">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
           <TabsTrigger value="overview" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview
@@ -613,7 +613,7 @@ export default function ReportsPage() {
             </Card>
           )}
       {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/studio/reports?tab=revenue')}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -839,7 +839,7 @@ export default function ReportsPage() {
         {/* Revenue Tab */}
         <TabsContent value="revenue" className="space-y-6">
           {/* Revenue Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">This Period</p>
@@ -929,7 +929,7 @@ export default function ReportsPage() {
         {/* Utilisation Tab */}
         <TabsContent value="utilisation" className="space-y-6">
           {/* Utilisation Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Average Fill Rate</p>
@@ -989,7 +989,7 @@ export default function ReportsPage() {
                   const isBad = slot.fill < 60
                   return (
                     <div key={i} className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-gray-700 w-20">{slot.time}</span>
+                      <span className="text-sm font-medium text-gray-700 w-16 sm:w-20">{slot.time}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4">
                         <div 
                           className={`h-4 rounded-full ${
@@ -998,10 +998,10 @@ export default function ReportsPage() {
                           style={{ width: `${slot.fill}%` }}
                         />
                       </div>
-                      <span className={`text-sm font-bold w-12 text-right ${
+                      <span className={`text-sm font-bold w-10 sm:w-12 text-right ${
                         isGood ? 'text-emerald-600' : isBad ? 'text-amber-600' : 'text-gray-900'
                       }`}>{slot.fill}%</span>
-                      <span className="text-sm text-gray-500 w-20">{slot.classes} classes</span>
+                      <span className="text-sm text-gray-500 text-right sm:text-left w-auto sm:w-20">{slot.classes} classes</span>
                     </div>
                   )
                 })}
@@ -1068,7 +1068,7 @@ export default function ReportsPage() {
         {/* Instructors Tab */}
         <TabsContent value="instructors" className="space-y-6">
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Instructors</p>
@@ -1220,7 +1220,7 @@ export default function ReportsPage() {
         {/* Retention Tab */}
         <TabsContent value="retention" className="space-y-6">
           {/* Retention Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link href="/studio/clients">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
@@ -1388,7 +1388,7 @@ export default function ReportsPage() {
         {/* Marketing Tab */}
         <TabsContent value="marketing" className="space-y-6">
           {/* Marketing Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link href="/studio/marketing">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
@@ -2152,7 +2152,7 @@ function WebsiteAnalyticsSection() {
           </div>
 
           {/* Detailed Analytics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Top Pages */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">

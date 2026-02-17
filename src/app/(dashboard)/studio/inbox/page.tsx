@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Check,
   X,
+  ChevronLeft,
   Edit3,
   AlertCircle,
   Loader2,
@@ -462,7 +463,7 @@ export default function InboxPage() {
 
   if (loading) {
     return (
-      <div className="h-[100dvh] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -471,11 +472,11 @@ export default function InboxPage() {
   const socialUnread = socialConversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
       {/* Inbox Type Tabs */}
       <div className="border-b bg-white px-4 py-3">
         <Tabs value={inboxTab} onValueChange={(v) => setInboxTab(v as typeof inboxTab)}>
-          <TabsList className="bg-gray-100/50">
+          <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
               <Mail className="h-4 w-4 mr-2" />
               Email & SMS
@@ -498,10 +499,10 @@ export default function InboxPage() {
       {inboxTab === "messages" ? (
       <div className="flex-1 min-h-0 flex">
       {/* Conversations List */}
-      <div className="w-96 border-r border-gray-200 flex flex-col min-h-0 bg-white">
+      <div className={`${selectedConversation ? "hidden md:flex" : "flex"} w-full md:w-96 border-r border-gray-200 flex-col min-h-0 bg-white`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">Messages</h1>
               {totalUnread > 0 && (
@@ -519,7 +520,7 @@ export default function InboxPage() {
               </Button>
               <Button 
                 size="sm" 
-                className="bg-violet-600 hover:bg-violet-700"
+                className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                 onClick={handleCompose}
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -529,8 +530,8 @@ export default function InboxPage() {
           </div>
           
           {/* Search & Filter */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 relative">
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            <div className="relative w-full flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search conversations..."
@@ -540,7 +541,7 @@ export default function InboxPage() {
               />
             </div>
             <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="w-full sm:w-28">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -614,13 +615,21 @@ export default function InboxPage() {
       </div>
 
       {/* Message View */}
-      <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
+      <div className={`${selectedConversation ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 bg-gray-50`}>
         {selectedConversation ? (
           <>
             {/* Conversation Header */}
             <div className="p-4 bg-white border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    onClick={() => setSelectedConversation(null)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
                     selectedConversation.isDraft ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
                   }`}>
@@ -808,7 +817,7 @@ export default function InboxPage() {
             )}
 
             {/* Compose Area */}
-            <div className="p-4 md:pr-24 bg-white border-t border-gray-200">
+            <div className="p-4 lg:pr-24 bg-white border-t border-gray-200">
               {/* Message Type Toggle */}
               <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
                 <button
@@ -892,10 +901,10 @@ export default function InboxPage() {
         /* ==================== SOCIAL INBOX ==================== */
         <div className="flex-1 min-h-0 flex">
           {/* Social Conversations List */}
-          <div className="w-96 border-r border-gray-200 flex flex-col min-h-0 bg-white">
+          <div className={`${selectedSocialConv || socialComposing ? "hidden md:flex" : "flex"} w-full md:w-96 border-r border-gray-200 flex-col min-h-0 bg-white`}>
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Social DMs</h1>
                   {socialUnread > 0 && (
@@ -914,7 +923,7 @@ export default function InboxPage() {
                     size="sm" 
                     onClick={handleStartSocialCompose}
                     disabled={socialAccounts.length === 0}
-                    className="bg-pink-600 hover:bg-pink-700"
+                    className="w-full bg-pink-600 hover:bg-pink-700 sm:w-auto"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Compose
@@ -932,8 +941,8 @@ export default function InboxPage() {
                 </div>
               ) : (
                 /* Search & Filter */
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
+                <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                  <div className="relative w-full flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="Search conversations..."
@@ -943,7 +952,7 @@ export default function InboxPage() {
                     />
                   </div>
                   <Select value={socialPlatformFilter} onValueChange={(v) => setSocialPlatformFilter(v as typeof socialPlatformFilter)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1053,13 +1062,16 @@ export default function InboxPage() {
           </div>
 
           {/* Social Message Thread or Compose */}
-          <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
+          <div className={`${selectedSocialConv || socialComposing ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 bg-gray-50`}>
           {socialComposing ? (
             <>
               {/* Compose Header */}
               <div className="p-4 bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSocialComposing(false)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
                     <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center">
                       <Edit3 className="h-5 w-5" />
                     </div>
@@ -1077,7 +1089,7 @@ export default function InboxPage() {
               {/* Compose Form */}
               <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                 {/* Platform & Account Selection */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Platform</label>
                     <div className="flex gap-2">
@@ -1162,15 +1174,15 @@ export default function InboxPage() {
               </div>
 
               {/* Send Button */}
-              <div className="p-4 md:pr-24 bg-white border-t border-gray-200">
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setSocialComposing(false)}>
+              <div className="p-4 lg:pr-24 bg-white border-t border-gray-200">
+                <div className="flex flex-col justify-end gap-3 sm:flex-row">
+                  <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSocialComposing(false)}>
                     Cancel
                   </Button>
                   <Button 
                     onClick={handleSendNewSocialMessage}
                     disabled={!socialComposeAccountId || !socialComposeUsername.trim() || !socialComposeMessage.trim() || sending}
-                    className="bg-pink-600 hover:bg-pink-700"
+                    className="w-full bg-pink-600 hover:bg-pink-700 sm:w-auto"
                   >
                     {sending ? (
                       <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</>
@@ -1187,6 +1199,9 @@ export default function InboxPage() {
               <div className="p-4 bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedSocialConv(null)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       selectedSocialConv.account?.platform === "INSTAGRAM" 
                         ? "bg-pink-100 text-pink-700" 
@@ -1228,7 +1243,7 @@ export default function InboxPage() {
               </div>
 
               {/* Compose */}
-              <div className="p-4 md:pr-24 bg-white border-t">
+              <div className="p-4 lg:pr-24 bg-white border-t">
                 <div className="flex items-end gap-3">
                   <Textarea
                     placeholder="Type your message..."

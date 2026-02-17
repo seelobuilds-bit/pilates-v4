@@ -568,7 +568,7 @@ export default function SocialMediaPage() {
         {/* ==================== TRAINING TAB ==================== */}
         <TabsContent value="training" className="space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm bg-gradient-to-br from-pink-500 to-rose-500 text-white">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -629,7 +629,7 @@ export default function SocialMediaPage() {
                   <Lightbulb className="h-5 w-5 text-amber-500" />
                   <h3 className="font-semibold text-gray-900">This Week&apos;s Content Ideas</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {contentIdeas.slice(0, 3).map(idea => (
                     <div key={idea.id} className="p-4 bg-amber-50 rounded-lg">
                       <Badge className="mb-2 bg-amber-100 text-amber-700">{idea.category}</Badge>
@@ -739,7 +739,7 @@ export default function SocialMediaPage() {
                   <Flame className="h-5 w-5 text-white" />
                   <h3 className="font-semibold text-white">🔥 Trending Now</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   {featuredContent.slice(0, 5).map(content => (
                     <a
                       key={content.id}
@@ -1833,7 +1833,6 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-
 
 
 
