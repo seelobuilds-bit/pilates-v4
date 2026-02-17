@@ -24,6 +24,7 @@ import {
   Banknote
 } from "lucide-react"
 import Link from "next/link"
+import { formatCurrency } from "@/lib/utils"
 
 interface Invoice {
   id: string
@@ -67,6 +68,7 @@ export default function StudioInvoicesPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [currency, setCurrency] = useState("usd")
   
   // Payment modal
   const [showPayModal, setShowPayModal] = useState(false)
@@ -82,6 +84,19 @@ export default function StudioInvoicesPage() {
 
   useEffect(() => {
     fetchInvoices()
+
+    const fetchCurrency = async () => {
+      try {
+        const res = await fetch("/api/studio/settings")
+        if (!res.ok) return
+        const data = await res.json()
+        setCurrency((data.stripeCurrency || "usd").toLowerCase())
+      } catch (error) {
+        console.error("Failed to fetch studio currency:", error)
+      }
+    }
+
+    fetchCurrency()
   }, [])
 
   async function fetchInvoices() {
@@ -219,7 +234,7 @@ export default function StudioInvoicesPage() {
                   <DollarSign className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalPending.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalPending, currency)}</p>
                   <p className="text-sm text-gray-500">Pending Amount</p>
                 </div>
               </div>
@@ -233,7 +248,7 @@ export default function StudioInvoicesPage() {
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${stats.totalPaid.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalPaid, currency)}</p>
                   <p className="text-sm text-gray-500">Total Paid</p>
                 </div>
               </div>
@@ -299,6 +314,7 @@ export default function StudioInvoicesPage() {
         <TabsContent value="pending">
           <InvoiceList 
             invoices={pendingInvoices}
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onMarkAsPaid={(inv) => {
               setSelectedInvoice(inv)
@@ -315,6 +331,7 @@ export default function StudioInvoicesPage() {
         <TabsContent value="paid">
           <InvoiceList 
             invoices={paidInvoices}
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onViewDetail={(inv) => {
               setDetailInvoice(inv)
@@ -327,6 +344,7 @@ export default function StudioInvoicesPage() {
         <TabsContent value="all">
           <InvoiceList 
             invoices={filteredInvoices}
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onMarkAsPaid={(inv) => {
               if (inv.status === "PENDING" || inv.status === "SENT") {
@@ -364,7 +382,7 @@ export default function StudioInvoicesPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Amount</span>
-                  <span className="font-bold text-lg text-violet-600">${selectedInvoice.total.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-violet-600">{formatCurrency(selectedInvoice.total, currency)}</span>
                 </div>
               </div>
 
@@ -511,8 +529,8 @@ export default function StudioInvoicesPage() {
                         <tr key={idx} className="border-t">
                           <td className="p-3 text-sm">{item.description}</td>
                           <td className="p-3 text-sm text-center">{item.quantity}</td>
-                          <td className="p-3 text-sm text-right">${item.rate.toFixed(2)}</td>
-                          <td className="p-3 text-sm text-right">${item.amount.toFixed(2)}</td>
+                          <td className="p-3 text-sm text-right">{formatCurrency(item.rate, currency)}</td>
+                          <td className="p-3 text-sm text-right">{formatCurrency(item.amount, currency)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -524,17 +542,17 @@ export default function StudioInvoicesPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Subtotal</span>
-                  <span className="font-medium">${detailInvoice.subtotal.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(detailInvoice.subtotal, currency)}</span>
                 </div>
                 {detailInvoice.tax > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Tax ({detailInvoice.taxRate}%)</span>
-                    <span className="font-medium">${detailInvoice.tax.toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(detailInvoice.tax, currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-violet-600">${detailInvoice.total.toFixed(2)}</span>
+                  <span className="text-violet-600">{formatCurrency(detailInvoice.total, currency)}</span>
                 </div>
               </div>
 
@@ -587,11 +605,13 @@ export default function StudioInvoicesPage() {
 // Invoice List Component
 function InvoiceList({ 
   invoices, 
+  currency,
   getStatusBadge,
   onMarkAsPaid,
   onViewDetail
 }: { 
   invoices: Invoice[]
+  currency: string
   getStatusBadge: (status: string) => React.ReactNode
   onMarkAsPaid?: (invoice: Invoice) => void
   onViewDetail: (invoice: Invoice) => void
@@ -647,7 +667,7 @@ function InvoiceList({
 
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="font-bold text-lg text-gray-900">${invoice.total.toFixed(2)}</p>
+                  <p className="font-bold text-lg text-gray-900">{formatCurrency(invoice.total, currency)}</p>
                   <p className="text-xs text-gray-500">
                     {invoice.lineItems.length} classes
                   </p>

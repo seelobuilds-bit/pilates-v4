@@ -33,6 +33,7 @@ import {
   Settings2,
 } from "lucide-react"
 import { DashboardData } from "./types"
+import { formatCurrency } from "@/lib/utils"
 
 interface DashboardViewProps {
   data: DashboardData
@@ -262,7 +263,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
-                            <p className="text-2xl font-bold text-gray-900">${data.stats.monthlyRevenue.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.stats.monthlyRevenue, data.currency)}</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                               <span className="text-emerald-500 font-medium">+{data.stats.revenueChange}%</span>

@@ -5,10 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+const SUPPORTED_CURRENCY_CODES = ["usd", "eur", "gbp", "cad", "aud", "nzd"] as const
+
+function normalizeCurrencyCode(currencyCode?: string | null) {
+  const normalized = (currencyCode || "usd").toLowerCase()
+  return SUPPORTED_CURRENCY_CODES.includes(normalized as (typeof SUPPORTED_CURRENCY_CODES)[number])
+    ? normalized
+    : "usd"
+}
+
+export function formatCurrency(amount: number, currencyCode?: string | null, locale = "en-US"): string {
+  const normalizedCurrency = normalizeCurrencyCode(currencyCode).toUpperCase()
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: normalizedCurrency,
   }).format(amount)
 }
 

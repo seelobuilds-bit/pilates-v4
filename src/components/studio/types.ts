@@ -83,6 +83,7 @@ export interface ClassType {
 export interface DashboardData {
   greeting: string
   currentDate: string
+  currency: string
   stats: {
     monthlyRevenue: number
     revenueChange: number

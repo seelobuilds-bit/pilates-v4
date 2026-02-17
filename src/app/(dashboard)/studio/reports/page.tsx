@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatCurrency } from "@/lib/utils"
 import { 
   DollarSign, 
   Users, 
@@ -142,6 +143,7 @@ export default function ReportsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loadingTeachers, setLoadingTeachers] = useState(true)
+  const [currency, setCurrency] = useState("usd")
   const [reportData, setReportData] = useState(defaultData)
   const [, setLoadingReports] = useState(true)
   
@@ -199,7 +201,7 @@ export default function ReportsPage() {
               bySource: revenueBySource,
               monthly: data.revenue?.monthly || [],
               insights: totalRevenue > 0 ? [
-                { type: 'positive', message: `Revenue is tracking at $${totalRevenue.toLocaleString()} this period` },
+                { type: 'positive', message: `Revenue is tracking at ${formatCurrency(totalRevenue, currency)} this period` },
                 { type: 'info', message: `${confirmedBookings} bookings confirmed, ${cancelledBookings} cancelled` }
               ] : [
                 { type: 'warning', message: 'No revenue recorded yet. Complete some bookings to see revenue data.' }
@@ -305,6 +307,21 @@ export default function ReportsPage() {
       }
     }
     fetchTeachers()
+  }, [])
+
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const res = await fetch('/api/studio/settings')
+        if (!res.ok) return
+        const data = await res.json()
+        setCurrency((data.stripeCurrency || 'usd').toLowerCase())
+      } catch (error) {
+        console.error('Failed to fetch studio currency:', error)
+      }
+    }
+
+    fetchCurrency()
   }, [])
   
   const handleRefresh = async () => {
@@ -592,7 +609,7 @@ export default function ReportsPage() {
                     {revenueChangeLabel}
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">${reportData.revenue.total.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.revenue.total, currency)}</p>
                 <p className="text-sm text-gray-500">Revenue</p>
           </CardContent>
         </Card>
@@ -663,7 +680,7 @@ export default function ReportsPage() {
                     const hitTarget = month.amount >= month.target
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-xs font-medium text-gray-900">${(month.amount / 1000).toFixed(0)}k</span>
+                        <span className="text-xs font-medium text-gray-900">{formatCurrency(month.amount, currency)}</span>
                         <div className="w-full relative">
                           <div 
                             className={`w-full rounded-t ${hitTarget ? 'bg-emerald-500' : 'bg-violet-500'}`}
@@ -802,7 +819,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">This Period</p>
-                <p className="text-3xl font-bold text-gray-900">${reportData.revenue.total.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">{formatCurrency(reportData.revenue.total, currency)}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
                     {reportData.revenue.percentChange >= 0 ? (
@@ -820,7 +837,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">Previous Period</p>
-                <p className="text-3xl font-bold text-gray-900">${reportData.revenue.previousPeriod.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">{formatCurrency(reportData.revenue.previousPeriod, currency)}</p>
                 <p className="text-sm text-gray-500 mt-2">Comparison baseline</p>
               </CardContent>
             </Card>
@@ -828,7 +845,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500 mb-1">Avg. Per Client</p>
-                <p className="text-3xl font-bold text-gray-900">${averageRevenuePerClient}</p>
+                <p className="text-3xl font-bold text-gray-900">{formatCurrency(averageRevenuePerClient, currency)}</p>
                 <p className="text-sm text-gray-500 mt-2">Revenue per active client</p>
               </CardContent>
             </Card>
@@ -852,7 +869,7 @@ export default function ReportsPage() {
                           {source.trend === 'up' ? '+' : ''}{source.change}%
                         </Badge>
                 </div>
-                      <span className="font-bold text-gray-900">${source.amount.toLocaleString()}</span>
+                      <span className="font-bold text-gray-900">{formatCurrency(source.amount, currency)}</span>
                 </div>
                     <div className="w-full bg-gray-100 rounded-full h-3">
                       <div 
@@ -1137,7 +1154,7 @@ export default function ReportsPage() {
                               {instructor.avgFill}%
                             </Badge>
                           </td>
-                          <td className="py-4 px-2 text-right font-semibold text-gray-900">${instructor.revenue.toLocaleString()}</td>
+                          <td className="py-4 px-2 text-right font-semibold text-gray-900">{formatCurrency(instructor.revenue, currency)}</td>
                           <td className="py-4 px-2 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
@@ -1482,7 +1499,7 @@ export default function ReportsPage() {
 
         {/* ==================== SOCIAL MEDIA TAB ==================== */}
         <TabsContent value="social" className="space-y-6">
-          <SocialMediaReportSection />
+          <SocialMediaReportSection currency={currency} />
         </TabsContent>
       </Tabs>
     </div>
@@ -1490,7 +1507,7 @@ export default function ReportsPage() {
 }
 
 // Social Media Report Section Component
-function SocialMediaReportSection() {
+function SocialMediaReportSection({ currency }: { currency: string }) {
   const [loading, setLoading] = useState(true)
   const [flows, setFlows] = useState<Array<{
     id: string
@@ -1734,7 +1751,7 @@ function SocialMediaReportSection() {
                           </span>
                         </td>
                         <td className="py-3 text-right font-medium text-gray-900">
-                          ${link.revenue.toFixed(2)}
+                          {formatCurrency(link.revenue, currency)}
                         </td>
                       </tr>
                     )

@@ -23,6 +23,7 @@ export default async function DemoDashboardPage() {
   }
 
   const studioId = studio.id
+  const studioCurrency = (studio.stripeCurrency || "usd").toLowerCase()
 
   // Get current date info
   const now = new Date()
@@ -183,6 +184,7 @@ export default async function DemoDashboardPage() {
   const dashboardData: DashboardData = {
     greeting: getGreeting(),
     currentDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+    currency: studioCurrency,
     stats: {
       monthlyRevenue: mockRevenue.thisMonth,
       revenueChange: mockRevenue.percentChange,
