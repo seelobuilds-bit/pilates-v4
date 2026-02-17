@@ -186,7 +186,7 @@ export default function EditLocationPage({
       </div>
 
       {/* Stats Row */}
-      {stats && (
+      {stats && hasLocationReportData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
@@ -325,7 +325,7 @@ export default function EditLocationPage({
                   <div className="flex items-end justify-between h-32 gap-2">
                     {safeStats.bookingsByDay.map((day, i) => {
                       const maxCount = Math.max(...safeStats.bookingsByDay.map(d => d.count))
-                      const height = (day.count / maxCount) * 100
+                      const height = maxCount > 0 ? (day.count / maxCount) * 100 : 0
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-1">
                           <div 
@@ -371,7 +371,7 @@ export default function EditLocationPage({
                   <div className="flex items-end justify-between h-40 gap-4">
                     {safeStats.monthlyRevenue.map((month, i) => {
                       const maxRevenue = Math.max(...safeStats.monthlyRevenue.map(m => m.revenue))
-                      const height = (month.revenue / maxRevenue) * 100
+                      const height = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">${(month.revenue / 1000).toFixed(1)}k</span>
