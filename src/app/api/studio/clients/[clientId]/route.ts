@@ -70,8 +70,9 @@ export async function GET(
       return sum + amount
     }, 0)
 
-    const totalBookings = allBookings.length
-    const cancelRate = totalBookings > 0 ? Math.round((cancelledClasses / totalBookings) * 1000) / 10 : 0
+    const totalBookings = nonCancelledBookings.length
+    const totalBookingAttempts = allBookings.length
+    const cancelRate = totalBookingAttempts > 0 ? Math.round((cancelledClasses / totalBookingAttempts) * 1000) / 10 : 0
 
     const classCounts = new Map<string, number>()
     const teacherCounts = new Map<string, number>()
@@ -123,7 +124,7 @@ export async function GET(
     })
     const bucketLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
 
-    for (const booking of allBookings) {
+    for (const booking of nonCancelledBookings) {
       const bookingDate = new Date(booking.createdAt)
       const key = `${bookingDate.getFullYear()}-${bookingDate.getMonth()}`
       const bucket = bucketLookup.get(key)

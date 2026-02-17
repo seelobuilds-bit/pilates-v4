@@ -382,6 +382,7 @@ export default function TeacherDetailPage({
       </div>
 
       {/* Stats Row */}
+      {hasTeacherReportData && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
@@ -441,6 +442,7 @@ export default function TeacherDetailPage({
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
@@ -619,7 +621,7 @@ export default function TeacherDetailPage({
                   <div className="flex items-end justify-between h-32 gap-4">
                     {safeExtendedStats.monthlyClasses.map((month, i) => {
                       const maxCount = Math.max(...safeExtendedStats.monthlyClasses.map(m => m.count))
-                      const height = (month.count / maxCount) * 100
+                      const height = maxCount > 0 ? (month.count / maxCount) * 100 : 0
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">{month.count}</span>
