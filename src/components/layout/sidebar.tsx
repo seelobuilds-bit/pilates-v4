@@ -30,6 +30,8 @@ import {
   Headphones,
   Target,
   Video,
+  Menu,
+  X,
 } from "lucide-react"
 
 type NavLink = {
@@ -174,6 +176,7 @@ export function Sidebar() {
   const [workingLinkHrefs, setWorkingLinkHrefs] = useState<string[]>(defaultWorkingLinkHrefs)
   const [showExtras, setShowExtras] = useState(false)
   const [showWorkingCustomize, setShowWorkingCustomize] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   let links = studioLinks
   let linkGroups: NavGroup[] = studioLinkGroups
@@ -274,6 +277,23 @@ export function Sidebar() {
     }
   }, [sidebarMode])
 
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isMobileOpen) {
+      return
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isMobileOpen])
+
   const handleWorkingSlotChange = (index: number, nextHref: string) => {
     setWorkingLinkHrefs((prev) => {
       const next = [...prev]
@@ -289,6 +309,8 @@ export function Sidebar() {
     })
   }
 
+  const isCompact = isCollapsed && !isMobileOpen
+
   const renderLink = (link: NavLink) => {
     const Icon = link.icon
     const isRootRoute =
@@ -299,46 +321,76 @@ export function Sidebar() {
       <Link
         key={link.href}
         href={link.href}
-        title={isCollapsed ? link.label : undefined}
+        title={isCompact ? link.label : undefined}
         className={cn(
           "rounded-lg text-sm font-medium transition-colors",
-          isCollapsed
+          isCompact
             ? "flex items-center justify-center px-2 py-2.5"
             : "flex items-center gap-3 px-3 py-2.5",
           isActive ? "bg-violet-50 text-violet-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
         )}
       >
         <Icon className={cn("h-5 w-5", isActive ? "text-violet-600" : "text-gray-400")} />
-        {!isCollapsed && link.label}
+        {!isCompact && link.label}
       </Link>
     )
   }
 
   return (
-    <div
-      className={cn(
-        "relative z-[70] flex h-full shrink-0 flex-col border-r border-gray-100 bg-white transition-all duration-200",
-        isCollapsed ? "w-[76px]" : "w-64"
+    <>
+      <button
+        type="button"
+        onClick={() => setIsMobileOpen(true)}
+        aria-label="Open sidebar"
+        className="fixed left-3 top-3 z-[75] inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white/95 p-2 text-gray-700 shadow-sm backdrop-blur lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {isMobileOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 z-[72] bg-gray-900/35 lg:hidden"
+        />
       )}
-    >
+
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-[73] flex h-[100dvh] w-[min(21rem,88vw)] flex-col border-r border-gray-100 bg-white shadow-xl transition-transform duration-200 lg:relative lg:z-[70] lg:h-full lg:translate-x-0 lg:shadow-none",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          isCollapsed ? "lg:w-[76px]" : "lg:w-64"
+        )}
+      >
       {/* Header */}
-      <div className={cn("flex items-center justify-between", isCollapsed ? "p-3" : "p-4")}>
-        <div className={cn(isCollapsed && "hidden")}>
+      <div className={cn("flex items-center justify-between", isCompact ? "p-3" : "p-4")}>
+        <div className={cn(isCompact && "hidden")}>
           <h1 className="font-semibold text-gray-900">{title}</h1>
           <p className="text-xs text-gray-500">{subtitle}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsCollapsed((prev) => !prev)}
-          className="rounded p-1 hover:bg-gray-100"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronLeft className={cn("h-4 w-4 text-gray-400 transition-transform", isCollapsed && "rotate-180")} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(false)}
+            className="rounded p-1 hover:bg-gray-100 lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            className="hidden rounded p-1 hover:bg-gray-100 lg:inline-flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft className={cn("h-4 w-4 text-gray-400 transition-transform", isCollapsed && "rotate-180")} />
+          </button>
+        </div>
       </div>
 
       {/* Studio Mode Controls */}
-      {isStudioOwner && !isCollapsed && (
+      {isStudioOwner && !isCompact && (
         <div className="border-b border-gray-100 px-3 pb-3 space-y-2">
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1">
             <button
@@ -401,7 +453,7 @@ export function Sidebar() {
       <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-2 space-y-4">
         {activeGroups.map((group) => (
           <div key={group.title} className="space-y-1">
-            {!isCollapsed && activeGroups.length > 1 && (
+            {!isCompact && activeGroups.length > 1 && (
               <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                 {group.title}
               </p>
@@ -412,7 +464,7 @@ export function Sidebar() {
 
         {isStudioOwner && sidebarMode === "working" && extrasLinks.length > 0 && (
           <div className="space-y-1">
-            {!isCollapsed && (
+            {!isCompact && (
               <button
                 type="button"
                 onClick={() => setShowExtras((prev) => !prev)}
@@ -421,18 +473,18 @@ export function Sidebar() {
                 {showExtras ? "Hide Extras" : "Show Extras"}
               </button>
             )}
-            {(showExtras || isCollapsed) && extrasLinks.map(renderLink)}
+            {(showExtras || isCompact) && extrasLinks.map(renderLink)}
           </div>
         )}
       </nav>
 
       {/* User Profile */}
-      <div className={cn("border-t border-gray-100", isCollapsed ? "p-2" : "p-3")}>
-        <div className={cn("flex items-center px-3 py-2", isCollapsed ? "justify-center" : "gap-3")}>
+      <div className={cn("border-t border-gray-100", isCompact ? "p-2" : "p-3")}>
+        <div className={cn("flex items-center px-3 py-2", isCompact ? "justify-center" : "gap-3")}>
           <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-medium text-violet-700">
             {session?.user?.firstName?.[0]}{session?.user?.lastName?.[0]}
           </div>
-          <div className={cn("flex-1 min-w-0", isCollapsed && "hidden")}>
+          <div className={cn("flex-1 min-w-0", isCompact && "hidden")}>
             <p className="text-sm font-medium text-gray-900 truncate">
               {session?.user?.firstName} {session?.user?.lastName}
             </p>
@@ -443,16 +495,17 @@ export function Sidebar() {
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          title={isCollapsed ? "Sign out" : undefined}
+          title={isCompact ? "Sign out" : undefined}
           className={cn(
             "mt-1 w-full rounded-lg py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900",
-            isCollapsed ? "flex items-center justify-center px-2" : "flex items-center gap-3 px-3"
+            isCompact ? "flex items-center justify-center px-2" : "flex items-center gap-3 px-3"
           )}
         >
           <LogOut className="h-5 w-5 text-gray-400" />
-          {!isCollapsed && "Sign out"}
+          {!isCompact && "Sign out"}
         </button>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

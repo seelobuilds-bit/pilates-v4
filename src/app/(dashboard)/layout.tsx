@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="app-scrollbar flex-1 overflow-auto pt-14 lg:pt-0">
         {children}
       </main>
       <SupportWidget />
