@@ -77,7 +77,7 @@ export default async function HQAnalyticsPage() {
   ]
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Platform Analytics</h1>
@@ -91,7 +91,7 @@ export default async function HQAnalyticsPage() {
             <Zap className="h-5 w-5" />
             <h2 className="font-semibold">Platform Health Summary</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                 <CheckCircle className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default async function HQAnalyticsPage() {
       </Card>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
@@ -184,7 +184,7 @@ export default async function HQAnalyticsPage() {
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
                   <h3 className="font-semibold text-gray-900">Studio Health Overview</h3>
                   <p className="text-sm text-gray-500">Monitor each studio&apos;s performance</p>
@@ -204,8 +204,8 @@ export default async function HQAnalyticsPage() {
                         ? 'border-emerald-200 bg-emerald-50/50'
                         : 'border-gray-100 bg-white hover:border-violet-200'
                     }`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             studio.health === 'at-risk' ? 'bg-red-100' :
                             studio.health === 'growing' ? 'bg-emerald-100' :
@@ -217,12 +217,12 @@ export default async function HQAnalyticsPage() {
                               'text-violet-600'
                             }`} />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{studio.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{studio.name}</p>
                             <p className="text-sm text-gray-500">Last active: {studio.lastActive}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-between sm:justify-end">
                           <Badge variant="secondary" className={`${
                             studio.health === 'at-risk' ? 'bg-red-100 text-red-700' :
                             studio.health === 'growing' ? 'bg-emerald-100 text-emerald-700' :
@@ -236,7 +236,7 @@ export default async function HQAnalyticsPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div>
                           <p className="text-lg font-bold text-gray-900">${(studio.revenue / 1000).toFixed(1)}k</p>
                           <p className="text-xs text-gray-500">Revenue</p>
