@@ -119,7 +119,7 @@ export default function TeacherClassDetailPage({
 
   if (loading) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -127,7 +127,7 @@ export default function TeacherClassDetailPage({
 
   if (!classSession) {
     return (
-      <div className="p-8 bg-gray-50/50 min-h-screen">
+      <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Class not found</p>
           <Link href="/teacher/schedule">
@@ -139,13 +139,13 @@ export default function TeacherClassDetailPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Message All Modal */}
       {showMessageModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <Card className="w-[500px] shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-[500px] shadow-xl">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex items-start justify-between gap-3 sm:items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                     <Send className="h-5 w-5 text-violet-600" />
@@ -253,16 +253,16 @@ export default function TeacherClassDetailPage({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button 
                       variant="outline" 
-                      className="flex-1"
+                      className="w-full flex-1"
                       onClick={() => setShowMessageModal(false)}
                     >
                       Cancel
                     </Button>
                     <Button 
-                      className={`flex-1 ${messageType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      className={`w-full flex-1 ${messageType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
                       onClick={handleSendMessageToAll}
                       disabled={sendingMessage || !messageBody.trim() || (messageType === "email" && !messageSubject.trim())}
                     >
@@ -289,10 +289,10 @@ export default function TeacherClassDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Back to Schedule
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{classSession.classType.name}</h1>
-            <p className="text-gray-500 mt-1 flex items-center gap-2">
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-gray-500">
               <Calendar className="h-4 w-4" />
               {new Date(classSession.startTime).toLocaleDateString("en-US", { 
                 weekday: "long",
@@ -305,7 +305,7 @@ export default function TeacherClassDetailPage({
           {classSession.bookings.length > 0 && (
             <Button 
               onClick={openMessageModal}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
             >
               <Send className="h-4 w-4 mr-2" />
               Message All Attendees
@@ -319,9 +319,9 @@ export default function TeacherClassDetailPage({
         <div className="lg:col-span-2">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="font-semibold text-gray-900">Booked Clients</h2>
-                <Badge variant={classSession._count.bookings >= classSession.capacity ? "destructive" : "secondary"}>
+                <Badge className="w-fit" variant={classSession._count.bookings >= classSession.capacity ? "destructive" : "secondary"}>
                   {classSession._count.bookings}/{classSession.capacity} spots
                 </Badge>
               </div>
@@ -330,7 +330,7 @@ export default function TeacherClassDetailPage({
                 <div className="space-y-2">
                   {classSession.bookings.map((booking) => (
                     <Link key={booking.id} href={`/teacher/clients/${booking.client.id}`}>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                      <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100 cursor-pointer sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 text-sm font-medium">
                             {booking.client.firstName[0]}{booking.client.lastName[0]}
@@ -340,7 +340,7 @@ export default function TeacherClassDetailPage({
                             <p className="text-sm text-gray-500">{booking.client.email}</p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+                        <Badge variant="outline" className="w-fit text-emerald-600 border-emerald-200">
                           Confirmed
                         </Badge>
                       </div>
@@ -447,7 +447,6 @@ export default function TeacherClassDetailPage({
     </div>
   )
 }
-
 
 
 

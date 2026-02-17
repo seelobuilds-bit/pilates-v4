@@ -310,17 +310,17 @@ export default function ClassFlowsPage() {
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Class Flows</h1>
           <p className="text-gray-500">Manage training content and resources for your teachers</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setShowAddCategory(true)}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button variant="outline" onClick={() => setShowAddCategory(true)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
-          <Button onClick={() => setShowAddContent(true)} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={() => setShowAddContent(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Content
           </Button>
@@ -328,7 +328,7 @@ export default function ClassFlowsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -387,12 +387,12 @@ export default function ClassFlowsPage() {
       </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
-          <TabsTrigger value="content" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border-0 bg-white p-1 shadow-sm">
+          <TabsTrigger value="content" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Video className="h-4 w-4 mr-2" />
             Content Library
           </TabsTrigger>
-          <TabsTrigger value="training" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="training" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
             Training Requests
           </TabsTrigger>
@@ -416,7 +416,7 @@ export default function ClassFlowsPage() {
             categories.map(category => (
               <Card key={category.id} className="border-0 shadow-sm">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{category.icon || "📚"}</span>
                       <div>
@@ -427,6 +427,7 @@ export default function ClassFlowsPage() {
                     <Button 
                       size="sm" 
                       variant="outline"
+                      className="w-full sm:w-auto"
                       onClick={() => {
                         setNewContent({ ...newContent, categoryId: category.id })
                         setShowAddContent(true)
@@ -442,7 +443,7 @@ export default function ClassFlowsPage() {
                       <p className="text-gray-500">No content in this category yet</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                       {category.contents.map(content => (
                         <div 
                           key={content.id}
@@ -480,9 +481,9 @@ export default function ClassFlowsPage() {
 
                           {/* Content Info */}
                           <div className="p-4">
-                            <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="mb-2 flex items-start justify-between gap-2">
                               <h4 className="font-medium text-gray-900 line-clamp-1">{content.title}</h4>
-                              <Badge variant="secondary" className={getDifficultyColor(content.difficulty)}>
+                              <Badge variant="secondary" className={`w-fit ${getDifficultyColor(content.difficulty)}`}>
                                 {content.difficulty}
                               </Badge>
                             </div>
@@ -492,7 +493,7 @@ export default function ClassFlowsPage() {
                                 {getTypeIcon(content.type)}
                                 <span className="text-xs text-gray-500 capitalize">{content.type.toLowerCase()}</span>
                               </div>
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -543,14 +544,14 @@ export default function ClassFlowsPage() {
                   {trainingRequests.map(request => (
                     <div 
                       key={request.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 transition-colors hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4 sm:items-center">
                         <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center">
                           <GraduationCap className="h-6 w-6 text-violet-600" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
                             <h4 className="font-medium text-gray-900">{request.title}</h4>
                             <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
                           </div>
@@ -560,8 +561,8 @@ export default function ClassFlowsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
+                      <div className="flex items-center justify-between gap-4 sm:justify-end">
+                        <div className="text-left sm:text-right">
                           <p className="text-sm text-gray-500">
                             {request.scheduledDate 
                               ? new Date(request.scheduledDate).toLocaleDateString()
@@ -571,7 +572,7 @@ export default function ClassFlowsPage() {
                             }
                           </p>
                         </div>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="shrink-0">
                           View Details
                           <ChevronRight className="h-4 w-4 ml-2" />
                         </Button>
@@ -589,7 +590,7 @@ export default function ClassFlowsPage() {
       {showAddCategory && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowAddCategory(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -616,7 +617,7 @@ export default function ClassFlowsPage() {
                       placeholder="Brief description of this category..."
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Icon (emoji)</Label>
                       <Input
@@ -636,12 +637,12 @@ export default function ClassFlowsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button variant="outline" onClick={() => setShowAddCategory(false)}>Cancel</Button>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" onClick={() => setShowAddCategory(false)} className="w-full sm:w-auto">Cancel</Button>
                   <Button 
                     onClick={createCategory} 
                     disabled={saving || !newCategory.name}
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Category"}
                   </Button>
@@ -656,7 +657,7 @@ export default function ClassFlowsPage() {
       {showAddContent && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowAddContent(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -667,7 +668,7 @@ export default function ClassFlowsPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Category</Label>
                       <Select
@@ -723,7 +724,7 @@ export default function ClassFlowsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Difficulty</Label>
                       <Select
@@ -756,7 +757,7 @@ export default function ClassFlowsPage() {
 
                   {newContent.type === "VIDEO" && (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <Label>Video</Label>
                         <div className="flex gap-2">
                           <Button
@@ -842,7 +843,7 @@ export default function ClassFlowsPage() {
 
                   {newContent.type === "PDF" && (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <Label>PDF Document</Label>
                         <div className="flex gap-2">
                           <Button
@@ -964,7 +965,7 @@ export default function ClassFlowsPage() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row">
                           <Button
                             type="button"
                             variant="outline"
@@ -999,7 +1000,7 @@ export default function ClassFlowsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-6 pt-2">
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:gap-6">
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={newContent.isPublished}
@@ -1017,12 +1018,12 @@ export default function ClassFlowsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button variant="outline" onClick={() => setShowAddContent(false)}>Cancel</Button>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" onClick={() => setShowAddContent(false)} className="w-full sm:w-auto">Cancel</Button>
                   <Button 
                     onClick={createContent} 
                     disabled={saving || !newContent.title || !newContent.categoryId}
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Content"}
                   </Button>
@@ -1035,7 +1036,6 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

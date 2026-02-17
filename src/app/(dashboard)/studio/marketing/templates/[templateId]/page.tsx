@@ -176,7 +176,7 @@ export default function TemplateDetailPage({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge variant="secondary">{template.category}</Badge>
                 <span className="text-sm text-gray-500">Used {template.usedCount} times</span>
               </div>
@@ -196,7 +196,7 @@ export default function TemplateDetailPage({
         </div>
       </div>
 
-      <div className="max-w-4xl">
+      <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Editor */}
           <div className="space-y-6">
@@ -270,7 +270,7 @@ export default function TemplateDetailPage({
                   )}
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>{template.type === "sms" ? "Message" : "Body"}</Label>
                       {template.type === "sms" && (
                         <span className={`text-xs ${
@@ -315,12 +315,12 @@ export default function TemplateDetailPage({
           <div>
             <Card className="border-0 shadow-sm lg:sticky lg:top-8">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <Eye className="h-5 w-5 text-gray-400" />
                     <h2 className="text-lg font-semibold text-gray-900">Preview</h2>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
                   </Button>
@@ -361,14 +361,14 @@ export default function TemplateDetailPage({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-8">
+        <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/studio/marketing?tab=templates">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Cancel</Button>
           </Link>
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
