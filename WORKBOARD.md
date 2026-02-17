@@ -19,12 +19,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-111 Schedule list UX parity (filters + sticky header + actions polish) | mac-mini-agent | mini/T-111-schedule-list-ux-parity | `src/app/(dashboard)/studio/schedule/page.tsx`, `src/components/studio/schedule/**` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/25 |
 | T-112 Schedule view simplify (revert day/week/month chips) | mac-mini-agent | mini/T-112-schedule-view-simplify | `src/app/(dashboard)/studio/schedule/page.tsx` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/26 |
 | T-113 Automation edit multi-step parity | codex-main | codex/T-113-automation-edit-multistep | `src/app/(dashboard)/studio/marketing/automations/[automationId]/page.tsx` | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/27 |
-| T-114 Owner flow smoke tests | mac-mini-agent | mini/T-114-owner-smoke-tests | `scripts/tests/**`, `package.json`, docs notes only | In Progress |  |
-| T-115 Reporting integrity + empty-state correctness | codex-main | codex/T-115-reporting-integrity-empty-states | Reporting APIs/UI for studio reports + entity report tabs | In Progress |  |
+| T-114 Owner flow smoke tests | mac-mini-agent | mini/T-114-owner-smoke-tests | `scripts/tests/**`, `package.json`, docs notes only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/28 |
+| T-115 Reporting integrity + empty-state correctness | codex-main | codex/T-115-reporting-integrity-empty-states | Reporting APIs/UI for studio reports + entity report tabs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/29 |
 
 ## Merge Order
-1. T-115
-2. T-114
+1. Next roadmap item to define
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
