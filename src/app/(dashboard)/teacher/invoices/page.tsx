@@ -220,22 +220,22 @@ export default function TeacherInvoicesPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
           <p className="text-gray-500 mt-1">Create and manage your invoices for {studioName || "your studio"}</p>
         </div>
         {!showCreator && (
-          <Button onClick={() => setShowCreator(true)} className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={() => setShowCreator(true)} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
             <Plus className="h-4 w-4 mr-2" />
             New Invoice
           </Button>
@@ -265,7 +265,7 @@ export default function TeacherInvoicesPage() {
       {showCreator && (
         <Card className="border-0 shadow-sm mb-6">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-gray-400" />
                 <h3 className="font-semibold text-gray-900">Create New Invoice</h3>
@@ -308,7 +308,7 @@ export default function TeacherInvoicesPage() {
                 <div className="border rounded-lg overflow-hidden">
                   {/* Invoice Header */}
                   <div className="bg-gradient-to-r from-violet-600 to-violet-500 text-white p-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h4 className="text-2xl font-bold">INVOICE</h4>
                         <p className="text-violet-200 mt-1">
@@ -324,7 +324,8 @@ export default function TeacherInvoicesPage() {
 
                   {/* Classes Table */}
                   <div className="p-6">
-                    <table className="w-full">
+                    <div className="app-scrollbar overflow-x-auto">
+                    <table className="min-w-[640px] w-full">
                       <thead>
                         <tr className="text-left text-sm text-gray-500 border-b">
                           <th className="pb-3">Class</th>
@@ -353,6 +354,7 @@ export default function TeacherInvoicesPage() {
                         )}
                       </tbody>
                     </table>
+                    </div>
 
                     {/* Summary */}
                     <div className="mt-6 border-t pt-4">
@@ -370,8 +372,8 @@ export default function TeacherInvoicesPage() {
                       </div>
                       
                       {/* Tax Input */}
-                      <div className="flex items-center justify-between py-2 border-t mt-2">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-2 border-t mt-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-gray-500">Tax</span>
                           <Input
                             type="number"
@@ -421,11 +423,12 @@ export default function TeacherInvoicesPage() {
 
               {/* Actions */}
               {invoiceSummary && invoiceClasses.length > 0 && (
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t">
                   <Button
                     variant="outline"
                     onClick={() => createInvoice(false)}
                     disabled={creating}
+                    className="w-full sm:w-auto"
                   >
                     {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
                     Save as Draft
@@ -433,7 +436,7 @@ export default function TeacherInvoicesPage() {
                   <Button
                     onClick={() => createInvoice(true)}
                     disabled={creating}
-                    className="bg-violet-600 hover:bg-violet-700"
+                    className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                   >
                     {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
                     Create & Submit
@@ -447,7 +450,7 @@ export default function TeacherInvoicesPage() {
 
       {/* Invoices Tabs */}
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="bg-white border">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="all">
             All Invoices
             <Badge className="ml-2 bg-gray-100 text-gray-600">{invoices.length}</Badge>
@@ -550,8 +553,8 @@ function InvoiceList({
       {invoices.map(invoice => (
         <Card key={invoice.id} className="border-0 shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                   invoice.status === "PAID" ? "bg-green-100" :
                   invoice.status === "PENDING" ? "bg-amber-100" :
@@ -567,9 +570,9 @@ function InvoiceList({
                     <FileText className="h-5 w-5 text-gray-500" />
                   )}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900">{invoice.invoiceNumber}</p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-gray-900 truncate">{invoice.invoiceNumber}</p>
                     {getStatusBadge(invoice.status)}
                   </div>
                   <p className="text-sm text-gray-500">
@@ -578,21 +581,22 @@ function InvoiceList({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-4">
+                <div className="text-left sm:text-right">
                   <p className="font-bold text-lg text-gray-900">${invoice.total.toFixed(2)}</p>
                   <p className="text-xs text-gray-500">
                     {invoice.lineItems.length} classes
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {invoice.status === "DRAFT" && (
                     <>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => onDelete(invoice.id)}
+                        className="w-full sm:w-auto"
                       >
                         Delete
                       </Button>
@@ -600,7 +604,7 @@ function InvoiceList({
                         size="sm"
                         onClick={() => onSubmit(invoice.id)}
                         disabled={submitting === invoice.id}
-                        className="bg-violet-600 hover:bg-violet-700"
+                        className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                       >
                         {submitting === invoice.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -627,7 +631,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

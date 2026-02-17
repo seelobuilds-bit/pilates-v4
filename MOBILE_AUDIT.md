@@ -131,9 +131,15 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/(dashboard)/teacher/reports/page.tsx`
   - `src/app/(dashboard)/teacher/leaderboards/page.tsx`
   - `src/app/(dashboard)/teacher/vault/page.tsx`
+- 2026-02-17 Batch G complete:
+  - `src/app/(dashboard)/teacher/vault/[courseId]/page.tsx`
+  - `src/app/(dashboard)/teacher/invoices/page.tsx`
+  - `src/app/(dashboard)/teacher/community/page.tsx`
+  - `src/components/vault/subscription-chat.tsx`
+  - `src/components/vault/course-chat.tsx`
 
 ## Next Priority Queue
 
-- `src/app/(dashboard)/teacher/vault/[courseId]/page.tsx`
-- `src/app/(dashboard)/teacher/invoices/page.tsx`
-- `src/app/(dashboard)/teacher/community/page.tsx`
+- `src/app/(dashboard)/studio/teachers/[teacherId]/page.tsx`
+- `src/app/(dashboard)/studio/vault/[courseId]/page.tsx`
+- `src/app/(dashboard)/studio/marketing/campaigns/new/page.tsx`
