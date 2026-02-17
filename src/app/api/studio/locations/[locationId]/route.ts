@@ -79,7 +79,7 @@ export async function GET(
   }, 0)
 
   const activeClientIds = new Set(
-    bookings.filter((booking) => booking.client.isActive).map((booking) => booking.clientId)
+    nonCancelledBookings.filter((booking) => booking.client.isActive).map((booking) => booking.clientId)
   )
 
   const classCounts = new Map<string, number>()
@@ -98,7 +98,7 @@ export async function GET(
     const className = booking.classSession.classType.name
     classCounts.set(className, (classCounts.get(className) || 0) + 1)
 
-    const dayKey = new Date(booking.createdAt).toLocaleDateString("en-US", { weekday: "short" })
+    const dayKey = new Date(booking.classSession.startTime).toLocaleDateString("en-US", { weekday: "short" })
     bookingsByDayMap.set(dayKey, (bookingsByDayMap.get(dayKey) || 0) + 1)
   }
 
@@ -128,7 +128,7 @@ export async function GET(
   }
 
   const stats = {
-    totalBookings: bookings.length,
+    totalBookings: nonCancelledBookings.length,
     totalRevenue: Math.round(totalRevenue * 100) / 100,
     activeClients: activeClientIds.size,
     avgClassSize:
@@ -143,7 +143,7 @@ export async function GET(
       .map(([name, classes]) => ({ name, classes, rating: 0 }))
       .sort((a, b) => b.classes - a.classes)
       .slice(0, 5),
-    recentBookings: bookings.slice(0, 10).map((booking) => ({
+    recentBookings: nonCancelledBookings.slice(0, 10).map((booking) => ({
       clientName: `${booking.client.firstName} ${booking.client.lastName}`.trim(),
       className: booking.classSession.classType.name,
       date: new Date(booking.createdAt).toLocaleString([], {

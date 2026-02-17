@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
+
 export async function GET(request: NextRequest) {
   const session = await getSession()
 
@@ -25,7 +27,9 @@ export async function GET(request: NextRequest) {
   const bookings = await db.booking.findMany({
     where: {
       studioId,
-      createdAt: { gte: startDate }
+      classSession: {
+        startTime: { gte: startDate }
+      }
     },
     include: {
       classSession: {
@@ -40,9 +44,11 @@ export async function GET(request: NextRequest) {
   const previousBookings = await db.booking.findMany({
     where: {
       studioId,
-      createdAt: {
-        gte: previousStartDate,
-        lt: startDate
+      classSession: {
+        startTime: {
+          gte: previousStartDate,
+          lt: startDate
+        }
       }
     },
     include: {
@@ -57,7 +63,9 @@ export async function GET(request: NextRequest) {
   const monthlyBookings = await db.booking.findMany({
     where: {
       studioId,
-      createdAt: { gte: monthWindowStart }
+      classSession: {
+        startTime: { gte: monthWindowStart }
+      }
     },
     include: {
       classSession: {
@@ -74,7 +82,7 @@ export async function GET(request: NextRequest) {
 
   for (const booking of bookings) {
     if (booking.status === "CANCELLED") continue
-    const amount = booking.paidAmount || booking.classSession.classType.price
+    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
     totalRevenue += amount
 
     const locationName = booking.classSession.location.name
@@ -86,7 +94,7 @@ export async function GET(request: NextRequest) {
 
   const previousTotalRevenue = previousBookings.reduce((sum, booking) => {
     if (booking.status === "CANCELLED") return sum
-    const amount = booking.paidAmount || booking.classSession.classType.price
+    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
     return sum + amount
   }, 0)
 
@@ -103,11 +111,11 @@ export async function GET(request: NextRequest) {
   }
   for (const booking of monthlyBookings) {
     if (booking.status === "CANCELLED") continue
-    const date = new Date(booking.createdAt)
+    const date = new Date(booking.classSession.startTime)
     const key = `${date.getFullYear()}-${date.getMonth()}`
     const bucket = monthlyRevenueMap.get(key)
     if (!bucket) continue
-    const amount = booking.paidAmount || booking.classSession.classType.price
+    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
     bucket.amount += amount
   }
   for (const bucket of monthlyRevenueMap.values()) {
@@ -142,24 +150,122 @@ export async function GET(request: NextRequest) {
     include: {
       classType: true,
       location: true,
-      teacher: { include: { user: true } }
+      teacher: { include: { user: true } },
+      bookings: {
+        select: { status: true }
+      },
+      _count: {
+        select: { waitlists: true }
+      }
     }
   })
 
   const classesByLocation: Record<string, number> = {}
   const classesByTeacher: Record<string, number> = {}
+  const byTimeSlotMap = new Map<string, { time: string; fillTotal: number; classes: number }>()
+  const byDayMap = new Map<string, { day: string; fillTotal: number; classes: number }>()
+  const byClassTypeMap = new Map<
+    string,
+    {
+      id: string
+      name: string
+      fillTotal: number
+      classes: number
+      waitlist: number
+    }
+  >()
+
+  const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  for (const day of dayOrder) {
+    byDayMap.set(day, { day, fillTotal: 0, classes: 0 })
+  }
 
   for (const session of classSessions) {
     classesByLocation[session.location.name] = (classesByLocation[session.location.name] || 0) + 1
     const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`
     classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
+
+    const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
+    const fill = session.capacity > 0 ? Math.round((attendedCount / session.capacity) * 100) : 0
+
+    const slotLabel = new Date(session.startTime).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit"
+    })
+    const slotEntry = byTimeSlotMap.get(slotLabel) || { time: slotLabel, fillTotal: 0, classes: 0 }
+    slotEntry.fillTotal += fill
+    slotEntry.classes += 1
+    byTimeSlotMap.set(slotLabel, slotEntry)
+
+    const dayLabel = new Date(session.startTime).toLocaleDateString("en-US", { weekday: "short" })
+    const dayEntry = byDayMap.get(dayLabel) || { day: dayLabel, fillTotal: 0, classes: 0 }
+    dayEntry.fillTotal += fill
+    dayEntry.classes += 1
+    byDayMap.set(dayLabel, dayEntry)
+
+    const classEntry = byClassTypeMap.get(session.classTypeId) || {
+      id: session.classTypeId,
+      name: session.classType.name,
+      fillTotal: 0,
+      classes: 0,
+      waitlist: 0
+    }
+    classEntry.fillTotal += fill
+    classEntry.classes += 1
+    classEntry.waitlist += session._count.waitlists
+    byClassTypeMap.set(session.classTypeId, classEntry)
   }
   const totalCapacity = classSessions.reduce((sum, session) => sum + session.capacity, 0)
+  const overallAverageFill =
+    classSessions.length > 0
+      ? Math.round(
+          classSessions.reduce((sum, session) => {
+            const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
+            return sum + (session.capacity > 0 ? (attendedCount / session.capacity) * 100 : 0)
+          }, 0) / classSessions.length
+        )
+      : 0
 
   const statusCounts: Record<string, number> = {}
   for (const booking of bookings) {
     statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1
   }
+
+  const byTimeSlot = Array.from(byTimeSlotMap.values())
+    .map((item) => ({
+      time: item.time,
+      fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+      classes: item.classes
+    }))
+    .sort((a, b) => b.fill - a.fill)
+
+  const byDay = Array.from(byDayMap.values()).map((item) => ({
+    day: item.day,
+    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    classes: item.classes
+  }))
+
+  const classFillRows = Array.from(byClassTypeMap.values()).map((item) => ({
+    id: item.id,
+    name: item.name,
+    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    waitlist: item.waitlist
+  }))
+
+  const topClasses = [...classFillRows]
+    .sort((a, b) => b.fill - a.fill)
+    .slice(0, 5)
+
+  const underperforming = [...classFillRows]
+    .filter((item) => item.fill < overallAverageFill)
+    .sort((a, b) => a.fill - b.fill)
+    .slice(0, 5)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      fill: item.fill,
+      avgFill: overallAverageFill
+    }))
 
   return NextResponse.json({
     revenue: {
@@ -180,10 +286,10 @@ export async function GET(request: NextRequest) {
       totalCapacity,
       byLocation: Object.entries(classesByLocation).map(([name, count]) => ({ name, count })),
       byTeacher: Object.entries(classesByTeacher).map(([name, count]) => ({ name, count })),
-      byTimeSlot: [],
-      byDay: [],
-      topClasses: [],
-      underperforming: []
+      byTimeSlot,
+      byDay,
+      topClasses,
+      underperforming
     },
     bookings: {
       total: bookings.length,

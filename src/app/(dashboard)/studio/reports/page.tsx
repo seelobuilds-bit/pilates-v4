@@ -397,11 +397,18 @@ export default function ReportsPage() {
   const revenueChangeLabel = `${reportData.revenue.percentChange > 0 ? "+" : ""}${reportData.revenue.percentChange}%`
   const utilisationChange = reportData.utilisation.averageFill - reportData.utilisation.previousPeriod
   const utilisationChangeLabel = `${utilisationChange > 0 ? "+" : ""}${utilisationChange}%`
+  const churnChange = reportData.retention.churnRate - reportData.retention.previousChurnRate
+  const churnChangeLabel = `${churnChange > 0 ? "+" : ""}${Math.abs(churnChange).toFixed(1)}%`
   const peakTimeLabel = reportData.utilisation.byTimeSlot[0]?.time || "No data"
   const averageRevenuePerClient =
     reportData.retention.activeClients > 0
       ? Math.round(reportData.revenue.total / reportData.retention.activeClients)
       : 0
+  const hasOverviewData =
+    reportData.revenue.total > 0 ||
+    reportData.utilisation.totalClasses > 0 ||
+    reportData.utilisation.totalAttendance > 0 ||
+    reportData.revenue.monthly.some((month) => month.amount > 0)
 
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
@@ -511,8 +518,10 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="text-gray-500 text-sm font-medium">Revenue Growth</p>
-                <p className="text-gray-900 font-bold text-2xl">{revenueChangeLabel}</p>
-                <p className="text-gray-400 text-xs">vs last period</p>
+                <p className="text-gray-900 font-bold text-2xl">{hasOverviewData ? revenueChangeLabel : "No data"}</p>
+                <p className="text-gray-400 text-xs">
+                  {hasOverviewData ? "vs last period" : "Add classes/bookings to start tracking"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -592,6 +601,17 @@ export default function ReportsPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {!hasOverviewData && (
+            <Card className="border-0 shadow-sm border-dashed border-gray-300 bg-white">
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                <h3 className="text-lg font-semibold text-gray-900">No report data yet</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Reports will populate after classes run and bookings/payments are recorded.
+                </p>
+              </CardContent>
+            </Card>
+          )}
       {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/studio/reports?tab=revenue')}>
@@ -653,8 +673,12 @@ export default function ReportsPage() {
                     <UserMinus className="h-5 w-5 text-amber-600" />
                   </div>
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                    <ArrowDownRight className="h-3 w-3 mr-1" />
-                    0.4%
+                    {churnChange <= 0 ? (
+                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowUpRight className="h-3 w-3 mr-1" />
+                    )}
+                    {churnChangeLabel}
                   </Badge>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{reportData.retention.churnRate}%</p>
@@ -675,8 +699,8 @@ export default function ReportsPage() {
                 <div className="flex items-end justify-between h-40 gap-2">
                   {reportData.revenue.monthly.map((month, i) => {
                     const maxAmount = Math.max(...reportData.revenue.monthly.map(m => Math.max(m.amount, m.target)))
-                    const height = (month.amount / maxAmount) * 100
-                    const targetHeight = (month.target / maxAmount) * 100
+                    const height = maxAmount > 0 ? (month.amount / maxAmount) * 100 : 0
+                    const targetHeight = maxAmount > 0 ? (month.target / maxAmount) * 100 : 0
                     const hitTarget = month.amount >= month.target
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
