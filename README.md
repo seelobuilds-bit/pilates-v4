@@ -44,3 +44,21 @@ Supabase rollout notes, including:
 - GitHub secrets for `main` vs other branches
 
 See `/Users/charlie/Development/pilates-v4/docs/supabase-migration.md`.
+
+## Owner flow smoke test
+
+Run a lightweight owner-route smoke check against a running app (defaults to `http://localhost:3000`):
+
+```bash
+TEST_OWNER_COOKIE='next-auth.session-token=...' pnpm test:smoke:owner
+```
+
+Optional base URL override:
+
+```bash
+TEST_BASE_URL='https://staging.example.com' TEST_OWNER_COOKIE='next-auth.session-token=...' pnpm test:smoke:owner
+```
+
+Notes:
+- Includes an anonymous access check (expects redirect/unauthorized on `/studio`)
+- Includes authenticated checks for `/studio`, `/studio/schedule`, `/studio/inbox`, `/studio/marketing`, and `/studio/settings`
