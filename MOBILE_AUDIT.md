@@ -165,9 +165,13 @@ Generated: 2026-02-17T19:46:41.791Z
   - `src/app/demo/reports/page.tsx`
   - `src/app/demo/store/page.tsx`
   - `src/app/demo/classes/[classTypeId]/page.tsx`
+- 2026-02-17 Batch O complete:
+  - `src/app/demo/classes/page.tsx`
+  - `src/app/demo/clients/page.tsx`
+  - `src/app/demo/locations/page.tsx`
 
 ## Next Priority Queue
 
-- `src/app/demo/classes/page.tsx`
-- `src/app/demo/clients/page.tsx`
-- `src/app/demo/locations/page.tsx`
+- `src/app/demo/class-flows/page.tsx`
+- `src/app/demo/teachers/page.tsx`
+- `src/app/demo/marketing/page.tsx`

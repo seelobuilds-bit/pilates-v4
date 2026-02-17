@@ -56,21 +56,21 @@ export default async function DemoClassesPage() {
   const upcomingMap = new Map(upcomingCounts.map(c => [c.classTypeId, c.upcoming]))
 
   return (
-    <div className="p-8 bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Class Types</h1>
           <p className="text-gray-500 mt-1">Manage the types of classes you offer</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700">
+        <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           New Class Type
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export default async function DemoClassesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {classTypes.map(classType => {
             const upcomingCount = upcomingMap.get(classType.id) || 0
             
@@ -139,7 +139,7 @@ export default async function DemoClassesPage() {
               <Link key={classType.id} href={`/demo/classes/${classType.id}`}>
                 <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
                   <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="mb-3 flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -152,7 +152,7 @@ export default async function DemoClassesPage() {
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">{classType.name}</h3>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="mt-0.5 flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
                               <Clock className="h-3 w-3 mr-1" />
                               {classType.duration} min
@@ -160,7 +160,7 @@ export default async function DemoClassesPage() {
                           </div>
                         </div>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-gray-300" />
+                      <ChevronRight className="h-5 w-5 shrink-0 text-gray-300" />
                     </div>
 
                     {classType.description && (
@@ -185,7 +185,7 @@ export default async function DemoClassesPage() {
                     </div>
 
                     {classType.price > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                         <span className="text-sm text-gray-500">Price</span>
                         <span className="font-semibold text-violet-600 flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />
@@ -203,5 +203,4 @@ export default async function DemoClassesPage() {
     </div>
   )
 }
-
 
