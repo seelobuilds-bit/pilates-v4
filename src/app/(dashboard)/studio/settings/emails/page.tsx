@@ -282,7 +282,7 @@ export default function EmailTemplatesPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to Settings
         </Link>
-        <div className="flex items-center justify-between">
+        <div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Message Templates</h1>
             <p className="text-gray-500 mt-1">Customize your automated email and SMS notifications</p>
@@ -290,11 +290,11 @@ export default function EmailTemplatesPage() {
         </div>
         
         {/* Email / SMS Tabs */}
-        <div className="flex gap-2 mt-6">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <Button
             variant={activeTab === "email" ? "default" : "outline"}
             onClick={() => setActiveTab("email")}
-            className={activeTab === "email" ? "bg-violet-600 hover:bg-violet-700" : ""}
+            className={`w-full sm:w-auto ${activeTab === "email" ? "bg-violet-600 hover:bg-violet-700" : ""}`}
           >
             <Mail className="h-4 w-4 mr-2" />
             Email Templates
@@ -302,7 +302,7 @@ export default function EmailTemplatesPage() {
           <Button
             variant={activeTab === "sms" ? "default" : "outline"}
             onClick={() => setActiveTab("sms")}
-            className={activeTab === "sms" ? "bg-violet-600 hover:bg-violet-700" : ""}
+            className={`w-full sm:w-auto ${activeTab === "sms" ? "bg-violet-600 hover:bg-violet-700" : ""}`}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
             SMS Templates
@@ -315,9 +315,9 @@ export default function EmailTemplatesPage() {
           <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
         </div>
       ) : activeTab === "email" ? (
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Email Template List */}
-          <div className="col-span-4">
+          <div className="lg:col-span-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-4">Email Types</h3>
@@ -367,17 +367,17 @@ export default function EmailTemplatesPage() {
           </div>
 
           {/* Template Editor */}
-          <div className="col-span-8">
+          <div className="lg:col-span-8">
             {selectedTemplate ? (
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
                   {/* Template Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
+                  <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${templateColors[selectedTemplate.type]}`}>
                         {templateIcons[selectedTemplate.type]}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h2 className="text-lg font-semibold text-gray-900">{selectedTemplate.name}</h2>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant={selectedTemplate.isEnabled ? "default" : "secondary"} className={selectedTemplate.isEnabled ? "bg-emerald-100 text-emerald-700" : ""}>
@@ -386,11 +386,12 @@ export default function EmailTemplatesPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setPreviewMode(!previewMode)}
+                        className="w-full sm:w-auto"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         {previewMode ? "Edit" : "Preview"}
@@ -399,7 +400,7 @@ export default function EmailTemplatesPage() {
                         onClick={handleSave}
                         disabled={saving || !hasChanges}
                         size="sm"
-                        className="bg-violet-600 hover:bg-violet-700"
+                        className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                       >
                         {saving ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -465,7 +466,7 @@ export default function EmailTemplatesPage() {
 
                       {/* Content Tabs */}
                       <Tabs value={editMode} onValueChange={(v) => setEditMode(v as "visual" | "html")}>
-                        <TabsList className="mb-4">
+                        <TabsList className="app-scrollbar mb-4 w-full justify-start overflow-x-auto">
                           <TabsTrigger value="visual" className="gap-2">
                             <FileText className="h-4 w-4" />
                             Plain Text
@@ -522,9 +523,9 @@ export default function EmailTemplatesPage() {
         </div>
       ) : (
         /* SMS Templates Tab */
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* SMS Template List */}
-          <div className="col-span-4">
+          <div className="lg:col-span-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-4">SMS Types</h3>
@@ -574,13 +575,13 @@ export default function EmailTemplatesPage() {
           </div>
 
           {/* SMS Template Editor */}
-          <div className="col-span-8">
+          <div className="lg:col-span-8">
             {selectedSmsTemplate ? (
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
                   {/* Template Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
+                  <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${smsTemplateColors[selectedSmsTemplate.type] || "bg-gray-100 text-gray-600"}`}>
                         {smsTemplateIcons[selectedSmsTemplate.type] || <MessageSquare className="h-5 w-5" />}
                       </div>
@@ -596,12 +597,12 @@ export default function EmailTemplatesPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full sm:w-auto sm:justify-end">
                       <Button
                         onClick={handleSaveSms}
                         disabled={saving || !hasSmsChanges}
                         size="sm"
-                        className="bg-violet-600 hover:bg-violet-700"
+                        className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                       >
                         {saving ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -699,7 +700,6 @@ export default function EmailTemplatesPage() {
     </div>
   )
 }
-
 
 
 

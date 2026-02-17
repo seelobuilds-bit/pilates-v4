@@ -249,7 +249,7 @@ export default function EditClassTypePage({
           <ArrowLeft className="h-4 w-4" />
           Back to Classes
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{classType.name}</h1>
             <p className="text-gray-500 mt-1">{formData.duration} min • ${formData.price} • {formData.capacity} spots</p>
@@ -262,7 +262,7 @@ export default function EditClassTypePage({
 
       {/* Stats Row */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -323,7 +323,7 @@ export default function EditClassTypePage({
 
       {/* Tabs */}
       <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="settings" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Settings className="h-4 w-4 mr-2" />
             Settings
@@ -368,7 +368,7 @@ export default function EditClassTypePage({
                   </div>
 
                   {/* Duration, Capacity, Price */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="duration">Duration (min)</Label>
                       <div className="relative">
@@ -418,7 +418,7 @@ export default function EditClassTypePage({
                   </div>
 
                   {/* Active Status */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">Active</p>
                       <p className="text-sm text-gray-500">Allow this class to be scheduled and booked</p>
@@ -435,13 +435,13 @@ export default function EditClassTypePage({
             {/* Location Assignment */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-violet-500" />
                     <h2 className="text-lg font-semibold text-gray-900">Available Locations</h2>
                   </div>
                   {activeLocations.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={selectAllLocations}>
+                    <Button variant="outline" size="sm" onClick={selectAllLocations} className="w-full sm:w-auto">
                       Select All
                     </Button>
                   )}
@@ -506,13 +506,13 @@ export default function EditClassTypePage({
             {/* Teacher Assignment */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-5 w-5 text-blue-500" />
                     <h2 className="text-lg font-semibold text-gray-900">Assigned Teachers</h2>
                   </div>
                   {activeTeachers.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={selectAllTeachers}>
+                    <Button variant="outline" size="sm" onClick={selectAllTeachers} className="w-full sm:w-auto">
                       Select All
                     </Button>
                   )}
@@ -586,13 +586,13 @@ export default function EditClassTypePage({
             </Card>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4">
               <Link href="/studio/classes">
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button>
               </Link>
               <Button 
                 onClick={() => handleSubmit()}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
                 disabled={saving}
               >
                 {saving ? (
@@ -619,13 +619,13 @@ export default function EditClassTypePage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.topTeachers.map((teacher, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                             {teacher.name.split(' ').map(n => n[0]).join('')}
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{teacher.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{teacher.name}</p>
                             <p className="text-sm text-gray-500">{teacher.classes} classes</p>
                           </div>
                         </div>
@@ -678,8 +678,8 @@ export default function EditClassTypePage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.popularTimes.map((slot, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
                           <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-medium">
                             {i + 1}
                           </span>
@@ -701,12 +701,12 @@ export default function EditClassTypePage({
                   </div>
                   <div className="space-y-3">
                     {safeStats.recentClasses.map((cls, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-gray-900">{cls.date}</p>
                           <p className="text-sm text-gray-500">{cls.teacher} • {cls.location}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <span className={`text-sm font-medium ${
                             cls.attendance >= cls.capacity ? "text-emerald-600" : "text-gray-900"
                           }`}>
@@ -727,7 +727,7 @@ export default function EditClassTypePage({
                     <TrendingUp className="h-5 w-5 text-gray-400" />
                     <h3 className="font-semibold text-gray-900">Booking Trends</h3>
                   </div>
-                  <div className="flex items-end justify-between h-40 gap-4">
+                  <div className="flex items-end justify-between h-40 gap-2 sm:gap-4">
                     {safeStats.monthlyBookings.map((month, i) => {
                       const maxCount = Math.max(...safeStats.monthlyBookings.map(m => m.count))
                       const height = (month.count / maxCount) * 100
