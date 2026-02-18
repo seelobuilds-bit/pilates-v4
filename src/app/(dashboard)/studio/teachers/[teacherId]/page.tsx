@@ -610,25 +610,31 @@ export default function TeacherDetailPage({
                     <h3 className="font-semibold text-gray-900">Recent Reviews</h3>
                   </div>
                   <div className="space-y-4">
-                    {safeExtendedStats.recentReviews.map((review, i) => (
-                      <div key={i} className="p-4 bg-gray-50 rounded-xl">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-medium text-gray-900">{review.clientName}</span>
-                            <div className="flex items-center gap-0.5">
-                              {[...Array(5)].map((_, j) => (
-                                <Star 
-                                  key={j} 
-                                  className={`h-4 w-4 ${j < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} 
-                                />
-                              ))}
+                    {safeExtendedStats.recentReviews.length > 0 ? (
+                      safeExtendedStats.recentReviews.map((review, i) => (
+                        <div key={i} className="p-4 bg-gray-50 rounded-xl">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-medium text-gray-900">{review.clientName}</span>
+                              <div className="flex items-center gap-0.5">
+                                {[...Array(5)].map((_, j) => (
+                                  <Star 
+                                    key={j} 
+                                    className={`h-4 w-4 ${j < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} 
+                                  />
+                                ))}
+                              </div>
                             </div>
+                            <span className="text-sm text-gray-500">{review.date}</span>
                           </div>
-                          <span className="text-sm text-gray-500">{review.date}</span>
+                          <p className="text-gray-600">{review.comment}</p>
                         </div>
-                        <p className="text-gray-600">{review.comment}</p>
+                      ))
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                        No review data available yet.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>

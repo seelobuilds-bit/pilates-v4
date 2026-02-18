@@ -61,7 +61,7 @@ export default function TeacherDashboardPage() {
     fetchStats()
   }, [])
 
-  // Default mock stats if API not available
+  // Default empty stats if API is unavailable
   const displayStats = stats || {
     totalClasses: 0,
     totalStudents: 0,
@@ -73,6 +73,7 @@ export default function TeacherDashboardPage() {
     upcomingClasses: [],
     recentClasses: []
   }
+  const hasRatingData = displayStats.avgRating > 0
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
@@ -123,7 +124,9 @@ export default function TeacherDashboardPage() {
                 <Star className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{displayStats.avgRating}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {hasRatingData ? displayStats.avgRating.toFixed(1) : "N/A"}
+                </p>
                 <p className="text-sm text-gray-500">Average Rating</p>
               </div>
             </div>
@@ -294,7 +297,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
 
 
 
