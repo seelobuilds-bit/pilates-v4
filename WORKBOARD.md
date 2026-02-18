@@ -29,12 +29,12 @@ Ship high-impact improvements in parallel without conflicts.
 | T-122 Reporting depth fillers (instructors + retention detail) | codex-main | codex/T-122-reporting-depth-fillers | `/api/studio/reports` instructor/retention metrics + `/studio/reports` wiring and empty-state clarity | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/39 |
 | T-124 Reporting smoke CI pipeline | mac-mini-agent | mini/T-124-reporting-smoke-ci | `.github/workflows/reporting-smoke.yml`, `WORKBOARD.md` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/40 |
 | T-125 Reporting empty-state/rating clarity (teacher surfaces) | codex-main | codex/T-125-reporting-empty-state-ratings | Teacher dashboard/reporting: explicit unavailable rating/review states and reporting UX polish | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/41 |
-| T-126 Supabase RLS baseline codification | codex-main | codex/T-126-supabase-rls-baseline | `scripts/sql/**`, `scripts/security/**`, `docs/supabase-security.md`, `package.json` script only | In Progress | TBD |
-| T-127 Automation chain conditions UX polish | mac-mini-agent | mini/T-127-automation-chain-conditions | `src/app/(dashboard)/studio/marketing/automations/new/page.tsx`, `src/app/(dashboard)/studio/marketing/automations/[automationId]/page.tsx` only | In Progress | TBD |
+| T-126 Supabase RLS baseline and security codification | codex-main | codex/T-126-supabase-rls-baseline | SQL + scripts/docs to codify RLS defaults for Supabase public schema | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/42 |
+| T-127 Automation chain stop-condition UX polish | mac-mini-agent | mini/T-127-automation-chain-conditions | Automation create/edit UX wording and delay validation polish | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/43 |
+| T-128 Social attribution tracking (booking + reports integrity) | codex-main | codex/T-128-social-attribution-tracking | Preserve `sf_track`, count click/conversion/revenue, and wire attribution through booking APIs | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/44 |
 
 ## Merge Order
-1. T-126 Supabase RLS baseline codification
-2. T-127 Automation chain conditions UX polish
+1. T-128 Social attribution tracking (booking + reports integrity)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
