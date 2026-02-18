@@ -59,10 +59,13 @@ Ship high-impact improvements in parallel without conflicts.
 | T-154 Mobile home quick actions + metric label polish | codex-main | codex/T-154-mobile-home-quick-actions | Add role-specific home quick actions (web handoff) and readable metric labels for owner/teacher/client mobile home | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/70 |
 | T-155 Mobile inbox search + role filters | codex-main | codex/T-155-mobile-inbox-search-filters | Add search and practical filtering in mobile inbox (owner/teacher unread filter, client channel filter) with clearer empty states | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/71 |
 | T-156 Web parity polish (schedule picker + vault uploads + subscription tags) | codex-main | codex/t-156-web-polish | Replace add-class datetime UX with styled picker, add vault lesson uploads/resources, and show plan-specific subscription tags | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/72 |
-| T-157 Mobile session hardening | codex-main | codex/t-157-mobile-hardening-pass | Harden mobile API/session behavior for token expiry + request timeouts and improve login guardrails | In Progress | https://github.com/seelobuilds-bit/pilates-v4/pull/73 |
+| T-157 Mobile session hardening | codex-main | codex/t-157-mobile-hardening-pass | Harden mobile API/session behavior for token expiry + request timeouts and improve login guardrails | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/73 |
+| T-158 Mobile compliance + private release pack | mac-mini-agent | mini/t-158-mobile-compliance-pack | Mobile compliance docs/runbook + profile account deletion web handoff (mobile/docs only) | In Progress | TBD |
+| T-159 Mobile deep-link + auth-safe route handling | codex-main | codex/t-159-mobile-deep-link-auth-routing | Preserve deep-linked mobile tab across auth redirect and harden post-login route allowlist | In Progress | https://github.com/seelobuilds-bit/pilates-v4/pull/75 |
 
 ## Merge Order
-1. T-157 Mobile session hardening
+1. T-158 Mobile compliance + private release pack
+2. T-159 Mobile deep-link + auth-safe route handling
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
