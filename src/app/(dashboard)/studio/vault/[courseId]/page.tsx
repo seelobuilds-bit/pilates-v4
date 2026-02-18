@@ -10,7 +10,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog"
 import { CourseChat } from "@/components/vault/course-chat"
 import {
   BookOpen,
@@ -23,8 +30,32 @@ import {
   Plus,
   GripVertical,
   Eye,
-  Crown
+  Crown,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  Trash2
 } from "lucide-react"
+
+interface Lesson {
+  id: string
+  title: string
+  description?: string | null
+  contentType: string
+  videoDuration: number | null
+  isPreview: boolean
+  isPublished: boolean
+  order: number
+}
+
+interface Module {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  isPublished: boolean
+  lessons: Lesson[]
+}
 
 interface Course {
   id: string
@@ -47,22 +78,7 @@ interface Course {
   includeInSubscription: boolean
   enrollmentCount: number
   totalLessons: number
-  modules: Array<{
-    id: string
-    title: string
-    description: string | null
-    order: number
-    isPublished: boolean
-    lessons: Array<{
-      id: string
-      title: string
-      contentType: string
-      videoDuration: number | null
-      isPreview: boolean
-      isPublished: boolean
-      order: number
-    }>
-  }>
+  modules: Module[]
   instructors: Array<{
     id: string
     role: string
@@ -102,28 +118,42 @@ interface Enrollment {
   } | null
 }
 
-export default function StudioVaultCoursePage({ 
-  params 
-}: { 
-  params: Promise<{ courseId: string }> 
+const defaultModuleForm = {
+  title: "",
+  description: ""
+}
+
+const defaultLessonForm = {
+  title: "",
+  description: "",
+  contentType: "video",
+  isPreview: false,
+  isPublished: false
+}
+
+export default function StudioVaultCoursePage({
+  params
+}: {
+  params: Promise<{ courseId: string }>
 }) {
   const resolvedParams = use(params)
-  
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [course, setCourse] = useState<Course | null>(null)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false)
   const [enrollmentsError, setEnrollmentsError] = useState<string | null>(null)
-  const [isAddModuleOpen, setIsAddModuleOpen] = useState(false)
-  const [creatingModule, setCreatingModule] = useState(false)
-  const [addModuleError, setAddModuleError] = useState<string | null>(null)
-  const [newModule, setNewModule] = useState({
-    title: "",
-    description: "",
-    dripDelay: ""
-  })
-  
+  const [contentBusy, setContentBusy] = useState(false)
+
+  const [moduleDialogOpen, setModuleDialogOpen] = useState(false)
+  const [moduleForm, setModuleForm] = useState(defaultModuleForm)
+
+  const [lessonDialogOpen, setLessonDialogOpen] = useState(false)
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [lessonForm, setLessonForm] = useState(defaultLessonForm)
+
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
     title: "",
@@ -222,9 +252,15 @@ export default function StudioVaultCoursePage({
     return "bg-blue-100 text-blue-700"
   }
 
+  function updateCourseModules(nextModules: Module[]) {
+    if (!course) return
+    const totalLessons = nextModules.reduce((sum, module) => sum + module.lessons.length, 0)
+    setCourse({ ...course, modules: nextModules, totalLessons })
+  }
+
   async function saveCourse() {
     if (!course) return
-    
+
     setSaving(true)
     try {
       const res = await fetch(`/api/vault/courses/${course.id}`, {
@@ -245,7 +281,7 @@ export default function StudioVaultCoursePage({
 
   async function togglePublish() {
     if (!course) return
-    
+
     try {
       const res = await fetch(`/api/vault/courses/${course.id}`, {
         method: "PATCH",
@@ -261,49 +297,194 @@ export default function StudioVaultCoursePage({
     }
   }
 
+  function openCreateLesson(moduleId: string) {
+    setSelectedModuleId(moduleId)
+    setEditingLessonId(null)
+    setLessonForm(defaultLessonForm)
+    setLessonDialogOpen(true)
+  }
+
+  function openEditLesson(moduleId: string, lesson: Lesson) {
+    setSelectedModuleId(moduleId)
+    setEditingLessonId(lesson.id)
+    setLessonForm({
+      title: lesson.title,
+      description: lesson.description || "",
+      contentType: lesson.contentType || "video",
+      isPreview: lesson.isPreview,
+      isPublished: lesson.isPublished
+    })
+    setLessonDialogOpen(true)
+  }
+
   async function createModule() {
-    if (!course || !newModule.title.trim()) return
-
-    setCreatingModule(true)
-    setAddModuleError(null)
+    if (!course || !moduleForm.title.trim()) return
+    setContentBusy(true)
     try {
-      const payload = {
-        title: newModule.title.trim(),
-        description: newModule.description.trim() || null,
-        dripDelay: newModule.dripDelay.trim() === "" ? null : parseInt(newModule.dripDelay, 10)
-      }
-
       const res = await fetch(`/api/vault/courses/${course.id}/modules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          title: moduleForm.title.trim(),
+          description: moduleForm.description.trim() || null
+        })
       })
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setAddModuleError(typeof data?.error === "string" ? data.error : "Failed to create module")
-        return
-      }
-
+      if (!res.ok) throw new Error("Failed to create module")
       const created = await res.json()
-      setCourse((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          modules: [...prev.modules, created].sort((a, b) => a.order - b.order),
-          _count: {
-            ...prev._count,
-            modules: prev._count.modules + 1
+      updateCourseModules([...course.modules, { ...created, lessons: created.lessons || [] }])
+      setModuleDialogOpen(false)
+      setModuleForm(defaultModuleForm)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setContentBusy(false)
+    }
+  }
+
+  async function saveLesson() {
+    if (!course || !selectedModuleId || !lessonForm.title.trim()) return
+
+    setContentBusy(true)
+    try {
+      const url = `/api/vault/courses/${course.id}/modules/${selectedModuleId}/lessons`
+      const res = await fetch(url, {
+        method: editingLessonId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          editingLessonId
+            ? {
+                lessonId: editingLessonId,
+                title: lessonForm.title.trim(),
+                description: lessonForm.description.trim() || null,
+                contentType: lessonForm.contentType,
+                isPreview: lessonForm.isPreview,
+                isPublished: lessonForm.isPublished
+              }
+            : {
+                title: lessonForm.title.trim(),
+                description: lessonForm.description.trim() || null,
+                contentType: lessonForm.contentType,
+                isPreview: lessonForm.isPreview
+              }
+        )
+      })
+
+      if (!res.ok) throw new Error("Failed to save lesson")
+      const savedLesson = await res.json()
+
+      const nextModules = course.modules.map((module) => {
+        if (module.id !== selectedModuleId) return module
+
+        if (editingLessonId) {
+          return {
+            ...module,
+            lessons: module.lessons.map((lesson) => (lesson.id === editingLessonId ? { ...lesson, ...savedLesson } : lesson))
           }
         }
+
+        return {
+          ...module,
+          lessons: [...module.lessons, savedLesson]
+        }
       })
-      setNewModule({ title: "", description: "", dripDelay: "" })
-      setIsAddModuleOpen(false)
+
+      updateCourseModules(nextModules)
+      setLessonDialogOpen(false)
+      setLessonForm(defaultLessonForm)
+      setEditingLessonId(null)
+      setSelectedModuleId(null)
     } catch (error) {
-      console.error("Failed to create module:", error)
-      setAddModuleError("Failed to create module")
+      console.error(error)
     } finally {
-      setCreatingModule(false)
+      setContentBusy(false)
+    }
+  }
+
+  async function deleteLesson(moduleId: string, lessonId: string) {
+    if (!course) return
+    const confirmed = window.confirm("Delete this lesson? This cannot be undone.")
+    if (!confirmed) return
+
+    setContentBusy(true)
+    try {
+      const res = await fetch(`/api/vault/courses/${course.id}/modules/${moduleId}/lessons?lessonId=${lessonId}`, {
+        method: "DELETE"
+      })
+      if (!res.ok) throw new Error("Failed to delete lesson")
+
+      const nextModules = course.modules.map((module) =>
+        module.id === moduleId
+          ? {
+              ...module,
+              lessons: module.lessons.filter((lesson) => lesson.id !== lessonId)
+            }
+          : module
+      )
+      updateCourseModules(nextModules)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setContentBusy(false)
+    }
+  }
+
+  async function reorderModules(moduleIndex: number, direction: "up" | "down") {
+    if (!course) return
+    const targetIndex = direction === "up" ? moduleIndex - 1 : moduleIndex + 1
+    if (targetIndex < 0 || targetIndex >= course.modules.length) return
+
+    const nextModules = [...course.modules]
+    ;[nextModules[moduleIndex], nextModules[targetIndex]] = [nextModules[targetIndex], nextModules[moduleIndex]]
+
+    const normalized = nextModules.map((module, index) => ({ ...module, order: index }))
+    updateCourseModules(normalized)
+
+    try {
+      await fetch(`/api/vault/courses/${course.id}/modules`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleOrders: normalized.map((module) => ({ id: module.id, order: module.order }))
+        })
+      })
+    } catch (error) {
+      console.error("Failed to reorder modules:", error)
+      fetchCourse()
+    }
+  }
+
+  async function reorderLessons(moduleId: string, lessonIndex: number, direction: "up" | "down") {
+    if (!course) return
+
+    const foundModule = course.modules.find((item) => item.id === moduleId)
+    if (!foundModule) return
+
+    const targetIndex = direction === "up" ? lessonIndex - 1 : lessonIndex + 1
+    if (targetIndex < 0 || targetIndex >= foundModule.lessons.length) return
+
+    const reorderedLessons = [...foundModule.lessons]
+    ;[reorderedLessons[lessonIndex], reorderedLessons[targetIndex]] = [reorderedLessons[targetIndex], reorderedLessons[lessonIndex]]
+
+    const normalizedLessons = reorderedLessons.map((lesson, index) => ({ ...lesson, order: index }))
+
+    const nextModules = course.modules.map((item) =>
+      item.id === moduleId ? { ...item, lessons: normalizedLessons } : item
+    )
+
+    updateCourseModules(nextModules)
+
+    try {
+      await fetch(`/api/vault/courses/${course.id}/modules/${moduleId}/lessons`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonOrders: normalizedLessons.map((lesson) => ({ id: lesson.id, order: lesson.order }))
+        })
+      })
+    } catch (error) {
+      console.error("Failed to reorder lessons:", error)
+      fetchCourse()
     }
   }
 
@@ -402,7 +583,7 @@ export default function StudioVaultCoursePage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold text-gray-900">Basic Information</h3>
-                
+
                 <div className="space-y-2">
                   <Label>Title</Label>
                   <Input
@@ -459,7 +640,7 @@ export default function StudioVaultCoursePage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold text-gray-900">Features & Settings</h3>
-                
+
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
                   <div>
                     <p className="font-medium text-gray-900">Include in Subscription</p>
@@ -530,13 +711,13 @@ export default function StudioVaultCoursePage({
                 <Button
                   size="sm"
                   className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
-                  onClick={() => setIsAddModuleOpen(true)}
+                  onClick={() => setModuleDialogOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Module
                 </Button>
               </div>
-              
+
               {course.modules.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -555,33 +736,72 @@ export default function StudioVaultCoursePage({
                             <p className="text-sm text-gray-500">{module.lessons.length} lessons</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button variant="outline" size="icon" disabled={i === 0 || contentBusy} onClick={() => reorderModules(i, "up")}>
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={i === course.modules.length - 1 || contentBusy}
+                            onClick={() => reorderModules(i, "down")}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
                           <Badge variant={module.isPublished ? "default" : "secondary"}>
                             {module.isPublished ? "Published" : "Draft"}
                           </Badge>
-                          <Button variant="ghost" size="sm">
-                            <Plus className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" onClick={() => openCreateLesson(module.id)}>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Lesson
                           </Button>
                         </div>
                       </div>
-                      
+
                       {module.lessons.length > 0 && (
                         <div className="divide-y">
                           {module.lessons.map((lesson, j) => (
-                            <div key={lesson.id} className="p-3 pl-4 sm:pl-12 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-gray-50">
-                              <div className="flex items-start sm:items-center gap-3">
-                                <span className="text-sm text-gray-400">{j + 1}.</span>
-                                <div>
-                                  <p className="font-medium text-sm">{lesson.title}</p>
-                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <div key={lesson.id} className="p-3 pl-4 sm:pl-12 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between hover:bg-gray-50">
+                              <div className="flex items-start sm:items-center gap-3 min-w-0">
+                                <span className="text-sm text-gray-400 shrink-0">{j + 1}.</span>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">{lesson.title}</p>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                                     <Badge variant="secondary" className="text-xs">{lesson.contentType}</Badge>
                                     {lesson.isPreview && <Badge className="bg-green-100 text-green-700 text-xs">Preview</Badge>}
+                                    {!lesson.isPublished && <Badge className="bg-gray-100 text-gray-700 text-xs">Draft</Badge>}
                                   </div>
                                 </div>
                               </div>
-                              <Button variant="ghost" size="sm">
-                                <Settings className="h-4 w-4" />
-                              </Button>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  disabled={j === 0 || contentBusy}
+                                  onClick={() => reorderLessons(module.id, j, "up")}
+                                >
+                                  <ArrowUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  disabled={j === module.lessons.length - 1 || contentBusy}
+                                  onClick={() => reorderLessons(module.id, j, "down")}
+                                >
+                                  <ArrowDown className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => openEditLesson(module.id, lesson)}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => deleteLesson(module.id, lesson.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -696,65 +916,112 @@ export default function StudioVaultCoursePage({
         )}
       </Tabs>
 
-      <Dialog open={isAddModuleOpen} onOpenChange={setIsAddModuleOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Module</DialogTitle>
+            <DialogDescription>Create a new module for this course.</DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-2">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="module-title">Module Title</Label>
+              <Label htmlFor="module-title">Title</Label>
               <Input
                 id="module-title"
-                value={newModule.title}
-                onChange={(event) => setNewModule((prev) => ({ ...prev, title: event.target.value }))}
-                placeholder="e.g. Fundamentals Week 1"
+                value={moduleForm.title}
+                onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
+                placeholder="Module title"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="module-description">Description</Label>
               <Textarea
                 id="module-description"
-                value={newModule.description}
-                onChange={(event) => setNewModule((prev) => ({ ...prev, description: event.target.value }))}
-                rows={3}
-                placeholder="What this module covers..."
+                rows={4}
+                value={moduleForm.description}
+                onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
+                placeholder="Optional"
               />
             </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModuleDialogOpen(false)}>Cancel</Button>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy} onClick={createModule}>
+              {contentBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create Module
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingLessonId ? "Edit Lesson" : "Add Lesson"}</DialogTitle>
+            <DialogDescription>
+              {editingLessonId ? "Update lesson details." : "Create a new lesson for this module."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="module-drip-delay">Drip Delay (days)</Label>
+              <Label htmlFor="lesson-title">Title</Label>
               <Input
-                id="module-drip-delay"
-                type="number"
-                min={0}
-                value={newModule.dripDelay}
-                onChange={(event) => setNewModule((prev) => ({ ...prev, dripDelay: event.target.value }))}
-                placeholder="Leave empty to unlock immediately"
+                id="lesson-title"
+                value={lessonForm.title}
+                onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                placeholder="Lesson title"
               />
             </div>
-            {addModuleError ? <p className="text-sm text-red-600">{addModuleError}</p> : null}
+
+            <div className="space-y-2">
+              <Label htmlFor="lesson-description">Description</Label>
+              <Textarea
+                id="lesson-description"
+                rows={3}
+                value={lessonForm.description}
+                onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                placeholder="Optional"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lesson-type">Content Type</Label>
+              <Input
+                id="lesson-type"
+                value={lessonForm.contentType}
+                onChange={(e) => setLessonForm({ ...lessonForm, contentType: e.target.value || "video" })}
+                placeholder="video"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border p-3">
+              <div>
+                <p className="font-medium text-gray-900">Preview Lesson</p>
+                <p className="text-sm text-gray-500">Allow non-enrolled users to preview this lesson.</p>
+              </div>
+              <Switch
+                checked={lessonForm.isPreview}
+                onCheckedChange={(value) => setLessonForm({ ...lessonForm, isPreview: value })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border p-3">
+              <div>
+                <p className="font-medium text-gray-900">Published</p>
+                <p className="text-sm text-gray-500">Students can access published lessons.</p>
+              </div>
+              <Switch
+                checked={lessonForm.isPublished}
+                onCheckedChange={(value) => setLessonForm({ ...lessonForm, isPublished: value })}
+              />
+            </div>
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsAddModuleOpen(false)
-                setAddModuleError(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              className="bg-violet-600 hover:bg-violet-700"
-              onClick={createModule}
-              disabled={creatingModule || !newModule.title.trim()}
-            >
-              {creatingModule ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Create Module
+            <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>Cancel</Button>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy} onClick={saveLesson}>
+              {contentBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {editingLessonId ? "Save Lesson" : "Create Lesson"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -762,15 +1029,3 @@ export default function StudioVaultCoursePage({
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
