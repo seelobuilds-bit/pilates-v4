@@ -12,25 +12,61 @@ interface ApiRequestOptions extends RequestInit {
   token?: string | null
 }
 
+export class ApiError extends Error {
+  status: number
+  payload: unknown
+
+  constructor(message: string, status: number, payload: unknown) {
+    super(message)
+    this.name = "ApiError"
+    this.status = status
+    this.payload = payload
+  }
+}
+
+let unauthorizedHandler: (() => void) | null = null
+
+export function setMobileApiUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
 async function request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { token, headers, ...rest } = options
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15_000)
 
-  const response = await fetch(`${mobileConfig.apiBaseUrl}${path}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-  })
+  try {
+    const response = await fetch(`${mobileConfig.apiBaseUrl}${path}`, {
+      ...rest,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+    })
 
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    const message = typeof payload?.error === "string" ? payload.error : "Request failed"
-    throw new Error(message)
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const message = typeof payload?.error === "string" ? payload.error : "Request failed"
+      if (response.status === 401) {
+        unauthorizedHandler?.()
+      }
+      throw new ApiError(message, response.status, payload)
+    }
+
+    return payload as T
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ApiError("Request timed out. Check connection and retry.", 408, null)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeout)
   }
-
-  return payload as T
 }
 
 export const mobileApi = {
