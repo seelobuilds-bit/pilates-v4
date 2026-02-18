@@ -23,6 +23,7 @@ const ENTITY_ROUTES = [
     label: "Client reports tab",
     envName: "TEST_STUDIO_CLIENT_ID",
     id: TEST_STUDIO_CLIENT_ID,
+    listRoute: "/api/studio/clients",
     route: (id) => `/studio/clients/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/clients/${id}`,
     apiIdPath: ["client", "id"],
@@ -31,6 +32,7 @@ const ENTITY_ROUTES = [
     label: "Teacher reports tab",
     envName: "TEST_STUDIO_TEACHER_ID",
     id: TEST_STUDIO_TEACHER_ID,
+    listRoute: "/api/studio/teachers",
     route: (id) => `/studio/teachers/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/teachers/${id}`,
     apiIdPath: ["id"],
@@ -39,6 +41,7 @@ const ENTITY_ROUTES = [
     label: "Class reports tab",
     envName: "TEST_STUDIO_CLASS_ID",
     id: TEST_STUDIO_CLASS_ID,
+    listRoute: "/api/studio/class-types",
     route: (id) => `/studio/classes/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/class-types/${id}`,
     apiIdPath: ["id"],
@@ -47,6 +50,7 @@ const ENTITY_ROUTES = [
     label: "Location reports tab",
     envName: "TEST_STUDIO_LOCATION_ID",
     id: TEST_STUDIO_LOCATION_ID,
+    listRoute: "/api/studio/locations",
     route: (id) => `/studio/locations/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/locations/${id}`,
     apiIdPath: ["id"],
@@ -202,19 +206,65 @@ async function runDataPresenceChecks(ownerCookie, teacherCookie) {
   return { passed, failed, skipped: 0 }
 }
 
-async function runEntityApiChecks(ownerCookie) {
+async function resolveEntityRouteIds(ownerCookie, entityRoutes) {
+  if (!ownerCookie) return entityRoutes
+
+  const resolvedRoutes = []
+  for (const entityRoute of entityRoutes) {
+    if (entityRoute.id || !entityRoute.listRoute) {
+      resolvedRoutes.push(entityRoute)
+      continue
+    }
+
+    const response = await request(entityRoute.listRoute, authHeaders(ownerCookie))
+    if (response.status !== 200) {
+      console.log(
+        `SKIP ${entityRoute.label} auto-resolve (${entityRoute.listRoute} returned ${response.status})`
+      )
+      resolvedRoutes.push(entityRoute)
+      continue
+    }
+
+    let payload
+    try {
+      payload = await response.json()
+    } catch {
+      console.log(`SKIP ${entityRoute.label} auto-resolve (list response was not JSON)`)
+      resolvedRoutes.push(entityRoute)
+      continue
+    }
+
+    const entities = Array.isArray(payload) ? payload : []
+    const firstEntity = entities.find((entity) => entity && typeof entity.id === "string")
+    if (!firstEntity) {
+      console.log(`SKIP ${entityRoute.label} auto-resolve (no entities found in ${entityRoute.listRoute})`)
+      resolvedRoutes.push(entityRoute)
+      continue
+    }
+
+    console.log(`INFO ${entityRoute.label} auto-resolved id from ${entityRoute.listRoute}`)
+    resolvedRoutes.push({
+      ...entityRoute,
+      id: firstEntity.id,
+    })
+  }
+
+  return resolvedRoutes
+}
+
+async function runEntityApiChecks(ownerCookie, entityRoutes) {
   if (!ownerCookie) {
-    console.log("SKIP Entity reporting API checks (set TEST_OWNER_COOKIE)")
-    return { passed: 0, failed: 0, skipped: ENTITY_ROUTES.length }
+    console.log("SKIP Entity reporting API checks (set TEST_OWNER_COOKIE to run)")
+    return { passed: 0, failed: 0, skipped: entityRoutes.length }
   }
 
   let passed = 0
   let failed = 0
   let skipped = 0
 
-  for (const entityRoute of ENTITY_ROUTES) {
+  for (const entityRoute of entityRoutes) {
     if (!entityRoute.id) {
-      console.log(`SKIP ${entityRoute.label} API check (set ${entityRoute.envName})`)
+      console.log(`SKIP ${entityRoute.label} API check (set ${entityRoute.envName} or ensure entities exist)`)
       skipped += 1
       continue
     }
@@ -258,11 +308,14 @@ async function run() {
   let passed = 0
   let failed = 0
   let skipped = 0
+  let resolvedEntityRoutes = ENTITY_ROUTES
 
   if (!TEST_OWNER_COOKIE) {
     console.log("SKIP Studio and entity route checks (set TEST_OWNER_COOKIE to run)")
     skipped += 1 + ENTITY_ROUTES.length
   } else {
+    resolvedEntityRoutes = await resolveEntityRouteIds(TEST_OWNER_COOKIE, ENTITY_ROUTES)
+
     const studioResult = await runRouteCheck({
       label: "Studio reports page loads with empty-state + tab sections",
       path: "/studio/reports",
@@ -272,9 +325,9 @@ async function run() {
     if (studioResult.ok) passed += 1
     else failed += 1
 
-    for (const entityRoute of ENTITY_ROUTES) {
+    for (const entityRoute of resolvedEntityRoutes) {
       if (!entityRoute.id) {
-        console.log(`SKIP ${entityRoute.label} (set ${entityRoute.envName})`)
+        console.log(`SKIP ${entityRoute.label} (set ${entityRoute.envName} or ensure entities exist)`)
         skipped += 1
         continue
       }
@@ -309,7 +362,7 @@ async function run() {
   failed += dataPresence.failed
   skipped += dataPresence.skipped
 
-  const entityApiChecks = await runEntityApiChecks(TEST_OWNER_COOKIE)
+  const entityApiChecks = await runEntityApiChecks(TEST_OWNER_COOKIE, resolvedEntityRoutes)
   passed += entityApiChecks.passed
   failed += entityApiChecks.failed
   skipped += entityApiChecks.skipped
