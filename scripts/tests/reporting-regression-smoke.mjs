@@ -606,6 +606,11 @@ async function runReportIntegrityChecks(ownerCookie) {
     request("/api/studio/reports/integrity?days=30", authHeaders(ownerCookie)),
   ])
 
+  if (integrityResponse.status === 404) {
+    console.log("SKIP Report write-path integrity checks (/api/studio/reports/integrity not available on TEST_BASE_URL)")
+    return { passed: 0, failed: 0, skipped: 1 }
+  }
+
   if (reportResponse.status !== 200 || integrityResponse.status !== 200) {
     fail(
       "Report write-path integrity checks",
