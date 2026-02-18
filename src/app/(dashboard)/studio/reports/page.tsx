@@ -112,6 +112,8 @@ const defaultData = {
     emailsSent: 0,
     emailOpenRate: 0,
     emailClickRate: 0,
+    previousEmailOpenRate: 0,
+    previousEmailClickRate: 0,
     bookingsFromEmail: 0,
     remindersSent: 0,
     noShowRate: 0,
@@ -119,6 +121,15 @@ const defaultData = {
     winbackSuccess: 0,
     campaigns: [] as { id: string; name: string; sent: number; opened: number; clicked: number; bookings: number }[],
     insights: [] as { type: string; message: string }[]
+  },
+
+  // Social impact (period-bound summary from reports API)
+  social: {
+    activeFlows: 0,
+    totalTriggered: 0,
+    totalResponded: 0,
+    totalBooked: 0,
+    conversionRate: 0
   }
 }
 
@@ -198,6 +209,8 @@ export default function ReportsPage() {
           const activeClients = data.clients?.active || 0
           const churnedClients = data.clients?.churned || 0
           const churnRate = totalClients > 0 ? Math.round((churnedClients / totalClients) * 100 * 10) / 10 : 0
+          const marketing = data.marketing || {}
+          const social = data.social || {}
           
           // Build real data object
           setReportData({
@@ -254,18 +267,28 @@ export default function ReportsPage() {
               ]
             },
             marketing: {
-              emailsSent: 0,
-              emailOpenRate: 0,
-              emailClickRate: 0,
-              bookingsFromEmail: 0,
-              remindersSent: 0,
-              noShowRate: 0,
-              previousNoShowRate: 0,
-              winbackSuccess: 0,
-              campaigns: [],
-              insights: [
-                { type: 'info', message: 'Set up email automations to track marketing performance' }
-              ]
+              emailsSent: marketing.emailsSent || 0,
+              emailOpenRate: marketing.emailOpenRate || 0,
+              emailClickRate: marketing.emailClickRate || 0,
+              previousEmailOpenRate: marketing.previousEmailOpenRate || 0,
+              previousEmailClickRate: marketing.previousEmailClickRate || 0,
+              bookingsFromEmail: marketing.bookingsFromEmail || 0,
+              remindersSent: marketing.remindersSent || 0,
+              noShowRate: marketing.noShowRate || 0,
+              previousNoShowRate: marketing.previousNoShowRate || 0,
+              winbackSuccess: marketing.winbackSuccess || 0,
+              campaigns: marketing.campaigns || [],
+              insights:
+                marketing.insights && marketing.insights.length > 0
+                  ? marketing.insights
+                  : [{ type: "info", message: "Set up campaigns and automations to track marketing performance." }]
+            },
+            social: {
+              activeFlows: social.activeFlows || 0,
+              totalTriggered: social.totalTriggered || 0,
+              totalResponded: social.totalResponded || 0,
+              totalBooked: social.totalBooked || 0,
+              conversionRate: social.conversionRate || 0
             }
           })
         }
@@ -428,7 +451,19 @@ export default function ReportsPage() {
     teachers.length > 0 ||
     reportData.retention.totalClients > 0 ||
     reportData.marketing.emailsSent > 0 ||
-    reportData.marketing.campaigns.length > 0
+    reportData.marketing.campaigns.length > 0 ||
+    reportData.social.totalTriggered > 0 ||
+    reportData.social.totalBooked > 0 ||
+    reportData.social.activeFlows > 0
+
+  const noShowDelta = reportData.marketing.noShowRate - reportData.marketing.previousNoShowRate
+  const noShowTrendLabel = noShowDelta < 0 ? "Down from" : noShowDelta > 0 ? "Up from" : "Flat vs"
+  const noShowTrendClass =
+    noShowDelta < 0
+      ? "bg-emerald-50 text-emerald-700"
+      : noShowDelta > 0
+        ? "bg-amber-50 text-amber-700"
+        : "bg-gray-100 text-gray-700"
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -1454,8 +1489,8 @@ export default function ReportsPage() {
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">No-Show Rate</p>
                 <p className="text-2xl font-bold text-gray-900">{reportData.marketing.noShowRate}%</p>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 mt-2">
-                  Down from {reportData.marketing.previousNoShowRate}%
+                <Badge variant="secondary" className={`mt-2 ${noShowTrendClass}`}>
+                  {noShowTrendLabel} {reportData.marketing.previousNoShowRate}%
                 </Badge>
               </CardContent>
             </Card>
@@ -1475,7 +1510,7 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-900">Campaign Performance</h3>
-                  <p className="text-sm text-gray-500">Which automations are driving results?</p>
+                  <p className="text-sm text-gray-500">Which campaigns are driving results?</p>
                 </div>
                 <Link href="/studio/marketing">
                   <Button variant="outline" size="sm">
@@ -1485,53 +1520,59 @@ export default function ReportsPage() {
                 </Link>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 text-sm font-medium text-gray-500">Campaign</th>
-                      <th className="text-right py-3 text-sm font-medium text-gray-500">Sent</th>
-                      <th className="text-right py-3 text-sm font-medium text-gray-500">Opened</th>
-                      <th className="text-right py-3 text-sm font-medium text-gray-500">Open Rate</th>
-                      <th className="text-right py-3 text-sm font-medium text-gray-500">Bookings</th>
-                      <th className="text-right py-3 text-sm font-medium text-gray-500"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportData.marketing.campaigns.map((campaign) => {
-                      const openRate = campaign.sent > 0 ? Math.round((campaign.opened / campaign.sent) * 100) : 0
-                      return (
-                        <tr key={campaign.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 font-medium text-gray-900">{campaign.name}</td>
-                          <td className="py-3 text-right text-gray-700">{campaign.sent}</td>
-                          <td className="py-3 text-right text-gray-700">{campaign.opened}</td>
-                          <td className="py-3 text-right">
-                            <Badge variant="secondary" className={`${
-                              openRate >= 80 ? 'bg-emerald-50 text-emerald-700' :
-                              openRate >= 40 ? 'bg-blue-50 text-blue-700' :
-                              'bg-gray-50 text-gray-700'
-                            }`}>{openRate}%</Badge>
-                          </td>
-                          <td className="py-3 text-right">
-                            {campaign.bookings > 0 ? (
-                              <span className="font-bold text-emerald-600">{campaign.bookings}</span>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="py-3 text-right">
-                            <Link href={`/studio/marketing/automations/${campaign.id}`}>
-                              <Button variant="ghost" size="sm">
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {reportData.marketing.campaigns.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
+                  No campaign performance data in this period yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 text-sm font-medium text-gray-500">Campaign</th>
+                        <th className="text-right py-3 text-sm font-medium text-gray-500">Sent</th>
+                        <th className="text-right py-3 text-sm font-medium text-gray-500">Opened</th>
+                        <th className="text-right py-3 text-sm font-medium text-gray-500">Open Rate</th>
+                        <th className="text-right py-3 text-sm font-medium text-gray-500">Bookings</th>
+                        <th className="text-right py-3 text-sm font-medium text-gray-500"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.marketing.campaigns.map((campaign) => {
+                        const openRate = campaign.sent > 0 ? Math.round((campaign.opened / campaign.sent) * 100) : 0
+                        return (
+                          <tr key={campaign.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 font-medium text-gray-900">{campaign.name}</td>
+                            <td className="py-3 text-right text-gray-700">{campaign.sent}</td>
+                            <td className="py-3 text-right text-gray-700">{campaign.opened}</td>
+                            <td className="py-3 text-right">
+                              <Badge variant="secondary" className={`${
+                                openRate >= 80 ? 'bg-emerald-50 text-emerald-700' :
+                                openRate >= 40 ? 'bg-blue-50 text-blue-700' :
+                                'bg-gray-50 text-gray-700'
+                              }`}>{openRate}%</Badge>
+                            </td>
+                            <td className="py-3 text-right">
+                              {campaign.bookings > 0 ? (
+                                <span className="font-bold text-emerald-600">{campaign.bookings}</span>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 text-right">
+                              <Link href={`/studio/marketing/campaigns/${campaign.id}`}>
+                                <Button variant="ghost" size="sm">
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               </CardContent>
             </Card>
 
@@ -1566,7 +1607,7 @@ export default function ReportsPage() {
 
         {/* ==================== SOCIAL MEDIA TAB ==================== */}
         <TabsContent value="social" className="space-y-6">
-          <SocialMediaReportSection currency={currency} />
+          <SocialMediaReportSection currency={currency} summary={reportData.social} />
         </TabsContent>
           </>
         )}
@@ -1576,7 +1617,19 @@ export default function ReportsPage() {
 }
 
 // Social Media Report Section Component
-function SocialMediaReportSection({ currency }: { currency: string }) {
+function SocialMediaReportSection({
+  currency,
+  summary
+}: {
+  currency: string
+  summary: {
+    activeFlows: number
+    totalTriggered: number
+    totalResponded: number
+    totalBooked: number
+    conversionRate: number
+  }
+}) {
   const [loading, setLoading] = useState(true)
   const [flows, setFlows] = useState<Array<{
     id: string
@@ -1623,11 +1676,14 @@ function SocialMediaReportSection({ currency }: { currency: string }) {
     setLoading(false)
   }
 
-  const totalTriggered = flows.reduce((sum, f) => sum + f.totalTriggered, 0)
-  const totalBooked = flows.reduce((sum, f) => sum + f.totalBooked, 0)
+  const totalTriggered = summary.totalTriggered
+  const totalBooked = summary.totalBooked
+  const totalResponded = summary.totalResponded
+  const activeFlows = summary.activeFlows
+  const conversionRate = summary.conversionRate
   const totalClicks = trackingLinks.reduce((sum, l) => sum + l.clicks, 0)
   const totalConversions = trackingLinks.reduce((sum, l) => sum + l.conversions, 0)
-  const conversionRate = totalClicks > 0 ? Math.round((totalConversions / totalClicks) * 100) : 0
+  const linkConversionRate = totalClicks > 0 ? Math.round((totalConversions / totalClicks) * 100) : 0
 
   if (loading) {
     return (
@@ -1659,8 +1715,9 @@ function SocialMediaReportSection({ currency }: { currency: string }) {
                 <MessageCircle className="h-5 w-5 text-violet-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{flows.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{activeFlows}</p>
                 <p className="text-sm text-gray-500">Active Flows</p>
+                <p className="text-xs text-gray-400">{totalResponded} responses sent</p>
               </div>
             </div>
           </CardContent>
@@ -1686,11 +1743,15 @@ function SocialMediaReportSection({ currency }: { currency: string }) {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{conversionRate}%</p>
-                <p className="text-sm text-gray-500">Conversion Rate</p>
+                <p className="text-sm text-gray-500">Flow Conversion Rate</p>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="text-xs text-gray-500">
+        This summary is for the selected reports period. Tracking-link rows below are all-time totals.
       </div>
 
       {/* Automation Flows Performance */}
@@ -1831,6 +1892,12 @@ function SocialMediaReportSection({ currency }: { currency: string }) {
           )}
         </CardContent>
       </Card>
+
+      {totalClicks > 0 && (
+        <div className="text-xs text-gray-500">
+          Tracking-link conversion rate: {linkConversionRate}% ({totalConversions} conversions from {totalClicks} clicks).
+        </div>
+      )}
     </div>
   )
 }
