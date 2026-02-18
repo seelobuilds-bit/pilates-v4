@@ -133,18 +133,6 @@ const defaultData = {
   }
 }
 
-interface Teacher {
-  id: string
-  name: string
-  specialties: string[]
-  classes: number
-  avgFill: number
-  revenue: number
-  rating: number
-  retention: number
-  trend: string
-}
-
 export default function ReportsPage() {
   const router = useRouter()
   const [period, setPeriod] = useState("30")
@@ -152,11 +140,9 @@ export default function ReportsPage() {
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
   const [refreshing, setRefreshing] = useState(false)
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [loadingTeachers, setLoadingTeachers] = useState(true)
   const [currency, setCurrency] = useState("usd")
   const [reportData, setReportData] = useState(defaultData)
-  const [, setLoadingReports] = useState(true)
+  const [loadingReports, setLoadingReports] = useState(true)
   
   // Fetch real reports data from API
   useEffect(() => {
@@ -211,6 +197,7 @@ export default function ReportsPage() {
           const churnRate = totalClients > 0 ? Math.round((churnedClients / totalClients) * 100 * 10) / 10 : 0
           const marketing = data.marketing || {}
           const social = data.social || {}
+          const retentionData = data.retention || {}
           
           // Build real data object
           setReportData({
@@ -245,7 +232,7 @@ export default function ReportsPage() {
                 { type: 'warning', message: 'No classes scheduled yet. Add classes to see utilisation data.' }
               ]
             },
-            instructors: [],
+            instructors: data.instructors || [],
             retention: {
               totalClients: totalClients,
               activeClients: activeClients,
@@ -254,11 +241,11 @@ export default function ReportsPage() {
               churnRate: churnRate,
               previousChurnRate: churnRate > 0 ? churnRate + 0.4 : 0,
               avgLifetimeValue: activeClients > 0 ? Math.round(totalRevenue / activeClients) : 0,
-              atRiskClients: Math.max(0, totalClients - activeClients),
-              membershipBreakdown: [],
-              churnReasons: [],
-              atRiskList: [],
-              cohortRetention: [],
+              atRiskClients: retentionData.atRiskClients ?? Math.max(0, totalClients - activeClients),
+              membershipBreakdown: retentionData.membershipBreakdown || [],
+              churnReasons: retentionData.churnReasons || [],
+              atRiskList: retentionData.atRiskList || [],
+              cohortRetention: retentionData.cohortRetention || [],
               insights: totalClients > 0 ? [
                 { type: 'positive', message: `${activeClients} active clients out of ${totalClients} total` },
                 { type: churnRate > 5 ? 'warning' : 'info', message: `Current churn rate: ${churnRate}%` }
@@ -301,44 +288,6 @@ export default function ReportsPage() {
     
     fetchReportData()
   }, [period])
-
-  // Fetch real teachers from API
-  useEffect(() => {
-    const fetchTeachers = async () => {
-      try {
-        const response = await fetch('/api/studio/teachers')
-        if (response.ok) {
-          const data = await response.json()
-          // Map the API data to our teacher format with real stats where available
-          const teachersWithStats = data.map((teacher: { 
-            id: string; 
-            user: { firstName: string; lastName: string }; 
-            specialties: string | string[];
-            _count?: { classSessions?: number }
-          }) => ({
-            id: teacher.id,
-            name: teacher.user ? `${teacher.user.firstName} ${teacher.user.lastName}` : 'Unknown',
-            specialties: Array.isArray(teacher.specialties) 
-              ? teacher.specialties 
-              : (teacher.specialties?.split(',').map((s: string) => s.trim()) || ['Mat']),
-            classes: teacher._count?.classSessions || 0,
-            avgFill: 0, // Would need to calculate from bookings
-            revenue: 0, // Would need to calculate from payments
-            rating: 0,
-            retention: 0,
-            trend: 'stable'
-          }))
-          setTeachers(teachersWithStats)
-        }
-      } catch (error) {
-        console.error('Failed to fetch teachers:', error)
-        setTeachers([])
-      } finally {
-        setLoadingTeachers(false)
-      }
-    }
-    fetchTeachers()
-  }, [])
 
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -435,6 +384,18 @@ export default function ReportsPage() {
     reportData.retention.activeClients > 0
       ? Math.round(reportData.revenue.total / reportData.retention.activeClients)
       : 0
+  const instructorCount = reportData.instructors.length
+  const instructorAverageFill =
+    instructorCount > 0
+      ? Math.round(reportData.instructors.reduce((sum, instructor) => sum + instructor.avgFill, 0) / instructorCount)
+      : 0
+  const instructorTotalClasses = reportData.instructors.reduce((sum, instructor) => sum + instructor.classes, 0)
+  const instructorAverageRating =
+    instructorCount > 0
+      ? (
+          reportData.instructors.reduce((sum, instructor) => sum + instructor.rating, 0) / instructorCount
+        ).toFixed(1)
+      : "0.0"
   const hasOverviewData =
     reportData.revenue.total > 0 ||
     reportData.utilisation.totalClasses > 0 ||
@@ -448,7 +409,6 @@ export default function ReportsPage() {
     reportData.utilisation.totalClasses > 0 ||
     reportData.utilisation.byTimeSlot.length > 0 ||
     reportData.instructors.length > 0 ||
-    teachers.length > 0 ||
     reportData.retention.totalClients > 0 ||
     reportData.marketing.emailsSent > 0 ||
     reportData.marketing.campaigns.length > 0 ||
@@ -847,29 +807,35 @@ export default function ReportsPage() {
                     {reportData.retention.atRiskClients} clients
                   </Badge>
                 </div>
-                  <div className="space-y-3">
-                  {reportData.retention.atRiskList.map((client) => (
-                    <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity">
-                        <div className={`w-2 h-2 rounded-full ${
-                          client.status === 'high-risk' ? 'bg-red-500' : 'bg-amber-500'
-                        }`} />
-                        <div>
-                          <p className="font-medium text-gray-900">{client.name}</p>
-                          <p className="text-sm text-gray-500">Last visit: {client.lastVisit}</p>
-                        </div>
-                      </Link>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
-                      >
-                        <Mail className="h-4 w-4 mr-1" />
-                        Reach Out
-                      </Button>
+                <div className="space-y-3">
+                  {reportData.retention.atRiskList.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+                      No at-risk clients in this period.
+                    </div>
+                  ) : (
+                    reportData.retention.atRiskList.map((client) => (
+                      <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity">
+                          <div className={`w-2 h-2 rounded-full ${
+                            client.status === 'high-risk' ? 'bg-red-500' : 'bg-amber-500'
+                          }`} />
+                          <div>
+                            <p className="font-medium text-gray-900">{client.name}</p>
+                            <p className="text-sm text-gray-500">Last visit: {client.lastVisit}</p>
+                          </div>
+                        </Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
+                        >
+                          <Mail className="h-4 w-4 mr-1" />
+                          Reach Out
+                        </Button>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  )}
+                </div>
                 <Link href="/studio/clients?filter=at-risk">
                   <Button variant="ghost" className="w-full mt-4 text-amber-600">
                     View All At-Risk Clients
@@ -1150,29 +1116,21 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Instructors</p>
-                <p className="text-2xl font-bold text-gray-900">{teachers.length || reportData.instructors.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{instructorCount}</p>
                 <p className="text-sm text-gray-500 mt-2">Active teachers</p>
               </CardContent>
             </Card>
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Avg. Fill Rate</p>
-                <p className="text-2xl font-bold text-emerald-600">
-                  {teachers.length > 0 
-                    ? Math.round(teachers.reduce((sum, t) => sum + t.avgFill, 0) / teachers.length)
-                    : 83}%
-                </p>
+                <p className="text-2xl font-bold text-emerald-600">{instructorAverageFill}%</p>
                 <p className="text-sm text-gray-500 mt-2">Across all instructors</p>
               </CardContent>
             </Card>
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Classes</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.length > 0 
-                    ? teachers.reduce((sum, t) => sum + t.classes, 0)
-                    : 115}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{instructorTotalClasses}</p>
                 <p className="text-sm text-gray-500 mt-2">This period</p>
               </CardContent>
             </Card>
@@ -1181,11 +1139,7 @@ export default function ReportsPage() {
                 <p className="text-sm text-gray-500 mb-1">Avg. Rating</p>
                 <div className="flex items-center gap-1">
                   <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {teachers.length > 0 
-                      ? (teachers.reduce((sum, t) => sum + t.rating, 0) / teachers.length).toFixed(1)
-                      : '4.8'}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{instructorAverageRating}</p>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">Client ratings</p>
               </CardContent>
@@ -1207,10 +1161,15 @@ export default function ReportsPage() {
                 </Link>
               </div>
               
-              {loadingTeachers ? (
+              {loadingReports ? (
                 <div className="flex items-center justify-center py-12">
                   <RefreshCw className="h-6 w-6 animate-spin text-violet-500" />
                   <span className="ml-2 text-gray-500">Loading instructors...</span>
+                </div>
+              ) : reportData.instructors.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                  <GraduationCap className="mx-auto mb-3 h-8 w-8 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-700">No instructor data yet for this period.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -1226,7 +1185,7 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(teachers.length > 0 ? teachers : reportData.instructors).map((instructor) => (
+                      {reportData.instructors.map((instructor) => (
                         <tr 
                           key={instructor.id} 
                           className="border-b border-gray-100 hover:bg-violet-50 cursor-pointer transition-colors"
@@ -1353,28 +1312,34 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Retention by Tenure</h3>
                 <p className="text-sm text-gray-500 mb-4">How long do clients stay?</p>
-                  <div className="space-y-3">
-                  {reportData.retention.cohortRetention.map((cohort, i) => (
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">{cohort.cohort}</span>
-                        <span className={`text-sm font-bold ${
-                          cohort.retained >= 80 ? 'text-emerald-600' : 
-                          cohort.retained >= 60 ? 'text-amber-600' : 'text-red-600'
-                        }`}>{cohort.retained}% retained</span>
+                <div className="space-y-3">
+                  {reportData.retention.cohortRetention.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+                      No cohort retention data yet.
+                    </div>
+                  ) : (
+                    reportData.retention.cohortRetention.map((cohort, i) => (
+                      <div key={i}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">{cohort.cohort}</span>
+                          <span className={`text-sm font-bold ${
+                            cohort.retained >= 80 ? 'text-emerald-600' : 
+                            cohort.retained >= 60 ? 'text-amber-600' : 'text-red-600'
+                          }`}>{cohort.retained}% retained</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              cohort.retained >= 80 ? 'bg-emerald-500' : 
+                              cohort.retained >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${cohort.retained}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${
-                            cohort.retained >= 80 ? 'bg-emerald-500' : 
-                            cohort.retained >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${cohort.retained}%` }}
-                        />
-                      </div>
-                      </div>
-                    ))}
-                  </div>
+                    ))
+                  )}
+                </div>
                 <p className="text-sm text-violet-600 mt-4">
                   💡 Focus on first-month retention to improve overall numbers
                 </p>
@@ -1387,12 +1352,18 @@ export default function ReportsPage() {
                 <h3 className="font-semibold text-gray-900 mb-4">Why Clients Leave</h3>
                 <p className="text-sm text-gray-500 mb-4">Understanding churn reasons</p>
                 <div className="space-y-3">
-                  {reportData.retention.churnReasons.map((reason, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-700">{reason.reason}</span>
-                      <Badge variant="secondary">{reason.count} clients</Badge>
+                  {reportData.retention.churnReasons.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+                      No churn reasons recorded for this period.
                     </div>
-                  ))}
+                  ) : (
+                    reportData.retention.churnReasons.map((reason, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-700">{reason.reason}</span>
+                        <Badge variant="secondary">{reason.count} clients</Badge>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1409,34 +1380,40 @@ export default function ReportsPage() {
                 <span className="text-sm text-gray-500">No booking in 14+ days</span>
               </div>
               <div className="space-y-3">
-                {reportData.retention.atRiskList.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
-                    <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1">
-                      <div className={`w-3 h-3 rounded-full ${
-                        client.status === 'high-risk' ? 'bg-red-500' : 'bg-amber-500'
-                      }`} />
-                      <div>
-                        <p className="font-medium text-gray-900">{client.name}</p>
-                        <p className="text-sm text-gray-500">Last: {client.lastVisit} • {client.visits} total visits</p>
-                      </div>
-                    </Link>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/studio/clients/${client.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Reach Out
-                      </Button>
-                    </div>
+                {reportData.retention.atRiskList.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-700">
+                    No at-risk clients found in this period.
                   </div>
-                ))}
+                ) : (
+                  reportData.retention.atRiskList.map((client) => (
+                    <div key={client.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+                      <Link href={`/studio/clients/${client.id}`} className="flex items-center gap-3 flex-1">
+                        <div className={`w-3 h-3 rounded-full ${
+                          client.status === 'high-risk' ? 'bg-red-500' : 'bg-amber-500'
+                        }`} />
+                        <div>
+                          <p className="font-medium text-gray-900">{client.name}</p>
+                          <p className="text-sm text-gray-500">Last: {client.lastVisit} • {client.visits} total visits</p>
+                        </div>
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/studio/clients/${client.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleReachOut({ id: client.id, name: client.name, email: client.email })}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Reach Out
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <Link href="/studio/clients?filter=at-risk">
                 <Button variant="ghost" className="w-full mt-4 text-amber-600">

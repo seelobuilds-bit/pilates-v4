@@ -25,10 +25,12 @@ Ship high-impact improvements in parallel without conflicts.
 | T-118 Reporting backend integrity (studio + teacher) | codex-main | codex/T-118-reporting-backend-integrity | Reporting APIs and teacher reporting surfaces: bounded windows, remove mock values, canonical metrics | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/34 |
 | T-119 Reporting integrity phase 2 (marketing/social/leaderboards) | codex-main | codex/T-119-reporting-integrity-phase2 | Backend reporting correctness for marketing + social attribution metrics and leaderboard rank stability | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/35 |
 | T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/37 |
-| T-121 Reporting regression smoke tests | mac-mini-agent | mini/T-121-reporting-smoke-tests | `scripts/tests/**`, `package.json`, `WORKBOARD.md` status update only | Needs Review | — |
+<<<<<<< HEAD
+| T-121 Reporting regression smoke tests | mac-mini-agent | mini/T-121-reporting-smoke-tests | `scripts/tests/**`, `package.json`, `WORKBOARD.md` status update only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/38 |
+| T-122 Reporting depth fillers (instructors + retention detail) | codex-main | codex/T-122-reporting-depth-fillers | `/api/studio/reports` instructor/retention metrics + `/studio/reports` wiring and empty-state clarity | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/39 |
 
 ## Merge Order
-1. T-121 Reporting regression smoke tests
+1. T-122 Reporting depth fillers (instructors + retention detail)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
