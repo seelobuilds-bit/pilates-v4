@@ -24,10 +24,10 @@ Ship high-impact improvements in parallel without conflicts.
 | T-117 Mobile hardening core pass (studio owner, non-marketing) | codex-main | codex/T-117-mobile-hardening-core | Studio owner layout + non-marketing route responsiveness + support widget mobile behavior | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/31, https://github.com/seelobuilds-bit/pilates-v4/pull/32, https://github.com/seelobuilds-bit/pilates-v4/pull/33 |
 | T-118 Reporting backend integrity (studio + teacher) | codex-main | codex/T-118-reporting-backend-integrity | Reporting APIs and teacher reporting surfaces: bounded windows, remove mock values, canonical metrics | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/34 |
 | T-119 Reporting integrity phase 2 (marketing/social/leaderboards) | codex-main | codex/T-119-reporting-integrity-phase2 | Backend reporting correctness for marketing + social attribution metrics and leaderboard rank stability | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/35 |
-| T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | In Progress | TBD |
+| T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/37 |
 
 ## Merge Order
-1. T-120 Reporting UI truth-source wiring
+1. T-121 Reporting regression smoke tests
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
