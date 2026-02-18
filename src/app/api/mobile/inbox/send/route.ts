@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { sendEmail, sendSMS } from "@/lib/communications"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { sendMobilePushNotification } from "@/lib/mobile-push"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         subdomain: true,
+        ownerId: true,
       },
     })
 
@@ -75,6 +77,35 @@ export async function POST(request: NextRequest) {
         },
         select: { id: true },
       })
+
+      try {
+        const teachers = await db.teacher.findMany({
+          where: {
+            studioId: studio.id,
+            isActive: true,
+          },
+          select: {
+            userId: true,
+          },
+        })
+
+        const recipientUserIds = Array.from(new Set([studio.ownerId, ...teachers.map((teacher) => teacher.userId)]))
+
+        await sendMobilePushNotification({
+          studioId: studio.id,
+          userIds: recipientUserIds,
+          title: `New message from ${client.firstName} ${client.lastName}`,
+          body: message,
+          data: {
+            type: "mobile_inbox_message",
+            channel: channel === "SMS" ? "SMS" : "EMAIL",
+            clientId: client.id,
+            studioId: studio.id,
+          },
+        })
+      } catch (pushError) {
+        console.error("Mobile inbox push notify (studio recipients) failed:", pushError)
+      }
 
       return NextResponse.json({ success: true, messageId: inboundMessage.id })
     }
@@ -141,6 +172,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: result.error || "Failed to send email" }, { status: 500 })
       }
 
+      try {
+        await sendMobilePushNotification({
+          studioId: studio.id,
+          clientIds: [client.id],
+          title: `Message from ${studio.name}`,
+          body: message,
+          data: {
+            type: "mobile_inbox_message",
+            channel: "EMAIL",
+            studioId: studio.id,
+            clientId: client.id,
+          },
+        })
+      } catch (pushError) {
+        console.error("Mobile inbox push notify (client recipient) failed:", pushError)
+      }
+
       return NextResponse.json({ success: true, messageId: result.messageId })
     }
 
@@ -157,6 +205,23 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json({ error: result.error || "Failed to send SMS" }, { status: 500 })
+    }
+
+    try {
+      await sendMobilePushNotification({
+        studioId: studio.id,
+        clientIds: [client.id],
+        title: `Message from ${studio.name}`,
+        body: message,
+        data: {
+          type: "mobile_inbox_message",
+          channel: "SMS",
+          studioId: studio.id,
+          clientId: client.id,
+        },
+      })
+    } catch (pushError) {
+      console.error("Mobile inbox push notify (client recipient) failed:", pushError)
     }
 
     return NextResponse.json({ success: true, messageId: result.messageId })

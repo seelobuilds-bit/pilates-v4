@@ -1,11 +1,13 @@
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native"
 import { useMemo, useState } from "react"
 import { useAuth } from "@/src/context/auth-context"
+import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 
 export default function ProfileScreen() {
-  const { user, bootstrap, signOut } = useAuth()
+  const { user, bootstrap, token, signOut } = useAuth()
   const [openingDeletionRequest, setOpeningDeletionRequest] = useState(false)
+  const [sendingTestPush, setSendingTestPush] = useState(false)
 
   const subdomain = useMemo(
     () => (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase(),
@@ -34,6 +36,31 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleTestPush = async () => {
+    if (!token) {
+      Alert.alert("Session expired", "Please sign in again to run a push test.")
+      return
+    }
+
+    setSendingTestPush(true)
+    try {
+      const result = await mobileApi.sendPushTest(token)
+      if (result.sent > 0) {
+        Alert.alert("Push sent", `Delivered ${result.sent} test notification(s).`)
+      } else {
+        Alert.alert(
+          "No active push device",
+          "No enabled push token was found for this account on this studio. Re-open the app on a physical device and allow notifications."
+        )
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send push test"
+      Alert.alert("Push test failed", message)
+    } finally {
+      setSendingTestPush(false)
+    }
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
@@ -49,6 +76,16 @@ export default function ProfileScreen() {
         >
           <Text style={styles.secondaryButtonText}>
             {openingDeletionRequest ? "Opening..." : "Account deletion request"}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.secondaryButton, sendingTestPush && styles.secondaryButtonDisabled]}
+          onPress={() => void handleTestPush()}
+          disabled={sendingTestPush}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {sendingTestPush ? "Sending test..." : "Send test notification"}
           </Text>
         </Pressable>
 

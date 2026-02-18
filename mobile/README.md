@@ -15,6 +15,7 @@ Auth is handled via:
 - `GET /api/mobile/bootstrap`
 - `POST /api/mobile/push/register`
 - `POST /api/mobile/push/unregister`
+- `POST /api/mobile/push/test`
 
 ## Local Run
 
@@ -61,3 +62,8 @@ pnpm build:android:production
 
 - JS/UI updates can ship broadly via EAS Update channels.
 - Native dependency/config changes require a new binary per app.
+
+## Push Delivery
+
+- Backend can use optional `EXPO_PUSH_ACCESS_TOKEN` for authenticated push delivery.
+- Profile tab includes **Send test notification** to verify token registration on a real device.

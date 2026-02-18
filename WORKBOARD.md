@@ -62,12 +62,12 @@ Ship high-impact improvements in parallel without conflicts.
 | T-157 Mobile session hardening | codex-main | codex/t-157-mobile-hardening-pass | Harden mobile API/session behavior for token expiry + request timeouts and improve login guardrails | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/73 |
 | T-158 Mobile compliance + private release pack | mac-mini-agent | mini/t-158-mobile-compliance-pack | Mobile compliance docs/runbook + profile account deletion web handoff (mobile/docs only) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/76 |
 | T-159 Mobile deep-link + auth-safe route handling | codex-main | codex/t-159-mobile-deep-link-auth-routing | Preserve deep-linked mobile tab across auth redirect and harden post-login route allowlist | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/75 |
-| T-160 Mobile push-notification foundation | codex-main | codex/t-160-mobile-push-foundation | Add mobile push token registration lifecycle (mobile permission + register/unregister APIs + backend token model) | In Progress | TBD |
-| T-161 Mobile packaging automation | mac-mini-agent | mini/t-161-mobile-packaging-automation | Improve studio variant generator with validation, dry-run, and per-studio release checklist output | In Progress | TBD |
+| T-160 Mobile push-notification foundation | codex-main | codex/t-160-mobile-push-foundation | Add mobile push token registration lifecycle (mobile permission + register/unregister APIs + backend token model) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/78 |
+| T-161 Mobile packaging automation | mac-mini-agent | mini/t-161-mobile-packaging-automation | Improve studio variant generator with validation, dry-run, and per-studio release checklist output | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/77 |
+| T-162 Mobile push delivery and trigger wiring | codex-main | codex/t-162-mobile-push-delivery-run | Add Expo push send helper, wire push triggers for mobile inbox/booking flows, and add in-app test notification action | In Progress | TBD |
 
 ## Merge Order
-1. T-161 Mobile packaging automation
-2. T-160 Mobile push-notification foundation
+1. T-162 Mobile push delivery and trigger wiring
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

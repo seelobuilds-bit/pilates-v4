@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { sendMobilePushNotification } from "@/lib/mobile-push"
+
+function formatStartTime(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(value)
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const studio = await db.studio.findUnique({
       where: { id: decoded.studioId },
-      select: { id: true, subdomain: true },
+      select: { id: true, subdomain: true, ownerId: true },
     })
 
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
@@ -45,9 +55,27 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         status: true,
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         classSession: {
           select: {
+            id: true,
             startTime: true,
+            classType: {
+              select: {
+                name: true,
+              },
+            },
+            teacher: {
+              select: {
+                userId: true,
+              },
+            },
           },
         },
       },
@@ -77,6 +105,24 @@ export async function POST(request: NextRequest) {
         status: true,
       },
     })
+
+    try {
+      const targetUserIds = Array.from(new Set([studio.ownerId, booking.classSession.teacher.userId]))
+      await sendMobilePushNotification({
+        studioId: studio.id,
+        userIds: targetUserIds,
+        title: "Booking cancelled",
+        body: `${booking.client.firstName} ${booking.client.lastName} cancelled ${booking.classSession.classType.name} (${formatStartTime(booking.classSession.startTime)})`,
+        data: {
+          type: "mobile_booking_cancelled",
+          bookingId: cancelled.id,
+          classSessionId: booking.classSession.id,
+          clientId: booking.client.id,
+        },
+      })
+    } catch (pushError) {
+      console.error("Mobile booking cancellation push failed:", pushError)
+    }
 
     return NextResponse.json({ success: true, bookingId: cancelled.id, status: cancelled.status })
   } catch (error) {
