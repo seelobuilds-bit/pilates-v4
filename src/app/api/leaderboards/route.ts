@@ -192,9 +192,15 @@ export async function GET(request: NextRequest) {
           ? studioEntryByPeriod.get(lb.currentPeriod.id)
           : teacherEntryByPeriod.get(lb.currentPeriod.id)
 
-      userRanks[lb.id] = matchedEntry
-        ? { rank: matchedEntry.rank || 0, score: matchedEntry.score }
-        : null
+      if (!matchedEntry || !matchedEntry.rank || matchedEntry.rank <= 0) {
+        userRanks[lb.id] = null
+        continue
+      }
+
+      userRanks[lb.id] = {
+        rank: matchedEntry.rank,
+        score: matchedEntry.score
+      }
     }
 
     // Group leaderboards by category for UI
@@ -252,7 +258,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
 
 
 
