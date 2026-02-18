@@ -259,6 +259,338 @@ export async function GET(request: NextRequest) {
     statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1
   }
 
+  const [
+    periodMessages,
+    previousPeriodMessages,
+    reportCampaigns,
+    reminderAutomations,
+    winbackAutomations,
+    activeSocialFlows,
+    totalSocialTriggered,
+    totalSocialResponded,
+    totalSocialBooked
+  ] = await Promise.all([
+    db.message.findMany({
+      where: {
+        studioId,
+        direction: "OUTBOUND",
+        createdAt: {
+          gte: startDate,
+          lt: reportEndDate
+        }
+      },
+      select: {
+        id: true,
+        channel: true,
+        status: true,
+        clientId: true,
+        campaignId: true,
+        automationId: true,
+        openedAt: true,
+        clickedAt: true
+      }
+    }),
+    db.message.findMany({
+      where: {
+        studioId,
+        direction: "OUTBOUND",
+        createdAt: {
+          gte: previousStartDate,
+          lt: startDate
+        }
+      },
+      select: {
+        id: true,
+        channel: true,
+        status: true,
+        clientId: true,
+        campaignId: true,
+        automationId: true,
+        openedAt: true,
+        clickedAt: true
+      }
+    }),
+    db.campaign.findMany({
+      where: {
+        studioId,
+        OR: [
+          {
+            sentAt: {
+              gte: startDate,
+              lt: reportEndDate
+            }
+          },
+          {
+            updatedAt: {
+              gte: startDate,
+              lt: reportEndDate
+            },
+            sentCount: {
+              gt: 0
+            }
+          }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        sentCount: true,
+        openedCount: true,
+        clickedCount: true
+      },
+      orderBy: {
+        sentCount: "desc"
+      },
+      take: 10
+    }),
+    db.automation.findMany({
+      where: {
+        studioId,
+        trigger: "CLASS_REMINDER"
+      },
+      select: {
+        id: true
+      }
+    }),
+    db.automation.findMany({
+      where: {
+        studioId,
+        trigger: "CLIENT_INACTIVE"
+      },
+      select: {
+        id: true
+      }
+    }),
+    db.socialMediaFlow.count({
+      where: {
+        isActive: true,
+        account: {
+          studioId
+        }
+      }
+    }),
+    db.socialMediaFlowEvent.count({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lt: reportEndDate
+        },
+        flow: {
+          account: {
+            studioId
+          }
+        }
+      }
+    }),
+    db.socialMediaFlowEvent.count({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lt: reportEndDate
+        },
+        responseSent: true,
+        flow: {
+          account: {
+            studioId
+          }
+        }
+      }
+    }),
+    db.socialMediaFlowEvent.count({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lt: reportEndDate
+        },
+        converted: true,
+        flow: {
+          account: {
+            studioId
+          }
+        }
+      }
+    })
+  ])
+
+  const periodEmailMessages = periodMessages.filter((message) => message.channel === "EMAIL")
+  const previousPeriodEmailMessages = previousPeriodMessages.filter((message) => message.channel === "EMAIL")
+  const emailsSent = periodEmailMessages.length
+  const openedEmails = periodEmailMessages.filter(
+    (message) => message.openedAt || message.status === "OPENED" || message.status === "CLICKED"
+  ).length
+  const clickedEmails = periodEmailMessages.filter(
+    (message) => message.clickedAt || message.status === "CLICKED"
+  ).length
+  const previousEmailsSent = previousPeriodEmailMessages.length
+  const previousOpenedEmails = previousPeriodEmailMessages.filter(
+    (message) => message.openedAt || message.status === "OPENED" || message.status === "CLICKED"
+  ).length
+  const previousClickedEmails = previousPeriodEmailMessages.filter(
+    (message) => message.clickedAt || message.status === "CLICKED"
+  ).length
+
+  const emailOpenRate = emailsSent > 0 ? Math.round((openedEmails / emailsSent) * 1000) / 10 : 0
+  const emailClickRate = emailsSent > 0 ? Math.round((clickedEmails / emailsSent) * 1000) / 10 : 0
+  const previousEmailOpenRate =
+    previousEmailsSent > 0 ? Math.round((previousOpenedEmails / previousEmailsSent) * 1000) / 10 : 0
+  const previousEmailClickRate =
+    previousEmailsSent > 0 ? Math.round((previousClickedEmails / previousEmailsSent) * 1000) / 10 : 0
+
+  const emailRecipientClientIds = Array.from(
+    new Set(
+      periodEmailMessages
+        .map((message) => message.clientId)
+        .filter((clientId): clientId is string => Boolean(clientId))
+    )
+  )
+
+  const bookingsByEmailRecipient = emailRecipientClientIds.length
+    ? await db.booking.groupBy({
+        by: ["clientId"],
+        where: {
+          studioId,
+          clientId: {
+            in: emailRecipientClientIds
+          },
+          status: {
+            in: ["CONFIRMED", "COMPLETED", "NO_SHOW"]
+          },
+          classSession: {
+            startTime: {
+              gte: startDate,
+              lt: reportEndDate
+            }
+          }
+        },
+        _count: {
+          clientId: true
+        }
+      })
+    : []
+
+  const bookingsByClientId = new Map<string, number>()
+  for (const row of bookingsByEmailRecipient) {
+    bookingsByClientId.set(row.clientId, row._count.clientId)
+  }
+
+  const campaignClientMap = new Map<string, Set<string>>()
+  for (const message of periodEmailMessages) {
+    if (!message.campaignId || !message.clientId) continue
+    const clients = campaignClientMap.get(message.campaignId) || new Set<string>()
+    clients.add(message.clientId)
+    campaignClientMap.set(message.campaignId, clients)
+  }
+
+  const campaignRows = reportCampaigns.map((campaign) => {
+    const campaignClients = campaignClientMap.get(campaign.id) || new Set<string>()
+    const attributedBookings = Array.from(campaignClients).reduce((sum, clientId) => {
+      return sum + (bookingsByClientId.get(clientId) || 0)
+    }, 0)
+    return {
+      id: campaign.id,
+      name: campaign.name,
+      sent: campaign.sentCount,
+      opened: campaign.openedCount,
+      clicked: campaign.clickedCount,
+      bookings: attributedBookings
+    }
+  })
+
+  const bookingsFromEmail = bookingsByEmailRecipient.reduce((sum, row) => sum + row._count.clientId, 0)
+
+  const reminderAutomationIds = new Set(reminderAutomations.map((automation) => automation.id))
+  const remindersSent = periodMessages.filter(
+    (message) => message.automationId && reminderAutomationIds.has(message.automationId)
+  ).length
+
+  const winbackAutomationIds = new Set(winbackAutomations.map((automation) => automation.id))
+  const winbackClientIds = Array.from(
+    new Set(
+      periodMessages
+        .filter((message) => message.automationId && winbackAutomationIds.has(message.automationId))
+        .map((message) => message.clientId)
+        .filter((clientId): clientId is string => Boolean(clientId))
+    )
+  )
+
+  const winbackRecoveredClients = winbackClientIds.length
+    ? await db.booking.findMany({
+        where: {
+          studioId,
+          clientId: {
+            in: winbackClientIds
+          },
+          status: {
+            in: ["CONFIRMED", "COMPLETED", "NO_SHOW"]
+          },
+          classSession: {
+            startTime: {
+              gte: startDate,
+              lt: reportEndDate
+            }
+          }
+        },
+        select: {
+          clientId: true
+        },
+        distinct: ["clientId"]
+      })
+    : []
+
+  const winbackSuccess = winbackRecoveredClients.length
+
+  const attendedBookingsThisPeriod = bookings.filter((booking) =>
+    ATTENDED_BOOKING_STATUSES.has(booking.status)
+  )
+  const attendedBookingsPreviousPeriod = previousBookings.filter((booking) =>
+    ATTENDED_BOOKING_STATUSES.has(booking.status)
+  )
+  const noShowRate =
+    attendedBookingsThisPeriod.length > 0
+      ? Math.round(
+          (attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length /
+            attendedBookingsThisPeriod.length) *
+            1000
+        ) / 10
+      : 0
+  const previousNoShowRate =
+    attendedBookingsPreviousPeriod.length > 0
+      ? Math.round(
+          (attendedBookingsPreviousPeriod.filter((booking) => booking.status === "NO_SHOW").length /
+            attendedBookingsPreviousPeriod.length) *
+            1000
+        ) / 10
+      : 0
+
+  const socialConversionRate =
+    totalSocialTriggered > 0 ? Math.round((totalSocialBooked / totalSocialTriggered) * 1000) / 10 : 0
+
+  const marketingInsights =
+    emailsSent > 0
+      ? [
+          {
+            type: emailOpenRate >= previousEmailOpenRate ? "positive" : "warning",
+            message: `Email open rate is ${emailOpenRate}% (${emailOpenRate - previousEmailOpenRate >= 0 ? "+" : ""}${(
+              emailOpenRate - previousEmailOpenRate
+            ).toFixed(1)}pp vs previous period).`
+          },
+          {
+            type: bookingsFromEmail > 0 ? "positive" : "info",
+            message:
+              bookingsFromEmail > 0
+                ? `${bookingsFromEmail} bookings were attributed to recipients reached by email this period.`
+                : "Email recipients have not converted into bookings yet this period."
+          },
+          {
+            type: noShowRate <= previousNoShowRate ? "positive" : "warning",
+            message: `No-show rate is ${noShowRate}% (${noShowRate <= previousNoShowRate ? "improved" : "up"} from ${previousNoShowRate}%).`
+          }
+        ]
+      : [
+          { type: "info", message: "No outbound email activity yet in this period." },
+          { type: "info", message: "Launch a campaign or automation to start collecting marketing performance data." }
+        ]
+
   const byTimeSlot = Array.from(byTimeSlotMap.values())
     .map((item) => ({
       time: item.time,
@@ -324,6 +656,27 @@ export async function GET(request: NextRequest) {
     bookings: {
       total: bookings.length,
       byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+    },
+    marketing: {
+      emailsSent,
+      emailOpenRate,
+      emailClickRate,
+      previousEmailOpenRate,
+      previousEmailClickRate,
+      bookingsFromEmail,
+      remindersSent,
+      noShowRate,
+      previousNoShowRate,
+      winbackSuccess,
+      campaigns: campaignRows,
+      insights: marketingInsights
+    },
+    social: {
+      activeFlows: activeSocialFlows,
+      totalTriggered: totalSocialTriggered,
+      totalResponded: totalSocialResponded,
+      totalBooked: totalSocialBooked,
+      conversionRate: socialConversionRate
     },
     range: {
       days,

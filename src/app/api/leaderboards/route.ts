@@ -67,74 +67,134 @@ export async function GET(request: NextRequest) {
     })
 
     // Enrich entries with studio/teacher names
-    const enrichedLeaderboards = await Promise.all(
-      leaderboards.map(async (lb) => {
-        try {
-          const currentPeriod = lb.periods[0]
-          if (!currentPeriod) return { ...lb, currentPeriod: null }
-
-          const entries = await Promise.all(
-            currentPeriod.entries.map(async (entry) => {
-              try {
-                let participant = null
-                if (entry.studioId) {
-                  participant = await db.studio.findUnique({
-                    where: { id: entry.studioId },
-                    select: { id: true, name: true, subdomain: true }
-                  })
-                } else if (entry.teacherId) {
-                  const teacher = await db.teacher.findUnique({
-                    where: { id: entry.teacherId },
-                    include: { user: { select: { firstName: true, lastName: true } } }
-                  })
-                  if (teacher) {
-                    participant = {
-                      id: teacher.id,
-                      name: `${teacher.user.firstName} ${teacher.user.lastName}`,
-                      studioId: teacher.studioId
-                    }
-                  }
-                }
-                return { ...entry, participant }
-              } catch (e) {
-                console.error("Error enriching entry:", e)
-                return { ...entry, participant: null }
-              }
-            })
-          )
-
-          return {
-            ...lb,
-            currentPeriod: {
-              ...currentPeriod,
-              entries,
-              totalEntries: currentPeriod._count.entries
-            }
-          }
-        } catch (e) {
-          console.error("Error enriching leaderboard:", e)
-          return { ...lb, currentPeriod: null }
-        }
-      })
+    const allEntries = leaderboards.flatMap((lb) => lb.periods[0]?.entries ?? [])
+    const studioIds = Array.from(
+      new Set(allEntries.map((entry) => entry.studioId).filter((id): id is string => Boolean(id)))
     )
+    const teacherIds = Array.from(
+      new Set(allEntries.map((entry) => entry.teacherId).filter((id): id is string => Boolean(id)))
+    )
+
+    const [studios, teachers] = await Promise.all([
+      studioIds.length
+        ? db.studio.findMany({
+            where: { id: { in: studioIds } },
+            select: { id: true, name: true, subdomain: true }
+          })
+        : Promise.resolve([]),
+      teacherIds.length
+        ? db.teacher.findMany({
+            where: { id: { in: teacherIds } },
+            select: {
+              id: true,
+              studioId: true,
+              user: {
+                select: { firstName: true, lastName: true }
+              }
+            }
+          })
+        : Promise.resolve([])
+    ])
+
+    const studioParticipantById = new Map(
+      studios.map((studio) => [studio.id, { id: studio.id, name: studio.name, subdomain: studio.subdomain }])
+    )
+    const teacherParticipantById = new Map(
+      teachers.map((teacher) => [
+        teacher.id,
+        {
+          id: teacher.id,
+          name: `${teacher.user.firstName} ${teacher.user.lastName}`,
+          studioId: teacher.studioId
+        }
+      ])
+    )
+
+    const enrichedLeaderboards = leaderboards.map((lb) => {
+      const currentPeriod = lb.periods[0]
+      if (!currentPeriod) {
+        return { ...lb, currentPeriod: null }
+      }
+
+      const entries = currentPeriod.entries.map((entry) => {
+        const participant = entry.studioId
+          ? (studioParticipantById.get(entry.studioId) ?? null)
+          : entry.teacherId
+            ? (teacherParticipantById.get(entry.teacherId) ?? null)
+            : null
+        return { ...entry, participant }
+      })
+
+      return {
+        ...lb,
+        currentPeriod: {
+          ...currentPeriod,
+          entries,
+          totalEntries: currentPeriod._count.entries
+        }
+      }
+    })
 
     // Get user's rank in each leaderboard
     const userRanks: Record<string, { rank: number; score: number } | null> = {}
     const studioId = session.user.studioId
     const teacherId = session.user.teacherId
 
-    for (const lb of enrichedLeaderboards) {
-      if (!lb.currentPeriod) continue
-      
-      const myEntry = await db.leaderboardEntry.findFirst({
-        where: {
-          periodId: lb.currentPeriod.id,
-          ...(lb.participantType === "STUDIO" ? { studioId } : { teacherId })
-        },
-        select: { rank: true, score: true }
-      })
+    const currentPeriods = enrichedLeaderboards
+      .map((lb) => ({
+        leaderboardId: lb.id,
+        participantType: lb.participantType,
+        periodId: lb.currentPeriod?.id ?? null
+      }))
+      .filter((item): item is { leaderboardId: string; participantType: LeaderboardParticipantType; periodId: string } =>
+        Boolean(item.periodId)
+      )
 
-      userRanks[lb.id] = myEntry ? { rank: myEntry.rank || 0, score: myEntry.score } : null
+    const studioPeriodIds = currentPeriods
+      .filter((item) => item.participantType === "STUDIO")
+      .map((item) => item.periodId)
+    const teacherPeriodIds = currentPeriods
+      .filter((item) => item.participantType === "TEACHER")
+      .map((item) => item.periodId)
+
+    const [studioEntries, teacherEntries] = await Promise.all([
+      studioId && studioPeriodIds.length
+        ? db.leaderboardEntry.findMany({
+            where: {
+              periodId: { in: studioPeriodIds },
+              studioId
+            },
+            select: { periodId: true, rank: true, score: true }
+          })
+        : Promise.resolve([]),
+      teacherId && teacherPeriodIds.length
+        ? db.leaderboardEntry.findMany({
+            where: {
+              periodId: { in: teacherPeriodIds },
+              teacherId
+            },
+            select: { periodId: true, rank: true, score: true }
+          })
+        : Promise.resolve([])
+    ])
+
+    const studioEntryByPeriod = new Map(studioEntries.map((entry) => [entry.periodId, entry]))
+    const teacherEntryByPeriod = new Map(teacherEntries.map((entry) => [entry.periodId, entry]))
+
+    for (const lb of enrichedLeaderboards) {
+      if (!lb.currentPeriod) {
+        userRanks[lb.id] = null
+        continue
+      }
+
+      const matchedEntry =
+        lb.participantType === "STUDIO"
+          ? studioEntryByPeriod.get(lb.currentPeriod.id)
+          : teacherEntryByPeriod.get(lb.currentPeriod.id)
+
+      userRanks[lb.id] = matchedEntry
+        ? { rank: matchedEntry.rank || 0, score: matchedEntry.score }
+        : null
     }
 
     // Group leaderboards by category for UI
@@ -192,8 +252,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
-
 
 
 
