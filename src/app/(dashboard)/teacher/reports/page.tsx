@@ -72,6 +72,7 @@ export default function TeacherReportsPage() {
   }
 
   const maxMonthlyCount = Math.max(1, ...stats.monthlyClasses.map((month) => month.count))
+  const hasRatingData = stats.avgRating > 0
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -116,7 +117,7 @@ export default function TeacherReportsPage() {
                 <Star className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.avgRating.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-gray-900">{hasRatingData ? stats.avgRating.toFixed(1) : "N/A"}</p>
                 <p className="text-sm text-gray-500">Average Rating</p>
               </div>
             </div>

@@ -26,11 +26,13 @@ Ship high-impact improvements in parallel without conflicts.
 | T-119 Reporting integrity phase 2 (marketing/social/leaderboards) | codex-main | codex/T-119-reporting-integrity-phase2 | Backend reporting correctness for marketing + social attribution metrics and leaderboard rank stability | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/35 |
 | T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/37 |
 | T-121 Reporting regression smoke tests | mac-mini-agent | mini/T-121-reporting-smoke-tests | `scripts/tests/**`, `package.json`, `WORKBOARD.md` status update only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/38 |
-| T-122 Reporting depth fillers (instructors + retention detail) | codex-main | codex/T-122-reporting-depth-fillers | `/api/studio/reports` instructor/retention metrics + `/studio/reports` wiring and empty-state clarity | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/39 |
-| T-124 Reporting smoke CI pipeline | mac-mini-agent | mini/T-124-reporting-smoke-ci | `.github/workflows/reporting-smoke.yml`, `WORKBOARD.md` only | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/40 |
+<<<<<<< HEAD
+| T-122 Reporting depth fillers (instructors + retention detail) | codex-main | codex/T-122-reporting-depth-fillers | `/api/studio/reports` instructor/retention metrics + `/studio/reports` wiring and empty-state clarity | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/39 |
+| T-124 Reporting smoke CI pipeline | mac-mini-agent | mini/T-124-reporting-smoke-ci | `.github/workflows/reporting-smoke.yml`, `WORKBOARD.md` only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/40 |
+| T-125 Reporting empty-state/rating clarity (teacher surfaces) | codex-main | codex/T-125-reporting-empty-state-ratings | Teacher dashboard/reporting: explicit unavailable rating/review states and reporting UX polish | In Progress | pending |
 
 ## Merge Order
-1. T-122 Reporting depth fillers (instructors + retention detail)
+1. T-125 Reporting empty-state/rating clarity (teacher surfaces)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
