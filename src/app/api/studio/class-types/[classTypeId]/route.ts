@@ -129,9 +129,9 @@ export async function GET(
     locationBookingCounts.set(locationName, (locationBookingCounts.get(locationName) || 0) + 1)
   }
 
-  const now = new Date()
+  const bucketEndDate = new Date(endDate)
   const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+    const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
     return {
       key: `${date.getFullYear()}-${date.getMonth()}`,
       month: date.toLocaleDateString("en-US", { month: "short" }),

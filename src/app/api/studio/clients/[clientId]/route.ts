@@ -141,18 +141,17 @@ export async function GET(
     }, null)
     let avgBookingsPerMonth = 0
     if (oldestBookingDate && totalBookings > 0) {
-      const now = new Date()
       const monthDiff =
-        (now.getFullYear() - oldestBookingDate.getFullYear()) * 12 +
-        (now.getMonth() - oldestBookingDate.getMonth()) +
+        (endDate.getFullYear() - oldestBookingDate.getFullYear()) * 12 +
+        (endDate.getMonth() - oldestBookingDate.getMonth()) +
         1
       const activeMonths = Math.max(1, monthDiff)
       avgBookingsPerMonth = Math.round((totalBookings / activeMonths) * 10) / 10
     }
 
-    const now = new Date()
+    const bucketEndDate = new Date(endDate)
     const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+      const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
       return {
         key: `${date.getFullYear()}-${date.getMonth()}`,
         month: date.toLocaleDateString("en-US", { month: "short" }),
