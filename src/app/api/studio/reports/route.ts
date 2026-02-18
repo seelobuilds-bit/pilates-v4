@@ -3,6 +3,15 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
+const DEFAULT_REPORT_DAYS = 30
+const MAX_REPORT_DAYS = 365
+
+function parseReportDays(value: string | null) {
+  if (!value) return DEFAULT_REPORT_DAYS
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return DEFAULT_REPORT_DAYS
+  return Math.min(MAX_REPORT_DAYS, Math.max(1, parsed))
+}
 
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -13,13 +22,14 @@ export async function GET(request: NextRequest) {
 
   const studioId = session.user.studioId
   const searchParams = request.nextUrl.searchParams
-  const days = parseInt(searchParams.get("days") || "30")
-  const startDate = new Date()
+  const days = parseReportDays(searchParams.get("days"))
+  const reportEndDate = new Date()
+  const startDate = new Date(reportEndDate)
   startDate.setDate(startDate.getDate() - days)
   const previousStartDate = new Date(startDate)
   previousStartDate.setDate(previousStartDate.getDate() - days)
 
-  const monthWindowStart = new Date()
+  const monthWindowStart = new Date(reportEndDate)
   monthWindowStart.setMonth(monthWindowStart.getMonth() - 5)
   monthWindowStart.setDate(1)
   monthWindowStart.setHours(0, 0, 0, 0)
@@ -28,7 +38,10 @@ export async function GET(request: NextRequest) {
     where: {
       studioId,
       classSession: {
-        startTime: { gte: startDate }
+        startTime: {
+          gte: startDate,
+          lt: reportEndDate
+        }
       }
     },
     include: {
@@ -64,7 +77,10 @@ export async function GET(request: NextRequest) {
     where: {
       studioId,
       classSession: {
-        startTime: { gte: monthWindowStart }
+        startTime: {
+          gte: monthWindowStart,
+          lt: reportEndDate
+        }
       }
     },
     include: {
@@ -126,7 +142,10 @@ export async function GET(request: NextRequest) {
   const newClients = await db.client.count({
     where: {
       studioId,
-      createdAt: { gte: startDate }
+      createdAt: {
+        gte: startDate,
+        lt: reportEndDate
+      }
     }
   })
   const activeClients = await db.client.count({
@@ -145,7 +164,10 @@ export async function GET(request: NextRequest) {
   const classSessions = await db.classSession.findMany({
     where: {
       studioId,
-      startTime: { gte: startDate }
+      startTime: {
+        gte: startDate,
+        lt: reportEndDate
+      }
     },
     include: {
       classType: true,
@@ -216,6 +238,12 @@ export async function GET(request: NextRequest) {
     byClassTypeMap.set(session.classTypeId, classEntry)
   }
   const totalCapacity = classSessions.reduce((sum, session) => sum + session.capacity, 0)
+  const totalAttendance = classSessions.reduce((sum, session) => {
+    return (
+      sum +
+      session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
+    )
+  }, 0)
   const overallAverageFill =
     classSessions.length > 0
       ? Math.round(
@@ -284,6 +312,8 @@ export async function GET(request: NextRequest) {
     classes: {
       total: classSessions.length,
       totalCapacity,
+      totalAttendance,
+      averageFill: overallAverageFill,
       byLocation: Object.entries(classesByLocation).map(([name, count]) => ({ name, count })),
       byTeacher: Object.entries(classesByTeacher).map(([name, count]) => ({ name, count })),
       byTimeSlot,
@@ -294,6 +324,11 @@ export async function GET(request: NextRequest) {
     bookings: {
       total: bookings.length,
       byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+    },
+    range: {
+      days,
+      startDate: startDate.toISOString(),
+      endDate: reportEndDate.toISOString()
     }
   })
 }

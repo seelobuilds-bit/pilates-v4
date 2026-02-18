@@ -181,9 +181,17 @@ export default function ReportsPage() {
           const bookingsByStatus = data.bookings?.byStatus || []
           const confirmedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CONFIRMED')?.count || 0
           const cancelledBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CANCELLED')?.count || 0
-          const completedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'COMPLETED')?.count || 0
-          const totalAttendance = confirmedBookings + completedBookings
-          const avgFill = classCapacity > 0 ? Math.round((totalAttendance / classCapacity) * 100) : 0
+          const serverAttendance = data.classes?.totalAttendance ?? 0
+          const fallbackAttendance =
+            confirmedBookings +
+            (bookingsByStatus.find((b: { status: string; count: number }) => b.status === "COMPLETED")?.count || 0)
+          const totalAttendance = serverAttendance > 0 ? serverAttendance : fallbackAttendance
+          const avgFill =
+            typeof data.classes?.averageFill === "number"
+              ? data.classes.averageFill
+              : classCapacity > 0
+                ? Math.round((totalAttendance / classCapacity) * 100)
+                : 0
           
           // Calculate churn rate
           const totalClients = data.clients?.total || 0

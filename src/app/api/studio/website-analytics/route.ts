@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate date range
-    const startDate = new Date()
+    const endDate = new Date()
+    const startDate = new Date(endDate)
     switch (period) {
       case "24h":
         startDate.setHours(startDate.getHours() - 24)
@@ -67,7 +68,10 @@ export async function GET(request: NextRequest) {
         where: {
           studioId: session.user.studioId,
           type: "PAGE_VIEW",
-          createdAt: { gte: startDate }
+          createdAt: {
+            gte: startDate,
+            lt: endDate
+          }
         }
       }),
       
@@ -75,7 +79,10 @@ export async function GET(request: NextRequest) {
       db.websiteVisitor.count({
         where: {
           studioId: session.user.studioId,
-          lastVisit: { gte: startDate }
+          lastVisit: {
+            gte: startDate,
+            lt: endDate
+          }
         }
       }),
       
@@ -84,7 +91,10 @@ export async function GET(request: NextRequest) {
         where: {
           studioId: session.user.studioId,
           hasConverted: true,
-          convertedAt: { gte: startDate }
+          convertedAt: {
+            gte: startDate,
+            lt: endDate
+          }
         }
       }),
       
@@ -94,7 +104,10 @@ export async function GET(request: NextRequest) {
         where: {
           studioId: session.user.studioId,
           type: "PAGE_VIEW",
-          createdAt: { gte: startDate }
+          createdAt: {
+            gte: startDate,
+            lt: endDate
+          }
         },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
@@ -106,7 +119,10 @@ export async function GET(request: NextRequest) {
         by: ["firstSource"],
         where: {
           studioId: session.user.studioId,
-          lastVisit: { gte: startDate }
+          lastVisit: {
+            gte: startDate,
+            lt: endDate
+          }
         },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
@@ -118,7 +134,10 @@ export async function GET(request: NextRequest) {
         by: ["device"],
         where: {
           studioId: session.user.studioId,
-          lastVisit: { gte: startDate }
+          lastVisit: {
+            gte: startDate,
+            lt: endDate
+          }
         },
         _count: { id: true }
       }),
@@ -127,7 +146,10 @@ export async function GET(request: NextRequest) {
       db.websiteEvent.findMany({
         where: {
           studioId: session.user.studioId,
-          createdAt: { gte: startDate }
+          createdAt: {
+            gte: startDate,
+            lt: endDate
+          }
         },
         orderBy: { createdAt: "desc" },
         take: 20,
@@ -148,6 +170,7 @@ export async function GET(request: NextRequest) {
             FROM "WebsiteEvent"
             WHERE "studioId" = ${session.user.studioId}
               AND "createdAt" >= ${startDate}
+              AND "createdAt" < ${endDate}
               AND "type" = 'PAGE_VIEW'
             GROUP BY DATE_TRUNC('hour', "createdAt")
             ORDER BY period
@@ -160,6 +183,7 @@ export async function GET(request: NextRequest) {
             FROM "WebsiteEvent"
             WHERE "studioId" = ${session.user.studioId}
               AND "createdAt" >= ${startDate}
+              AND "createdAt" < ${endDate}
               AND "type" = 'PAGE_VIEW'
             GROUP BY DATE_TRUNC('day', "createdAt")
             ORDER BY period
@@ -178,6 +202,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       config,
+      range: {
+        period,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      },
       analytics: {
         overview: {
           totalPageViews,
@@ -256,7 +285,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
 
 
 
