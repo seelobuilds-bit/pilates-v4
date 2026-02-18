@@ -18,11 +18,21 @@ Auth is handled via:
 
 ## Local Run
 
-1. Create a variant env file:
+1. Create a variant env file (and release checklist):
 
 ```bash
 pnpm prepare:studio --slug zenith --name "Zenith Pilates"
 cp .env.studio.zenith .env.local
+```
+
+This generates:
+- `.env.studio.zenith`
+- `releases/zenith/release-checklist.md`
+
+Use `--dry-run` to preview outputs without writing files:
+
+```bash
+pnpm prepare:studio --slug zenith --name "Zenith Pilates" --dry-run
 ```
 
 2. Start app:
