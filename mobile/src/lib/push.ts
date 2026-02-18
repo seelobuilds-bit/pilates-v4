@@ -10,6 +10,10 @@ export interface MobilePushRegistrationResult {
   reason?: "not_device" | "permission_denied" | "missing_project_id" | "token_unavailable"
 }
 
+export type MobilePushRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/profile"
+
+let pushPresentationConfigured = false
+
 function getPlatform(): MobilePushPlatform {
   if (Platform.OS === "ios") return "IOS"
   if (Platform.OS === "android") return "ANDROID"
@@ -82,4 +86,39 @@ export async function registerForPushNotificationsAsync(): Promise<MobilePushReg
   }
 
   return { enabled: true, params }
+}
+
+export function configurePushPresentation() {
+  if (pushPresentationConfigured) return
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  })
+
+  pushPresentationConfigured = true
+}
+
+export function routeFromPushPayload(data: unknown): MobilePushRoute | null {
+  if (!data || typeof data !== "object") return null
+  const type = String((data as { type?: unknown }).type || "").trim().toLowerCase()
+
+  if (type === "mobile_inbox_message") {
+    return "/(app)/inbox"
+  }
+
+  if (type === "mobile_booking_created" || type === "mobile_booking_reactivated" || type === "mobile_booking_cancelled") {
+    return "/(app)/schedule"
+  }
+
+  if (type === "mobile_push_test") {
+    return "/(app)/profile"
+  }
+
+  return null
 }
