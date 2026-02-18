@@ -16,6 +16,7 @@ Auth is handled via:
 - `POST /api/mobile/push/register`
 - `POST /api/mobile/push/unregister`
 - `POST /api/mobile/push/test`
+- `GET /api/mobile/push/status`
 
 ## Local Run
 
