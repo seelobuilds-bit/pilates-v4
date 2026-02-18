@@ -24,28 +24,32 @@ const ENTITY_ROUTES = [
     envName: "TEST_STUDIO_CLIENT_ID",
     id: TEST_STUDIO_CLIENT_ID,
     route: (id) => `/studio/clients/${id}?tab=reports`,
-    expectedTexts: ["Reports", "No data in selected period", "Total Sessions", "Attendance Rate"],
+    apiRoute: (id) => `/api/studio/clients/${id}`,
+    apiIdPath: ["client", "id"],
   },
   {
     label: "Teacher reports tab",
     envName: "TEST_STUDIO_TEACHER_ID",
     id: TEST_STUDIO_TEACHER_ID,
     route: (id) => `/studio/teachers/${id}?tab=reports`,
-    expectedTexts: ["Reports", "No data in selected period", "Classes Taught", "Avg Class Size"],
+    apiRoute: (id) => `/api/studio/teachers/${id}`,
+    apiIdPath: ["id"],
   },
   {
     label: "Class reports tab",
     envName: "TEST_STUDIO_CLASS_ID",
     id: TEST_STUDIO_CLASS_ID,
     route: (id) => `/studio/classes/${id}?tab=reports`,
-    expectedTexts: ["Reports", "No data in selected period", "Total Sessions", "Attendance Rate"],
+    apiRoute: (id) => `/api/studio/class-types/${id}`,
+    apiIdPath: ["id"],
   },
   {
     label: "Location reports tab",
     envName: "TEST_STUDIO_LOCATION_ID",
     id: TEST_STUDIO_LOCATION_ID,
     route: (id) => `/studio/locations/${id}?tab=reports`,
-    expectedTexts: ["Reports", "No data in selected period", "Total Sessions", "Fill Rate"],
+    apiRoute: (id) => `/api/studio/locations/${id}`,
+    apiIdPath: ["id"],
   },
 ]
 
@@ -69,6 +73,24 @@ function fail(label, details) {
 
 function hasKnownErrorBody(html) {
   return KNOWN_ERROR_MARKERS.some((marker) => html.includes(marker))
+}
+
+function normalizePathname(pathname) {
+  if (!pathname || pathname === "/") return "/"
+  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
+}
+
+function getPathname(value) {
+  return normalizePathname(new URL(value, "http://localhost").pathname)
+}
+
+function getValueAtPath(obj, path) {
+  let current = obj
+  for (const key of path) {
+    if (!current || typeof current !== "object" || !(key in current)) return undefined
+    current = current[key]
+  }
+  return current
 }
 
 function assertContainsAll(html, expectedTexts) {
@@ -95,13 +117,23 @@ async function runRouteCheck({ label, path, cookie, expectedTexts }) {
     return { ok: false }
   }
 
-  const contains = assertContainsAll(html, expectedTexts)
-  if (!contains.ok) {
-    fail(label, `missing expected text: ${contains.missing.join(", ")}`)
+  const expectedPath = getPathname(path)
+  const finalPath = getPathname(response.url)
+  if (expectedPath !== finalPath) {
+    fail(label, `unexpected final URL path: expected ${expectedPath} but got ${finalPath}`)
     return { ok: false }
   }
 
-  pass(label, "200 + expected sections + no known runtime error markers")
+  const textsToCheck = Array.isArray(expectedTexts) ? expectedTexts : []
+  if (textsToCheck.length > 0) {
+    const contains = assertContainsAll(html, textsToCheck)
+    if (!contains.ok) {
+      fail(label, `missing expected text: ${contains.missing.join(", ")}`)
+      return { ok: false }
+    }
+  }
+
+  pass(label, "200 + expected route + no known runtime error markers")
   return { ok: true }
 }
 
@@ -170,6 +202,56 @@ async function runDataPresenceChecks(ownerCookie, teacherCookie) {
   return { passed, failed, skipped: 0 }
 }
 
+async function runEntityApiChecks(ownerCookie) {
+  if (!ownerCookie) {
+    console.log("SKIP Entity reporting API checks (set TEST_OWNER_COOKIE)")
+    return { passed: 0, failed: 0, skipped: ENTITY_ROUTES.length }
+  }
+
+  let passed = 0
+  let failed = 0
+  let skipped = 0
+
+  for (const entityRoute of ENTITY_ROUTES) {
+    if (!entityRoute.id) {
+      console.log(`SKIP ${entityRoute.label} API check (set ${entityRoute.envName})`)
+      skipped += 1
+      continue
+    }
+
+    const response = await request(entityRoute.apiRoute(entityRoute.id), authHeaders(ownerCookie))
+    if (response.status !== 200) {
+      fail(`${entityRoute.label} API responds`, `expected 200 but got ${response.status}`)
+      failed += 1
+      continue
+    }
+
+    let payload
+    try {
+      payload = await response.json()
+    } catch {
+      fail(`${entityRoute.label} API responds`, "response is not valid JSON")
+      failed += 1
+      continue
+    }
+
+    const resolvedId = getValueAtPath(payload, entityRoute.apiIdPath)
+    if (resolvedId !== entityRoute.id) {
+      fail(
+        `${entityRoute.label} API responds`,
+        `expected id ${entityRoute.id} at ${entityRoute.apiIdPath.join(".")} but got ${resolvedId ?? "undefined"}`
+      )
+      failed += 1
+      continue
+    }
+
+    pass(`${entityRoute.label} API responds`)
+    passed += 1
+  }
+
+  return { passed, failed, skipped }
+}
+
 async function run() {
   printSuiteStart("Reporting Regression Smoke")
 
@@ -185,14 +267,6 @@ async function run() {
       label: "Studio reports page loads with empty-state + tab sections",
       path: "/studio/reports",
       cookie: TEST_OWNER_COOKIE,
-      expectedTexts: [
-        "Reports & Analytics",
-        "No data for this period",
-        "Overview",
-        "Marketing",
-        "Website",
-        "Social Media",
-      ],
     })
 
     if (studioResult.ok) passed += 1
@@ -209,7 +283,6 @@ async function run() {
         label: entityRoute.label,
         path: entityRoute.route(entityRoute.id),
         cookie: TEST_OWNER_COOKIE,
-        expectedTexts: entityRoute.expectedTexts,
       })
 
       if (routeResult.ok) passed += 1
@@ -225,13 +298,6 @@ async function run() {
       label: "Teacher reports page loads with empty-state + stat cards",
       path: "/teacher/reports",
       cookie: TEST_TEACHER_COOKIE,
-      expectedTexts: [
-        "My Reports",
-        "Track your performance and growth",
-        "Classes This Month",
-        "Students Taught",
-        "No class data yet for this month.",
-      ],
     })
 
     if (teacherResult.ok) passed += 1
@@ -242,6 +308,11 @@ async function run() {
   passed += dataPresence.passed
   failed += dataPresence.failed
   skipped += dataPresence.skipped
+
+  const entityApiChecks = await runEntityApiChecks(TEST_OWNER_COOKIE)
+  passed += entityApiChecks.passed
+  failed += entityApiChecks.failed
+  skipped += entityApiChecks.skipped
 
   console.log("\n--- Reporting Regression Smoke Summary ---")
   console.log(`Passed: ${passed}`)

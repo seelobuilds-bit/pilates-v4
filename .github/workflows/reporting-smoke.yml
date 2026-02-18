@@ -64,8 +64,8 @@ jobs:
         run: |
           {
             echo "## Reporting Smoke Result"
-            echo "- Workflow: \\`reporting-smoke.yml\\`"
-            echo "- Command: \\`pnpm test:smoke:reporting\\`"
+            echo "- Workflow: reporting-smoke.yml"
+            echo "- Command: pnpm test:smoke:reporting"
             echo "- Result: **${{ steps.reporting_smoke.outputs.result || 'fail' }}**"
             echo "- Note: Skipped tests are treated as successful run outcomes when the test command exits 0."
           } >> "$GITHUB_STEP_SUMMARY"
