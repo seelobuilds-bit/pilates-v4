@@ -4,6 +4,7 @@ import type {
   MobileInboxResponse,
   MobileInboxThreadResponse,
   MobileLoginResponse,
+  MobilePushRegisterParams,
   MobileScheduleResponse,
   MobileSessionUser,
 } from "@/src/types/mobile"
@@ -150,6 +151,25 @@ export const mobileApi = {
     return request<{ success: boolean }>("/api/mobile/auth/logout", {
       method: "POST",
       token,
+    })
+  },
+
+  registerPushToken(token: string, params: MobilePushRegisterParams) {
+    return request<{ success: boolean; device?: { id: string; platform: string; isEnabled: boolean } }>(
+      "/api/mobile/push/register",
+      {
+        method: "POST",
+        token,
+        body: JSON.stringify(params),
+      }
+    )
+  },
+
+  unregisterPushToken(token: string, params?: { expoPushToken?: string }) {
+    return request<{ success: boolean; disabledCount: number }>("/api/mobile/push/unregister", {
+      method: "POST",
+      token,
+      body: JSON.stringify(params || {}),
     })
   },
 }

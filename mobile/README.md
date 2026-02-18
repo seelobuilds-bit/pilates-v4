@@ -13,6 +13,8 @@ Auth is handled via:
 - `POST /api/mobile/auth/login`
 - `GET /api/mobile/auth/me`
 - `GET /api/mobile/bootstrap`
+- `POST /api/mobile/push/register`
+- `POST /api/mobile/push/unregister`
 
 ## Local Run
 
@@ -36,6 +38,7 @@ Each studio has unique:
 - subdomain (`EXPO_PUBLIC_STUDIO_SUBDOMAIN`)
 - iOS bundle ID (`IOS_BUNDLE_IDENTIFIER`)
 - Android package (`ANDROID_PACKAGE`)
+- EAS project id for push token registration (`EXPO_PROJECT_ID`)
 
 Build commands:
 
