@@ -94,3 +94,16 @@ export interface MobileInboxResponse {
   conversations?: MobileConversationSummary[]
   messages?: MobileInboxMessage[]
 }
+
+export interface MobileInboxThreadResponse {
+  role: MobileRole
+  studio: StudioSummary
+  client: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phone: string | null
+  }
+  messages: MobileInboxMessage[]
+}

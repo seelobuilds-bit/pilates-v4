@@ -1,0 +1,127 @@
+import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { sendEmail, sendSMS } from "@/lib/communications"
+import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = extractBearerToken(request.headers.get("authorization"))
+    if (!token) {
+      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    }
+
+    const decoded = verifyMobileToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    if (decoded.role === "CLIENT") {
+      return NextResponse.json({ error: "Clients cannot send messages from mobile yet" }, { status: 403 })
+    }
+
+    const studio = await db.studio.findUnique({
+      where: { id: decoded.studioId },
+      select: {
+        id: true,
+        name: true,
+        subdomain: true,
+      },
+    })
+
+    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const clientId = String(body?.clientId || "").trim()
+    const channel = String(body?.channel || "").trim().toUpperCase()
+    const message = String(body?.message || "").trim()
+    const subject = String(body?.subject || "").trim()
+
+    if (!clientId || !message || !["EMAIL", "SMS"].includes(channel)) {
+      return NextResponse.json(
+        { error: "clientId, channel (EMAIL|SMS), and message are required" },
+        { status: 400 }
+      )
+    }
+
+    if (decoded.role === "TEACHER") {
+      if (!decoded.teacherId) {
+        return NextResponse.json({ error: "Teacher session invalid" }, { status: 401 })
+      }
+
+      const hasBooking = await db.booking.findFirst({
+        where: {
+          studioId: studio.id,
+          clientId,
+          classSession: {
+            teacherId: decoded.teacherId,
+          },
+        },
+        select: { id: true },
+      })
+
+      if (!hasBooking) {
+        return NextResponse.json({ error: "Access denied" }, { status: 403 })
+      }
+    }
+
+    const client = await db.client.findFirst({
+      where: {
+        id: clientId,
+        studioId: studio.id,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+      },
+    })
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
+    if (channel === "EMAIL") {
+      if (!client.email) {
+        return NextResponse.json({ error: "Client has no email address" }, { status: 400 })
+      }
+
+      const result = await sendEmail(studio.id, {
+        to: client.email,
+        toName: `${client.firstName} ${client.lastName}`,
+        subject: subject || "Message from your studio",
+        body: message,
+        clientId: client.id,
+      })
+
+      if (!result.success) {
+        return NextResponse.json({ error: result.error || "Failed to send email" }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, messageId: result.messageId })
+    }
+
+    if (!client.phone) {
+      return NextResponse.json({ error: "Client has no phone number" }, { status: 400 })
+    }
+
+    const result = await sendSMS(studio.id, {
+      to: client.phone,
+      toName: `${client.firstName} ${client.lastName}`,
+      body: message,
+      clientId: client.id,
+    })
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || "Failed to send SMS" }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, messageId: result.messageId })
+  } catch (error) {
+    console.error("Mobile inbox send error:", error)
+    return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
+  }
+}
