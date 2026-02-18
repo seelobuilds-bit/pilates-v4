@@ -25,6 +25,7 @@ Ship high-impact improvements in parallel without conflicts.
 | T-118 Reporting backend integrity (studio + teacher) | codex-main | codex/T-118-reporting-backend-integrity | Reporting APIs and teacher reporting surfaces: bounded windows, remove mock values, canonical metrics | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/34 |
 | T-119 Reporting integrity phase 2 (marketing/social/leaderboards) | codex-main | codex/T-119-reporting-integrity-phase2 | Backend reporting correctness for marketing + social attribution metrics and leaderboard rank stability | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/35 |
 | T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/37 |
+| T-121 Reporting regression smoke tests | mac-mini-agent | mini/T-121-reporting-smoke-tests | `scripts/tests/**`, `package.json`, `WORKBOARD.md` status update only | Needs Review | — |
 
 ## Merge Order
 1. T-121 Reporting regression smoke tests
