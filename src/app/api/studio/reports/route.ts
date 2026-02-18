@@ -419,7 +419,7 @@ export async function GET(request: NextRequest) {
       where: {
         isActive: true,
         account: {
-          studioId
+          OR: [{ studioId }, { teacher: { studioId } }]
         }
       }
     }),
@@ -431,7 +431,7 @@ export async function GET(request: NextRequest) {
         },
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }
@@ -445,7 +445,7 @@ export async function GET(request: NextRequest) {
         responseSent: true,
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }
@@ -459,7 +459,7 @@ export async function GET(request: NextRequest) {
         converted: true,
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }

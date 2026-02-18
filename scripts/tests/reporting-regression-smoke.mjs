@@ -595,6 +595,84 @@ async function runStudioReportConsistencyChecks(ownerCookie) {
   return { passed: 1, failed: 0, skipped: 0 }
 }
 
+async function runReportIntegrityChecks(ownerCookie) {
+  if (!ownerCookie) {
+    console.log("SKIP Report write-path integrity checks (set TEST_OWNER_COOKIE)")
+    return { passed: 0, failed: 0, skipped: 1 }
+  }
+
+  const [reportResponse, integrityResponse] = await Promise.all([
+    request("/api/studio/reports?days=30", authHeaders(ownerCookie)),
+    request("/api/studio/reports/integrity?days=30", authHeaders(ownerCookie)),
+  ])
+
+  if (integrityResponse.status === 404) {
+    console.log("SKIP Report write-path integrity checks (/api/studio/reports/integrity not available on TEST_BASE_URL)")
+    return { passed: 0, failed: 0, skipped: 1 }
+  }
+
+  if (reportResponse.status !== 200 || integrityResponse.status !== 200) {
+    fail(
+      "Report write-path integrity checks",
+      `expected 200 responses but got ${reportResponse.status} and ${integrityResponse.status}`
+    )
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  let reportPayload
+  let integrityPayload
+  try {
+    reportPayload = await reportResponse.json()
+    integrityPayload = await integrityResponse.json()
+  } catch {
+    fail("Report write-path integrity checks", "response is not valid JSON")
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  const errors = []
+  const expected = integrityPayload?.source || {}
+  if (toNumber(reportPayload?.marketing?.remindersSent) !== toNumber(expected?.marketing?.remindersSent)) {
+    errors.push(
+      `marketing.remindersSent mismatch (${reportPayload?.marketing?.remindersSent} vs ${expected?.marketing?.remindersSent})`
+    )
+  }
+  if (toNumber(reportPayload?.marketing?.winbackSuccess) !== toNumber(expected?.marketing?.winbackSuccess)) {
+    errors.push(
+      `marketing.winbackSuccess mismatch (${reportPayload?.marketing?.winbackSuccess} vs ${expected?.marketing?.winbackSuccess})`
+    )
+  }
+  if (toNumber(reportPayload?.social?.totalTriggered) !== toNumber(expected?.social?.totalTriggered)) {
+    errors.push(
+      `social.totalTriggered mismatch (${reportPayload?.social?.totalTriggered} vs ${expected?.social?.totalTriggered})`
+    )
+  }
+  if (toNumber(reportPayload?.social?.totalResponded) !== toNumber(expected?.social?.totalResponded)) {
+    errors.push(
+      `social.totalResponded mismatch (${reportPayload?.social?.totalResponded} vs ${expected?.social?.totalResponded})`
+    )
+  }
+  if (toNumber(reportPayload?.social?.totalBooked) !== toNumber(expected?.social?.totalBooked)) {
+    errors.push(`social.totalBooked mismatch (${reportPayload?.social?.totalBooked} vs ${expected?.social?.totalBooked})`)
+  }
+
+  const failedIntegrityChecks = Array.isArray(integrityPayload?.checks)
+    ? integrityPayload.checks.filter((check) => check && check.pass === false)
+    : []
+  if (failedIntegrityChecks.length > 0) {
+    errors.push(
+      `integrity endpoint failed checks: ${failedIntegrityChecks.map((check) => check.name).join(", ")}`
+    )
+  }
+
+  if (errors.length > 0) {
+    fail("Report write-path integrity checks", errors.join("; "))
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  pass("Report write-path integrity checks")
+  return { passed: 1, failed: 0, skipped: 0 }
+}
+
 async function runTeacherReportConsistencyChecks(teacherCookie) {
   if (!teacherCookie) {
     console.log("SKIP Teacher reporting consistency checks (set TEST_TEACHER_COOKIE or TEST_OWNER_COOKIE)")
@@ -960,6 +1038,11 @@ async function run() {
   passed += studioConsistency.passed
   failed += studioConsistency.failed
   skipped += studioConsistency.skipped
+
+  const reportIntegrity = await runReportIntegrityChecks(TEST_OWNER_COOKIE)
+  passed += reportIntegrity.passed
+  failed += reportIntegrity.failed
+  skipped += reportIntegrity.skipped
 
   const teacherConsistency = await runTeacherReportConsistencyChecks(TEST_TEACHER_COOKIE)
   passed += teacherConsistency.passed
