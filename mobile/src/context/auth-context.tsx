@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store"
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { mobileApi } from "@/src/lib/api"
+import { mobileApi, setMobileApiUnauthorizedHandler } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 import type { MobileBootstrapResponse, MobileSessionUser } from "@/src/types/mobile"
 
@@ -32,21 +32,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [bootstrap, setBootstrap] = useState<MobileBootstrapResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const clearSession = useCallback(async () => {
+    setToken(null)
+    setUser(null)
+    setBootstrap(null)
+    await persistToken(null)
+  }, [])
+
+  useEffect(() => {
+    setMobileApiUnauthorizedHandler(() => {
+      void clearSession()
+    })
+
+    return () => {
+      setMobileApiUnauthorizedHandler(null)
+    }
+  }, [clearSession])
+
   const refreshBootstrap = useCallback(async () => {
     if (!token) {
       setBootstrap(null)
       return
     }
-    const nextBootstrap = await mobileApi.bootstrap(token)
-    setBootstrap(nextBootstrap)
+    try {
+      const nextBootstrap = await mobileApi.bootstrap(token)
+      setBootstrap(nextBootstrap)
+    } catch {
+      // Keep the last known bootstrap; auth handler will clear session on 401.
+    }
   }, [token])
 
   const signOut = useCallback(async () => {
     const currentToken = token
-    setToken(null)
-    setUser(null)
-    setBootstrap(null)
-    await persistToken(null)
+    await clearSession()
 
     if (currentToken) {
       try {
@@ -55,14 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Token is deleted locally regardless of network result.
       }
     }
-  }, [token])
+  }, [clearSession, token])
 
   const hydrateFromToken = useCallback(async (sessionToken: string) => {
     const profile = await mobileApi.me(sessionToken)
     setToken(sessionToken)
     setUser(profile)
-    const nextBootstrap = await mobileApi.bootstrap(sessionToken)
-    setBootstrap(nextBootstrap)
+    try {
+      const nextBootstrap = await mobileApi.bootstrap(sessionToken)
+      setBootstrap(nextBootstrap)
+    } catch {
+      setBootstrap(null)
+    }
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
@@ -81,8 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(response.user)
     await persistToken(response.token)
 
-    const nextBootstrap = await mobileApi.bootstrap(response.token)
-    setBootstrap(nextBootstrap)
+    try {
+      const nextBootstrap = await mobileApi.bootstrap(response.token)
+      setBootstrap(nextBootstrap)
+    } catch {
+      setBootstrap(null)
+    }
   }, [])
 
   useEffect(() => {
@@ -92,14 +118,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!storedToken) return
         await hydrateFromToken(storedToken)
       } catch {
-        await persistToken(null)
+        await clearSession()
       } finally {
         setLoading(false)
       }
     }
 
     void boot()
-  }, [hydrateFromToken])
+  }, [clearSession, hydrateFromToken])
 
   const value = useMemo(
     () => ({

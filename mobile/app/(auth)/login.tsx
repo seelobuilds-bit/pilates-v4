@@ -9,6 +9,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting
 
   const studioLabel = useMemo(() => {
     if (mobileConfig.studioName && mobileConfig.studioSubdomain) {
@@ -35,6 +36,9 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Welcome to {studioLabel}</Text>
         <Text style={styles.subtitle}>Sign in as studio owner, teacher, or client.</Text>
+        {!mobileConfig.studioSubdomain ? (
+          <Text style={styles.warning}>Studio subdomain is missing in mobile env config.</Text>
+        ) : null}
 
         <TextInput
           autoCapitalize="none"
@@ -54,7 +58,7 @@ export default function LoginScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable onPress={handleLogin} disabled={submitting} style={[styles.button, submitting && styles.buttonDisabled]}>
+        <Pressable onPress={handleLogin} disabled={!canSubmit} style={[styles.button, !canSubmit && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>{submitting ? "Signing in..." : "Sign in"}</Text>
         </Pressable>
       </View>
@@ -81,6 +85,11 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: 8,
     color: "#334155",
+  },
+  warning: {
+    marginBottom: 8,
+    color: "#b45309",
+    fontSize: 13,
   },
   input: {
     borderWidth: 1,

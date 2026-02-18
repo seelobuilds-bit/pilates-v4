@@ -57,10 +57,12 @@ Ship high-impact improvements in parallel without conflicts.
 | T-152 Mobile client inbox compose | codex-main | codex/T-152-mobile-client-inbox-compose | Allow clients to send mobile inbox messages to studio and wire composer UI in client inbox flow | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/68 |
 | T-153 Mobile paid booking handoff (web checkout) | codex-main | codex/T-153-mobile-paid-booking-handoff | Replace paid-class dead-end in mobile schedule with actionable "Book on Web Checkout" handoff for clients | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/69 |
 | T-154 Mobile home quick actions + metric label polish | codex-main | codex/T-154-mobile-home-quick-actions | Add role-specific home quick actions (web handoff) and readable metric labels for owner/teacher/client mobile home | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/70 |
-| T-155 Mobile inbox search + role filters | codex-main | codex/T-155-mobile-inbox-search-filters | Add search and practical filtering in mobile inbox (owner/teacher unread filter, client channel filter) with clearer empty states | In Progress | TBD |
+| T-155 Mobile inbox search + role filters | codex-main | codex/T-155-mobile-inbox-search-filters | Add search and practical filtering in mobile inbox (owner/teacher unread filter, client channel filter) with clearer empty states | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/71 |
+| T-156 Web parity polish (schedule picker + vault uploads + subscription tags) | codex-main | codex/t-156-web-polish | Replace add-class datetime UX with styled picker, add vault lesson uploads/resources, and show plan-specific subscription tags | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/72 |
+| T-157 Mobile session hardening | codex-main | codex/t-157-mobile-hardening-pass | Harden mobile API/session behavior for token expiry + request timeouts and improve login guardrails | In Progress | https://github.com/seelobuilds-bit/pilates-v4/pull/73 |
 
 ## Merge Order
-1. T-155 Mobile inbox search + role filters
+1. T-157 Mobile session hardening
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
