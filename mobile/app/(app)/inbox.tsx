@@ -75,8 +75,42 @@ export default function InboxScreen() {
   const [subject, setSubject] = useState("")
   const [composerText, setComposerText] = useState("")
   const [sending, setSending] = useState(false)
+  const [search, setSearch] = useState("")
+  const [unreadOnly, setUnreadOnly] = useState(false)
+  const [clientChannelFilter, setClientChannelFilter] = useState<"ALL" | "EMAIL" | "SMS">("ALL")
 
   const isClient = useMemo(() => user?.role === "CLIENT", [user?.role])
+  const searchNormalized = search.trim().toLowerCase()
+
+  const filteredConversations = useMemo(() => {
+    return conversations.filter((conversation) => {
+      if (unreadOnly && conversation.unreadCount === 0) {
+        return false
+      }
+
+      if (!searchNormalized) {
+        return true
+      }
+
+      const haystack = `${conversation.clientName} ${conversation.clientEmail} ${conversation.lastMessage?.body || ""}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [conversations, searchNormalized, unreadOnly])
+
+  const filteredMessages = useMemo(() => {
+    return messages.filter((message) => {
+      if (clientChannelFilter !== "ALL" && message.channel !== clientChannelFilter) {
+        return false
+      }
+
+      if (!searchNormalized) {
+        return true
+      }
+
+      const haystack = `${message.body} ${message.subject || ""}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [clientChannelFilter, messages, searchNormalized])
 
   const loadInbox = useCallback(
     async (isRefresh = false) => {
@@ -262,23 +296,65 @@ export default function InboxScreen() {
     )
   }
 
-  const hasData = isClient ? messages.length > 0 : conversations.length > 0
+  const hasData = isClient ? filteredMessages.length > 0 : filteredConversations.length > 0
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Inbox</Text>
       <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
 
+      <View style={styles.filtersWrap}>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={isClient ? "Search messages..." : "Search clients/messages..."}
+          style={styles.searchInput}
+        />
+        {isClient ? (
+          <View style={styles.channelRow}>
+            <Pressable
+              style={[styles.channelButton, clientChannelFilter === "ALL" && styles.channelButtonActive]}
+              onPress={() => setClientChannelFilter("ALL")}
+            >
+              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && styles.channelButtonTextActive]}>All</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.channelButton, clientChannelFilter === "EMAIL" && styles.channelButtonActive]}
+              onPress={() => setClientChannelFilter("EMAIL")}
+            >
+              <Text style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.channelButton, clientChannelFilter === "SMS" && styles.channelButtonActive]}
+              onPress={() => setClientChannelFilter("SMS")}
+            >
+              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={[styles.unreadToggle, unreadOnly && styles.unreadToggleActive]}
+            onPress={() => setUnreadOnly((prev) => !prev)}
+          >
+            <Text style={[styles.unreadToggleText, unreadOnly && styles.unreadToggleTextActive]}>
+              {unreadOnly ? "Unread only: ON" : "Unread only: OFF"}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {loading && !hasData ? <Text style={styles.loading}>Loading inbox...</Text> : null}
 
-      {!loading && !hasData && !error ? <Text style={styles.empty}>No inbox activity yet.</Text> : null}
+      {!loading && !hasData && !error ? (
+        <Text style={styles.empty}>{searchNormalized ? "No results for current filters." : "No inbox activity yet."}</Text>
+      ) : null}
 
       {isClient ? (
         <>
           <FlatList
-            data={messages}
+            data={filteredMessages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MessageCard item={item} />}
             style={styles.list}
@@ -330,7 +406,7 @@ export default function InboxScreen() {
         </>
       ) : (
         <FlatList
-          data={conversations}
+          data={filteredConversations}
           keyExtractor={(item) => item.clientId}
           renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} />}
           style={styles.list}
@@ -374,6 +450,38 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#334155",
     marginBottom: 4,
+  },
+  filtersWrap: {
+    gap: 8,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "white",
+  },
+  unreadToggle: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    backgroundColor: "white",
+  },
+  unreadToggleActive: {
+    borderColor: "#1d4ed8",
+    backgroundColor: "#dbeafe",
+  },
+  unreadToggleText: {
+    color: "#334155",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  unreadToggleTextActive: {
+    color: "#1d4ed8",
   },
   list: {
     flex: 1,
