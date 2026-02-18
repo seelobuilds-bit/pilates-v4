@@ -224,7 +224,7 @@ function isNonNegativeNumber(value) {
 async function runExtendedSurfaceChecks(ownerCookie) {
   if (!ownerCookie) {
     console.log("SKIP Extended reporting surface checks (set TEST_OWNER_COOKIE to run)")
-    return { passed: 0, failed: 0, skipped: 4 }
+    return { passed: 0, failed: 0, skipped: 5 }
   }
 
   let passed = 0
@@ -329,6 +329,42 @@ async function runExtendedSurfaceChecks(ownerCookie) {
         failed += 1
       } else {
         pass("Social tracking surface checks")
+        passed += 1
+      }
+    }
+  }
+
+  const flowsResponse = await request("/api/social-media/flows", authHeaders(ownerCookie))
+  if (flowsResponse.status !== 200) {
+    fail("Social flow surface checks", `expected 200 but got ${flowsResponse.status}`)
+    failed += 1
+  } else {
+    let flowsPayload
+    try {
+      flowsPayload = await flowsResponse.json()
+    } catch {
+      fail("Social flow surface checks", "response is not valid JSON")
+      failed += 1
+      flowsPayload = null
+    }
+
+    if (flowsPayload) {
+      const accounts = Array.isArray(flowsPayload?.accounts) ? flowsPayload.accounts : []
+      const flows = Array.isArray(flowsPayload?.flows) ? flowsPayload.flows : []
+      const validAccountIds = new Set(accounts.map((account) => account?.id).filter(Boolean))
+      const badFlow = flows.find(
+        (flow) =>
+          typeof flow?.id !== "string" ||
+          !isNonNegativeNumber(flow?.totalTriggered) ||
+          !isNonNegativeNumber(flow?.totalResponded) ||
+          !isNonNegativeNumber(flow?.totalBooked) ||
+          (flow?.accountId && validAccountIds.size > 0 && !validAccountIds.has(flow.accountId))
+      )
+      if (!Array.isArray(flowsPayload?.accounts) || !Array.isArray(flowsPayload?.flows) || badFlow) {
+        fail("Social flow surface checks", "flows payload contains invalid account/metric rows")
+        failed += 1
+      } else {
+        pass("Social flow surface checks")
         passed += 1
       }
     }
