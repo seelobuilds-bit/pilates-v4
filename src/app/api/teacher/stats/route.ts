@@ -7,12 +7,13 @@ const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 export async function GET() {
   const session = await getSession()
 
-  if (!session?.user?.teacherId) {
+  if (!session?.user?.teacherId || !session.user.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
     const teacherId = session.user.teacherId
+    const studioId = session.user.studioId
 
     const now = new Date()
     const today = new Date(now)
@@ -27,6 +28,7 @@ export async function GET() {
       db.classSession.findMany({
         where: {
           teacherId,
+          studioId,
           startTime: {
             gte: now,
             lt: tomorrow
@@ -42,6 +44,7 @@ export async function GET() {
       db.classSession.findMany({
         where: {
           teacherId,
+          studioId,
           startTime: {
             gte: startOfMonth,
             lt: now
@@ -58,6 +61,7 @@ export async function GET() {
       db.classSession.findMany({
         where: {
           teacherId,
+          studioId,
           startTime: {
             gte: startOfMonth,
             lt: now
@@ -78,8 +82,10 @@ export async function GET() {
       }),
       db.booking.findMany({
         where: {
+          studioId,
           classSession: {
             teacherId,
+            studioId,
             startTime: {
               gte: startOfMonth,
               lt: now
@@ -105,6 +111,7 @@ export async function GET() {
       db.classSession.findMany({
         where: {
           teacherId,
+          studioId,
           startTime: {
             gte: sixMonthWindowStart,
             lt: now
@@ -210,7 +217,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 
