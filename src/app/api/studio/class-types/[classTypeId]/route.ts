@@ -104,8 +104,8 @@ export async function GET(
   })
   const monthlyLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
 
-  for (const booking of bookings) {
-    const date = new Date(booking.createdAt)
+  for (const booking of nonCancelledBookings) {
+    const date = new Date(booking.classSession.startTime)
     const key = `${date.getFullYear()}-${date.getMonth()}`
     const bucket = monthlyLookup.get(key)
     if (bucket) {
