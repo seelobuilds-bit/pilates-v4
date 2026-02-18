@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
+import { mobileConfig } from "@/src/lib/config"
 import type { MobileScheduleItem } from "@/src/types/mobile"
 
 function formatDateRange(startIso: string, endIso: string) {
@@ -32,6 +33,7 @@ function ScheduleCard({
   actionLoading,
   onBook,
   onCancel,
+  onOpenWebBooking,
 }: {
   item: MobileScheduleItem
   isClient: boolean
@@ -39,6 +41,7 @@ function ScheduleCard({
   actionLoading: boolean
   onBook: (classSessionId: string) => void
   onCancel: (bookingId: string) => void
+  onOpenWebBooking: (classSessionId: string) => void
 }) {
   const { date, time } = formatDateRange(item.startTime, item.endTime)
   const teacher = `${item.teacher.firstName} ${item.teacher.lastName}`
@@ -70,9 +73,13 @@ function ScheduleCard({
               <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Cancel Booking"}</Text>
             </Pressable>
           ) : isPaidClass ? (
-            <View style={[styles.actionButton, styles.disabledInfoButton]}>
-              <Text style={styles.disabledInfoText}>Paid class: book via web checkout</Text>
-            </View>
+            <Pressable
+              style={[styles.actionButton, styles.webButton, actionLoading && styles.actionButtonDisabled]}
+              onPress={() => onOpenWebBooking(item.id)}
+              disabled={actionLoading}
+            >
+              <Text style={styles.actionButtonText}>{actionLoading ? "Opening..." : "Book on Web Checkout"}</Text>
+            </Pressable>
           ) : (
             <Pressable
               style={[styles.actionButton, styles.bookButton, actionLoading && styles.actionButtonDisabled]}
@@ -176,6 +183,30 @@ export default function ScheduleScreen() {
     [loadSchedule, token]
   )
 
+  const handleOpenWebBooking = useCallback(
+    async (classSessionId: string) => {
+      const subdomain = (user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase()
+      if (!subdomain) {
+        setError("Studio subdomain is missing for web checkout")
+        return
+      }
+
+      setActionLoadingId(classSessionId)
+      setError(null)
+      const base = mobileConfig.apiBaseUrl.replace(/\/$/, "")
+      const url = `${base}/${subdomain}/book?source=mobile&classSessionId=${encodeURIComponent(classSessionId)}`
+
+      try {
+        await Linking.openURL(url)
+      } catch {
+        setError("Unable to open web checkout")
+      } finally {
+        setActionLoadingId(null)
+      }
+    },
+    [user?.studio?.subdomain]
+  )
+
   useEffect(() => {
     void loadSchedule()
   }, [loadSchedule])
@@ -219,6 +250,7 @@ export default function ScheduleScreen() {
             actionLoading={actionLoadingId === item.id || actionLoadingId === item.bookingId}
             onBook={handleBook}
             onCancel={handleCancel}
+            onOpenWebBooking={handleOpenWebBooking}
           />
         )}
         contentContainerStyle={styles.listContent}
@@ -309,22 +341,15 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: "#ef4444",
   },
+  webButton: {
+    backgroundColor: "#0f766e",
+  },
   actionButtonDisabled: {
     opacity: 0.6,
   },
   actionButtonText: {
     color: "white",
     fontWeight: "700",
-  },
-  disabledInfoButton: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    backgroundColor: "#f8fafc",
-  },
-  disabledInfoText: {
-    color: "#475569",
-    fontWeight: "600",
-    fontSize: 12,
   },
   loading: {
     color: "#475569",

@@ -21,46 +21,71 @@ export async function GET(
     const classTypeId = searchParams.get("classTypeId")
     const teacherId = searchParams.get("teacherId")
     const date = searchParams.get("date")
+    const classSessionId = searchParams.get("classSessionId")
 
-    const where: Record<string, unknown> = {
-      studioId: studio.id,
-      startTime: { gte: new Date() }
-    }
-
-    if (locationId) where.locationId = locationId
-    if (classTypeId) where.classTypeId = classTypeId
-    if (teacherId) where.teacherId = teacherId
-
-    if (date) {
-      const startOfDay = new Date(date + "T00:00:00")
-      const endOfDay = new Date(date + "T23:59:59")
-      where.startTime = { gte: startOfDay, lte: endOfDay }
-    }
-
-    const sessions = await db.classSession.findMany({
-      where,
-      include: {
-        teacher: {
+    const sessions = classSessionId
+      ? await db.classSession.findMany({
+          where: {
+            id: classSessionId,
+            studioId: studio.id,
+            startTime: { gte: new Date() },
+          },
           include: {
-            user: { select: { firstName: true, lastName: true } }
-          }
-        },
-        classType: true,
-        location: true,
-        _count: { 
-          select: { 
-            bookings: {
-              where: { status: { in: ["CONFIRMED", "PENDING"] } }
+            teacher: {
+              include: {
+                user: { select: { firstName: true, lastName: true } },
+              },
             },
-            waitlists: {
-              where: { status: "WAITING" }
-            }
-          } 
-        }
-      },
-      orderBy: { startTime: "asc" },
-      take: 20
-    })
+            classType: true,
+            location: true,
+            _count: {
+              select: {
+                bookings: {
+                  where: { status: { in: ["CONFIRMED", "PENDING"] } },
+                },
+                waitlists: {
+                  where: { status: "WAITING" },
+                },
+              },
+            },
+          },
+          take: 1,
+        })
+      : await db.classSession.findMany({
+          where: {
+            studioId: studio.id,
+            startTime: date
+              ? {
+                  gte: new Date(`${date}T00:00:00`),
+                  lte: new Date(`${date}T23:59:59`),
+                }
+              : { gte: new Date() },
+            ...(locationId ? { locationId } : {}),
+            ...(classTypeId ? { classTypeId } : {}),
+            ...(teacherId ? { teacherId } : {}),
+          },
+          include: {
+            teacher: {
+              include: {
+                user: { select: { firstName: true, lastName: true } },
+              },
+            },
+            classType: true,
+            location: true,
+            _count: {
+              select: {
+                bookings: {
+                  where: { status: { in: ["CONFIRMED", "PENDING"] } },
+                },
+                waitlists: {
+                  where: { status: "WAITING" },
+                },
+              },
+            },
+          },
+          orderBy: { startTime: "asc" },
+          take: 20,
+        })
 
     return NextResponse.json(
       sessions.map((s) => {
