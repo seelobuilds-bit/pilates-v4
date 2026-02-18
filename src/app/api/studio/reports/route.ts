@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
+const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
 
@@ -174,7 +176,11 @@ export async function GET(request: NextRequest) {
       location: true,
       teacher: { include: { user: true } },
       bookings: {
-        select: { status: true }
+        select: {
+          status: true,
+          paidAmount: true,
+          clientId: true
+        }
       },
       _count: {
         select: { waitlists: true }
@@ -268,7 +274,12 @@ export async function GET(request: NextRequest) {
     activeSocialFlows,
     totalSocialTriggered,
     totalSocialResponded,
-    totalSocialBooked
+    totalSocialBooked,
+    previousClassCounts,
+    studioTeachers,
+    studioClients,
+    cancelledBookingsInPeriod,
+    activeClientVisitRows
   ] = await Promise.all([
     db.message.findMany({
       where: {
@@ -407,6 +418,93 @@ export async function GET(request: NextRequest) {
           account: {
             studioId
           }
+        }
+      }
+    }),
+    db.classSession.groupBy({
+      by: ["teacherId"],
+      where: {
+        studioId,
+        startTime: {
+          gte: previousStartDate,
+          lt: startDate
+        }
+      },
+      _count: {
+        teacherId: true
+      }
+    }),
+    db.teacher.findMany({
+      where: {
+        studioId
+      },
+      select: {
+        id: true,
+        isActive: true,
+        specialties: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    }),
+    db.client.findMany({
+      where: {
+        studioId
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        isActive: true,
+        credits: true,
+        createdAt: true
+      }
+    }),
+    db.booking.findMany({
+      where: {
+        studioId,
+        status: "CANCELLED",
+        classSession: {
+          startTime: {
+            gte: startDate,
+            lt: reportEndDate
+          }
+        }
+      },
+      select: {
+        cancellationReason: true
+      }
+    }),
+    db.booking.findMany({
+      where: {
+        studioId,
+        status: {
+          in: ATTENDED_BOOKING_STATUS_LIST
+        },
+        client: {
+          isActive: true
+        },
+        classSession: {
+          startTime: {
+            lt: reportEndDate
+          }
+        }
+      },
+      select: {
+        clientId: true,
+        classSession: {
+          select: {
+            startTime: true
+          }
+        }
+      },
+      orderBy: {
+        classSession: {
+          startTime: "desc"
         }
       }
     })
@@ -565,6 +663,227 @@ export async function GET(request: NextRequest) {
   const socialConversionRate =
     totalSocialTriggered > 0 ? Math.round((totalSocialBooked / totalSocialTriggered) * 1000) / 10 : 0
 
+  const previousClassCountByTeacherId = new Map(
+    previousClassCounts.map((row) => [row.teacherId, row._count.teacherId])
+  )
+  const teacherMetaById = new Map(
+    studioTeachers.map((teacher) => [
+      teacher.id,
+      {
+        name: `${teacher.user.firstName} ${teacher.user.lastName}`,
+        specialties: teacher.specialties,
+        isActive: teacher.isActive
+      }
+    ])
+  )
+  const instructorBuckets = new Map<
+    string,
+    {
+      id: string
+      name: string
+      specialties: string[]
+      classes: number
+      totalCapacity: number
+      attended: number
+      revenue: number
+      rating: number
+      previousClasses: number
+      clientVisits: Map<string, number>
+    }
+  >()
+
+  for (const session of classSessions) {
+    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`
+    const teacherSpecialties = teacherMetaById.get(session.teacherId)?.specialties || []
+    const bucket =
+      instructorBuckets.get(session.teacherId) || {
+        id: session.teacherId,
+        name: teacherName,
+        specialties: teacherSpecialties,
+        classes: 0,
+        totalCapacity: 0,
+        attended: 0,
+        revenue: 0,
+        rating: 0,
+        previousClasses: previousClassCountByTeacherId.get(session.teacherId) || 0,
+        clientVisits: new Map<string, number>()
+      }
+
+    bucket.classes += 1
+    bucket.totalCapacity += session.capacity
+
+    for (const booking of session.bookings) {
+      if (booking.status !== "CANCELLED") {
+        const amount = booking.paidAmount ?? session.classType.price ?? 0
+        bucket.revenue += amount
+      }
+      if (!ATTENDED_BOOKING_STATUSES.has(booking.status)) continue
+      bucket.attended += 1
+      bucket.clientVisits.set(booking.clientId, (bucket.clientVisits.get(booking.clientId) || 0) + 1)
+    }
+
+    instructorBuckets.set(session.teacherId, bucket)
+  }
+
+  for (const teacher of studioTeachers) {
+    if (!teacher.isActive || instructorBuckets.has(teacher.id)) continue
+    const name = `${teacher.user.firstName} ${teacher.user.lastName}`
+    instructorBuckets.set(teacher.id, {
+      id: teacher.id,
+      name,
+      specialties: teacher.specialties,
+      classes: 0,
+      totalCapacity: 0,
+      attended: 0,
+      revenue: 0,
+      rating: 0,
+      previousClasses: previousClassCountByTeacherId.get(teacher.id) || 0,
+      clientVisits: new Map<string, number>()
+    })
+  }
+
+  const instructorRows = Array.from(instructorBuckets.values())
+    .map((bucket) => {
+      const uniqueClients = bucket.clientVisits.size
+      const repeatClients = Array.from(bucket.clientVisits.values()).filter((count) => count > 1).length
+      const avgFill =
+        bucket.totalCapacity > 0 ? Math.round((bucket.attended / bucket.totalCapacity) * 100) : 0
+      const retention =
+        uniqueClients > 0 ? Math.round((repeatClients / uniqueClients) * 1000) / 10 : 0
+      const trend =
+        bucket.classes > bucket.previousClasses
+          ? "up"
+          : bucket.classes < bucket.previousClasses
+            ? "down"
+            : "stable"
+
+      return {
+        id: bucket.id,
+        name: bucket.name,
+        classes: bucket.classes,
+        avgFill,
+        revenue: Math.round(bucket.revenue * 100) / 100,
+        rating: bucket.rating,
+        retention,
+        trend,
+        specialties: bucket.specialties
+      }
+    })
+    .sort((a, b) => b.classes - a.classes || a.name.localeCompare(b.name))
+
+  const activeClientsList = studioClients.filter((client) => client.isActive)
+  const riskCutoff = new Date(reportEndDate)
+  riskCutoff.setDate(riskCutoff.getDate() - 14)
+  const highRiskCutoff = new Date(reportEndDate)
+  highRiskCutoff.setDate(highRiskCutoff.getDate() - 30)
+  const recentActivityCutoff = new Date(reportEndDate)
+  recentActivityCutoff.setDate(recentActivityCutoff.getDate() - 30)
+
+  const visitCountByClientId = new Map<string, number>()
+  const lastVisitByClientId = new Map<string, Date>()
+  const recentlyActiveClientIds = new Set<string>()
+  for (const visit of activeClientVisitRows) {
+    visitCountByClientId.set(visit.clientId, (visitCountByClientId.get(visit.clientId) || 0) + 1)
+    if (!lastVisitByClientId.has(visit.clientId)) {
+      lastVisitByClientId.set(visit.clientId, visit.classSession.startTime)
+    }
+    if (visit.classSession.startTime >= recentActivityCutoff) {
+      recentlyActiveClientIds.add(visit.clientId)
+    }
+  }
+
+  const atRiskCandidates = activeClientsList
+    .map((client) => {
+      const lastVisit = lastVisitByClientId.get(client.id) || null
+      const visits = visitCountByClientId.get(client.id) || 0
+      const isAtRisk = !lastVisit || lastVisit < riskCutoff
+      const status = !lastVisit || lastVisit < highRiskCutoff ? "high-risk" : "medium-risk"
+      return {
+        id: client.id,
+        name: `${client.firstName} ${client.lastName}`,
+        email: client.email,
+        lastVisit,
+        visits,
+        isAtRisk,
+        status
+      }
+    })
+    .filter((client) => client.isAtRisk)
+    .sort((a, b) => {
+      if (!a.lastVisit && !b.lastVisit) return a.name.localeCompare(b.name)
+      if (!a.lastVisit) return -1
+      if (!b.lastVisit) return 1
+      return a.lastVisit.getTime() - b.lastVisit.getTime()
+    })
+
+  const atRiskList = atRiskCandidates.slice(0, 10).map((client) => ({
+    id: client.id,
+    name: client.name,
+    email: client.email,
+    lastVisit: client.lastVisit
+      ? client.lastVisit.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Never",
+    visits: client.visits,
+    status: client.status
+  }))
+
+  const cohortRanges = [
+    { label: "0-30 days", min: 0, max: 30 },
+    { label: "31-90 days", min: 31, max: 90 },
+    { label: "91-180 days", min: 91, max: 180 },
+    { label: "181+ days", min: 181, max: Number.POSITIVE_INFINITY }
+  ]
+
+  const cohortBuckets = cohortRanges.map((range) => ({
+    cohort: range.label,
+    total: 0,
+    retained: 0
+  }))
+  for (const client of activeClientsList) {
+    const ageInDays = Math.floor((reportEndDate.getTime() - client.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+    const bucketIndex = cohortRanges.findIndex((range) => ageInDays >= range.min && ageInDays <= range.max)
+    if (bucketIndex < 0) continue
+    cohortBuckets[bucketIndex].total += 1
+    if (recentlyActiveClientIds.has(client.id)) {
+      cohortBuckets[bucketIndex].retained += 1
+    }
+  }
+  const cohortRetention = cohortBuckets.map((bucket) => ({
+    cohort: bucket.cohort,
+    retained: bucket.total > 0 ? Math.round((bucket.retained / bucket.total) * 1000) / 10 : 0
+  }))
+
+  const cancellationReasonCounts = new Map<string, number>()
+  for (const booking of cancelledBookingsInPeriod) {
+    const reason = booking.cancellationReason?.trim() || "No reason provided"
+    cancellationReasonCounts.set(reason, (cancellationReasonCounts.get(reason) || 0) + 1)
+  }
+  const churnReasons = Array.from(cancellationReasonCounts.entries())
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  const membershipBuckets = [
+    { type: "No credits", count: 0 },
+    { type: "1-4 credits", count: 0 },
+    { type: "5-9 credits", count: 0 },
+    { type: "10+ credits", count: 0 }
+  ]
+  for (const client of activeClientsList) {
+    if (client.credits <= 0) membershipBuckets[0].count += 1
+    else if (client.credits <= 4) membershipBuckets[1].count += 1
+    else if (client.credits <= 9) membershipBuckets[2].count += 1
+    else membershipBuckets[3].count += 1
+  }
+  const membershipBreakdown = membershipBuckets.map((bucket) => ({
+    type: bucket.type,
+    count: bucket.count,
+    percent:
+      activeClientsList.length > 0
+        ? Math.round((bucket.count / activeClientsList.length) * 1000) / 10
+        : 0
+  }))
+
   const marketingInsights =
     emailsSent > 0
       ? [
@@ -640,6 +959,14 @@ export async function GET(request: NextRequest) {
       new: newClients,
       active: activeClients,
       churned: churnedClients
+    },
+    instructors: instructorRows,
+    retention: {
+      atRiskClients: atRiskCandidates.length,
+      atRiskList,
+      membershipBreakdown,
+      churnReasons,
+      cohortRetention
     },
     classes: {
       total: classSessions.length,
