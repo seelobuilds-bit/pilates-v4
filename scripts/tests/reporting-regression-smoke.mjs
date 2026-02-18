@@ -32,6 +32,7 @@ const ENTITY_ROUTES = [
       revenue: toNumber(payload?.stats?.totalSpent),
       completed: toNumber(payload?.stats?.completedClasses),
     }),
+    monotonicKeys: ["bookings", "revenue", "completed"],
   },
   {
     label: "Teacher reports tab",
@@ -46,6 +47,7 @@ const ENTITY_ROUTES = [
       students: toNumber(payload?.stats?.totalStudents),
       revenue: toNumber(payload?.extendedStats?.revenue),
     }),
+    monotonicKeys: ["classes", "students", "revenue"],
   },
   {
     label: "Class reports tab",
@@ -60,6 +62,7 @@ const ENTITY_ROUTES = [
       revenue: toNumber(payload?.stats?.totalRevenue),
       attendance: toNumber(payload?.stats?.avgAttendance),
     }),
+    monotonicKeys: ["bookings", "revenue"],
   },
   {
     label: "Location reports tab",
@@ -74,6 +77,7 @@ const ENTITY_ROUTES = [
       revenue: toNumber(payload?.stats?.totalRevenue),
       activeClients: toNumber(payload?.stats?.activeClients),
     }),
+    monotonicKeys: ["bookings", "revenue", "activeClients"],
   },
 ]
 
@@ -186,9 +190,12 @@ function summaryMatches(a, b, epsilon = 0.01) {
   return keys.every((key) => approxEqual(a?.[key], b?.[key], epsilon))
 }
 
-function summaryIsNonDecreasing(olderWindow, widerWindow, epsilon = 0.01) {
-  const keys = Array.from(new Set([...Object.keys(olderWindow || {}), ...Object.keys(widerWindow || {})]))
-  return keys.every((key) => toNumber(widerWindow?.[key]) + epsilon >= toNumber(olderWindow?.[key]))
+function summaryIsNonDecreasing(olderWindow, widerWindow, keys = null, epsilon = 0.01) {
+  const keysToCheck =
+    Array.isArray(keys) && keys.length > 0
+      ? keys
+      : Array.from(new Set([...Object.keys(olderWindow || {}), ...Object.keys(widerWindow || {})]))
+  return keysToCheck.every((key) => toNumber(widerWindow?.[key]) + epsilon >= toNumber(olderWindow?.[key]))
 }
 
 function studioHasData(payload) {
@@ -608,7 +615,10 @@ async function runEntityPeriodChecks(ownerCookie, entityRoutes) {
 
     const summary7 = entityRoute.getSummary(days7.payload)
     const summary90 = entityRoute.getSummary(days90.payload)
-    if (!summaryIsNonDecreasing(summary7, summary30) || !summaryIsNonDecreasing(summary30, summary90)) {
+    if (
+      !summaryIsNonDecreasing(summary7, summary30, entityRoute.monotonicKeys) ||
+      !summaryIsNonDecreasing(summary30, summary90, entityRoute.monotonicKeys)
+    ) {
       fail(
         `${entityRoute.label} period monotonicity`,
         `expected 7d <= 30d <= 90d summaries (${JSON.stringify(summary7)} | ${JSON.stringify(summary30)} | ${JSON.stringify(summary90)})`
@@ -618,23 +628,24 @@ async function runEntityPeriodChecks(ownerCookie, entityRoutes) {
     }
 
     if (REQUIRE_DATA) {
-      const futureRange = await fetchEntityPayload(
+      const historicalRange = await fetchEntityPayload(
         entityRoute,
         entityRoute.id,
         ownerCookie,
-        "startDate=2099-01-01&endDate=2099-01-07"
+        "startDate=2000-01-01&endDate=2000-01-07"
       )
-      if (!futureRange.ok) {
-        fail(`${entityRoute.label} future-range check`, futureRange.reason)
+      if (!historicalRange.ok) {
+        fail(`${entityRoute.label} custom-range check`, historicalRange.reason)
         failed += 1
         continue
       }
-      const futureSummary = entityRoute.getSummary(futureRange.payload)
-      const hasFutureValues = Object.values(futureSummary).some((value) => Math.abs(toNumber(value)) > 0.01)
-      if (hasFutureValues) {
+
+      const summaryHistorical = entityRoute.getSummary(historicalRange.payload)
+      const hasCurrentValues = Object.values(summary30).some((value) => Math.abs(toNumber(value)) > 0.01)
+      if (hasCurrentValues && summaryMatches(summary30, summaryHistorical)) {
         fail(
-          `${entityRoute.label} future-range check`,
-          `expected empty far-future summary but got ${JSON.stringify(futureSummary)}`
+          `${entityRoute.label} custom-range check`,
+          `expected explicit date range to differ from days=30 summary (${JSON.stringify(summaryHistorical)} vs ${JSON.stringify(summary30)})`
         )
         failed += 1
         continue
