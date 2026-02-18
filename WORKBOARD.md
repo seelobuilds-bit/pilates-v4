@@ -32,10 +32,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-126 Supabase RLS baseline and security codification | codex-main | codex/T-126-supabase-rls-baseline | SQL + scripts/docs to codify RLS defaults for Supabase public schema | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/42 |
 | T-127 Automation chain stop-condition UX polish | mac-mini-agent | mini/T-127-automation-chain-conditions | Automation create/edit UX wording and delay validation polish | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/43 |
 | T-128 Social attribution tracking (booking + reports integrity) | codex-main | codex/T-128-social-attribution-tracking | Preserve `sf_track`, count click/conversion/revenue, and wire attribution through booking APIs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/44 |
-| T-129 Reporting rating/review placeholder cleanup | codex-main | codex/T-129-reporting-rating-placeholders | Remove hardcoded rating placeholders and present explicit unavailable states across studio/teacher reporting APIs + UI | In Progress | TBD |
+| T-129 Reporting rating/review placeholder cleanup | codex-main | codex/T-129-reporting-rating-placeholders | Remove hardcoded rating placeholders and present explicit unavailable states across studio/teacher reporting APIs + UI | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/45 |
+| T-130 Teacher invoice earnings placeholder fix | codex-main | codex/T-130-invoice-earnings-placeholder-fix | Replace `PERCENTAGE` payout placeholder with real revenue-based calculation (exclude cancelled bookings) | In Progress | TBD |
 
 ## Merge Order
-1. T-129 Reporting rating/review placeholder cleanup
+1. T-130 Teacher invoice earnings placeholder fix
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
