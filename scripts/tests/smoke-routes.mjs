@@ -26,7 +26,7 @@ await runChecks([
   {
     name: "Debug stripe endpoint remains protected",
     path: "/api/debug-stripe",
-    expectedStatus: 401,
+    expectedStatus: [401, 404],
   },
 ])
 

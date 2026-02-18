@@ -42,13 +42,18 @@ async function run() {
 
   // Required unauthorized check
   {
-    const result = await check({
-      label: "Anonymous user is blocked from /studio",
-      path: "/studio",
-      expectedStatus: UNAUTHORIZED_STATUSES,
-    })
-    if (result.ok) passed += 1
-    else failed += 1
+    const response = await request("/studio")
+    const finalPath = new URL(response.url).pathname
+    const blockedByRedirect = finalPath === "/login"
+    const blockedByStatus = UNAUTHORIZED_STATUSES.includes(response.status)
+
+    if (blockedByRedirect || blockedByStatus) {
+      pass("Anonymous user is blocked from /studio", `${response.status}${blockedByRedirect ? " -> /login" : ""}`)
+      passed += 1
+    } else {
+      fail("Anonymous user is blocked from /studio", [...UNAUTHORIZED_STATUSES, "redirect to /login"], response.status)
+      failed += 1
+    }
   }
 
   // Required auth check(s)

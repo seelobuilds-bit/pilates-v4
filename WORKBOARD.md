@@ -47,10 +47,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-141 Reporting end-to-end integrity (write-path + parity) | codex-main | codex/T-141-reporting-e2e-integrity | Validate tracking write-paths (bookings/automations/social/leaderboards), enforce cross-surface parity checks, and fail CI on integrity regressions | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/57 |
 | T-142 Stripe Connect SSR warning cleanup | codex-main | codex/T-142-build-warning-cleanup | Switch Stripe Connect loader to SSR-safe pure import to remove server-render warning noise during builds | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/58 |
 | T-143 Reporting smoke strictness gates | codex-main | codex/T-143-reporting-smoke-strict-mode | Add optional strict-mode env gates to fail CI when report integrity is skipped or any smoke checks are skipped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/59 |
-| T-144 Reporting smoke runbook/docs | codex-main | codex/T-144-reporting-smoke-docs | Document reporting smoke env setup and strict-mode rollout for local and GitHub Actions usage | In Progress | TBD |
+| T-144 Reporting smoke runbook/docs | codex-main | codex/T-144-reporting-smoke-docs | Document reporting smoke env setup and strict-mode rollout for local and GitHub Actions usage | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/60 |
+| T-145 Smoke suite hardening (auth/debug compatibility) | codex-main | codex/T-145-smoke-suite-hardening | Align smoke/authz tests with production-safe debug endpoint behavior and redirect-following auth checks so release signals are accurate | In Progress | TBD |
 
 ## Merge Order
-1. T-144 Reporting smoke runbook/docs
+1. T-145 Smoke suite hardening (auth/debug compatibility)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

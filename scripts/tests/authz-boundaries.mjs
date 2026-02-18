@@ -21,7 +21,7 @@ await runChecks([
   {
     name: "Debug session endpoint denies anonymous access",
     path: "/api/debug-session",
-    expectedStatus: 401,
+    expectedStatus: [401, 404],
   },
   {
     name: "Social account connect denies anonymous access",
