@@ -101,7 +101,11 @@ export async function GET(
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
 
-    const oldestBookingDate = allBookings[allBookings.length - 1]?.createdAt
+    const oldestBookingDate = nonCancelledBookings.reduce<Date | null>((oldest, booking) => {
+      const classStart = booking.classSession.startTime
+      if (!oldest || classStart < oldest) return classStart
+      return oldest
+    }, null)
     let avgBookingsPerMonth = 0
     if (oldestBookingDate && totalBookings > 0) {
       const now = new Date()
@@ -125,7 +129,7 @@ export async function GET(
     const bucketLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
 
     for (const booking of nonCancelledBookings) {
-      const bookingDate = new Date(booking.createdAt)
+      const bookingDate = new Date(booking.classSession.startTime)
       const key = `${bookingDate.getFullYear()}-${bookingDate.getMonth()}`
       const bucket = bucketLookup.get(key)
       if (bucket) {

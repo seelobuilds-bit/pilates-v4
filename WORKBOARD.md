@@ -36,10 +36,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-130 Teacher invoice earnings placeholder fix | codex-main | codex/T-130-invoice-earnings-placeholder-fix | Replace `PERCENTAGE` payout placeholder with real revenue-based calculation (exclude cancelled bookings) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/46 |
 | T-131 Leaderboard user-rank null-state integrity | codex-main | codex/T-131-leaderboard-rank-null-fix | Avoid emitting rank `0`; return `null` for not-yet-ranked participants so UI shows correct empty state | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/47 |
 | T-132 Reports custom date-range integrity | codex-main | codex/T-132-reports-custom-date-range-integrity | Ensure studio reports custom range sends/uses explicit `startDate` + `endDate` and aligns previous-period calculations to selected span | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/48 |
-| T-133 Teacher reporting studio-scope enforcement | codex-main | codex/T-133-teacher-reporting-studio-scope | Enforce `studioId` scoping in teacher reporting APIs to prevent cross-tenant metric bleed and keep report totals tenant-correct | In Progress | TBD |
+| T-133 Teacher reporting studio-scope enforcement | codex-main | codex/T-133-teacher-reporting-studio-scope | Enforce `studioId` scoping in teacher reporting APIs to prevent cross-tenant metric bleed and keep report totals tenant-correct | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/49 |
+| T-134 Reporting monthly bucket date alignment | codex-main | codex/T-134-reporting-monthly-bucket-date-alignment | Align client/class/location monthly trend buckets to class session dates so reporting charts reflect operational periods | In Progress | TBD |
 
 ## Merge Order
-1. T-133 Teacher reporting studio-scope enforcement
+1. T-134 Reporting monthly bucket date alignment
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
