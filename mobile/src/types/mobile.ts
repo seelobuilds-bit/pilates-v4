@@ -41,6 +41,7 @@ export interface MobileScheduleItem {
   classType: {
     id: string
     name: string
+    price: number
   }
   teacher: {
     id: string

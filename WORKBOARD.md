@@ -52,10 +52,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-146 Mobile foundation (Expo + mobile auth + studio variants) | codex-main | codex/T-146-mobile-foundation | Create mobile workspace, shared auth/session bootstrap for owner/teacher/client, and private per-studio app variant build pipeline | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/62 |
 | T-147 Mobile schedule + inbox data feed (phase 2) | codex-main | codex/T-147-mobile-schedule-feed | Add role-aware mobile schedule/inbox APIs and wire Schedule/Inbox tabs to live backend data for owner/teacher/client | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/63 |
 | T-148 Vault module action + schedule UX + tab polish | codex-main | codex/T-148-vault-schedule-ui-fixes | Fix no-op “Add Module” action, improve schedule creation date/time input ergonomics, and clean class/location/leaderboard tab-scroll UI issues | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/64 |
-| T-150 Mobile inbox actions (thread + send) | codex-main | codex/T-150-mobile-inbox-actions | Add mobile conversation thread endpoint + send endpoint and wire owner/teacher Inbox tab to open thread and send email/SMS from app | In Progress | TBD |
+| T-150 Mobile inbox actions (thread + send) | codex-main | codex/T-150-mobile-inbox-actions | Add mobile conversation thread endpoint + send endpoint and wire owner/teacher Inbox tab to open thread and send email/SMS from app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/65 |
+| T-151 Mobile schedule booking actions (client) | codex-main | codex/T-151-mobile-schedule-booking-actions | Add client browse/book/cancel capabilities in mobile schedule (free classes), including API endpoints and in-app mode toggle | In Progress | TBD |
 
 ## Merge Order
-1. T-150 Mobile inbox actions (thread + send)
+1. T-151 Mobile schedule booking actions (client)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

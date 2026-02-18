@@ -55,10 +55,11 @@ export const mobileApi = {
     })
   },
 
-  schedule(token: string, params?: { from?: string; to?: string }) {
+  schedule(token: string, params?: { from?: string; to?: string; mode?: "booked" | "all" }) {
     const search = new URLSearchParams()
     if (params?.from) search.set("from", params.from)
     if (params?.to) search.set("to", params.to)
+    if (params?.mode) search.set("mode", params.mode)
     const path = search.size ? `/api/mobile/schedule?${search.toString()}` : "/api/mobile/schedule"
 
     return request<MobileScheduleResponse>(path, {
@@ -90,6 +91,22 @@ export const mobileApi = {
       method: "POST",
       token,
       body: JSON.stringify(params),
+    })
+  },
+
+  bookClass(token: string, classSessionId: string) {
+    return request<{ success: boolean; bookingId?: string; status?: string }>("/api/mobile/schedule/book", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ classSessionId }),
+    })
+  },
+
+  cancelBooking(token: string, bookingId: string) {
+    return request<{ success: boolean; bookingId?: string; status?: string }>("/api/mobile/schedule/cancel", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ bookingId }),
     })
   },
 
