@@ -805,156 +805,277 @@ export default function SchedulePage() {
             <>
               {/* Calendar Grid */}
               {viewMode === "calendar" ? (
-                <div className="grid grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-1">
-                  {/* Day Headers */}
-                  {weekDates.map((date, i) => {
-                    const isToday = new Date().toDateString() === date.toDateString()
-                    const dayClasses = classesByDay[i] || []
-                    const dayBlocked = blockedByDay[i] || []
-                    const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
-                    return (
-                      <div 
-                        key={i}
-                        className={`text-center p-2 sm:p-3 rounded-xl min-w-[104px] sm:min-w-[120px] ${
-                          isToday ? 'bg-violet-100' : hasBlockedTime ? 'bg-red-50' : 'bg-gray-50'
-                        }`}
-                      >
-                        <p className={`text-xs font-medium ${
-                          isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-500'
-                        }`}>
-                          {dayNames[i]}
-                        </p>
-                        <p className={`text-xl font-bold ${
-                          isToday ? 'text-violet-600' : hasBlockedTime ? 'text-red-600' : 'text-gray-900'
-                        }`}>
-                          {date.getDate()}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {dayClasses.length} class{dayClasses.length !== 1 ? 'es' : ''}
-                        </p>
-                        {hasBlockedTime && (
-                          <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 mt-1">
-                            <Ban className="h-2.5 w-2.5 mr-1" />
-                            {dayBlocked.length} blocked
-                          </Badge>
-                        )}
-                      </div>
-                    )
-                  })}
+                <>
+                  {/* Mobile Calendar */}
+                  <div className="space-y-3 md:hidden">
+                    {weekDates.map((date, dayIndex) => {
+                      const isToday = new Date().toDateString() === date.toDateString()
+                      const dayClasses = classesByDay[dayIndex] || []
+                      const dayBlocked = blockedByDay[dayIndex] || []
+                      const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
 
-                  {/* Classes and Blocked Times for each day */}
-                  {weekDates.map((_, dayIndex) => (
-                    <div key={dayIndex} className="space-y-2 min-h-[260px] sm:min-h-[400px] min-w-[104px] sm:min-w-[120px]">
-                      {/* Blocked Times */}
-                      {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
-                        <div
-                          key={bt.id}
-                          className="p-3 bg-red-50 rounded-lg border-l-4 border-l-red-500 shadow-sm"
-                        >
-                          <div className="flex items-center gap-1 text-red-600">
-                            <Ban className="h-3 w-3" />
-                            <span className="text-xs font-medium">Blocked</span>
+                      return (
+                        <div key={dayIndex} className={`rounded-xl border p-3 ${isToday ? "border-violet-300 bg-violet-50" : "border-gray-100 bg-white"}`}>
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div>
+                              <p className={`text-xs font-semibold ${isToday ? "text-violet-700" : "text-gray-500"}`}>
+                                {date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
+                              </p>
+                              <p className={`text-lg font-bold ${isToday ? "text-violet-700" : "text-gray-900"}`}>
+                                {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                                {dayClasses.length} class{dayClasses.length !== 1 ? "es" : ""}
+                              </Badge>
+                              {hasBlockedTime && (
+                                <Badge variant="secondary" className="bg-red-100 text-red-700">
+                                  <Ban className="mr-1 h-3 w-3" />
+                                  {dayBlocked.length}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-xs text-red-700 flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(bt.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} - 
-                            {new Date(bt.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
-                          </p>
-                          <p className="text-xs text-red-500 mt-1">
-                            {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
-                          </p>
-                          {bt.reason && (
-                            <p className="text-xs text-red-400 mt-1 truncate">{bt.reason}</p>
-                          )}
+
+                          <div className="space-y-2">
+                            {showBlockedTimes && dayBlocked.map((bt) => (
+                              <div
+                                key={bt.id}
+                                className="rounded-lg border-l-4 border-l-red-500 bg-red-50 p-3 shadow-sm"
+                              >
+                                <div className="flex items-center gap-1 text-red-600">
+                                  <Ban className="h-3 w-3" />
+                                  <span className="text-xs font-medium">Blocked</span>
+                                </div>
+                                <p className="mt-1 flex items-center gap-1 text-xs text-red-700">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(bt.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })} -{" "}
+                                  {new Date(bt.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                                </p>
+                                <p className="mt-1 text-xs text-red-500">
+                                  {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
+                                </p>
+                              </div>
+                            ))}
+
+                            {dayClasses.length > 0 ? (
+                              dayClasses.map((cls) => {
+                                const isSelected = selectedClasses.has(cls.id)
+                                const classCard = (
+                                  <div
+                                    className={`rounded-lg border-l-4 p-3 shadow-sm transition-all ${getClassColor(cls.classType.name)} ${
+                                      selectMode
+                                        ? isSelected
+                                          ? "bg-violet-100 ring-2 ring-violet-500"
+                                          : "bg-white"
+                                        : "cursor-pointer bg-white hover:bg-violet-50 hover:shadow-md"
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-gray-900">{cls.classType.name}</p>
+                                        <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                          <Clock className="h-3 w-3" />
+                                          {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
+                                        </p>
+                                      </div>
+                                      {selectMode &&
+                                        (isSelected ? (
+                                          <CheckSquare className="h-4 w-4 shrink-0 text-violet-600" />
+                                        ) : (
+                                          <Square className="h-4 w-4 shrink-0 text-gray-300" />
+                                        ))}
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      {cls.teacher.user.firstName} {cls.teacher.user.lastName}
+                                    </p>
+                                    <div className="mt-1 flex items-center justify-between gap-2">
+                                      <p className="text-xs text-gray-500">{cls.location.name}</p>
+                                      <p className={`text-xs font-medium ${cls._count.bookings >= cls.capacity ? "text-red-500" : "text-teal-500"}`}>
+                                        {cls._count.bookings}/{cls.capacity}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+
+                                if (selectMode) {
+                                  return (
+                                    <div key={cls.id} onClick={(e) => toggleSelectClass(cls.id, e)}>
+                                      {classCard}
+                                    </div>
+                                  )
+                                }
+
+                                return (
+                                  <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                                    {classCard}
+                                  </Link>
+                                )
+                              })
+                            ) : !hasBlockedTime ? (
+                              <p className="py-2 text-center text-xs text-gray-400">No classes</p>
+                            ) : null}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Desktop Calendar */}
+                  <div className="app-scrollbar hidden overflow-x-auto pb-1 md:block">
+                    <div className="grid min-w-[920px] grid-cols-7 gap-4">
+                      {/* Day Headers */}
+                      {weekDates.map((date, i) => {
+                        const isToday = new Date().toDateString() === date.toDateString()
+                        const dayClasses = classesByDay[i] || []
+                        const dayBlocked = blockedByDay[i] || []
+                        const hasBlockedTime = showBlockedTimes && dayBlocked.length > 0
+                        return (
+                          <div 
+                            key={i}
+                            className={`rounded-xl p-3 text-center ${
+                              isToday ? "bg-violet-100" : hasBlockedTime ? "bg-red-50" : "bg-gray-50"
+                            }`}
+                          >
+                            <p className={`text-xs font-medium ${
+                              isToday ? "text-violet-600" : hasBlockedTime ? "text-red-600" : "text-gray-500"
+                            }`}>
+                              {dayNames[i]}
+                            </p>
+                            <p className={`text-xl font-bold ${
+                              isToday ? "text-violet-600" : hasBlockedTime ? "text-red-600" : "text-gray-900"
+                            }`}>
+                              {date.getDate()}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              {dayClasses.length} class{dayClasses.length !== 1 ? "es" : ""}
+                            </p>
+                            {hasBlockedTime && (
+                              <Badge variant="secondary" className="mt-1 bg-red-100 text-xs text-red-700">
+                                <Ban className="mr-1 h-2.5 w-2.5" />
+                                {dayBlocked.length} blocked
+                              </Badge>
+                            )}
+                          </div>
+                        )
+                      })}
+
+                      {/* Classes and Blocked Times for each day */}
+                      {weekDates.map((_, dayIndex) => (
+                        <div key={dayIndex} className="min-h-[400px] space-y-2">
+                          {/* Blocked Times */}
+                          {showBlockedTimes && (blockedByDay[dayIndex] || []).map((bt) => (
+                            <div
+                              key={bt.id}
+                              className="rounded-lg border-l-4 border-l-red-500 bg-red-50 p-3 shadow-sm"
+                            >
+                              <div className="flex items-center gap-1 text-red-600">
+                                <Ban className="h-3 w-3" />
+                                <span className="text-xs font-medium">Blocked</span>
+                              </div>
+                              <p className="mt-1 flex items-center gap-1 text-xs text-red-700">
+                                <Clock className="h-3 w-3" />
+                                {new Date(bt.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })} -
+                                {new Date(bt.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                              </p>
+                              <p className="mt-1 text-xs text-red-500">
+                                {bt.teacher.user.firstName} {bt.teacher.user.lastName[0]}.
+                              </p>
+                              {bt.reason && (
+                                <p className="mt-1 truncate text-xs text-red-400">{bt.reason}</p>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {/* Classes */}
+                          {(classesByDay[dayIndex] || []).length > 0 ? (
+                            (classesByDay[dayIndex] || []).map((cls) => {
+                              const isSelected = selectedClasses.has(cls.id)
+                              
+                              if (selectMode) {
+                                return (
+                                  <div
+                                    key={cls.id}
+                                    onClick={(e) => toggleSelectClass(cls.id, e)}
+                                    className={`cursor-pointer rounded-lg border-l-4 p-3 shadow-sm transition-all ${getClassColor(cls.classType.name)} ${
+                                      isSelected 
+                                        ? "bg-violet-100 ring-2 ring-violet-500" 
+                                        : "bg-white hover:bg-violet-50"
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <p className="flex-1 truncate text-sm font-medium text-gray-900">{cls.classType.name}</p>
+                                      {isSelected ? (
+                                        <CheckSquare className="h-4 w-4 shrink-0 text-violet-600" />
+                                      ) : (
+                                        <Square className="h-4 w-4 shrink-0 text-gray-300" />
+                                      )}
+                                    </div>
+                                    <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                      <Clock className="h-3 w-3" />
+                                      {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-400">
+                                      {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                                    </p>
+                                    {hasMultipleLocations && filterLocation === "all" && (
+                                      <Badge 
+                                        variant="secondary" 
+                                        className={`mt-1.5 border-0 text-xs ${locationColorMap[cls.locationId]}`}
+                                      >
+                                        <MapPin className="mr-1 h-2.5 w-2.5" />
+                                        {cls.location.name}
+                                      </Badge>
+                                    )}
+                                    <p className={`mt-1 text-xs ${
+                                      cls._count.bookings >= cls.capacity ? "text-red-500" : "text-teal-500"
+                                    }`}>
+                                      {cls._count.bookings}/{cls.capacity}
+                                    </p>
+                                  </div>
+                                )
+                              }
+                              
+                              return (
+                                <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
+                                  <div
+                                    className={`cursor-pointer rounded-lg border-l-4 bg-white p-3 shadow-sm transition-all hover:bg-violet-50 hover:shadow-md ${getClassColor(cls.classType.name)}`}
+                                  >
+                                    <p className="truncate text-sm font-medium text-gray-900">{cls.classType.name}</p>
+                                    <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                      <Clock className="h-3 w-3" />
+                                      {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-400">
+                                      {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
+                                    </p>
+                                    {hasMultipleLocations && filterLocation === "all" && (
+                                      <Badge 
+                                        variant="secondary" 
+                                        className={`mt-1.5 border-0 text-xs ${locationColorMap[cls.locationId]}`}
+                                      >
+                                        <MapPin className="mr-1 h-2.5 w-2.5" />
+                                        {cls.location.name}
+                                      </Badge>
+                                    )}
+                                    <p className={`mt-1 text-xs ${
+                                      cls._count.bookings >= cls.capacity ? "text-red-500" : "text-teal-500"
+                                    }`}>
+                                      {cls._count.bookings}/{cls.capacity}
+                                    </p>
+                                  </div>
+                                </Link>
+                              )
+                            })
+                          ) : (blockedByDay[dayIndex] || []).length === 0 ? (
+                            <p className="pt-4 text-center text-xs text-gray-400">No classes</p>
+                          ) : null}
                         </div>
                       ))}
-                      
-                      {/* Classes */}
-                      {(classesByDay[dayIndex] || []).length > 0 ? (
-                        (classesByDay[dayIndex] || []).map((cls) => {
-                          const isSelected = selectedClasses.has(cls.id)
-                          
-                          if (selectMode) {
-                            return (
-                              <div
-                                key={cls.id}
-                                onClick={(e) => toggleSelectClass(cls.id, e)}
-                                className={`p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-pointer ${getClassColor(cls.classType.name)} ${
-                                  isSelected 
-                                    ? 'bg-violet-100 ring-2 ring-violet-500' 
-                                    : 'bg-white hover:bg-violet-50'
-                                }`}
-                              >
-                                <div className="flex items-start justify-between">
-                                  <p className="font-medium text-sm text-gray-900 truncate flex-1">{cls.classType.name}</p>
-                                  {isSelected ? (
-                                    <CheckSquare className="h-4 w-4 text-violet-600 shrink-0" />
-                                  ) : (
-                                    <Square className="h-4 w-4 text-gray-300 shrink-0" />
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
-                                </p>
-                                {hasMultipleLocations && filterLocation === "all" && (
-                                  <Badge 
-                                    variant="secondary" 
-                                    className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
-                                  >
-                                    <MapPin className="h-2.5 w-2.5 mr-1" />
-                                    {cls.location.name}
-                                  </Badge>
-                                )}
-                                <p className={`text-xs mt-1 ${
-                                  cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
-                                }`}>
-                                  {cls._count.bookings}/{cls.capacity}
-                                </p>
-                              </div>
-                            )
-                          }
-                          
-                          return (
-                            <Link key={cls.id} href={`/studio/schedule/${cls.id}`}>
-                              <div
-                                className={`p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md hover:bg-violet-50 transition-all cursor-pointer ${getClassColor(cls.classType.name)}`}
-                              >
-                                <p className="font-medium text-sm text-gray-900 truncate">{cls.classType.name}</p>
-                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(cls.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {cls.teacher.user.firstName} {cls.teacher.user.lastName[0]}.
-                                </p>
-                                {hasMultipleLocations && filterLocation === "all" && (
-                                  <Badge 
-                                    variant="secondary" 
-                                    className={`text-xs mt-1.5 ${locationColorMap[cls.locationId]} border-0`}
-                                  >
-                                    <MapPin className="h-2.5 w-2.5 mr-1" />
-                                    {cls.location.name}
-                                  </Badge>
-                                )}
-                                <p className={`text-xs mt-1 ${
-                                  cls._count.bookings >= cls.capacity ? 'text-red-500' : 'text-teal-500'
-                                }`}>
-                                  {cls._count.bookings}/{cls.capacity}
-                                </p>
-                              </div>
-                            </Link>
-                          )
-                        })
-                      ) : (blockedByDay[dayIndex] || []).length === 0 ? (
-                        <p className="text-xs text-gray-400 text-center pt-4">No classes</p>
-                      ) : null}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                </>
               ) : (
                 <div className="space-y-3">
                   <div className="space-y-2 md:hidden">
