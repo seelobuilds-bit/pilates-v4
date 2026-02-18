@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+function buildTrackingScope(user: { studioId: string; teacherId?: string | null }) {
+  if (user.teacherId) {
+    return {
+      OR: [
+        { studioId: user.studioId },
+        { teacherId: user.teacherId },
+      ],
+    }
+  }
+
+  return {
+    OR: [
+      { studioId: user.studioId },
+      { teacher: { studioId: user.studioId } },
+    ],
+  }
+}
+
 // GET - Fetch tracking links
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -11,16 +29,37 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams
-  const teacherId = searchParams.get("teacherId")
+  const teacherIdParam = searchParams.get("teacherId")
 
   try {
+    let teacherIdFilter: string | null = null
+    if (teacherIdParam) {
+      if (session.user.teacherId && teacherIdParam !== session.user.teacherId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+
+      const teacher = await db.teacher.findFirst({
+        where: {
+          id: teacherIdParam,
+          studioId: session.user.studioId,
+        },
+        select: { id: true },
+      })
+
+      if (!teacher) {
+        return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+      }
+
+      teacherIdFilter = teacher.id
+    }
+
     const links = await db.socialMediaTrackingLink.findMany({
       where: {
-        OR: [
-          { studioId: session.user.studioId },
-          ...(teacherId ? [{ teacherId }] : []),
-          ...(session.user.teacherId ? [{ teacherId: session.user.teacherId }] : [])
-        ]
+        ...buildTrackingScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
+        ...(teacherIdFilter ? { teacherId: teacherIdFilter } : {}),
       },
       include: {
         account: true,
@@ -97,7 +136,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create tracking link" }, { status: 500 })
   }
 }
-
 
 
 

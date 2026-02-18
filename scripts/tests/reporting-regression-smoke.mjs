@@ -216,6 +216,210 @@ function teacherHasData(payload) {
   )
 }
 
+function isNonNegativeNumber(value) {
+  const num = Number(value)
+  return Number.isFinite(num) && num >= 0
+}
+
+async function runExtendedSurfaceChecks(ownerCookie) {
+  if (!ownerCookie) {
+    console.log("SKIP Extended reporting surface checks (set TEST_OWNER_COOKIE to run)")
+    return { passed: 0, failed: 0, skipped: 4 }
+  }
+
+  let passed = 0
+  let failed = 0
+
+  const website7dResponse = await request("/api/studio/website-analytics?period=7d", authHeaders(ownerCookie))
+  const websiteInvalidResponse = await request(
+    "/api/studio/website-analytics?period=invalid_period",
+    authHeaders(ownerCookie)
+  )
+  if (website7dResponse.status !== 200 || websiteInvalidResponse.status !== 200) {
+    fail(
+      "Website analytics surface checks",
+      `expected 200 responses but got ${website7dResponse.status} and ${websiteInvalidResponse.status}`
+    )
+    failed += 1
+  } else {
+    let website7dPayload
+    let websiteInvalidPayload
+    try {
+      website7dPayload = await website7dResponse.json()
+      websiteInvalidPayload = await websiteInvalidResponse.json()
+    } catch {
+      fail("Website analytics surface checks", "response is not valid JSON")
+      failed += 1
+      website7dPayload = null
+      websiteInvalidPayload = null
+    }
+
+    if (website7dPayload && websiteInvalidPayload) {
+      const overview = website7dPayload?.analytics?.overview
+      const conversionRateExpected =
+        toNumber(overview?.uniqueVisitors) > 0
+          ? ((toNumber(overview?.totalConversions) / toNumber(overview?.uniqueVisitors)) * 100).toFixed(1)
+          : "0"
+      const avgPagesExpected =
+        toNumber(overview?.uniqueVisitors) > 0
+          ? (toNumber(overview?.totalPageViews) / toNumber(overview?.uniqueVisitors)).toFixed(1)
+          : "0"
+
+      const websiteErrors = []
+      if (!isNonNegativeNumber(overview?.totalPageViews)) websiteErrors.push("overview.totalPageViews invalid")
+      if (!isNonNegativeNumber(overview?.uniqueVisitors)) websiteErrors.push("overview.uniqueVisitors invalid")
+      if (!isNonNegativeNumber(overview?.totalConversions)) websiteErrors.push("overview.totalConversions invalid")
+      if (String(overview?.conversionRate ?? "") !== conversionRateExpected) {
+        websiteErrors.push(
+          `overview.conversionRate mismatch (${overview?.conversionRate} vs expected ${conversionRateExpected})`
+        )
+      }
+      if (String(overview?.avgPagesPerVisit ?? "") !== avgPagesExpected) {
+        websiteErrors.push(
+          `overview.avgPagesPerVisit mismatch (${overview?.avgPagesPerVisit} vs expected ${avgPagesExpected})`
+        )
+      }
+      if (websiteInvalidPayload?.range?.period !== "7d") {
+        websiteErrors.push(
+          `invalid period fallback mismatch (range.period=${websiteInvalidPayload?.range?.period ?? "undefined"})`
+        )
+      }
+      if (!Array.isArray(website7dPayload?.analytics?.topPages)) websiteErrors.push("analytics.topPages is not array")
+      if (!Array.isArray(website7dPayload?.analytics?.topSources))
+        websiteErrors.push("analytics.topSources is not array")
+      if (!Array.isArray(website7dPayload?.analytics?.deviceBreakdown))
+        websiteErrors.push("analytics.deviceBreakdown is not array")
+
+      if (websiteErrors.length > 0) {
+        fail("Website analytics surface checks", websiteErrors.join("; "))
+        failed += 1
+      } else {
+        pass("Website analytics surface checks")
+        passed += 1
+      }
+    }
+  }
+
+  const trackingResponse = await request("/api/social-media/tracking", authHeaders(ownerCookie))
+  if (trackingResponse.status !== 200) {
+    fail("Social tracking surface checks", `expected 200 but got ${trackingResponse.status}`)
+    failed += 1
+  } else {
+    let trackingPayload
+    try {
+      trackingPayload = await trackingResponse.json()
+    } catch {
+      fail("Social tracking surface checks", "response is not valid JSON")
+      failed += 1
+      trackingPayload = null
+    }
+
+    if (trackingPayload) {
+      const links = Array.isArray(trackingPayload) ? trackingPayload : []
+      const badLink = links.find(
+        (link) =>
+          typeof link?.id !== "string" ||
+          typeof link?.code !== "string" ||
+          !isNonNegativeNumber(link?.clicks) ||
+          !isNonNegativeNumber(link?.conversions) ||
+          !isNonNegativeNumber(link?.revenue)
+      )
+      if (!Array.isArray(trackingPayload) || badLink) {
+        fail("Social tracking surface checks", "tracking payload contains invalid link rows")
+        failed += 1
+      } else {
+        pass("Social tracking surface checks")
+        passed += 1
+      }
+    }
+  }
+
+  const automationsResponse = await request("/api/studio/automations", authHeaders(ownerCookie))
+  if (automationsResponse.status !== 200) {
+    fail("Automation reporting surface checks", `expected 200 but got ${automationsResponse.status}`)
+    failed += 1
+  } else {
+    let automationsPayload
+    try {
+      automationsPayload = await automationsResponse.json()
+    } catch {
+      fail("Automation reporting surface checks", "response is not valid JSON")
+      failed += 1
+      automationsPayload = null
+    }
+
+    if (automationsPayload) {
+      const automations = Array.isArray(automationsPayload?.automations) ? automationsPayload.automations : []
+      const badAutomation = automations.find(
+        (automation) =>
+          !Number.isInteger(automation?.stepCount) ||
+          automation.stepCount < 1 ||
+          !isNonNegativeNumber(automation?.totalSent)
+      )
+      if (!Array.isArray(automationsPayload?.automations) || badAutomation) {
+        fail("Automation reporting surface checks", "automation payload contains invalid metric rows")
+        failed += 1
+      } else {
+        pass("Automation reporting surface checks")
+        passed += 1
+      }
+    }
+  }
+
+  const [leaderboardStudioResponse, leaderboardTeacherResponse] = await Promise.all([
+    request("/api/leaderboards?type=STUDIO", authHeaders(ownerCookie)),
+    request("/api/leaderboards?type=TEACHER", authHeaders(ownerCookie)),
+  ])
+
+  if (leaderboardStudioResponse.status !== 200 || leaderboardTeacherResponse.status !== 200) {
+    fail(
+      "Leaderboards reporting surface checks",
+      `expected 200 responses but got ${leaderboardStudioResponse.status} and ${leaderboardTeacherResponse.status}`
+    )
+    failed += 1
+  } else {
+    let studioPayload
+    let teacherPayload
+    try {
+      studioPayload = await leaderboardStudioResponse.json()
+      teacherPayload = await leaderboardTeacherResponse.json()
+    } catch {
+      fail("Leaderboards reporting surface checks", "response is not valid JSON")
+      failed += 1
+      studioPayload = null
+      teacherPayload = null
+    }
+
+    if (studioPayload && teacherPayload) {
+      const allLeaderboards = [
+        ...(Array.isArray(studioPayload?.leaderboards) ? studioPayload.leaderboards : []),
+        ...(Array.isArray(teacherPayload?.leaderboards) ? teacherPayload.leaderboards : []),
+      ]
+      const badEntry = allLeaderboards
+        .flatMap((lb) => lb?.currentPeriod?.entries || [])
+        .find((entry) => entry?.rank != null && toNumber(entry.rank) <= 0)
+      const badRank = [...Object.values(studioPayload?.myRanks || {}), ...Object.values(teacherPayload?.myRanks || {})]
+        .filter(Boolean)
+        .find((rank) => toNumber(rank?.rank) <= 0 || !Number.isFinite(toNumber(rank?.score)))
+
+      if (
+        !Array.isArray(studioPayload?.leaderboards) ||
+        !Array.isArray(teacherPayload?.leaderboards) ||
+        badEntry ||
+        badRank
+      ) {
+        fail("Leaderboards reporting surface checks", "leaderboard payload contains invalid rank data")
+        failed += 1
+      } else {
+        pass("Leaderboards reporting surface checks")
+        passed += 1
+      }
+    }
+  }
+
+  return { passed, failed, skipped: 0 }
+}
+
 async function runDataPresenceChecks(ownerCookie, teacherCookie) {
   if (!REQUIRE_DATA) {
     console.log("SKIP Data-presence API checks (set TEST_REQUIRE_REPORT_DATA=1 to enforce)")
@@ -735,6 +939,11 @@ async function run() {
   passed += entityPeriodChecks.passed
   failed += entityPeriodChecks.failed
   skipped += entityPeriodChecks.skipped
+
+  const extendedSurfaceChecks = await runExtendedSurfaceChecks(TEST_OWNER_COOKIE)
+  passed += extendedSurfaceChecks.passed
+  failed += extendedSurfaceChecks.failed
+  skipped += extendedSurfaceChecks.skipped
 
   console.log("\n--- Reporting Regression Smoke Summary ---")
   console.log(`Passed: ${passed}`)

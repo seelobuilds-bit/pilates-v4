@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams
-  const period = searchParams.get("period") || "7d"
+  const requestedPeriod = searchParams.get("period") || "7d"
+  const period = ["24h", "7d", "30d", "90d"].includes(requestedPeriod) ? requestedPeriod : "7d"
   const dataType = searchParams.get("type") || "overview"
 
   try {
@@ -285,7 +286,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
 
 
 

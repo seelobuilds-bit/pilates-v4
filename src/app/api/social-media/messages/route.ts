@@ -3,6 +3,24 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { getSocialMediaMode } from "@/lib/social-media-mode"
 
+function buildAccountScope(user: { studioId: string; teacherId?: string | null }) {
+  if (user.teacherId) {
+    return {
+      OR: [
+        { studioId: user.studioId },
+        { teacherId: user.teacherId },
+      ],
+    }
+  }
+
+  return {
+    OR: [
+      { studioId: user.studioId },
+      { teacher: { studioId: user.studioId } },
+    ],
+  }
+}
+
 // GET - Fetch social media conversations/messages
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -19,15 +37,19 @@ export async function GET(request: NextRequest) {
     // Get accounts for this studio/teacher
     const accounts = await db.socialMediaAccount.findMany({
       where: {
-        OR: [
-          { studioId: session.user.studioId },
-          ...(session.user.teacherId ? [{ teacherId: session.user.teacherId }] : [])
-        ],
+        ...buildAccountScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
         isActive: true
       }
     })
 
-    const accountIds = accountId ? [accountId] : accounts.map(a => a.id)
+    const accessibleAccountIds = new Set(accounts.map((account) => account.id))
+    if (accountId && !accessibleAccountIds.has(accountId)) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 })
+    }
+    const accountIds = accountId ? [accountId] : accounts.map((a) => a.id)
 
     if (platformUserId) {
       // Get specific conversation
@@ -113,10 +135,10 @@ export async function POST(request: NextRequest) {
     const account = await db.socialMediaAccount.findFirst({
       where: {
         id: accountId,
-        OR: [
-          { studioId: session.user.studioId },
-          ...(session.user.teacherId ? [{ teacherId: session.user.teacherId }] : [])
-        ]
+        ...buildAccountScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
       }
     })
 
@@ -158,9 +180,23 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { platformUserId, accountId } = body
 
+    const account = await db.socialMediaAccount.findFirst({
+      where: {
+        id: accountId,
+        ...buildAccountScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
+      },
+      select: { id: true },
+    })
+    if (!account) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 })
+    }
+
     await db.socialMediaMessage.updateMany({
       where: {
-        accountId,
+        accountId: account.id,
         platformUserId,
         isRead: false
       },
@@ -176,7 +212,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to mark as read" }, { status: 500 })
   }
 }
-
 
 
 
