@@ -1,53 +1,85 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { 
-  TrendingUp,
-  Users,
-  Star,
-  Calendar,
-  DollarSign,
-  BarChart3
-} from "lucide-react"
+import { Loader2, TrendingUp, Users, Star, Calendar, DollarSign, BarChart3 } from "lucide-react"
+
+interface TeacherReportStats {
+  totalClasses: number
+  totalStudents: number
+  avgRating: number
+  revenue: number
+  retentionRate: number
+  avgFillRate: number
+  monthlyClasses: { month: string; count: number }[]
+  topClasses: { name: string; count: number }[]
+  recentReviews: { clientName: string; rating: number; comment: string; date: string }[]
+}
+
+const emptyStats: TeacherReportStats = {
+  totalClasses: 0,
+  totalStudents: 0,
+  avgRating: 0,
+  revenue: 0,
+  retentionRate: 0,
+  avgFillRate: 0,
+  monthlyClasses: [],
+  topClasses: [],
+  recentReviews: []
+}
 
 export default function TeacherReportsPage() {
-  // Mock data - in production this would come from API
-  const stats = {
-    totalClasses: 48,
-    totalStudents: 287,
-    avgRating: 4.9,
-    revenue: 8450,
-    retentionRate: 87,
-    avgFillRate: 82,
-    monthlyClasses: [
-      { month: "Jul", count: 8 },
-      { month: "Aug", count: 10 },
-      { month: "Sep", count: 9 },
-      { month: "Oct", count: 12 },
-      { month: "Nov", count: 11 },
-      { month: "Dec", count: 8 }
-    ],
-    topClasses: [
-      { name: "Reformer Pilates", count: 24, rating: 4.9 },
-      { name: "Mat Pilates", count: 16, rating: 4.8 },
-      { name: "Tower Class", count: 8, rating: 4.7 }
-    ],
-    recentReviews: [
-      { clientName: "Emma W.", rating: 5, comment: "Amazing class! So attentive and helpful.", date: "2 days ago" },
-      { clientName: "John D.", rating: 5, comment: "Best instructor I've had.", date: "1 week ago" },
-      { clientName: "Lisa M.", rating: 4, comment: "Great energy and clear instructions.", date: "2 weeks ago" }
-    ]
+  const [stats, setStats] = useState<TeacherReportStats>(emptyStats)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/teacher/stats")
+        if (!response.ok) {
+          setStats(emptyStats)
+          return
+        }
+        const data = await response.json()
+        setStats({
+          totalClasses: data.totalClasses ?? 0,
+          totalStudents: data.totalStudents ?? 0,
+          avgRating: data.avgRating ?? 0,
+          revenue: data.revenue ?? 0,
+          retentionRate: data.retentionRate ?? 0,
+          avgFillRate: data.avgFillRate ?? 0,
+          monthlyClasses: Array.isArray(data.monthlyClasses) ? data.monthlyClasses : [],
+          topClasses: Array.isArray(data.topClasses) ? data.topClasses : [],
+          recentReviews: Array.isArray(data.recentReviews) ? data.recentReviews : []
+        })
+      } catch (error) {
+        console.error("Failed to fetch teacher reports:", error)
+        setStats(emptyStats)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
   }
+
+  const maxMonthlyCount = Math.max(1, ...stats.monthlyClasses.map((month) => month.count))
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
         <p className="text-gray-500 mt-1">Track your performance and growth</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
@@ -84,7 +116,7 @@ export default function TeacherReportsPage() {
                 <Star className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.avgRating}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.avgRating.toFixed(1)}</p>
                 <p className="text-sm text-gray-500">Average Rating</p>
               </div>
             </div>
@@ -107,7 +139,6 @@ export default function TeacherReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Performance Metrics */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -140,7 +171,6 @@ export default function TeacherReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Top Classes */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -149,29 +179,28 @@ export default function TeacherReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {stats.topClasses.map((cls, i) => (
-                <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
-                      {i + 1}
-                    </span>
-                    <span className="font-medium text-gray-900 truncate">{cls.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3 sm:justify-end">
-                    <span className="text-sm text-gray-500">{cls.count} classes</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                      <span className="text-sm font-medium text-gray-900">{cls.rating}</span>
+            {stats.topClasses.length > 0 ? (
+              <div className="space-y-3">
+                {stats.topClasses.map((cls, i) => (
+                  <div key={`${cls.name}-${i}`} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-medium">
+                        {i + 1}
+                      </span>
+                      <span className="font-medium text-gray-900 truncate">{cls.name}</span>
                     </div>
+                    <span className="text-sm text-gray-500">{cls.count} classes</span>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                No class data yet for this month.
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Classes Over Time */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -180,23 +209,27 @@ export default function TeacherReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
-              {stats.monthlyClasses.map((month, i) => {
-                const maxCount = Math.max(...stats.monthlyClasses.map(m => m.count))
-                const height = (month.count / maxCount) * 100
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{month.count}</span>
-                    <div className="w-full bg-violet-500 rounded-t" style={{ height: `${height}%` }} />
-                    <span className="text-xs text-gray-500">{month.month}</span>
-                  </div>
-                )
-              })}
-            </div>
+            {stats.monthlyClasses.length > 0 ? (
+              <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
+                {stats.monthlyClasses.map((month, i) => {
+                  const height = (month.count / maxMonthlyCount) * 100
+                  return (
+                    <div key={`${month.month}-${i}`} className="flex-1 flex flex-col items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">{month.count}</span>
+                      <div className="w-full bg-violet-500 rounded-t" style={{ height: `${height}%` }} />
+                      <span className="text-xs text-gray-500">{month.month}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                No month-by-month class history available yet.
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Recent Reviews */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -205,55 +238,28 @@ export default function TeacherReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {stats.recentReviews.map((review, i) => (
-                <div key={i} className="p-4 bg-gray-50 rounded-xl">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium text-gray-900">{review.clientName}</span>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, j) => (
-                          <Star
-                            key={j}
-                            className={`h-4 w-4 ${j < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`}
-                          />
-                        ))}
+            {stats.recentReviews.length > 0 ? (
+              <div className="space-y-4">
+                {stats.recentReviews.map((review, i) => (
+                  <div key={`${review.clientName}-${i}`} className="p-4 bg-gray-50 rounded-xl">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium text-gray-900">{review.clientName}</span>
                       </div>
+                      <span className="text-sm text-gray-500">{review.date}</span>
                     </div>
-                    <span className="text-sm text-gray-500">{review.date}</span>
+                    <p className="text-gray-600 text-sm">{review.comment}</p>
                   </div>
-                  <p className="text-gray-600 text-sm">{review.comment}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                No review data available yet.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

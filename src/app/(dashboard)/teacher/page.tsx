@@ -32,6 +32,9 @@ interface TeacherStats {
   totalStudents: number
   avgRating: number
   revenue: number
+  retentionRate?: number
+  avgFillRate?: number
+  completionRate?: number
   upcomingClasses: ClassSession[]
   recentClasses: ClassSession[]
 }
@@ -60,10 +63,13 @@ export default function TeacherDashboardPage() {
 
   // Default mock stats if API not available
   const displayStats = stats || {
-    totalClasses: 48,
-    totalStudents: 287,
-    avgRating: 4.9,
-    revenue: 8450,
+    totalClasses: 0,
+    totalStudents: 0,
+    avgRating: 0,
+    revenue: 0,
+    retentionRate: 0,
+    avgFillRate: 0,
+    completionRate: 0,
     upcomingClasses: [],
     recentClasses: []
   }
@@ -211,30 +217,39 @@ export default function TeacherDashboardPage() {
               <div className="p-4 bg-emerald-50 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-emerald-700">Client Retention</span>
-                  <span className="text-lg font-bold text-emerald-600">87%</span>
+                  <span className="text-lg font-bold text-emerald-600">{displayStats.retentionRate || 0}%</span>
                 </div>
                 <div className="w-full bg-emerald-200 rounded-full h-2">
-                  <div className="bg-emerald-500 h-2 rounded-full" style={{ width: "87%" }} />
+                  <div
+                    className="bg-emerald-500 h-2 rounded-full"
+                    style={{ width: `${displayStats.retentionRate || 0}%` }}
+                  />
                 </div>
               </div>
 
               <div className="p-4 bg-blue-50 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-blue-700">Average Class Fill Rate</span>
-                  <span className="text-lg font-bold text-blue-600">82%</span>
+                  <span className="text-lg font-bold text-blue-600">{displayStats.avgFillRate || 0}%</span>
                 </div>
                 <div className="w-full bg-blue-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: "82%" }} />
+                  <div
+                    className="bg-blue-500 h-2 rounded-full"
+                    style={{ width: `${displayStats.avgFillRate || 0}%` }}
+                  />
                 </div>
               </div>
 
               <div className="p-4 bg-violet-50 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-violet-700">Completion Rate</span>
-                  <span className="text-lg font-bold text-violet-600">96%</span>
+                  <span className="text-lg font-bold text-violet-600">{displayStats.completionRate || 0}%</span>
                 </div>
                 <div className="w-full bg-violet-200 rounded-full h-2">
-                  <div className="bg-violet-500 h-2 rounded-full" style={{ width: "96%" }} />
+                  <div
+                    className="bg-violet-500 h-2 rounded-full"
+                    style={{ width: `${displayStats.completionRate || 0}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -279,7 +294,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
 
 
 
