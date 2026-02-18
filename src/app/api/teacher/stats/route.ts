@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 
@@ -139,33 +140,29 @@ export async function GET() {
       )
     }, 0)
 
-    const avgClassSize =
-      monthClasses.length > 0 ? Math.round((totalAttendance / monthClasses.length) * 10) / 10 : 0
+    const avgClassSize = monthClasses.length > 0 ? roundTo(totalAttendance / monthClasses.length, 1) : 0
 
     const avgFillRate =
       monthClasses.length > 0
-        ? Math.round(
+        ? roundTo(
             monthClasses.reduce((sum, session) => {
               const attendedCount = session.bookings.filter((booking) =>
                 ATTENDED_BOOKING_STATUSES.has(booking.status)
               ).length
-              return sum + (session.capacity > 0 ? (attendedCount / session.capacity) * 100 : 0)
-            }, 0) / monthClasses.length
+              return sum + ratioPercentage(attendedCount, session.capacity, 4)
+            }, 0) / monthClasses.length,
+            0
           )
         : 0
 
-    const completionRate =
-      nonCancelledBookings.length > 0
-        ? Math.round((completedBookings / nonCancelledBookings.length) * 100)
-        : 0
+    const completionRate = ratioPercentage(completedBookings, nonCancelledBookings.length, 0)
 
     const clientBookingCounts = new Map<string, number>()
     for (const booking of nonCancelledBookings) {
       clientBookingCounts.set(booking.clientId, (clientBookingCounts.get(booking.clientId) || 0) + 1)
     }
     const repeatClientCount = Array.from(clientBookingCounts.values()).filter((count) => count > 1).length
-    const retentionRate =
-      clientBookingCounts.size > 0 ? Math.round((repeatClientCount / clientBookingCounts.size) * 100) : 0
+    const retentionRate = ratioPercentage(repeatClientCount, clientBookingCounts.size, 0)
 
     const classCounts = new Map<string, number>()
     for (const session of monthClasses) {
@@ -201,7 +198,7 @@ export async function GET() {
       totalStudents: uniqueStudents.size,
       avgRating: null,
       ratingDataAvailable: false,
-      revenue: Math.round(revenue * 100) / 100,
+      revenue: roundCurrency(revenue),
       retentionRate,
       avgFillRate,
       avgClassSize,
@@ -217,7 +214,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 
