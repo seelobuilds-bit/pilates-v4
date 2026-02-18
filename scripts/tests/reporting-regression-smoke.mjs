@@ -9,6 +9,8 @@ const TEST_STUDIO_CLASS_ID = process.env.TEST_STUDIO_CLASS_ID
 const TEST_STUDIO_LOCATION_ID = process.env.TEST_STUDIO_LOCATION_ID
 
 const REQUIRE_DATA = process.env.TEST_REQUIRE_REPORT_DATA === "1"
+const REQUIRE_INTEGRITY = process.env.TEST_REQUIRE_REPORT_INTEGRITY === "1"
+const FAIL_ON_SKIP = process.env.TEST_FAIL_ON_SKIP === "1"
 
 const KNOWN_ERROR_MARKERS = [
   "Application error:",
@@ -597,6 +599,10 @@ async function runStudioReportConsistencyChecks(ownerCookie) {
 
 async function runReportIntegrityChecks(ownerCookie) {
   if (!ownerCookie) {
+    if (REQUIRE_INTEGRITY) {
+      fail("Report write-path integrity checks", "TEST_REQUIRE_REPORT_INTEGRITY=1 but TEST_OWNER_COOKIE is not set")
+      return { passed: 0, failed: 1, skipped: 0 }
+    }
     console.log("SKIP Report write-path integrity checks (set TEST_OWNER_COOKIE)")
     return { passed: 0, failed: 0, skipped: 1 }
   }
@@ -607,6 +613,13 @@ async function runReportIntegrityChecks(ownerCookie) {
   ])
 
   if (integrityResponse.status === 404) {
+    if (REQUIRE_INTEGRITY) {
+      fail(
+        "Report write-path integrity checks",
+        "integrity endpoint unavailable on TEST_BASE_URL while TEST_REQUIRE_REPORT_INTEGRITY=1"
+      )
+      return { passed: 0, failed: 1, skipped: 0 }
+    }
     console.log("SKIP Report write-path integrity checks (/api/studio/reports/integrity not available on TEST_BASE_URL)")
     return { passed: 0, failed: 0, skipped: 1 }
   }
@@ -1068,6 +1081,12 @@ async function run() {
   console.log(`Passed: ${passed}`)
   console.log(`Failed: ${failed}`)
   console.log(`Skipped: ${skipped}`)
+
+  if (skipped > 0 && FAIL_ON_SKIP) {
+    fail("Reporting regression smoke summary", `skipped checks are disallowed (Skipped: ${skipped})`)
+    process.exitCode = 1
+    return
+  }
 
   if (failed > 0) {
     process.exitCode = 1
