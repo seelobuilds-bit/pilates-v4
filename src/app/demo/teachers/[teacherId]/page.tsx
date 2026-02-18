@@ -144,7 +144,7 @@ export default function TeacherDetailPage({
   // Invoice state
   const [payRate, setPayRate] = useState<PayRate>({ type: "PER_CLASS", rate: 0, currency: "USD" })
   const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [savingPayRate, setSavingPayRate] = useState(false)
+  const [savingPayRate] = useState(false)
 
   useEffect(() => {
     async function fetchTeacher() {
@@ -237,7 +237,7 @@ export default function TeacherDetailPage({
     showReadOnlyNotice()
   }
 
-  async function markInvoicePaid(_invoiceId: string) {
+  async function markInvoicePaid() {
     showReadOnlyNotice()
   }
 
@@ -1187,7 +1187,7 @@ export default function TeacherDetailPage({
                           {(invoice.status === "SENT" || invoice.status === "PENDING") && (
                             <Button
                               size="sm"
-                              onClick={() => markInvoicePaid(invoice.id)}
+                              onClick={() => markInvoicePaid()}
                               className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
@@ -107,7 +107,7 @@ function getClassColor(className: string): string {
   return classColors.default
 }
 
-export default function SchedulePage() {
+function SchedulePageContent() {
   const searchParams = useSearchParams()
   const initialTeacher = searchParams.get("teacher") || ""
   
@@ -131,7 +131,7 @@ export default function SchedulePage() {
   // Multi-select state
   const [selectMode, setSelectMode] = useState(false)
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
-  const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [bulkActionLoading] = useState(false)
   const [showReassignModal, setShowReassignModal] = useState(false)
   const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
 
@@ -339,7 +339,8 @@ export default function SchedulePage() {
     setViewMode(nextView)
   }
 
-  const handleCancelClass = async (_classId: string) => {
+  const handleCancelClass = (classId: string) => {
+    void classId
     showReadOnlyNotice()
   }
 
@@ -1188,5 +1189,19 @@ export default function SchedulePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function SchedulePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+        </div>
+      }
+    >
+      <SchedulePageContent />
+    </Suspense>
   )
 }
