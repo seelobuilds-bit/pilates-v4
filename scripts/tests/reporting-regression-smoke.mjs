@@ -112,10 +112,10 @@ function toNumber(value) {
 
 function studioHasData(payload) {
   return (
-    toNumber(payload?.overview?.revenue?.total) > 0 ||
-    toNumber(payload?.overview?.bookings?.total) > 0 ||
-    toNumber(payload?.overview?.newClients?.total) > 0 ||
-    toNumber(payload?.overview?.activeMembers?.total) > 0
+    toNumber(payload?.revenue?.total) > 0 ||
+    toNumber(payload?.bookings?.total) > 0 ||
+    toNumber(payload?.clients?.new) > 0 ||
+    toNumber(payload?.clients?.active) > 0
   )
 }
 
