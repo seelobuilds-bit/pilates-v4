@@ -146,6 +146,21 @@ function toNumber(value) {
   return Number.isFinite(num) ? num : 0
 }
 
+function toIsoDate(value) {
+  if (typeof value !== "string" || value.length === 0) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function isPercentInRange(value) {
+  const num = toNumber(value)
+  return num >= 0 && num <= 100
+}
+
+function approxEqual(a, b, epsilon = 0.1) {
+  return Math.abs(toNumber(a) - toNumber(b)) <= epsilon
+}
+
 function studioHasData(payload) {
   return (
     toNumber(payload?.revenue?.total) > 0 ||
@@ -204,6 +219,170 @@ async function runDataPresenceChecks(ownerCookie, teacherCookie) {
   }
 
   return { passed, failed, skipped: 0 }
+}
+
+async function runStudioReportConsistencyChecks(ownerCookie) {
+  if (!ownerCookie) {
+    console.log("SKIP Studio reporting consistency checks (set TEST_OWNER_COOKIE)")
+    return { passed: 0, failed: 0, skipped: 1 }
+  }
+
+  const response = await request("/api/studio/reports?days=30", authHeaders(ownerCookie))
+  if (response.status !== 200) {
+    fail("Studio reports consistency checks", `expected 200 but got ${response.status}`)
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  let payload
+  try {
+    payload = await response.json()
+  } catch {
+    fail("Studio reports consistency checks", "response is not valid JSON")
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  const errors = []
+
+  const rangeStart = toIsoDate(payload?.range?.startDate)
+  const rangeEnd = toIsoDate(payload?.range?.endDate)
+  if (!rangeStart || !rangeEnd || rangeStart >= rangeEnd) {
+    errors.push("range.startDate/endDate are invalid or not ordered")
+  }
+
+  const bookingTotal = toNumber(payload?.bookings?.total)
+  const bookingStatusTotal = Array.isArray(payload?.bookings?.byStatus)
+    ? payload.bookings.byStatus.reduce((sum, row) => sum + toNumber(row?.count), 0)
+    : 0
+  if (bookingTotal !== bookingStatusTotal) {
+    errors.push(`bookings total mismatch (${bookingTotal} vs byStatus ${bookingStatusTotal})`)
+  }
+
+  const revenueTotal = toNumber(payload?.revenue?.total)
+  const revenueByClassTypeTotal = Array.isArray(payload?.revenue?.byClassType)
+    ? payload.revenue.byClassType.reduce((sum, row) => sum + toNumber(row?.amount), 0)
+    : 0
+  if (!approxEqual(revenueTotal, revenueByClassTypeTotal, 0.01)) {
+    errors.push(`revenue total mismatch (${revenueTotal} vs byClassType ${revenueByClassTypeTotal})`)
+  }
+
+  const averageFill = toNumber(payload?.classes?.averageFill)
+  if (averageFill < 0 || averageFill > 100) {
+    errors.push(`classes.averageFill out of range (${averageFill})`)
+  }
+
+  const marketingRates = [
+    ["emailOpenRate", payload?.marketing?.emailOpenRate],
+    ["emailClickRate", payload?.marketing?.emailClickRate],
+    ["previousEmailOpenRate", payload?.marketing?.previousEmailOpenRate],
+    ["previousEmailClickRate", payload?.marketing?.previousEmailClickRate],
+    ["noShowRate", payload?.marketing?.noShowRate],
+    ["previousNoShowRate", payload?.marketing?.previousNoShowRate],
+  ]
+  for (const [label, value] of marketingRates) {
+    if (!isPercentInRange(value)) {
+      errors.push(`marketing.${label} out of range (${toNumber(value)})`)
+    }
+  }
+
+  const socialTriggered = toNumber(payload?.social?.totalTriggered)
+  const socialBooked = toNumber(payload?.social?.totalBooked)
+  const socialConversionRate = toNumber(payload?.social?.conversionRate)
+  const expectedSocialConversionRate =
+    socialTriggered > 0 ? Math.round((socialBooked / socialTriggered) * 1000) / 10 : 0
+  if (!approxEqual(socialConversionRate, expectedSocialConversionRate, 0.1)) {
+    errors.push(
+      `social.conversionRate mismatch (${socialConversionRate} vs expected ${expectedSocialConversionRate})`
+    )
+  }
+
+  const atRiskClients = toNumber(payload?.retention?.atRiskClients)
+  const atRiskListCount = Array.isArray(payload?.retention?.atRiskList) ? payload.retention.atRiskList.length : 0
+  if (atRiskListCount > atRiskClients) {
+    errors.push(`retention.atRiskList length exceeds atRiskClients (${atRiskListCount} > ${atRiskClients})`)
+  }
+
+  const membershipBreakdown = Array.isArray(payload?.retention?.membershipBreakdown)
+    ? payload.retention.membershipBreakdown
+    : []
+  const membershipPercentSum = membershipBreakdown.reduce((sum, row) => sum + toNumber(row?.percent), 0)
+  if (membershipBreakdown.length > 0 && (membershipPercentSum < 99 || membershipPercentSum > 101)) {
+    errors.push(`retention.membershipBreakdown percent sum drift (${membershipPercentSum})`)
+  }
+
+  if (errors.length > 0) {
+    fail("Studio reports consistency checks", errors.join("; "))
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  pass("Studio reports consistency checks")
+  return { passed: 1, failed: 0, skipped: 0 }
+}
+
+async function runTeacherReportConsistencyChecks(teacherCookie) {
+  if (!teacherCookie) {
+    console.log("SKIP Teacher reporting consistency checks (set TEST_TEACHER_COOKIE or TEST_OWNER_COOKIE)")
+    return { passed: 0, failed: 0, skipped: 1 }
+  }
+
+  const response = await request("/api/teacher/stats", authHeaders(teacherCookie))
+  if (response.status !== 200) {
+    fail("Teacher reports consistency checks", `expected 200 but got ${response.status}`)
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  let payload
+  try {
+    payload = await response.json()
+  } catch {
+    fail("Teacher reports consistency checks", "response is not valid JSON")
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  const errors = []
+
+  const totalClasses = toNumber(payload?.totalClasses)
+  const totalStudents = toNumber(payload?.totalStudents)
+  const revenue = toNumber(payload?.revenue)
+  if (totalClasses < 0) errors.push(`totalClasses is negative (${totalClasses})`)
+  if (totalStudents < 0) errors.push(`totalStudents is negative (${totalStudents})`)
+  if (revenue < 0) errors.push(`revenue is negative (${revenue})`)
+
+  const percentMetrics = [
+    ["retentionRate", payload?.retentionRate],
+    ["avgFillRate", payload?.avgFillRate],
+    ["completionRate", payload?.completionRate],
+  ]
+  for (const [label, value] of percentMetrics) {
+    if (!isPercentInRange(value)) {
+      errors.push(`${label} out of range (${toNumber(value)})`)
+    }
+  }
+
+  const monthlyClasses = Array.isArray(payload?.monthlyClasses) ? payload.monthlyClasses : []
+  if (monthlyClasses.length !== 6) {
+    errors.push(`monthlyClasses length expected 6 but got ${monthlyClasses.length}`)
+  }
+  for (const row of monthlyClasses) {
+    const count = toNumber(row?.count)
+    if (count < 0) {
+      errors.push(`monthlyClasses has negative count (${count})`)
+      break
+    }
+  }
+
+  const topClasses = Array.isArray(payload?.topClasses) ? payload.topClasses : []
+  const topClassCountSum = topClasses.reduce((sum, row) => sum + toNumber(row?.count), 0)
+  if (topClassCountSum > totalClasses) {
+    errors.push(`topClasses count exceeds totalClasses (${topClassCountSum} > ${totalClasses})`)
+  }
+
+  if (errors.length > 0) {
+    fail("Teacher reports consistency checks", errors.join("; "))
+    return { passed: 0, failed: 1, skipped: 0 }
+  }
+
+  pass("Teacher reports consistency checks")
+  return { passed: 1, failed: 0, skipped: 0 }
 }
 
 async function resolveEntityRouteIds(ownerCookie, entityRoutes) {
@@ -361,6 +540,16 @@ async function run() {
   passed += dataPresence.passed
   failed += dataPresence.failed
   skipped += dataPresence.skipped
+
+  const studioConsistency = await runStudioReportConsistencyChecks(TEST_OWNER_COOKIE)
+  passed += studioConsistency.passed
+  failed += studioConsistency.failed
+  skipped += studioConsistency.skipped
+
+  const teacherConsistency = await runTeacherReportConsistencyChecks(TEST_TEACHER_COOKIE)
+  passed += teacherConsistency.passed
+  failed += teacherConsistency.failed
+  skipped += teacherConsistency.skipped
 
   const entityApiChecks = await runEntityApiChecks(TEST_OWNER_COOKIE, resolvedEntityRoutes)
   passed += entityApiChecks.passed
