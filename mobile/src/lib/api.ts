@@ -183,4 +183,19 @@ export const mobileApi = {
       }
     )
   },
+
+  pushStatus(token: string) {
+    return request<{
+      success: boolean
+      push: {
+        totalCount: number
+        enabledCount: number
+        disabledCount: number
+        latestSeenAt: string | null
+      }
+    }>("/api/mobile/push/status", {
+      method: "GET",
+      token,
+    })
+  },
 }

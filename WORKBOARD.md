@@ -66,10 +66,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-161 Mobile packaging automation | mac-mini-agent | mini/t-161-mobile-packaging-automation | Improve studio variant generator with validation, dry-run, and per-studio release checklist output | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/77 |
 | T-162 Mobile push delivery and trigger wiring | codex-main | codex/t-162-mobile-push-delivery-run | Add Expo push send helper, wire push triggers for mobile inbox/booking flows, and add in-app test notification action | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/79 |
 | T-163 Mobile notification tap deep-link routing | codex-main | codex/t-163-mobile-push-deeplink-routing | Handle push-tap routing (cold start + in-app) so notification types land users in Inbox/Schedule/Profile tabs safely | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/80 |
-| T-164 Mobile per-device push preference control | codex-main | codex/t-164-mobile-push-preferences | Add persisted push pause/resume toggle on mobile profile and respect preference in registration lifecycle | In Progress | TBD |
+| T-164 Mobile per-device push preference control | codex-main | codex/t-164-mobile-push-preferences | Add persisted push pause/resume toggle on mobile profile and respect preference in registration lifecycle | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/81 |
+| T-165 Mobile push registration diagnostics | codex-main | codex/t-165-mobile-push-status-diagnostics | Add push status API and profile diagnostics (enabled/total registrations + last activity) to improve device-level debugging | In Progress | TBD |
 
 ## Merge Order
-1. T-164 Mobile per-device push preference control
+1. T-165 Mobile push registration diagnostics
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

@@ -1,5 +1,5 @@
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
@@ -9,6 +9,13 @@ export default function ProfileScreen() {
   const [openingDeletionRequest, setOpeningDeletionRequest] = useState(false)
   const [sendingTestPush, setSendingTestPush] = useState(false)
   const [updatingPushPreference, setUpdatingPushPreference] = useState(false)
+  const [pushStatusLoading, setPushStatusLoading] = useState(false)
+  const [pushStatus, setPushStatus] = useState<{
+    totalCount: number
+    enabledCount: number
+    disabledCount: number
+    latestSeenAt: string | null
+  } | null>(null)
 
   const subdomain = useMemo(
     () => (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase(),
@@ -20,6 +27,27 @@ export default function ProfileScreen() {
     const base = mobileConfig.apiBaseUrl.replace(/\/$/, "")
     return `${base}/${subdomain}/account?source=mobile&intent=deletion-request`
   }, [subdomain])
+
+  const loadPushStatus = useCallback(async () => {
+    if (!token) {
+      setPushStatus(null)
+      return
+    }
+
+    setPushStatusLoading(true)
+    try {
+      const response = await mobileApi.pushStatus(token)
+      setPushStatus(response.push)
+    } catch {
+      setPushStatus(null)
+    } finally {
+      setPushStatusLoading(false)
+    }
+  }, [token])
+
+  useEffect(() => {
+    void loadPushStatus()
+  }, [loadPushStatus])
 
   const handleAccountDeletionRequest = async () => {
     if (!accountDeletionUrl) {
@@ -54,6 +82,7 @@ export default function ProfileScreen() {
           "No enabled push token was found for this account on this studio. Re-open the app on a physical device and allow notifications."
         )
       }
+      await loadPushStatus()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to send push test"
       Alert.alert("Push test failed", message)
@@ -66,6 +95,7 @@ export default function ProfileScreen() {
     setUpdatingPushPreference(true)
     try {
       await updatePushEnabled(!pushEnabled)
+      await loadPushStatus()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to update push setting"
       Alert.alert("Push setting failed", message)
@@ -80,6 +110,11 @@ export default function ProfileScreen() {
       <Text style={styles.row}>Name: {user?.firstName} {user?.lastName}</Text>
       <Text style={styles.row}>Email: {user?.email}</Text>
       <Text style={styles.row}>Role: {user?.role}</Text>
+      <Text style={styles.row}>Push preference: {pushEnabled ? "Enabled" : "Paused"}</Text>
+      <Text style={styles.row}>
+        Push registrations: {pushStatusLoading ? "Checking..." : `${pushStatus?.enabledCount || 0} enabled / ${pushStatus?.totalCount || 0} total`}
+      </Text>
+      {pushStatus?.latestSeenAt ? <Text style={styles.row}>Last push activity: {new Date(pushStatus.latestSeenAt).toLocaleString()}</Text> : null}
 
       <View style={styles.actions}>
         <Pressable
