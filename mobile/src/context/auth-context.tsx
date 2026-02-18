@@ -6,15 +6,18 @@ import { registerForPushNotificationsAsync } from "@/src/lib/push"
 import type { MobileBootstrapResponse, MobileSessionUser } from "@/src/types/mobile"
 
 const SESSION_TOKEN_KEY = "current_mobile_session_token"
+const PUSH_ENABLED_KEY = "current_mobile_push_enabled"
 
 interface AuthContextValue {
   user: MobileSessionUser | null
   token: string | null
   loading: boolean
   bootstrap: MobileBootstrapResponse | null
+  pushEnabled: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   refreshBootstrap: () => Promise<void>
+  updatePushEnabled: (next: boolean) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -27,11 +30,17 @@ async function persistToken(token: string | null) {
   await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token)
 }
 
+async function persistPushEnabled(next: boolean) {
+  await SecureStore.setItemAsync(PUSH_ENABLED_KEY, next ? "1" : "0")
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<MobileSessionUser | null>(null)
   const [bootstrap, setBootstrap] = useState<MobileBootstrapResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pushEnabled, setPushEnabled] = useState(true)
+  const [pushPreferenceReady, setPushPreferenceReady] = useState(false)
   const registeredPushTokenRef = useRef<string | null>(null)
 
   const clearSession = useCallback(async () => {
@@ -87,6 +96,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearSession, token])
 
+  const registerCurrentPushDevice = useCallback(async (currentToken: string) => {
+    const registration = await registerForPushNotificationsAsync()
+    if (!registration.enabled || !registration.params) {
+      return
+    }
+
+    if (registeredPushTokenRef.current === registration.params.expoPushToken) {
+      return
+    }
+
+    await mobileApi.registerPushToken(currentToken, registration.params)
+    registeredPushTokenRef.current = registration.params.expoPushToken
+  }, [])
+
+  const unregisterCurrentPushDevice = useCallback(async (currentToken: string) => {
+    let pushToken = registeredPushTokenRef.current
+    if (!pushToken) {
+      const registration = await registerForPushNotificationsAsync()
+      if (registration.enabled && registration.params?.expoPushToken) {
+        pushToken = registration.params.expoPushToken
+      }
+    }
+
+    if (!pushToken) {
+      return
+    }
+
+    await mobileApi.unregisterPushToken(currentToken, { expoPushToken: pushToken })
+    registeredPushTokenRef.current = null
+  }, [])
+
+  const updatePushEnabled = useCallback(
+    async (next: boolean) => {
+      setPushEnabled(next)
+      await persistPushEnabled(next)
+
+      if (!token) return
+
+      if (next) {
+        await registerCurrentPushDevice(token)
+        return
+      }
+
+      await unregisterCurrentPushDevice(token)
+    },
+    [registerCurrentPushDevice, token, unregisterCurrentPushDevice]
+  )
+
   const hydrateFromToken = useCallback(async (sessionToken: string) => {
     const profile = await mobileApi.me(sessionToken)
     setToken(sessionToken)
@@ -126,11 +183,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function boot() {
       try {
+        const storedPushEnabled = await SecureStore.getItemAsync(PUSH_ENABLED_KEY)
+        setPushEnabled(storedPushEnabled !== "0")
+        setPushPreferenceReady(true)
+
         const storedToken = await SecureStore.getItemAsync(SESSION_TOKEN_KEY)
         if (!storedToken) return
         await hydrateFromToken(storedToken)
       } catch {
         await clearSession()
+        setPushPreferenceReady(true)
       } finally {
         setLoading(false)
       }
@@ -140,25 +202,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearSession, hydrateFromToken])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || !pushEnabled || !pushPreferenceReady) return
     const currentToken = token
 
     let cancelled = false
 
     async function syncPushRegistration() {
       try {
-        const registration = await registerForPushNotificationsAsync()
-        if (!registration.enabled || !registration.params || cancelled) {
+        await registerCurrentPushDevice(currentToken)
+        if (cancelled) {
           return
-        }
-
-        if (registeredPushTokenRef.current === registration.params.expoPushToken) {
-          return
-        }
-
-        await mobileApi.registerPushToken(currentToken, registration.params)
-        if (!cancelled) {
-          registeredPushTokenRef.current = registration.params.expoPushToken
         }
       } catch {
         // Push registration should never block auth/session.
@@ -170,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [pushEnabled, pushPreferenceReady, registerCurrentPushDevice, token])
 
   const value = useMemo(
     () => ({
@@ -178,11 +231,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       loading,
       bootstrap,
+      pushEnabled,
       signIn,
       signOut,
       refreshBootstrap,
+      updatePushEnabled,
     }),
-    [bootstrap, loading, refreshBootstrap, signIn, signOut, token, user]
+    [bootstrap, loading, pushEnabled, refreshBootstrap, signIn, signOut, token, updatePushEnabled, user]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

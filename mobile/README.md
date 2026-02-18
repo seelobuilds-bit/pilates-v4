@@ -67,6 +67,7 @@ pnpm build:android:production
 
 - Backend can use optional `EXPO_PUSH_ACCESS_TOKEN` for authenticated push delivery.
 - Profile tab includes **Send test notification** to verify token registration on a real device.
+- Profile tab includes per-device push toggle (pause/resume without signing out).
 - Notification tap routing is wired:
   - inbox messages -> Inbox tab
   - booking updates -> Schedule tab

@@ -5,9 +5,10 @@ import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 
 export default function ProfileScreen() {
-  const { user, bootstrap, token, signOut } = useAuth()
+  const { user, bootstrap, token, pushEnabled, updatePushEnabled, signOut } = useAuth()
   const [openingDeletionRequest, setOpeningDeletionRequest] = useState(false)
   const [sendingTestPush, setSendingTestPush] = useState(false)
+  const [updatingPushPreference, setUpdatingPushPreference] = useState(false)
 
   const subdomain = useMemo(
     () => (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase(),
@@ -61,6 +62,18 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleTogglePushPreference = async () => {
+    setUpdatingPushPreference(true)
+    try {
+      await updatePushEnabled(!pushEnabled)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update push setting"
+      Alert.alert("Push setting failed", message)
+    } finally {
+      setUpdatingPushPreference(false)
+    }
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
@@ -86,6 +99,20 @@ export default function ProfileScreen() {
         >
           <Text style={styles.secondaryButtonText}>
             {sendingTestPush ? "Sending test..." : "Send test notification"}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.secondaryButton, updatingPushPreference && styles.secondaryButtonDisabled]}
+          onPress={() => void handleTogglePushPreference()}
+          disabled={updatingPushPreference}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {updatingPushPreference
+              ? "Updating push setting..."
+              : pushEnabled
+                ? "Pause notifications on this device"
+                : "Enable notifications on this device"}
           </Text>
         </Pressable>
 
