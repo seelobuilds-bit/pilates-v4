@@ -15,10 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    if (decoded.role === "CLIENT") {
-      return NextResponse.json({ error: "Clients cannot send messages from mobile yet" }, { status: 403 })
-    }
-
     const studio = await db.studio.findUnique({
       where: { id: decoded.studioId },
       select: {
@@ -33,16 +29,60 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}))
-    const clientId = String(body?.clientId || "").trim()
+    const clientIdFromBody = String(body?.clientId || "").trim()
     const channel = String(body?.channel || "").trim().toUpperCase()
     const message = String(body?.message || "").trim()
     const subject = String(body?.subject || "").trim()
 
-    if (!clientId || !message || !["EMAIL", "SMS"].includes(channel)) {
-      return NextResponse.json(
-        { error: "clientId, channel (EMAIL|SMS), and message are required" },
-        { status: 400 }
-      )
+    if (!message || !["EMAIL", "SMS"].includes(channel)) {
+      return NextResponse.json({ error: "channel (EMAIL|SMS) and message are required" }, { status: 400 })
+    }
+
+    if (decoded.role === "CLIENT") {
+      const clientId = decoded.clientId || decoded.sub
+      const client = await db.client.findFirst({
+        where: {
+          id: clientId,
+          studioId: studio.id,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      })
+
+      if (!client) {
+        return NextResponse.json({ error: "Client not found" }, { status: 404 })
+      }
+
+      const inboundMessage = await db.message.create({
+        data: {
+          channel: channel === "SMS" ? "SMS" : "EMAIL",
+          direction: "INBOUND",
+          status: "SENT",
+          subject: subject || null,
+          body: message,
+          fromAddress: client.email || "client@mobile.thecurrent.app",
+          toAddress: `inbox@${studio.subdomain}.thecurrent.app`,
+          fromName: `${client.firstName} ${client.lastName}`,
+          toName: studio.name,
+          threadId: `s_${studio.id}_c_${client.id}`,
+          studioId: studio.id,
+          clientId: client.id,
+          sentAt: new Date(),
+        },
+        select: { id: true },
+      })
+
+      return NextResponse.json({ success: true, messageId: inboundMessage.id })
+    }
+
+    const clientId = clientIdFromBody
+
+    if (!clientId) {
+      return NextResponse.json({ error: "clientId is required" }, { status: 400 })
     }
 
     if (decoded.role === "TEACHER") {

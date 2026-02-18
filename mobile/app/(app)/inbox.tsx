@@ -95,7 +95,11 @@ export default function InboxScreen() {
       try {
         const response = await mobileApi.inbox(token)
         setConversations(response.conversations || [])
-        setMessages(response.messages || [])
+        setMessages(
+          (response.messages || []).slice().sort((a, b) => {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          })
+        )
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load inbox"
         setError(message)
@@ -137,14 +141,20 @@ export default function InboxScreen() {
   )
 
   const sendMessage = useCallback(async () => {
-    if (!token || !activeConversation) return
+    if (!token) return
+    if (!isClient && !activeConversation) return
     if (!composerText.trim()) return
 
     setSending(true)
-    setThreadError(null)
+    if (isClient) {
+      setError(null)
+    } else {
+      setThreadError(null)
+    }
+
     try {
       await mobileApi.sendInboxMessage(token, {
-        clientId: activeConversation.clientId,
+        clientId: activeConversation?.clientId,
         channel,
         subject,
         message: composerText.trim(),
@@ -155,14 +165,22 @@ export default function InboxScreen() {
         setSubject("")
       }
 
-      await Promise.all([loadThread(activeConversation.clientId), loadInbox(true)])
+      if (isClient) {
+        await loadInbox(true)
+      } else if (activeConversation) {
+        await Promise.all([loadThread(activeConversation.clientId), loadInbox(true)])
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send message"
-      setThreadError(message)
+      if (isClient) {
+        setError(message)
+      } else {
+        setThreadError(message)
+      }
     } finally {
       setSending(false)
     }
-  }, [activeConversation, channel, composerText, loadInbox, loadThread, subject, token])
+  }, [activeConversation, channel, composerText, isClient, loadInbox, loadThread, subject, token])
 
   useEffect(() => {
     void loadInbox()
@@ -194,6 +212,7 @@ export default function InboxScreen() {
           data={threadMessages}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <MessageCard item={item} />}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={threadLoading} onRefresh={() => void loadThread(activeConversation.clientId)} />}
         />
@@ -248,7 +267,7 @@ export default function InboxScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Inbox</Text>
-      <Text style={styles.subtitle}>{isClient ? "Message history" : "Conversations"}</Text>
+      <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -257,18 +276,64 @@ export default function InboxScreen() {
       {!loading && !hasData && !error ? <Text style={styles.empty}>No inbox activity yet.</Text> : null}
 
       {isClient ? (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MessageCard item={item} />}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
-        />
+        <>
+          <FlatList
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <MessageCard item={item} />}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
+          />
+
+          <View style={styles.composerWrap}>
+            <View style={styles.channelRow}>
+              <Pressable
+                style={[styles.channelButton, channel === "EMAIL" && styles.channelButtonActive]}
+                onPress={() => setChannel("EMAIL")}
+              >
+                <Text style={[styles.channelButtonText, channel === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.channelButton, channel === "SMS" && styles.channelButtonActive]}
+                onPress={() => setChannel("SMS")}
+              >
+                <Text style={[styles.channelButtonText, channel === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+              </Pressable>
+            </View>
+
+            {channel === "EMAIL" ? (
+              <TextInput
+                value={subject}
+                onChangeText={setSubject}
+                placeholder="Subject (optional)"
+                style={styles.subjectInput}
+              />
+            ) : null}
+
+            <TextInput
+              value={composerText}
+              onChangeText={setComposerText}
+              placeholder="Write a message..."
+              style={styles.messageInput}
+              multiline
+            />
+
+            <Pressable
+              style={[styles.sendButton, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
+              onPress={() => void sendMessage()}
+              disabled={sending || !composerText.trim()}
+            >
+              <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send"}</Text>
+            </Pressable>
+          </View>
+        </>
       ) : (
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.clientId}
           renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} />}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
         />
@@ -309,6 +374,9 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#334155",
     marginBottom: 4,
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     gap: 10,
