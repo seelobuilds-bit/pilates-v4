@@ -118,6 +118,25 @@ export async function trackSocialLinkConversion(params: {
 
     if (!link) return false
 
+    let existingConversionEvent: { id: string; converted: boolean } | null = null
+    if (link.flow) {
+      existingConversionEvent = await tx.socialMediaFlowEvent.findFirst({
+        where: {
+          flowId: link.flow.id,
+          bookingId: params.bookingId
+        },
+        select: {
+          id: true,
+          converted: true
+        }
+      })
+
+      // Idempotency guard: this booking was already counted for this flow.
+      if (existingConversionEvent?.converted) {
+        return true
+      }
+    }
+
     await tx.socialMediaTrackingLink.update({
       where: {
         id: link.id
@@ -142,16 +161,6 @@ export async function trackSocialLinkConversion(params: {
           totalBooked: {
             increment: 1
           }
-        }
-      })
-
-      const existingConversionEvent = await tx.socialMediaFlowEvent.findFirst({
-        where: {
-          flowId: link.flow.id,
-          bookingId: params.bookingId
-        },
-        select: {
-          id: true
         }
       })
 
