@@ -40,10 +40,12 @@ Ship high-impact improvements in parallel without conflicts.
 | T-134 Reporting monthly bucket date alignment | codex-main | codex/T-134-reporting-monthly-bucket-date-alignment | Align client/class/location monthly trend buckets to class session dates so reporting charts reflect operational periods | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/50 |
 | T-135 Reporting smoke entity-id auto-resolve | codex-main | codex/T-135-reporting-smoke-entity-id-autoresolve | Auto-resolve missing client/teacher/class/location IDs from studio list endpoints so reporting smoke checks do not skip when one ID secret is missing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/51 |
 | T-136 Reporting consistency smoke checks | codex-main | codex/T-136-reporting-consistency-smoke-checks | Add strict reporting invariants in smoke tests (range validity, totals reconciliation, rate bounds, conversion math) to catch metric drift | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/52 |
-| T-138 Reporting metric math hardening | codex-main | codex/T-138-reporting-metric-math-hardening | Centralize percentage/currency math helpers and use them in reporting APIs to enforce bounded, consistent metric outputs | In Progress | TBD |
+| T-137 Entity report period parity | mac-mini-agent | mini/T-137-entity-report-period-parity | Add period selector + custom date ranges on entity report tabs and wire APIs to respect selected windows | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/54 |
+| T-138 Reporting metric math hardening | codex-main | codex/T-138-reporting-metric-math-hardening | Centralize percentage/currency math helpers and use them in reporting APIs to enforce bounded, consistent metric outputs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/53 |
+| T-139 Entity report period smoke validation | codex-main | codex/T-139-entity-report-period-smoke-validation | Extend reporting smoke with entity-level window checks (`days`/custom/fallback + monotonic windows) so period regressions fail CI | In Progress | TBD |
 
 ## Merge Order
-1. T-138 Reporting metric math hardening
+1. T-139 Entity report period smoke validation
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

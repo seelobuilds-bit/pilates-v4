@@ -27,6 +27,11 @@ const ENTITY_ROUTES = [
     route: (id) => `/studio/clients/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/clients/${id}`,
     apiIdPath: ["client", "id"],
+    getSummary: (payload) => ({
+      bookings: toNumber(payload?.stats?.totalBookings),
+      revenue: toNumber(payload?.stats?.totalSpent),
+      completed: toNumber(payload?.stats?.completedClasses),
+    }),
   },
   {
     label: "Teacher reports tab",
@@ -36,6 +41,11 @@ const ENTITY_ROUTES = [
     route: (id) => `/studio/teachers/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/teachers/${id}`,
     apiIdPath: ["id"],
+    getSummary: (payload) => ({
+      classes: toNumber(payload?.stats?.totalClasses),
+      students: toNumber(payload?.stats?.totalStudents),
+      revenue: toNumber(payload?.extendedStats?.revenue),
+    }),
   },
   {
     label: "Class reports tab",
@@ -45,6 +55,11 @@ const ENTITY_ROUTES = [
     route: (id) => `/studio/classes/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/class-types/${id}`,
     apiIdPath: ["id"],
+    getSummary: (payload) => ({
+      bookings: toNumber(payload?.stats?.totalBookings),
+      revenue: toNumber(payload?.stats?.totalRevenue),
+      attendance: toNumber(payload?.stats?.avgAttendance),
+    }),
   },
   {
     label: "Location reports tab",
@@ -54,6 +69,11 @@ const ENTITY_ROUTES = [
     route: (id) => `/studio/locations/${id}?tab=reports`,
     apiRoute: (id) => `/api/studio/locations/${id}`,
     apiIdPath: ["id"],
+    getSummary: (payload) => ({
+      bookings: toNumber(payload?.stats?.totalBookings),
+      revenue: toNumber(payload?.stats?.totalRevenue),
+      activeClients: toNumber(payload?.stats?.activeClients),
+    }),
   },
 ]
 
@@ -159,6 +179,16 @@ function isPercentInRange(value) {
 
 function approxEqual(a, b, epsilon = 0.1) {
   return Math.abs(toNumber(a) - toNumber(b)) <= epsilon
+}
+
+function summaryMatches(a, b, epsilon = 0.01) {
+  const keys = Array.from(new Set([...Object.keys(a || {}), ...Object.keys(b || {})]))
+  return keys.every((key) => approxEqual(a?.[key], b?.[key], epsilon))
+}
+
+function summaryIsNonDecreasing(olderWindow, widerWindow, epsilon = 0.01) {
+  const keys = Array.from(new Set([...Object.keys(olderWindow || {}), ...Object.keys(widerWindow || {})]))
+  return keys.every((key) => toNumber(widerWindow?.[key]) + epsilon >= toNumber(olderWindow?.[key]))
 }
 
 function studioHasData(payload) {
@@ -481,6 +511,143 @@ async function runEntityApiChecks(ownerCookie, entityRoutes) {
   return { passed, failed, skipped }
 }
 
+async function fetchEntityPayload(entityRoute, id, ownerCookie, query = "") {
+  const path = query ? `${entityRoute.apiRoute(id)}?${query}` : entityRoute.apiRoute(id)
+  const response = await request(path, authHeaders(ownerCookie))
+  if (response.status !== 200) {
+    return { ok: false, reason: `expected 200 for ${path} but got ${response.status}` }
+  }
+  try {
+    const payload = await response.json()
+    const resolvedId = getValueAtPath(payload, entityRoute.apiIdPath)
+    if (resolvedId !== id) {
+      return {
+        ok: false,
+        reason: `expected id ${id} at ${entityRoute.apiIdPath.join(".")} but got ${resolvedId ?? "undefined"}`,
+      }
+    }
+    return { ok: true, payload }
+  } catch {
+    return { ok: false, reason: `response at ${path} is not valid JSON` }
+  }
+}
+
+async function runEntityPeriodChecks(ownerCookie, entityRoutes) {
+  if (!ownerCookie) {
+    console.log("SKIP Entity period-window checks (set TEST_OWNER_COOKIE to run)")
+    return { passed: 0, failed: 0, skipped: entityRoutes.length }
+  }
+
+  let passed = 0
+  let failed = 0
+  let skipped = 0
+
+  for (const entityRoute of entityRoutes) {
+    if (!entityRoute.id) {
+      console.log(`SKIP ${entityRoute.label} period checks (set ${entityRoute.envName} or ensure entities exist)`)
+      skipped += 1
+      continue
+    }
+
+    const base30 = await fetchEntityPayload(entityRoute, entityRoute.id, ownerCookie, "days=30")
+    if (!base30.ok) {
+      fail(`${entityRoute.label} period checks`, base30.reason)
+      failed += 1
+      continue
+    }
+
+    const invalidDays = await fetchEntityPayload(entityRoute, entityRoute.id, ownerCookie, "days=999")
+    if (!invalidDays.ok) {
+      fail(`${entityRoute.label} invalid-days fallback`, invalidDays.reason)
+      failed += 1
+      continue
+    }
+
+    const invalidRange = await fetchEntityPayload(
+      entityRoute,
+      entityRoute.id,
+      ownerCookie,
+      "startDate=2030-12-31&endDate=2030-01-01"
+    )
+    if (!invalidRange.ok) {
+      fail(`${entityRoute.label} invalid-range fallback`, invalidRange.reason)
+      failed += 1
+      continue
+    }
+
+    const summary30 = entityRoute.getSummary(base30.payload)
+    const summaryInvalidDays = entityRoute.getSummary(invalidDays.payload)
+    const summaryInvalidRange = entityRoute.getSummary(invalidRange.payload)
+    if (!summaryMatches(summary30, summaryInvalidDays)) {
+      fail(
+        `${entityRoute.label} invalid-days fallback`,
+        `expected days=999 to match days=30 summary (${JSON.stringify(summary30)} vs ${JSON.stringify(summaryInvalidDays)})`
+      )
+      failed += 1
+      continue
+    }
+    if (!summaryMatches(summary30, summaryInvalidRange)) {
+      fail(
+        `${entityRoute.label} invalid-range fallback`,
+        `expected invalid date range to match days=30 summary (${JSON.stringify(summary30)} vs ${JSON.stringify(summaryInvalidRange)})`
+      )
+      failed += 1
+      continue
+    }
+
+    const days7 = await fetchEntityPayload(entityRoute, entityRoute.id, ownerCookie, "days=7")
+    const days90 = await fetchEntityPayload(entityRoute, entityRoute.id, ownerCookie, "days=90")
+    if (!days7.ok || !days90.ok) {
+      fail(
+        `${entityRoute.label} period-window checks`,
+        `failed to fetch days windows (${days7.ok ? "days=7 ok" : days7.reason}; ${days90.ok ? "days=90 ok" : days90.reason})`
+      )
+      failed += 1
+      continue
+    }
+
+    const summary7 = entityRoute.getSummary(days7.payload)
+    const summary90 = entityRoute.getSummary(days90.payload)
+    if (!summaryIsNonDecreasing(summary7, summary30) || !summaryIsNonDecreasing(summary30, summary90)) {
+      fail(
+        `${entityRoute.label} period monotonicity`,
+        `expected 7d <= 30d <= 90d summaries (${JSON.stringify(summary7)} | ${JSON.stringify(summary30)} | ${JSON.stringify(summary90)})`
+      )
+      failed += 1
+      continue
+    }
+
+    if (REQUIRE_DATA) {
+      const futureRange = await fetchEntityPayload(
+        entityRoute,
+        entityRoute.id,
+        ownerCookie,
+        "startDate=2099-01-01&endDate=2099-01-07"
+      )
+      if (!futureRange.ok) {
+        fail(`${entityRoute.label} future-range check`, futureRange.reason)
+        failed += 1
+        continue
+      }
+      const futureSummary = entityRoute.getSummary(futureRange.payload)
+      const hasFutureValues = Object.values(futureSummary).some((value) => Math.abs(toNumber(value)) > 0.01)
+      if (hasFutureValues) {
+        fail(
+          `${entityRoute.label} future-range check`,
+          `expected empty far-future summary but got ${JSON.stringify(futureSummary)}`
+        )
+        failed += 1
+        continue
+      }
+    }
+
+    pass(`${entityRoute.label} period-window checks`)
+    passed += 1
+  }
+
+  return { passed, failed, skipped }
+}
+
 async function run() {
   printSuiteStart("Reporting Regression Smoke")
 
@@ -555,6 +722,11 @@ async function run() {
   passed += entityApiChecks.passed
   failed += entityApiChecks.failed
   skipped += entityApiChecks.skipped
+
+  const entityPeriodChecks = await runEntityPeriodChecks(TEST_OWNER_COOKIE, resolvedEntityRoutes)
+  passed += entityPeriodChecks.passed
+  failed += entityPeriodChecks.failed
+  skipped += entityPeriodChecks.skipped
 
   console.log("\n--- Reporting Regression Smoke Summary ---")
   console.log(`Passed: ${passed}`)
