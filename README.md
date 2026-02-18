@@ -62,3 +62,42 @@ TEST_BASE_URL='https://staging.example.com' TEST_OWNER_COOKIE='next-auth.session
 Notes:
 - Includes an anonymous access check (expects redirect/unauthorized on `/studio`)
 - Includes authenticated checks for `/studio`, `/studio/schedule`, `/studio/inbox`, `/studio/marketing`, and `/studio/settings`
+
+## Reporting regression smoke test
+
+Run reporting consistency checks against a running app (defaults to `http://localhost:3000`):
+
+```bash
+TEST_OWNER_COOKIE='next-auth.session-token=...'
+TEST_TEACHER_COOKIE='next-auth.session-token=...'
+TEST_BASE_URL='https://staging.example.com'
+TEST_REQUIRE_REPORT_DATA='1'
+pnpm test:smoke:reporting
+```
+
+Optional entity IDs (if omitted, script auto-resolves from studio list endpoints where possible):
+
+```bash
+TEST_STUDIO_CLIENT_ID='...'
+TEST_STUDIO_TEACHER_ID='...'
+TEST_STUDIO_CLASS_ID='...'
+TEST_STUDIO_LOCATION_ID='...'
+```
+
+Strict-mode flags:
+
+- `TEST_REQUIRE_REPORT_INTEGRITY=1`: fail if `/api/studio/reports/integrity` cannot be executed.
+- `TEST_FAIL_ON_SKIP=1`: fail if any checks are skipped.
+
+GitHub Actions secrets used by `.github/workflows/reporting-smoke.yml`:
+
+- `TEST_OWNER_COOKIE`
+- `TEST_TEACHER_COOKIE`
+- `TEST_STUDIO_CLIENT_ID`
+- `TEST_STUDIO_TEACHER_ID`
+- `TEST_STUDIO_CLASS_ID`
+- `TEST_STUDIO_LOCATION_ID`
+- `TEST_REQUIRE_REPORT_DATA`
+- `TEST_REQUIRE_REPORT_INTEGRITY`
+- `TEST_FAIL_ON_SKIP`
+- `TEST_BASE_URL`
