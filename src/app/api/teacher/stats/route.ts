@@ -192,7 +192,8 @@ export async function GET() {
     return NextResponse.json({
       totalClasses: monthClasses.length,
       totalStudents: uniqueStudents.size,
-      avgRating: 0,
+      avgRating: null,
+      ratingDataAvailable: false,
       revenue: Math.round(revenue * 100) / 100,
       retentionRate,
       avgFillRate,
@@ -209,7 +210,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

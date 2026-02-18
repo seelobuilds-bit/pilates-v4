@@ -42,7 +42,7 @@ interface LocationStats {
   activeClients: number
   avgClassSize: number
   topClasses: { name: string; bookings: number }[]
-  topTeachers: { name: string; classes: number; rating: number }[]
+  topTeachers: { name: string; classes: number; rating: number | null }[]
   recentBookings: { clientName: string; className: string; date: string }[]
   bookingsByDay: { day: string; count: number }[]
   monthlyRevenue: { month: string; revenue: number }[]
@@ -329,7 +329,7 @@ export default function EditLocationPage({
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                          <span className="text-gray-900 font-medium">{teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
+                          <span className="text-gray-900 font-medium">{typeof teacher.rating === "number" && teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
                         </div>
                       </div>
                     ))}

@@ -30,7 +30,7 @@ interface ClassSession {
 interface TeacherStats {
   totalClasses: number
   totalStudents: number
-  avgRating: number
+  avgRating: number | null
   revenue: number
   retentionRate?: number
   avgFillRate?: number
@@ -65,7 +65,7 @@ export default function TeacherDashboardPage() {
   const displayStats = stats || {
     totalClasses: 0,
     totalStudents: 0,
-    avgRating: 0,
+    avgRating: null,
     revenue: 0,
     retentionRate: 0,
     avgFillRate: 0,
@@ -73,7 +73,7 @@ export default function TeacherDashboardPage() {
     upcomingClasses: [],
     recentClasses: []
   }
-  const hasRatingData = displayStats.avgRating > 0
+  const hasRatingData = typeof displayStats.avgRating === "number" && displayStats.avgRating > 0
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
@@ -125,7 +125,7 @@ export default function TeacherDashboardPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {hasRatingData ? displayStats.avgRating.toFixed(1) : "N/A"}
+                  {hasRatingData ? displayStats.avgRating!.toFixed(1) : "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">Average Rating</p>
               </div>
@@ -297,7 +297,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
 
 
 

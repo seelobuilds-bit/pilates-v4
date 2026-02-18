@@ -133,9 +133,10 @@ export async function GET(
       classSessions.length > 0
         ? Math.round((nonCancelledBookings.length / classSessions.length) * 10) / 10
         : 0,
-    avgRating: 0,
+    avgRating: null,
+    ratingDataAvailable: false,
     topTeachers: Array.from(teacherCounts.entries())
-      .map(([name, classes]) => ({ name, classes, rating: 0 }))
+      .map(([name, classes]) => ({ name, classes, rating: null }))
       .sort((a, b) => b.classes - a.classes)
       .slice(0, 5),
     topLocations: Array.from(locationBookingCounts.entries())

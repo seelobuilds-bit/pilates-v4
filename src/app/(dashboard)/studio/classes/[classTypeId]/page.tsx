@@ -55,8 +55,8 @@ interface ClassTypeStats {
   totalBookings: number
   totalRevenue: number
   avgAttendance: number
-  avgRating: number
-  topTeachers: { name: string; classes: number; rating: number }[]
+  avgRating: number | null
+  topTeachers: { name: string; classes: number; rating: number | null }[]
   topLocations: { name: string; bookings: number }[]
   monthlyBookings: { month: string; count: number }[]
   popularTimes: { time: string; count: number }[]
@@ -67,7 +67,7 @@ const emptyClassTypeStats: ClassTypeStats = {
   totalBookings: 0,
   totalRevenue: 0,
   avgAttendance: 0,
-  avgRating: 0,
+  avgRating: null,
   topTeachers: [],
   topLocations: [],
   monthlyBookings: [],
@@ -334,7 +334,7 @@ export default function EditClassTypePage({
                   <Star className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgRating > 0 ? safeStats.avgRating.toFixed(1) : "N/A"}</p>
+                  <p className="text-2xl font-bold text-gray-900">{typeof safeStats.avgRating === "number" && safeStats.avgRating > 0 ? safeStats.avgRating.toFixed(1) : "N/A"}</p>
                   <p className="text-sm text-gray-500">Avg. Rating</p>
                 </div>
               </div>
@@ -653,7 +653,7 @@ export default function EditClassTypePage({
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                          <span className="font-medium text-gray-900">{teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
+                          <span className="font-medium text-gray-900">{typeof teacher.rating === "number" && teacher.rating > 0 ? teacher.rating.toFixed(1) : "N/A"}</span>
                         </div>
                       </div>
                     ))}

@@ -140,9 +140,10 @@ export async function GET(
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 5),
     topTeachers: Array.from(teacherCounts.entries())
-      .map(([name, classes]) => ({ name, classes, rating: 0 }))
+      .map(([name, classes]) => ({ name, classes, rating: null }))
       .sort((a, b) => b.classes - a.classes)
       .slice(0, 5),
+    ratingDataAvailable: false,
     recentBookings: nonCancelledBookings.slice(0, 10).map((booking) => ({
       clientName: `${booking.client.firstName} ${booking.client.lastName}`.trim(),
       className: booking.classSession.classType.name,
