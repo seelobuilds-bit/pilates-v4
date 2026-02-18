@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import type { MobileConversationSummary, MobileInboxMessage } from "@/src/types/mobile"
@@ -14,9 +14,15 @@ function formatTimestamp(iso: string) {
   })
 }
 
-function ConversationCard({ item }: { item: MobileConversationSummary }) {
+function ConversationCard({
+  item,
+  onOpen,
+}: {
+  item: MobileConversationSummary
+  onOpen: (conversation: MobileConversationSummary) => void
+}) {
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => onOpen(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{item.clientName}</Text>
         {item.unreadCount > 0 ? <Text style={styles.badge}>{item.unreadCount}</Text> : null}
@@ -33,7 +39,7 @@ function ConversationCard({ item }: { item: MobileConversationSummary }) {
       ) : (
         <Text style={styles.emptyHint}>No messages yet</Text>
       )}
-    </View>
+    </Pressable>
   )
 }
 
@@ -43,7 +49,7 @@ function MessageCard({ item }: { item: MobileInboxMessage }) {
   return (
     <View style={[styles.card, inbound ? styles.inboundCard : styles.outboundCard]}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{inbound ? "From studio" : "Sent"}</Text>
+        <Text style={styles.cardTitle}>{inbound ? "Inbound" : "Outbound"}</Text>
         <Text style={styles.messageChannel}>{item.channel}</Text>
       </View>
       <Text style={styles.lastMessageTime}>{formatTimestamp(item.createdAt)}</Text>
@@ -59,6 +65,16 @@ export default function InboxScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [activeConversation, setActiveConversation] = useState<MobileConversationSummary | null>(null)
+  const [threadMessages, setThreadMessages] = useState<MobileInboxMessage[]>([])
+  const [threadLoading, setThreadLoading] = useState(false)
+  const [threadError, setThreadError] = useState<string | null>(null)
+
+  const [channel, setChannel] = useState<"EMAIL" | "SMS">("EMAIL")
+  const [subject, setSubject] = useState("")
+  const [composerText, setComposerText] = useState("")
+  const [sending, setSending] = useState(false)
 
   const isClient = useMemo(() => user?.role === "CLIENT", [user?.role])
 
@@ -91,9 +107,141 @@ export default function InboxScreen() {
     [token]
   )
 
+  const loadThread = useCallback(
+    async (clientId: string) => {
+      if (!token) return
+
+      setThreadLoading(true)
+      setThreadError(null)
+      try {
+        const response = await mobileApi.inboxThread(token, clientId)
+        setThreadMessages(response.messages)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load conversation"
+        setThreadError(message)
+      } finally {
+        setThreadLoading(false)
+      }
+    },
+    [token]
+  )
+
+  const openConversation = useCallback(
+    (conversation: MobileConversationSummary) => {
+      setActiveConversation(conversation)
+      setComposerText("")
+      setThreadMessages([])
+      void loadThread(conversation.clientId)
+    },
+    [loadThread]
+  )
+
+  const sendMessage = useCallback(async () => {
+    if (!token || !activeConversation) return
+    if (!composerText.trim()) return
+
+    setSending(true)
+    setThreadError(null)
+    try {
+      await mobileApi.sendInboxMessage(token, {
+        clientId: activeConversation.clientId,
+        channel,
+        subject,
+        message: composerText.trim(),
+      })
+
+      setComposerText("")
+      if (channel === "EMAIL") {
+        setSubject("")
+      }
+
+      await Promise.all([loadThread(activeConversation.clientId), loadInbox(true)])
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send message"
+      setThreadError(message)
+    } finally {
+      setSending(false)
+    }
+  }, [activeConversation, channel, composerText, loadInbox, loadThread, subject, token])
+
   useEffect(() => {
     void loadInbox()
   }, [loadInbox])
+
+  if (!isClient && activeConversation) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.threadHeader}>
+          <Pressable style={styles.backButton} onPress={() => setActiveConversation(null)}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{activeConversation.clientName}</Text>
+            <Text style={styles.subtitle}>{activeConversation.clientEmail}</Text>
+          </View>
+        </View>
+
+        {threadError ? <Text style={styles.error}>{threadError}</Text> : null}
+
+        {threadLoading && threadMessages.length === 0 ? (
+          <View style={styles.threadLoadingWrap}>
+            <ActivityIndicator size="small" />
+            <Text style={styles.loading}>Loading conversation...</Text>
+          </View>
+        ) : null}
+
+        <FlatList
+          data={threadMessages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <MessageCard item={item} />}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={threadLoading} onRefresh={() => void loadThread(activeConversation.clientId)} />}
+        />
+
+        <View style={styles.composerWrap}>
+          <View style={styles.channelRow}>
+            <Pressable
+              style={[styles.channelButton, channel === "EMAIL" && styles.channelButtonActive]}
+              onPress={() => setChannel("EMAIL")}
+            >
+              <Text style={[styles.channelButtonText, channel === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.channelButton, channel === "SMS" && styles.channelButtonActive]}
+              onPress={() => setChannel("SMS")}
+            >
+              <Text style={[styles.channelButtonText, channel === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+            </Pressable>
+          </View>
+
+          {channel === "EMAIL" ? (
+            <TextInput
+              value={subject}
+              onChangeText={setSubject}
+              placeholder="Subject (optional)"
+              style={styles.subjectInput}
+            />
+          ) : null}
+
+          <TextInput
+            value={composerText}
+            onChangeText={setComposerText}
+            placeholder="Write a message..."
+            style={styles.messageInput}
+            multiline
+          />
+
+          <Pressable
+            style={[styles.sendButton, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
+            onPress={() => void sendMessage()}
+            disabled={sending || !composerText.trim()}
+          >
+            <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send"}</Text>
+          </Pressable>
+        </View>
+      </View>
+    )
+  }
 
   const hasData = isClient ? messages.length > 0 : conversations.length > 0
 
@@ -120,7 +268,7 @@ export default function InboxScreen() {
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.clientId}
-          renderItem={({ item }) => <ConversationCard item={item} />}
+          renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} />}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
         />
@@ -135,6 +283,23 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 8,
     backgroundColor: "#f8fafc",
+  },
+  threadHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backButton: {
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "white",
+  },
+  backButtonText: {
+    color: "#334155",
+    fontWeight: "600",
   },
   title: {
     fontSize: 24,
@@ -204,6 +369,11 @@ const styles = StyleSheet.create({
   loading: {
     color: "#475569",
   },
+  threadLoadingWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   empty: {
     color: "#64748b",
   },
@@ -212,5 +382,66 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#dc2626",
+  },
+  composerWrap: {
+    borderTopWidth: 1,
+    borderColor: "#e2e8f0",
+    paddingTop: 10,
+    gap: 8,
+  },
+  channelRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  channelButton: {
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "white",
+  },
+  channelButtonActive: {
+    borderColor: "#1d4ed8",
+    backgroundColor: "#dbeafe",
+  },
+  channelButtonText: {
+    color: "#334155",
+    fontWeight: "600",
+  },
+  channelButtonTextActive: {
+    color: "#1d4ed8",
+  },
+  subjectInput: {
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "white",
+  },
+  messageInput: {
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "white",
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  sendButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#1d4ed8",
+    paddingVertical: 12,
+  },
+  sendButtonDisabled: {
+    opacity: 0.55,
+  },
+  sendButtonText: {
+    color: "white",
+    fontWeight: "700",
   },
 })

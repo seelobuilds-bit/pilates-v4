@@ -2,6 +2,7 @@ import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
   MobileInboxResponse,
+  MobileInboxThreadResponse,
   MobileLoginResponse,
   MobileScheduleResponse,
   MobileSessionUser,
@@ -70,6 +71,25 @@ export const mobileApi = {
     return request<MobileInboxResponse>("/api/mobile/inbox", {
       method: "GET",
       token,
+    })
+  },
+
+  inboxThread(token: string, clientId: string) {
+    const search = new URLSearchParams({ clientId })
+    return request<MobileInboxThreadResponse>(`/api/mobile/inbox/thread?${search.toString()}`, {
+      method: "GET",
+      token,
+    })
+  },
+
+  sendInboxMessage(
+    token: string,
+    params: { clientId: string; channel: "EMAIL" | "SMS"; message: string; subject?: string }
+  ) {
+    return request<{ success: boolean; messageId?: string }>("/api/mobile/inbox/send", {
+      method: "POST",
+      token,
+      body: JSON.stringify(params),
     })
   },
 
