@@ -2,6 +2,33 @@ import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const DEFAULT_REPORT_PERIOD_DAYS = 30
+const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
+
+function getReportDateRange(searchParams: URLSearchParams) {
+  const startDateParam = searchParams.get("startDate")
+  const endDateParam = searchParams.get("endDate")
+
+  if (startDateParam && endDateParam) {
+    const start = new Date(`${startDateParam}T00:00:00.000Z`)
+    const end = new Date(`${endDateParam}T23:59:59.999Z`)
+
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= end) {
+      return { startDate: start, endDate: end }
+    }
+  }
+
+  const parsedDays = Number.parseInt(searchParams.get("days") || "", 10)
+  const days = ALLOWED_DAY_PRESETS.has(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
+
+  const endDate = new Date()
+  const startDate = new Date(endDate)
+  startDate.setHours(0, 0, 0, 0)
+  startDate.setDate(startDate.getDate() - (days - 1))
+
+  return { startDate, endDate }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ teacherId: string }> }
@@ -13,6 +40,7 @@ export async function GET(
     }
 
     const { teacherId } = await params
+    const { startDate, endDate } = getReportDateRange(request.nextUrl.searchParams)
 
     const teacher = await db.teacher.findFirst({
       where: {
@@ -84,17 +112,26 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
+    const reportClassSessions = allClassSessions.filter((session) => {
+      const classStart = new Date(session.startTime)
+      return classStart >= startDate && classStart <= endDate
+    })
+    const reportBookings = allBookings.filter((booking) => {
+      const classStart = new Date(booking.classSession.startTime)
+      return classStart >= startDate && classStart <= endDate
+    })
+
     const thisMonthStart = new Date()
     thisMonthStart.setDate(1)
     thisMonthStart.setHours(0, 0, 0, 0)
 
-    const classesThisMonth = allClassSessions.filter(
+    const classesThisMonth = reportClassSessions.filter(
       (session) => new Date(session.startTime) >= thisMonthStart
     ).length
 
-    const uniqueStudents = new Set(allBookings.map((booking) => booking.clientId))
-    const nonCancelledBookings = allBookings.filter((booking) => booking.status !== "CANCELLED")
-    const completedBookings = allBookings.filter((booking) => booking.status === "COMPLETED").length
+    const uniqueStudents = new Set(reportBookings.map((booking) => booking.clientId))
+    const nonCancelledBookings = reportBookings.filter((booking) => booking.status !== "CANCELLED")
+    const completedBookings = reportBookings.filter((booking) => booking.status === "COMPLETED").length
 
     const revenue = nonCancelledBookings.reduce((sum, booking) => {
       const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
@@ -102,8 +139,8 @@ export async function GET(
     }, 0)
 
     const avgClassSize =
-      allClassSessions.length > 0
-        ? Math.round((nonCancelledBookings.length / allClassSessions.length) * 10) / 10
+      reportClassSessions.length > 0
+        ? Math.round((nonCancelledBookings.length / reportClassSessions.length) * 10) / 10
         : 0
 
     const completionRate =
@@ -123,14 +160,14 @@ export async function GET(
 
     const classCounts = new Map<string, number>()
     const locationCounts = new Map<string, number>()
-    for (const session of allClassSessions) {
+    for (const session of reportClassSessions) {
       classCounts.set(session.classType.name, (classCounts.get(session.classType.name) || 0) + 1)
       locationCounts.set(session.location.name, (locationCounts.get(session.location.name) || 0) + 1)
     }
 
-    const now = new Date()
+    const bucketEndDate = new Date(endDate)
     const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+      const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
       return {
         key: `${date.getFullYear()}-${date.getMonth()}`,
         month: date.toLocaleDateString("en-US", { month: "short" }),
@@ -138,7 +175,7 @@ export async function GET(
       }
     })
     const monthLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
-    for (const session of allClassSessions) {
+    for (const session of reportClassSessions) {
       const date = new Date(session.startTime)
       const key = `${date.getFullYear()}-${date.getMonth()}`
       const bucket = monthLookup.get(key)
@@ -173,7 +210,7 @@ export async function GET(
       ...teacher,
       upcomingClasses: teacher.classSessions,
       stats: {
-        totalClasses: teacher._count.classSessions,
+        totalClasses: reportClassSessions.length,
         totalStudents: uniqueStudents.size,
         averageRating: null,
         ratingDataAvailable: false,

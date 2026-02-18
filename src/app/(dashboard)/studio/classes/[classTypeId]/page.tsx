@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -63,6 +64,9 @@ interface ClassTypeStats {
   recentClasses: { date: string; teacher: string; location: string; attendance: number; capacity: number }[]
 }
 
+const DEFAULT_REPORT_PERIOD = "30"
+const CUSTOM_PERIOD_VALUE = "custom"
+
 const emptyClassTypeStats: ClassTypeStats = {
   totalBookings: 0,
   totalRevenue: 0,
@@ -91,6 +95,9 @@ export default function EditClassTypePage({
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
   const [stats, setStats] = useState<ClassTypeStats | null>(null)
+  const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -103,8 +110,16 @@ export default function EditClassTypePage({
   useEffect(() => {
     async function fetchData() {
       try {
+        const params = new URLSearchParams()
+        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+          params.set("startDate", customStartDate)
+          params.set("endDate", customEndDate)
+        } else {
+          params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
+        }
+
         const [classTypeRes, locationsRes, teachersRes] = await Promise.all([
-          fetch(`/api/studio/class-types/${resolvedParams.classTypeId}`),
+          fetch(`/api/studio/class-types/${resolvedParams.classTypeId}?${params.toString()}`),
           fetch("/api/studio/locations"),
           fetch("/api/studio/teachers")
         ])
@@ -154,7 +169,7 @@ export default function EditClassTypePage({
       }
     }
     fetchData()
-  }, [resolvedParams.classTypeId])
+  }, [resolvedParams.classTypeId, reportPeriod, customStartDate, customEndDate])
 
   const toggleLocation = (locationId: string) => {
     setSelectedLocations(prev => 
@@ -630,6 +645,41 @@ export default function EditClassTypePage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Report period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                      <SelectItem value={CUSTOM_PERIOD_VALUE}>Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {reportPeriod === CUSTOM_PERIOD_VALUE && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="class-custom-start">Start date</Label>
+                      <Input id="class-custom-start" type="date" value={customStartDate} onChange={(event) => setCustomStartDate(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="class-custom-end">End date</Label>
+                      <Input id="class-custom-end" type="date" value={customEndDate} onChange={(event) => setCustomEndDate(event.target.value)} />
+                    </div>
+                  </>
+                )}
+              </div>
+              {reportPeriod === CUSTOM_PERIOD_VALUE && (!customStartDate || !customEndDate) && (
+                <p className="text-sm text-gray-500">Choose both start and end dates to load custom report data.</p>
+              )}
+            </CardContent>
+          </Card>
           {stats && hasClassReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Teachers for this Class */}
