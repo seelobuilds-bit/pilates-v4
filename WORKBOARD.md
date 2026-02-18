@@ -27,6 +27,7 @@ Ship high-impact improvements in parallel without conflicts.
 | T-120 Reporting UI truth-source wiring | codex-main | codex/T-120-reporting-ui-truth-source | Studio reports page: wire marketing/social cards to backend metrics and eliminate placeholder UI values | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/37 |
 | T-121 Reporting regression smoke tests | mac-mini-agent | mini/T-121-reporting-smoke-tests | `scripts/tests/**`, `package.json`, `WORKBOARD.md` status update only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/38 |
 | T-122 Reporting depth fillers (instructors + retention detail) | codex-main | codex/T-122-reporting-depth-fillers | `/api/studio/reports` instructor/retention metrics + `/studio/reports` wiring and empty-state clarity | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/39 |
+| T-124 Reporting smoke CI pipeline | mac-mini-agent | mini/T-124-reporting-smoke-ci | `.github/workflows/reporting-smoke.yml`, `WORKBOARD.md` only | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/40 |
 
 ## Merge Order
 1. T-122 Reporting depth fillers (instructors + retention detail)
