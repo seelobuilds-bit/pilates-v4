@@ -172,4 +172,15 @@ export const mobileApi = {
       body: JSON.stringify(params || {}),
     })
   },
+
+  sendPushTest(token: string, params?: { message?: string }) {
+    return request<{ success: boolean; attempted: number; sent: number; failed: number; disabled: number }>(
+      "/api/mobile/push/test",
+      {
+        method: "POST",
+        token,
+        body: JSON.stringify(params || {}),
+      }
+    )
+  },
 }

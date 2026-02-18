@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { sendMobilePushNotification } from "@/lib/mobile-push"
+
+function formatStartTime(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(value)
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const studio = await db.studio.findUnique({
       where: { id: decoded.studioId },
-      select: { id: true, subdomain: true },
+      select: { id: true, subdomain: true, ownerId: true, name: true },
     })
 
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
@@ -36,6 +46,22 @@ export async function POST(request: NextRequest) {
 
     const clientId = decoded.clientId || decoded.sub
 
+    const client = await db.client.findFirst({
+      where: {
+        id: clientId,
+        studioId: studio.id,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    })
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
     const classSession = await db.classSession.findFirst({
       where: {
         id: classSessionId,
@@ -44,6 +70,11 @@ export async function POST(request: NextRequest) {
       include: {
         classType: {
           select: { id: true, name: true, price: true },
+        },
+        teacher: {
+          select: {
+            userId: true,
+          },
         },
         _count: {
           select: {
@@ -102,6 +133,24 @@ export async function POST(request: NextRequest) {
           },
         })
 
+        try {
+          const targetUserIds = Array.from(new Set([studio.ownerId, classSession.teacher.userId]))
+          await sendMobilePushNotification({
+            studioId: studio.id,
+            userIds: targetUserIds,
+            title: "Booking reactivated",
+            body: `${client.firstName} ${client.lastName} rebooked ${classSession.classType.name} (${formatStartTime(classSession.startTime)})`,
+            data: {
+              type: "mobile_booking_reactivated",
+              bookingId: reactivated.id,
+              classSessionId: classSession.id,
+              clientId: client.id,
+            },
+          })
+        } catch (pushError) {
+          console.error("Mobile booking reactivated push failed:", pushError)
+        }
+
         return NextResponse.json({ success: true, bookingId: reactivated.id, status: reactivated.status })
       }
 
@@ -121,6 +170,24 @@ export async function POST(request: NextRequest) {
         status: true,
       },
     })
+
+    try {
+      const targetUserIds = Array.from(new Set([studio.ownerId, classSession.teacher.userId]))
+      await sendMobilePushNotification({
+        studioId: studio.id,
+        userIds: targetUserIds,
+        title: "New class booking",
+        body: `${client.firstName} ${client.lastName} booked ${classSession.classType.name} (${formatStartTime(classSession.startTime)})`,
+        data: {
+          type: "mobile_booking_created",
+          bookingId: booking.id,
+          classSessionId: classSession.id,
+          clientId: client.id,
+        },
+      })
+    } catch (pushError) {
+      console.error("Mobile booking push failed:", pushError)
+    }
 
     return NextResponse.json({ success: true, bookingId: booking.id, status: booking.status })
   } catch (error) {
