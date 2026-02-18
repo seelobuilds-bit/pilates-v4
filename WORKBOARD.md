@@ -22,10 +22,10 @@ Ship high-impact improvements in parallel without conflicts.
 | T-114 Owner flow smoke tests | mac-mini-agent | mini/T-114-owner-smoke-tests | `scripts/tests/**`, `package.json`, docs notes only | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/28 |
 | T-115 Reporting integrity + empty-state correctness | codex-main | codex/T-115-reporting-integrity-empty-states | Reporting APIs/UI for studio reports + entity report tabs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/29 |
 | T-117 Mobile hardening core pass (studio owner, non-marketing) | codex-main | codex/T-117-mobile-hardening-core | Studio owner layout + non-marketing route responsiveness + support widget mobile behavior | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/31, https://github.com/seelobuilds-bit/pilates-v4/pull/32, https://github.com/seelobuilds-bit/pilates-v4/pull/33 |
-| T-118 Reporting backend integrity (studio + teacher) | codex-main | codex/T-118-reporting-backend-integrity | Reporting APIs and teacher reporting surfaces: bounded windows, remove mock values, canonical metrics | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/34 |
+| T-118 Reporting backend integrity (studio + teacher) | codex-main | codex/T-118-reporting-backend-integrity | Reporting APIs and teacher reporting surfaces: bounded windows, remove mock values, canonical metrics | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/34 |
 
 ## Merge Order
-1. T-118 Reporting backend integrity (studio + teacher)
+1. T-119 Reporting integrity phase 2 (marketing/social/leaderboards)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
