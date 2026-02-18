@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CourseChat } from "@/components/vault/course-chat"
 import {
   BookOpen,
@@ -114,6 +115,14 @@ export default function StudioVaultCoursePage({
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false)
   const [enrollmentsError, setEnrollmentsError] = useState<string | null>(null)
+  const [isAddModuleOpen, setIsAddModuleOpen] = useState(false)
+  const [creatingModule, setCreatingModule] = useState(false)
+  const [addModuleError, setAddModuleError] = useState<string | null>(null)
+  const [newModule, setNewModule] = useState({
+    title: "",
+    description: "",
+    dripDelay: ""
+  })
   
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
@@ -249,6 +258,52 @@ export default function StudioVaultCoursePage({
       }
     } catch (err) {
       console.error("Failed to toggle publish:", err)
+    }
+  }
+
+  async function createModule() {
+    if (!course || !newModule.title.trim()) return
+
+    setCreatingModule(true)
+    setAddModuleError(null)
+    try {
+      const payload = {
+        title: newModule.title.trim(),
+        description: newModule.description.trim() || null,
+        dripDelay: newModule.dripDelay.trim() === "" ? null : parseInt(newModule.dripDelay, 10)
+      }
+
+      const res = await fetch(`/api/vault/courses/${course.id}/modules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setAddModuleError(typeof data?.error === "string" ? data.error : "Failed to create module")
+        return
+      }
+
+      const created = await res.json()
+      setCourse((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          modules: [...prev.modules, created].sort((a, b) => a.order - b.order),
+          _count: {
+            ...prev._count,
+            modules: prev._count.modules + 1
+          }
+        }
+      })
+      setNewModule({ title: "", description: "", dripDelay: "" })
+      setIsAddModuleOpen(false)
+    } catch (error) {
+      console.error("Failed to create module:", error)
+      setAddModuleError("Failed to create module")
+    } finally {
+      setCreatingModule(false)
     }
   }
 
@@ -472,7 +527,11 @@ export default function StudioVaultCoursePage({
             <CardContent className="p-6">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-gray-900">Course Content</h3>
-                <Button size="sm" className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
+                <Button
+                  size="sm"
+                  className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
+                  onClick={() => setIsAddModuleOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Module
                 </Button>
@@ -636,10 +695,73 @@ export default function StudioVaultCoursePage({
           </TabsContent>
         )}
       </Tabs>
+
+      <Dialog open={isAddModuleOpen} onOpenChange={setIsAddModuleOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Module</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="module-title">Module Title</Label>
+              <Input
+                id="module-title"
+                value={newModule.title}
+                onChange={(event) => setNewModule((prev) => ({ ...prev, title: event.target.value }))}
+                placeholder="e.g. Fundamentals Week 1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="module-description">Description</Label>
+              <Textarea
+                id="module-description"
+                value={newModule.description}
+                onChange={(event) => setNewModule((prev) => ({ ...prev, description: event.target.value }))}
+                rows={3}
+                placeholder="What this module covers..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="module-drip-delay">Drip Delay (days)</Label>
+              <Input
+                id="module-drip-delay"
+                type="number"
+                min={0}
+                value={newModule.dripDelay}
+                onChange={(event) => setNewModule((prev) => ({ ...prev, dripDelay: event.target.value }))}
+                placeholder="Leave empty to unlock immediately"
+              />
+            </div>
+            {addModuleError ? <p className="text-sm text-red-600">{addModuleError}</p> : null}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsAddModuleOpen(false)
+                setAddModuleError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={createModule}
+              disabled={creatingModule || !newModule.title.trim()}
+            >
+              {creatingModule ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Create Module
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
 
 
 
