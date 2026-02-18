@@ -60,12 +60,14 @@ Ship high-impact improvements in parallel without conflicts.
 | T-155 Mobile inbox search + role filters | codex-main | codex/T-155-mobile-inbox-search-filters | Add search and practical filtering in mobile inbox (owner/teacher unread filter, client channel filter) with clearer empty states | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/71 |
 | T-156 Web parity polish (schedule picker + vault uploads + subscription tags) | codex-main | codex/t-156-web-polish | Replace add-class datetime UX with styled picker, add vault lesson uploads/resources, and show plan-specific subscription tags | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/72 |
 | T-157 Mobile session hardening | codex-main | codex/t-157-mobile-hardening-pass | Harden mobile API/session behavior for token expiry + request timeouts and improve login guardrails | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/73 |
-| T-158 Mobile compliance + private release pack | mac-mini-agent | mini/t-158-mobile-compliance-pack | Mobile compliance docs/runbook + profile account deletion web handoff (mobile/docs only) | In Progress | TBD |
-| T-159 Mobile deep-link + auth-safe route handling | codex-main | codex/t-159-mobile-deep-link-auth-routing | Preserve deep-linked mobile tab across auth redirect and harden post-login route allowlist | In Progress | https://github.com/seelobuilds-bit/pilates-v4/pull/75 |
+| T-158 Mobile compliance + private release pack | mac-mini-agent | mini/t-158-mobile-compliance-pack | Mobile compliance docs/runbook + profile account deletion web handoff (mobile/docs only) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/76 |
+| T-159 Mobile deep-link + auth-safe route handling | codex-main | codex/t-159-mobile-deep-link-auth-routing | Preserve deep-linked mobile tab across auth redirect and harden post-login route allowlist | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/75 |
+| T-160 Mobile push-notification foundation | codex-main | codex/t-160-mobile-push-foundation | Add mobile push token registration lifecycle (mobile permission + register/unregister APIs + backend token model) | In Progress | TBD |
+| T-161 Mobile packaging automation | mac-mini-agent | mini/t-161-mobile-packaging-automation | Improve studio variant generator with validation, dry-run, and per-studio release checklist output | In Progress | TBD |
 
 ## Merge Order
-1. T-158 Mobile compliance + private release pack
-2. T-159 Mobile deep-link + auth-safe route handling
+1. T-161 Mobile packaging automation
+2. T-160 Mobile push-notification foundation
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

@@ -20,6 +20,8 @@ Ship one shared mobile codebase while distributing private branded apps per stud
 - `GET /api/mobile/auth/me`
 - `POST /api/mobile/auth/logout`
 - `GET /api/mobile/bootstrap`
+- `POST /api/mobile/push/register`
+- `POST /api/mobile/push/unregister`
 
 ## Studio Onboarding Flow
 

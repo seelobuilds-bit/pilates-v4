@@ -1,7 +1,8 @@
 import * as SecureStore from "expo-secure-store"
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { mobileApi, setMobileApiUnauthorizedHandler } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
+import { registerForPushNotificationsAsync } from "@/src/lib/push"
 import type { MobileBootstrapResponse, MobileSessionUser } from "@/src/types/mobile"
 
 const SESSION_TOKEN_KEY = "current_mobile_session_token"
@@ -31,11 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<MobileSessionUser | null>(null)
   const [bootstrap, setBootstrap] = useState<MobileBootstrapResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const registeredPushTokenRef = useRef<string | null>(null)
 
   const clearSession = useCallback(async () => {
     setToken(null)
     setUser(null)
     setBootstrap(null)
+    registeredPushTokenRef.current = null
     await persistToken(null)
   }, [])
 
@@ -64,9 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     const currentToken = token
+    const registeredPushToken = registeredPushTokenRef.current
     await clearSession()
 
     if (currentToken) {
+      if (registeredPushToken) {
+        try {
+          await mobileApi.unregisterPushToken(currentToken, { expoPushToken: registeredPushToken })
+        } catch {
+          // Best-effort cleanup only.
+        }
+      }
+
       try {
         await mobileApi.logout(currentToken)
       } catch {
@@ -126,6 +138,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     void boot()
   }, [clearSession, hydrateFromToken])
+
+  useEffect(() => {
+    if (!token) return
+    const currentToken = token
+
+    let cancelled = false
+
+    async function syncPushRegistration() {
+      try {
+        const registration = await registerForPushNotificationsAsync()
+        if (!registration.enabled || !registration.params || cancelled) {
+          return
+        }
+
+        if (registeredPushTokenRef.current === registration.params.expoPushToken) {
+          return
+        }
+
+        await mobileApi.registerPushToken(currentToken, registration.params)
+        if (!cancelled) {
+          registeredPushTokenRef.current = registration.params.expoPushToken
+        }
+      } catch {
+        // Push registration should never block auth/session.
+      }
+    }
+
+    void syncPushRegistration()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   const value = useMemo(
     () => ({

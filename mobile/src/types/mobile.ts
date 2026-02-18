@@ -108,3 +108,13 @@ export interface MobileInboxThreadResponse {
   }
   messages: MobileInboxMessage[]
 }
+
+export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
+
+export interface MobilePushRegisterParams {
+  expoPushToken: string
+  platform: MobilePushPlatform
+  deviceId?: string | null
+  appVersion?: string | null
+  buildNumber?: string | null
+}
