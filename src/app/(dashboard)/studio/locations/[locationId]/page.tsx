@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -48,6 +49,9 @@ interface LocationStats {
   monthlyRevenue: { month: string; revenue: number }[]
 }
 
+const DEFAULT_REPORT_PERIOD = "30"
+const CUSTOM_PERIOD_VALUE = "custom"
+
 const emptyLocationStats: LocationStats = {
   totalBookings: 0,
   totalRevenue: 0,
@@ -72,6 +76,9 @@ export default function EditLocationPage({
   const [saving, setSaving] = useState(false)
   const [location, setLocation] = useState<Location | null>(null)
   const [stats, setStats] = useState<LocationStats | null>(null)
+  const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -85,7 +92,15 @@ export default function EditLocationPage({
   useEffect(() => {
     async function fetchLocation() {
       try {
-        const res = await fetch(`/api/studio/locations/${resolvedParams.locationId}`)
+        const params = new URLSearchParams()
+        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+          params.set("startDate", customStartDate)
+          params.set("endDate", customEndDate)
+        } else {
+          params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
+        }
+
+        const res = await fetch(`/api/studio/locations/${resolvedParams.locationId}?${params.toString()}`)
         if (!res.ok) {
           setError("We couldn't load this location right now.")
           return
@@ -111,7 +126,7 @@ export default function EditLocationPage({
       }
     }
     fetchLocation()
-  }, [resolvedParams.locationId])
+  }, [resolvedParams.locationId, reportPeriod, customStartDate, customEndDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -283,6 +298,41 @@ export default function EditLocationPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Report period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                      <SelectItem value={CUSTOM_PERIOD_VALUE}>Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {reportPeriod === CUSTOM_PERIOD_VALUE && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="location-custom-start">Start date</Label>
+                      <Input id="location-custom-start" type="date" value={customStartDate} onChange={(event) => setCustomStartDate(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location-custom-end">End date</Label>
+                      <Input id="location-custom-end" type="date" value={customEndDate} onChange={(event) => setCustomEndDate(event.target.value)} />
+                    </div>
+                  </>
+                )}
+              </div>
+              {reportPeriod === CUSTOM_PERIOD_VALUE && (!customStartDate || !customEndDate) && (
+                <p className="text-sm text-gray-500">Choose both start and end dates to load custom report data.</p>
+              )}
+            </CardContent>
+          </Card>
           {stats && hasLocationReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Classes */}

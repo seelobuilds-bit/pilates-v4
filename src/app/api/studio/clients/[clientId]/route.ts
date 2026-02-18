@@ -2,6 +2,33 @@ import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const DEFAULT_REPORT_PERIOD_DAYS = 30
+const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
+
+function getReportDateRange(searchParams: URLSearchParams) {
+  const startDateParam = searchParams.get("startDate")
+  const endDateParam = searchParams.get("endDate")
+
+  if (startDateParam && endDateParam) {
+    const start = new Date(`${startDateParam}T00:00:00.000Z`)
+    const end = new Date(`${endDateParam}T23:59:59.999Z`)
+
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= end) {
+      return { startDate: start, endDate: end }
+    }
+  }
+
+  const parsedDays = Number.parseInt(searchParams.get("days") || "", 10)
+  const days = ALLOWED_DAY_PRESETS.has(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
+
+  const endDate = new Date()
+  const startDate = new Date(endDate)
+  startDate.setHours(0, 0, 0, 0)
+  startDate.setDate(startDate.getDate() - (days - 1))
+
+  return { startDate, endDate }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
@@ -13,6 +40,7 @@ export async function GET(
     }
 
     const { clientId } = await params
+    const { startDate, endDate } = getReportDateRange(request.nextUrl.searchParams)
 
     const client = await db.client.findFirst({
       where: {
@@ -61,9 +89,14 @@ export async function GET(
       }
     })
 
-    const nonCancelledBookings = allBookings.filter((booking) => booking.status !== "CANCELLED")
-    const completedClasses = allBookings.filter((booking) => booking.status === "COMPLETED").length
-    const cancelledClasses = allBookings.filter((booking) => booking.status === "CANCELLED").length
+    const reportBookings = allBookings.filter((booking) => {
+      const classStart = new Date(booking.classSession.startTime)
+      return classStart >= startDate && classStart <= endDate
+    })
+
+    const nonCancelledBookings = reportBookings.filter((booking) => booking.status !== "CANCELLED")
+    const completedClasses = reportBookings.filter((booking) => booking.status === "COMPLETED").length
+    const cancelledClasses = reportBookings.filter((booking) => booking.status === "CANCELLED").length
 
     const totalSpent = nonCancelledBookings.reduce((sum, booking) => {
       const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
@@ -71,7 +104,7 @@ export async function GET(
     }, 0)
 
     const totalBookings = nonCancelledBookings.length
-    const totalBookingAttempts = allBookings.length
+    const totalBookingAttempts = reportBookings.length
     const cancelRate = totalBookingAttempts > 0 ? Math.round((cancelledClasses / totalBookingAttempts) * 1000) / 10 : 0
 
     const classCounts = new Map<string, number>()
@@ -137,7 +170,7 @@ export async function GET(
       }
     }
 
-    const activityTimeline = allBookings.slice(0, 10).map((booking) => {
+    const activityTimeline = reportBookings.slice(0, 10).map((booking) => {
       let action = "Updated"
       if (booking.status === "CONFIRMED") action = "Booked"
       if (booking.status === "COMPLETED") action = "Completed"
