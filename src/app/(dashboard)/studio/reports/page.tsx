@@ -418,6 +418,18 @@ export default function ReportsPage() {
     reportData.utilisation.totalAttendance > 0 ||
     reportData.revenue.monthly.some((month) => month.amount > 0)
 
+  const hasReportsData =
+    reportData.revenue.total > 0 ||
+    reportData.revenue.monthly.length > 0 ||
+    reportData.revenue.bySource.length > 0 ||
+    reportData.utilisation.totalClasses > 0 ||
+    reportData.utilisation.byTimeSlot.length > 0 ||
+    reportData.instructors.length > 0 ||
+    teachers.length > 0 ||
+    reportData.retention.totalClients > 0 ||
+    reportData.marketing.emailsSent > 0 ||
+    reportData.marketing.campaigns.length > 0
+
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -607,6 +619,29 @@ export default function ReportsPage() {
           </TabsTrigger>
         </TabsList>
 
+        {!hasReportsData ? (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-10 text-center">
+              <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-7 w-7 text-violet-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No data for this period</h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                We don&apos;t have enough reporting data yet. Try another date range or check back after more classes, bookings, and campaigns are tracked.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh data
+                </Button>
+                <Button onClick={() => setPeriod("30")} className="bg-violet-600 hover:bg-violet-700">
+                  View last 30 days
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {!hasOverviewData && (
@@ -1533,6 +1568,8 @@ export default function ReportsPage() {
         <TabsContent value="social" className="space-y-6">
           <SocialMediaReportSection currency={currency} />
         </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   )
