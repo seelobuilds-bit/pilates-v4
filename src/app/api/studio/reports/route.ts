@@ -686,7 +686,7 @@ export async function GET(request: NextRequest) {
       totalCapacity: number
       attended: number
       revenue: number
-      rating: number
+      rating: number | null
       previousClasses: number
       clientVisits: Map<string, number>
     }
@@ -704,7 +704,7 @@ export async function GET(request: NextRequest) {
         totalCapacity: 0,
         attended: 0,
         revenue: 0,
-        rating: 0,
+        rating: null,
         previousClasses: previousClassCountByTeacherId.get(session.teacherId) || 0,
         clientVisits: new Map<string, number>()
       }
@@ -736,7 +736,7 @@ export async function GET(request: NextRequest) {
       totalCapacity: 0,
       attended: 0,
       revenue: 0,
-      rating: 0,
+      rating: null,
       previousClasses: previousClassCountByTeacherId.get(teacher.id) || 0,
       clientVisits: new Map<string, number>()
     })

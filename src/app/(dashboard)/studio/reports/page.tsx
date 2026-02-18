@@ -84,7 +84,7 @@ const defaultData = {
     classes: number;
     avgFill: number;
     revenue: number;
-    rating: number;
+    rating: number | null;
     retention: number;
     trend: string;
     specialties: string[];
@@ -385,17 +385,21 @@ export default function ReportsPage() {
       ? Math.round(reportData.revenue.total / reportData.retention.activeClients)
       : 0
   const instructorCount = reportData.instructors.length
+  const ratedInstructors = reportData.instructors.filter(
+    (instructor) => typeof instructor.rating === "number" && instructor.rating > 0
+  )
   const instructorAverageFill =
     instructorCount > 0
       ? Math.round(reportData.instructors.reduce((sum, instructor) => sum + instructor.avgFill, 0) / instructorCount)
       : 0
   const instructorTotalClasses = reportData.instructors.reduce((sum, instructor) => sum + instructor.classes, 0)
   const instructorAverageRating =
-    instructorCount > 0
+    ratedInstructors.length > 0
       ? (
-          reportData.instructors.reduce((sum, instructor) => sum + instructor.rating, 0) / instructorCount
+          ratedInstructors.reduce((sum, instructor) => sum + (instructor.rating || 0), 0) /
+          ratedInstructors.length
         ).toFixed(1)
-      : "0.0"
+      : "N/A"
   const hasOverviewData =
     reportData.revenue.total > 0 ||
     reportData.utilisation.totalClasses > 0 ||
@@ -1141,7 +1145,9 @@ export default function ReportsPage() {
                   <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
                   <p className="text-2xl font-bold text-gray-900">{instructorAverageRating}</p>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Client ratings</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {ratedInstructors.length > 0 ? "Client ratings" : "Ratings unavailable"}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -1219,7 +1225,11 @@ export default function ReportsPage() {
                           <td className="py-4 px-2 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                              <span className="font-semibold text-gray-900">{instructor.rating}</span>
+                              <span className="font-semibold text-gray-900">
+                                {typeof instructor.rating === "number" && instructor.rating > 0
+                                  ? instructor.rating.toFixed(1)
+                                  : "N/A"}
+                              </span>
                             </div>
                           </td>
                           <td className="py-4 px-2 text-right">

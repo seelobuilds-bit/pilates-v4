@@ -162,6 +162,7 @@ export async function GET(
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count),
       monthlyClasses: monthlyBuckets.map(({ month, count }) => ({ month, count })),
+      ratingDataAvailable: false,
       recentReviews: [] as Array<{ clientName: string; rating: number; comment: string; date: string }>,
       topClients
     }
@@ -172,7 +173,8 @@ export async function GET(
       stats: {
         totalClasses: teacher._count.classSessions,
         totalStudents: uniqueStudents.size,
-        averageRating: 0,
+        averageRating: null,
+        ratingDataAvailable: false,
         thisMonth: classesThisMonth
       },
       extendedStats

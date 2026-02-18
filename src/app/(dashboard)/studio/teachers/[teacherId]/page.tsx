@@ -53,7 +53,7 @@ interface Teacher {
   stats: {
     totalClasses: number
     totalStudents: number
-    averageRating: number
+    averageRating: number | null
     thisMonth: number
   }
 }
@@ -442,7 +442,7 @@ export default function TeacherDetailPage({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {teacher.stats.averageRating > 0 ? teacher.stats.averageRating.toFixed(1) : "N/A"}
+                  {typeof teacher.stats.averageRating === "number" && teacher.stats.averageRating > 0 ? teacher.stats.averageRating.toFixed(1) : "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">Avg. Rating</p>
               </div>

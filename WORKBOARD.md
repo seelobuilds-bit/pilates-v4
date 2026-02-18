@@ -31,10 +31,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-125 Reporting empty-state/rating clarity (teacher surfaces) | codex-main | codex/T-125-reporting-empty-state-ratings | Teacher dashboard/reporting: explicit unavailable rating/review states and reporting UX polish | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/41 |
 | T-126 Supabase RLS baseline and security codification | codex-main | codex/T-126-supabase-rls-baseline | SQL + scripts/docs to codify RLS defaults for Supabase public schema | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/42 |
 | T-127 Automation chain stop-condition UX polish | mac-mini-agent | mini/T-127-automation-chain-conditions | Automation create/edit UX wording and delay validation polish | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/43 |
-| T-128 Social attribution tracking (booking + reports integrity) | codex-main | codex/T-128-social-attribution-tracking | Preserve `sf_track`, count click/conversion/revenue, and wire attribution through booking APIs | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/44 |
+| T-128 Social attribution tracking (booking + reports integrity) | codex-main | codex/T-128-social-attribution-tracking | Preserve `sf_track`, count click/conversion/revenue, and wire attribution through booking APIs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/44 |
+| T-129 Reporting rating/review placeholder cleanup | codex-main | codex/T-129-reporting-rating-placeholders | Remove hardcoded rating placeholders and present explicit unavailable states across studio/teacher reporting APIs + UI | In Progress | TBD |
 
 ## Merge Order
-1. T-128 Social attribution tracking (booking + reports integrity)
+1. T-129 Reporting rating/review placeholder cleanup
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
