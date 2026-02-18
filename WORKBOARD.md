@@ -44,9 +44,10 @@ Ship high-impact improvements in parallel without conflicts.
 | T-138 Reporting metric math hardening | codex-main | codex/T-138-reporting-metric-math-hardening | Centralize percentage/currency math helpers and use them in reporting APIs to enforce bounded, consistent metric outputs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/53 |
 | T-139 Entity report period smoke validation | codex-main | codex/T-139-entity-report-period-smoke-validation | Extend reporting smoke with entity-level window checks (`days`/custom/fallback + monotonic windows) so period regressions fail CI | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/55 |
 | T-140 Reporting completeness pass (remaining surfaces) | codex-main | codex/T-140-reporting-completeness-pass | Verify/fix reporting + tracking for website analytics/social hub/marketing automations/leaderboards, enforce empty states, and add smoke coverage | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/56 |
+| T-141 Reporting end-to-end integrity (write-path + parity) | codex-main | codex/T-141-reporting-e2e-integrity | Validate tracking write-paths (bookings/automations/social/leaderboards), enforce cross-surface parity checks, and fail CI on integrity regressions | In Progress | TBD |
 
 ## Merge Order
-1. None currently queued
+1. T-141 Reporting end-to-end integrity (write-path + parity)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
