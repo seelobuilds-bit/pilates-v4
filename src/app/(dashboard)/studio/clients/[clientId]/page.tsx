@@ -5,6 +5,9 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -81,6 +84,9 @@ interface Communication {
   timestamp: string
 }
 
+const DEFAULT_REPORT_PERIOD = "30"
+const CUSTOM_PERIOD_VALUE = "custom"
+
 const emptyClientStats: ClientStats = {
   totalSpent: 0,
   totalBookings: 0,
@@ -112,11 +118,22 @@ export default function ClientDetailPage({
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [communications, setCommunications] = useState<Communication[]>([])
   const [currency, setCurrency] = useState("usd")
+  const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
 
   useEffect(() => {
     async function fetchClient() {
       try {
-        const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`)
+        const params = new URLSearchParams()
+        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+          params.set("startDate", customStartDate)
+          params.set("endDate", customEndDate)
+        } else {
+          params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
+        }
+
+        const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}?${params.toString()}`)
         if (!res.ok) {
           setError("We couldn't load this client right now.")
           return
@@ -148,7 +165,7 @@ export default function ClientDetailPage({
     }
 
     fetchCurrency()
-  }, [resolvedParams.clientId])
+  }, [resolvedParams.clientId, reportPeriod, customStartDate, customEndDate])
 
   if (loading) {
     return (
@@ -384,6 +401,51 @@ export default function ClientDetailPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Report period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                      <SelectItem value={CUSTOM_PERIOD_VALUE}>Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {reportPeriod === CUSTOM_PERIOD_VALUE && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-custom-start">Start date</Label>
+                      <Input
+                        id="client-custom-start"
+                        type="date"
+                        value={customStartDate}
+                        onChange={(event) => setCustomStartDate(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-custom-end">End date</Label>
+                      <Input
+                        id="client-custom-end"
+                        type="date"
+                        value={customEndDate}
+                        onChange={(event) => setCustomEndDate(event.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              {reportPeriod === CUSTOM_PERIOD_VALUE && (!customStartDate || !customEndDate) && (
+                <p className="text-sm text-gray-500">Choose both start and end dates to load custom report data.</p>
+              )}
+            </CardContent>
+          </Card>
           {stats && hasClientReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Preferences */}

@@ -53,7 +53,7 @@ interface Teacher {
   stats: {
     totalClasses: number
     totalStudents: number
-    averageRating: number
+    averageRating: number | null
     thisMonth: number
   }
 }
@@ -79,6 +79,9 @@ interface TeacherStats {
   recentReviews: { clientName: string; rating: number; comment: string; date: string }[]
   topClients: { name: string; bookings: number }[]
 }
+
+const DEFAULT_REPORT_PERIOD = "30"
+const CUSTOM_PERIOD_VALUE = "custom"
 
 const emptyTeacherStats: TeacherStats = {
   revenue: 0,
@@ -136,6 +139,9 @@ export default function TeacherDetailPage({
   const [extendedStats, setExtendedStats] = useState<TeacherStats | null>(null)
   const [scheduleWeekOffset, setScheduleWeekOffset] = useState(0)
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([])
+  const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
   
   // Invoice state
   const [payRate, setPayRate] = useState<PayRate>({ type: "PER_CLASS", rate: 0, currency: "USD" })
@@ -145,7 +151,15 @@ export default function TeacherDetailPage({
   useEffect(() => {
     async function fetchTeacher() {
       try {
-        const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`)
+        const params = new URLSearchParams()
+        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+          params.set("startDate", customStartDate)
+          params.set("endDate", customEndDate)
+        } else {
+          params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
+        }
+
+        const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}?${params.toString()}`)
         if (!res.ok) {
           setError("We couldn't load this teacher right now.")
           return
@@ -162,7 +176,7 @@ export default function TeacherDetailPage({
       setLoading(false)
     }
     fetchTeacher()
-  }, [resolvedParams.teacherId])
+  }, [resolvedParams.teacherId, reportPeriod, customStartDate, customEndDate])
 
   // Fetch blocked times when week offset changes
   useEffect(() => {
@@ -442,7 +456,7 @@ export default function TeacherDetailPage({
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {teacher.stats.averageRating > 0 ? teacher.stats.averageRating.toFixed(1) : "N/A"}
+                  {typeof teacher.stats.averageRating === "number" && teacher.stats.averageRating > 0 ? teacher.stats.averageRating.toFixed(1) : "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">Avg. Rating</p>
               </div>
@@ -489,6 +503,41 @@ export default function TeacherDetailPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Report period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                      <SelectItem value={CUSTOM_PERIOD_VALUE}>Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {reportPeriod === CUSTOM_PERIOD_VALUE && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="teacher-custom-start">Start date</Label>
+                      <Input id="teacher-custom-start" type="date" value={customStartDate} onChange={(event) => setCustomStartDate(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="teacher-custom-end">End date</Label>
+                      <Input id="teacher-custom-end" type="date" value={customEndDate} onChange={(event) => setCustomEndDate(event.target.value)} />
+                    </div>
+                  </>
+                )}
+              </div>
+              {reportPeriod === CUSTOM_PERIOD_VALUE && (!customStartDate || !customEndDate) && (
+                <p className="text-sm text-gray-500">Choose both start and end dates to load custom report data.</p>
+              )}
+            </CardContent>
+          </Card>
           {extendedStats && hasTeacherReportData && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Performance Metrics */}

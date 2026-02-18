@@ -2,17 +2,64 @@ import { NextRequest, NextResponse } from "next/server"
 import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
+const DAY_IN_MS = 1000 * 60 * 60 * 24
+
+type ReportRange = {
+  days: number
+  startDate: Date
+  reportEndDate: Date
+  previousStartDate: Date
+}
 
 function parseReportDays(value: string | null) {
   if (!value) return DEFAULT_REPORT_DAYS
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed)) return DEFAULT_REPORT_DAYS
   return Math.min(MAX_REPORT_DAYS, Math.max(1, parsed))
+}
+
+function parseDateInput(value: string | null) {
+  if (!value) return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
+}
+
+function resolveReportRange(searchParams: URLSearchParams): ReportRange {
+  const requestedStartDate = parseDateInput(searchParams.get("startDate"))
+  const requestedEndDate = parseDateInput(searchParams.get("endDate"))
+
+  if (
+    requestedStartDate &&
+    requestedEndDate &&
+    requestedStartDate.getTime() <= requestedEndDate.getTime()
+  ) {
+    const startDate = new Date(requestedStartDate)
+    const reportEndDate = new Date(requestedEndDate)
+    // Use an exclusive upper bound at the start of the day after the selected end date.
+    reportEndDate.setUTCDate(reportEndDate.getUTCDate() + 1)
+    const days = Math.max(1, Math.round((reportEndDate.getTime() - startDate.getTime()) / DAY_IN_MS))
+    const previousStartDate = new Date(startDate)
+    previousStartDate.setUTCDate(previousStartDate.getUTCDate() - days)
+
+    return { days, startDate, reportEndDate, previousStartDate }
+  }
+
+  const days = parseReportDays(searchParams.get("days"))
+  const reportEndDate = new Date()
+  const startDate = new Date(reportEndDate)
+  startDate.setDate(startDate.getDate() - days)
+  const previousStartDate = new Date(startDate)
+  previousStartDate.setDate(previousStartDate.getDate() - days)
+
+  return { days, startDate, reportEndDate, previousStartDate }
 }
 
 export async function GET(request: NextRequest) {
@@ -24,12 +71,7 @@ export async function GET(request: NextRequest) {
 
   const studioId = session.user.studioId
   const searchParams = request.nextUrl.searchParams
-  const days = parseReportDays(searchParams.get("days"))
-  const reportEndDate = new Date()
-  const startDate = new Date(reportEndDate)
-  startDate.setDate(startDate.getDate() - days)
-  const previousStartDate = new Date(startDate)
-  previousStartDate.setDate(previousStartDate.getDate() - days)
+  const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(searchParams)
 
   const monthWindowStart = new Date(reportEndDate)
   monthWindowStart.setMonth(monthWindowStart.getMonth() - 5)
@@ -214,7 +256,7 @@ export async function GET(request: NextRequest) {
     classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
 
     const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-    const fill = session.capacity > 0 ? Math.round((attendedCount / session.capacity) * 100) : 0
+    const fill = ratioPercentage(attendedCount, session.capacity, 0)
 
     const slotLabel = new Date(session.startTime).toLocaleTimeString("en-US", {
       hour: "numeric",
@@ -252,11 +294,12 @@ export async function GET(request: NextRequest) {
   }, 0)
   const overallAverageFill =
     classSessions.length > 0
-      ? Math.round(
+      ? roundTo(
           classSessions.reduce((sum, session) => {
             const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-            return sum + (session.capacity > 0 ? (attendedCount / session.capacity) * 100 : 0)
-          }, 0) / classSessions.length
+            return sum + ratioPercentage(attendedCount, session.capacity, 4)
+          }, 0) / classSessions.length,
+          0
         )
       : 0
 
@@ -376,7 +419,7 @@ export async function GET(request: NextRequest) {
       where: {
         isActive: true,
         account: {
-          studioId
+          OR: [{ studioId }, { teacher: { studioId } }]
         }
       }
     }),
@@ -388,7 +431,7 @@ export async function GET(request: NextRequest) {
         },
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }
@@ -402,7 +445,7 @@ export async function GET(request: NextRequest) {
         responseSent: true,
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }
@@ -416,7 +459,7 @@ export async function GET(request: NextRequest) {
         converted: true,
         flow: {
           account: {
-            studioId
+            OR: [{ studioId }, { teacher: { studioId } }]
           }
         }
       }
@@ -527,12 +570,10 @@ export async function GET(request: NextRequest) {
     (message) => message.clickedAt || message.status === "CLICKED"
   ).length
 
-  const emailOpenRate = emailsSent > 0 ? Math.round((openedEmails / emailsSent) * 1000) / 10 : 0
-  const emailClickRate = emailsSent > 0 ? Math.round((clickedEmails / emailsSent) * 1000) / 10 : 0
-  const previousEmailOpenRate =
-    previousEmailsSent > 0 ? Math.round((previousOpenedEmails / previousEmailsSent) * 1000) / 10 : 0
-  const previousEmailClickRate =
-    previousEmailsSent > 0 ? Math.round((previousClickedEmails / previousEmailsSent) * 1000) / 10 : 0
+  const emailOpenRate = ratioPercentage(openedEmails, emailsSent, 1)
+  const emailClickRate = ratioPercentage(clickedEmails, emailsSent, 1)
+  const previousEmailOpenRate = ratioPercentage(previousOpenedEmails, previousEmailsSent, 1)
+  const previousEmailClickRate = ratioPercentage(previousClickedEmails, previousEmailsSent, 1)
 
   const emailRecipientClientIds = Array.from(
     new Set(
@@ -643,25 +684,18 @@ export async function GET(request: NextRequest) {
   const attendedBookingsPreviousPeriod = previousBookings.filter((booking) =>
     ATTENDED_BOOKING_STATUSES.has(booking.status)
   )
-  const noShowRate =
-    attendedBookingsThisPeriod.length > 0
-      ? Math.round(
-          (attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length /
-            attendedBookingsThisPeriod.length) *
-            1000
-        ) / 10
-      : 0
-  const previousNoShowRate =
-    attendedBookingsPreviousPeriod.length > 0
-      ? Math.round(
-          (attendedBookingsPreviousPeriod.filter((booking) => booking.status === "NO_SHOW").length /
-            attendedBookingsPreviousPeriod.length) *
-            1000
-        ) / 10
-      : 0
+  const noShowRate = ratioPercentage(
+    attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length,
+    attendedBookingsThisPeriod.length,
+    1
+  )
+  const previousNoShowRate = ratioPercentage(
+    attendedBookingsPreviousPeriod.filter((booking) => booking.status === "NO_SHOW").length,
+    attendedBookingsPreviousPeriod.length,
+    1
+  )
 
-  const socialConversionRate =
-    totalSocialTriggered > 0 ? Math.round((totalSocialBooked / totalSocialTriggered) * 1000) / 10 : 0
+  const socialConversionRate = ratioPercentage(totalSocialBooked, totalSocialTriggered, 1)
 
   const previousClassCountByTeacherId = new Map(
     previousClassCounts.map((row) => [row.teacherId, row._count.teacherId])
@@ -686,7 +720,7 @@ export async function GET(request: NextRequest) {
       totalCapacity: number
       attended: number
       revenue: number
-      rating: number
+      rating: number | null
       previousClasses: number
       clientVisits: Map<string, number>
     }
@@ -704,7 +738,7 @@ export async function GET(request: NextRequest) {
         totalCapacity: 0,
         attended: 0,
         revenue: 0,
-        rating: 0,
+        rating: null,
         previousClasses: previousClassCountByTeacherId.get(session.teacherId) || 0,
         clientVisits: new Map<string, number>()
       }
@@ -736,7 +770,7 @@ export async function GET(request: NextRequest) {
       totalCapacity: 0,
       attended: 0,
       revenue: 0,
-      rating: 0,
+      rating: null,
       previousClasses: previousClassCountByTeacherId.get(teacher.id) || 0,
       clientVisits: new Map<string, number>()
     })
@@ -746,10 +780,8 @@ export async function GET(request: NextRequest) {
     .map((bucket) => {
       const uniqueClients = bucket.clientVisits.size
       const repeatClients = Array.from(bucket.clientVisits.values()).filter((count) => count > 1).length
-      const avgFill =
-        bucket.totalCapacity > 0 ? Math.round((bucket.attended / bucket.totalCapacity) * 100) : 0
-      const retention =
-        uniqueClients > 0 ? Math.round((repeatClients / uniqueClients) * 1000) / 10 : 0
+      const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
+      const retention = ratioPercentage(repeatClients, uniqueClients, 1)
       const trend =
         bucket.classes > bucket.previousClasses
           ? "up"
@@ -762,7 +794,7 @@ export async function GET(request: NextRequest) {
         name: bucket.name,
         classes: bucket.classes,
         avgFill,
-        revenue: Math.round(bucket.revenue * 100) / 100,
+        revenue: roundCurrency(bucket.revenue),
         rating: bucket.rating,
         retention,
         trend,
@@ -850,7 +882,7 @@ export async function GET(request: NextRequest) {
   }
   const cohortRetention = cohortBuckets.map((bucket) => ({
     cohort: bucket.cohort,
-    retained: bucket.total > 0 ? Math.round((bucket.retained / bucket.total) * 1000) / 10 : 0
+    retained: ratioPercentage(bucket.retained, bucket.total, 1)
   }))
 
   const cancellationReasonCounts = new Map<string, number>()
@@ -878,10 +910,7 @@ export async function GET(request: NextRequest) {
   const membershipBreakdown = membershipBuckets.map((bucket) => ({
     type: bucket.type,
     count: bucket.count,
-    percent:
-      activeClientsList.length > 0
-        ? Math.round((bucket.count / activeClientsList.length) * 1000) / 10
-        : 0
+    percent: ratioPercentage(bucket.count, activeClientsList.length, 1)
   }))
 
   const marketingInsights =
@@ -913,21 +942,21 @@ export async function GET(request: NextRequest) {
   const byTimeSlot = Array.from(byTimeSlotMap.values())
     .map((item) => ({
       time: item.time,
-      fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+      fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
       classes: item.classes
     }))
     .sort((a, b) => b.fill - a.fill)
 
   const byDay = Array.from(byDayMap.values()).map((item) => ({
     day: item.day,
-    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
     classes: item.classes
   }))
 
   const classFillRows = Array.from(byClassTypeMap.values()).map((item) => ({
     id: item.id,
     name: item.name,
-    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
     waitlist: item.waitlist
   }))
 

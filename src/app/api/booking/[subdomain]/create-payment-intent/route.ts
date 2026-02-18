@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getStripe, calculatePlatformFee } from "@/lib/stripe"
+import { normalizeSocialTrackingCode } from "@/lib/social-tracking"
 
 // POST - Create a PaymentIntent for embedded payment form
 export async function POST(
@@ -10,7 +11,7 @@ export async function POST(
   try {
     const { subdomain } = await params
     const body = await request.json()
-    const { classSessionId, clientEmail, clientFirstName, clientLastName } = body
+    const { classSessionId, clientEmail, clientFirstName, clientLastName, trackingCode } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -128,6 +129,23 @@ export async function POST(
     const amountInCents = Math.round(classSession.classType.price * 100)
     const platformFee = calculatePlatformFee(amountInCents)
 
+    const normalizedTrackingCode = normalizeSocialTrackingCode(trackingCode)
+    let attributedTrackingCode: string | null = null
+    if (normalizedTrackingCode) {
+      const trackingLink = await db.socialMediaTrackingLink.findFirst({
+        where: {
+          code: normalizedTrackingCode,
+          studioId: studio.id
+        },
+        select: {
+          id: true
+        }
+      })
+      if (trackingLink) {
+        attributedTrackingCode = normalizedTrackingCode
+      }
+    }
+
     // Create PaymentIntent on the connected account
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
@@ -145,6 +163,7 @@ export async function POST(
         classDate: new Date(classSession.startTime).toISOString(),
         teacherName: `${classSession.teacher.user.firstName} ${classSession.teacher.user.lastName}`,
         locationName: classSession.location.name,
+        ...(attributedTrackingCode ? { trackingCode: attributedTrackingCode } : {}),
       },
     }, {
       stripeAccount: studio.stripeAccountId,
@@ -176,7 +195,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
 
 
 

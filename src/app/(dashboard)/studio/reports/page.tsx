@@ -84,7 +84,7 @@ const defaultData = {
     classes: number;
     avgFill: number;
     revenue: number;
-    rating: number;
+    rating: number | null;
     retention: number;
     trend: string;
     specialties: string[];
@@ -133,6 +133,32 @@ const defaultData = {
   }
 }
 
+const CUSTOM_PERIOD_SEPARATOR = " to "
+const DEFAULT_REPORT_PERIOD_DAYS = 30
+
+function getCustomPeriodRange(period: string) {
+  const [startDate, endDate] = period.split(CUSTOM_PERIOD_SEPARATOR)
+  if (!startDate || !endDate) return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return null
+  if (new Date(startDate) > new Date(endDate)) return null
+  return { startDate, endDate }
+}
+
+function buildReportsQuery(period: string) {
+  const params = new URLSearchParams()
+  const customRange = getCustomPeriodRange(period)
+  if (customRange) {
+    params.set("startDate", customRange.startDate)
+    params.set("endDate", customRange.endDate)
+    return params.toString()
+  }
+
+  const parsedDays = Number.parseInt(period, 10)
+  const days = Number.isFinite(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
+  params.set("days", String(days))
+  return params.toString()
+}
+
 export default function ReportsPage() {
   const router = useRouter()
   const [period, setPeriod] = useState("30")
@@ -143,14 +169,21 @@ export default function ReportsPage() {
   const [currency, setCurrency] = useState("usd")
   const [reportData, setReportData] = useState(defaultData)
   const [loadingReports, setLoadingReports] = useState(true)
+  const selectedCustomRange = getCustomPeriodRange(period)
+  const isCustomRangeValid = Boolean(
+    customStartDate &&
+      customEndDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(customStartDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(customEndDate) &&
+      new Date(customStartDate) <= new Date(customEndDate)
+  )
   
   // Fetch real reports data from API
   useEffect(() => {
     const fetchReportData = async () => {
       setLoadingReports(true)
       try {
-        const days = period.includes('to') ? 30 : parseInt(period)
-        const response = await fetch(`/api/studio/reports?days=${days}`)
+        const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`)
         if (response.ok) {
           const data = await response.json()
           
@@ -307,9 +340,8 @@ export default function ReportsPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
     // Re-fetch data
-    const days = period.includes('to') ? 30 : parseInt(period)
     try {
-      const response = await fetch(`/api/studio/reports?days=${days}`)
+      const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`)
       if (response.ok) {
         // Data will be refreshed via the useEffect
       }
@@ -321,6 +353,10 @@ export default function ReportsPage() {
 
   const handlePeriodChange = (value: string) => {
     if (value === "custom") {
+      if (selectedCustomRange) {
+        setCustomStartDate(selectedCustomRange.startDate)
+        setCustomEndDate(selectedCustomRange.endDate)
+      }
       setShowCustomDate(true)
     } else {
       setPeriod(value)
@@ -329,8 +365,8 @@ export default function ReportsPage() {
   }
 
   const applyCustomDateRange = () => {
-    if (customStartDate && customEndDate) {
-      setPeriod(`${customStartDate} to ${customEndDate}`)
+    if (isCustomRangeValid) {
+      setPeriod(`${customStartDate}${CUSTOM_PERIOD_SEPARATOR}${customEndDate}`)
       setShowCustomDate(false)
     }
   }
@@ -362,8 +398,8 @@ export default function ReportsPage() {
 
   // Get display text for the selected period
   const getPeriodDisplay = () => {
-    if (period.includes('to')) {
-      return period.replace(' to ', ' - ')
+    if (selectedCustomRange) {
+      return `${selectedCustomRange.startDate} - ${selectedCustomRange.endDate}`
     }
     switch (period) {
       case '7': return 'Last 7 days'
@@ -385,17 +421,21 @@ export default function ReportsPage() {
       ? Math.round(reportData.revenue.total / reportData.retention.activeClients)
       : 0
   const instructorCount = reportData.instructors.length
+  const ratedInstructors = reportData.instructors.filter(
+    (instructor) => typeof instructor.rating === "number" && instructor.rating > 0
+  )
   const instructorAverageFill =
     instructorCount > 0
       ? Math.round(reportData.instructors.reduce((sum, instructor) => sum + instructor.avgFill, 0) / instructorCount)
       : 0
   const instructorTotalClasses = reportData.instructors.reduce((sum, instructor) => sum + instructor.classes, 0)
   const instructorAverageRating =
-    instructorCount > 0
+    ratedInstructors.length > 0
       ? (
-          reportData.instructors.reduce((sum, instructor) => sum + instructor.rating, 0) / instructorCount
+          ratedInstructors.reduce((sum, instructor) => sum + (instructor.rating || 0), 0) /
+          ratedInstructors.length
         ).toFixed(1)
-      : "0.0"
+      : "N/A"
   const hasOverviewData =
     reportData.revenue.total > 0 ||
     reportData.utilisation.totalClasses > 0 ||
@@ -447,7 +487,7 @@ export default function ReportsPage() {
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <div className="relative w-full sm:w-auto">
-            <Select value={period.includes('to') ? 'custom' : period} onValueChange={handlePeriodChange}>
+            <Select value={selectedCustomRange ? 'custom' : period} onValueChange={handlePeriodChange}>
               <SelectTrigger className="w-full bg-white sm:w-[180px]">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="Select period" />
@@ -509,7 +549,7 @@ export default function ReportsPage() {
                         <Button 
                           className="flex-1 bg-violet-600 hover:bg-violet-700"
                           onClick={applyCustomDateRange}
-                          disabled={!customStartDate || !customEndDate}
+                          disabled={!isCustomRangeValid}
                         >
                           Apply Range
                         </Button>
@@ -1141,7 +1181,9 @@ export default function ReportsPage() {
                   <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
                   <p className="text-2xl font-bold text-gray-900">{instructorAverageRating}</p>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Client ratings</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {ratedInstructors.length > 0 ? "Client ratings" : "Ratings unavailable"}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -1219,7 +1261,11 @@ export default function ReportsPage() {
                           <td className="py-4 px-2 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                              <span className="font-semibold text-gray-900">{instructor.rating}</span>
+                              <span className="font-semibold text-gray-900">
+                                {typeof instructor.rating === "number" && instructor.rating > 0
+                                  ? instructor.rating.toFixed(1)
+                                  : "N/A"}
+                              </span>
                             </div>
                           </td>
                           <td className="py-4 px-2 text-right">

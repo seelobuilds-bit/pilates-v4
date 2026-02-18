@@ -267,6 +267,11 @@ export default function MarketingPage() {
     }
   }
 
+
+  const getStopBehaviorLabel = (stopOnBooking?: boolean) => {
+    return stopOnBooking ? "Stops when client books" : "Continues regardless of bookings"
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -424,9 +429,9 @@ export default function MarketingPage() {
                             <p className="text-sm text-gray-500">
                               Trigger: {getTriggerLabel(automation.trigger)} • {automation.totalSent} sent
                             </p>
-                            {automation.stopOnBooking && (
-                              <p className="text-xs text-emerald-600 mt-1">Stops automatically after booking</p>
-                            )}
+                            <p className={`mt-1 text-xs ${automation.stopOnBooking ? "text-emerald-600" : "text-gray-500"}`}>
+                              Stop behavior: {getStopBehaviorLabel(automation.stopOnBooking)}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">

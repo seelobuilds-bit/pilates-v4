@@ -12,7 +12,7 @@ import {
   ConnectNotificationBanner,
   ConnectComponentsProvider,
 } from "@stripe/react-connect-js"
-import { loadConnectAndInitialize } from "@stripe/connect-js"
+import { loadConnectAndInitialize } from "@stripe/connect-js/pure"
 import { 
   CreditCard, 
   Loader2, 

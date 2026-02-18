@@ -15,12 +15,22 @@ import {
   Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
 } from "lucide-react"
 
+const TRACKING_CODE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{5,127}$/
+
+function normalizeTrackingCode(value: string | null) {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!TRACKING_CODE_PATTERN.test(trimmed)) return null
+  return trimmed
+}
+
 // Stripe Payment Wrapper - loads Stripe with connected account
 function StripePaymentWrapper({
   clientSecret,
   connectedAccountId,
   subdomain,
   paymentId,
+  trackingCode,
   amount,
   onSuccess,
   selectedSlot,
@@ -31,6 +41,7 @@ function StripePaymentWrapper({
   connectedAccountId: string
   subdomain: string
   paymentId: string
+  trackingCode: string | null
   amount: number
   onSuccess: (bookingData: BookingDetails) => void
   selectedSlot: TimeSlot | null
@@ -72,6 +83,7 @@ function StripePaymentWrapper({
       <EmbeddedPaymentForm 
         subdomain={subdomain}
         paymentId={paymentId}
+        trackingCode={trackingCode}
         amount={amount}
         onSuccess={onSuccess}
         selectedSlot={selectedSlot}
@@ -85,6 +97,7 @@ function StripePaymentWrapper({
 function EmbeddedPaymentForm({ 
   subdomain,
   paymentId,
+  trackingCode,
   amount,
   onSuccess,
   selectedSlot,
@@ -93,6 +106,7 @@ function EmbeddedPaymentForm({
 }: { 
   subdomain: string
   paymentId: string
+  trackingCode: string | null
   amount: number
   onSuccess: (bookingData: BookingDetails) => void
   selectedSlot: TimeSlot | null
@@ -109,7 +123,7 @@ function EmbeddedPaymentForm({
       const res = await fetch(`/api/booking/${subdomain}/confirm-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentIntentId, paymentId })
+        body: JSON.stringify({ paymentIntentId, paymentId, trackingCode })
       })
 
       if (!res.ok) {
@@ -317,6 +331,7 @@ export default function EmbedBookingPage() {
   const paymentSuccess = searchParams.get("success") === "true"
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
+  const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
   const [studioData, setStudioData] = useState<StudioData | null>(null)
@@ -349,6 +364,38 @@ export default function EmbedBookingPage() {
   const [connectedAccountId, setConnectedAccountId] = useState<string | null>(null)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
+  const [storedTrackingCode, setStoredTrackingCode] = useState<string | null>(null)
+  const activeTrackingCode = trackingCodeFromUrl || storedTrackingCode
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const storageKey = `social_tracking_code:${subdomain}`
+    if (trackingCodeFromUrl) {
+      window.sessionStorage.setItem(storageKey, trackingCodeFromUrl)
+      setStoredTrackingCode(trackingCodeFromUrl)
+      return
+    }
+    setStoredTrackingCode(normalizeTrackingCode(window.sessionStorage.getItem(storageKey)))
+  }, [subdomain, trackingCodeFromUrl])
+
+  useEffect(() => {
+    if (!trackingCodeFromUrl || typeof window === "undefined") return
+    const dedupeKey = `social_track_click:${subdomain}:${trackingCodeFromUrl}`
+    if (window.sessionStorage.getItem(dedupeKey)) return
+    window.sessionStorage.setItem(dedupeKey, "1")
+    void fetch(`/api/booking/${subdomain}/track-link-click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackingCode: trackingCodeFromUrl })
+    }).catch(() => {
+      window.sessionStorage.removeItem(dedupeKey)
+    })
+  }, [subdomain, trackingCodeFromUrl])
+
+  useEffect(() => {
+    if ((!bookingComplete && !paymentSuccess) || typeof window === "undefined") return
+    window.sessionStorage.removeItem(`social_tracking_code:${subdomain}`)
+  }, [bookingComplete, paymentSuccess, subdomain])
 
   useEffect(() => {
     async function fetchData() {
@@ -513,6 +560,7 @@ export default function EmbedBookingPage() {
             clientEmail: client.email,
             clientFirstName: client.firstName,
             clientLastName: client.lastName,
+            trackingCode: activeTrackingCode,
           })
         })
 
@@ -532,7 +580,7 @@ export default function EmbedBookingPage() {
     }
 
     createPaymentIntent()
-  }, [step, client, selectedSlot, studioData?.stripeEnabled, subdomain, clientSecret])
+  }, [step, client, selectedSlot, studioData?.stripeEnabled, subdomain, clientSecret, activeTrackingCode])
 
   function handlePaymentSuccess(bookingData: BookingDetails) {
     setBookingDetails(bookingData)
@@ -551,7 +599,8 @@ export default function EmbedBookingPage() {
           classSessionId: selectedSlot.id,
           bookingType,
           packSize: bookingType === "pack" ? packSize : undefined,
-          autoRenew: bookingType === "pack" ? autoRenew : undefined
+          autoRenew: bookingType === "pack" ? autoRenew : undefined,
+          trackingCode: activeTrackingCode
         })
       })
 
@@ -1131,6 +1180,7 @@ export default function EmbedBookingPage() {
                           connectedAccountId={connectedAccountId}
                           subdomain={subdomain}
                           paymentId={paymentId!}
+                          trackingCode={activeTrackingCode}
                           amount={calculatePrice()}
                           onSuccess={handlePaymentSuccess}
                           selectedSlot={selectedSlot}

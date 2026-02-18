@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { use, useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Loader2, Mail, MessageSquare, Plus, Settings2, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -80,7 +81,7 @@ function getDefaultStep(index = 0): StepForm {
   return {
     id: `step-${index + 1}`,
     channel: "EMAIL",
-    delayValue: 0,
+    delayValue: 1,
     delayUnit: "minutes",
     subject: "",
     body: "",
@@ -148,7 +149,7 @@ export default function AutomationConfigPage({
                   return {
                     id: loadedStep.id || `step-${index + 1}`,
                     channel: loadedStep.channel,
-                    delayValue: splitDelay.value,
+                    delayValue: Math.max(1, splitDelay.value),
                     delayUnit: splitDelay.unit,
                     subject: loadedStep.subject || "",
                     body: loadedStep.body || "",
@@ -160,7 +161,7 @@ export default function AutomationConfigPage({
                   {
                     id: "step-1",
                     channel: automation.channel,
-                    delayValue: splitDelay.value,
+                    delayValue: Math.max(1, splitDelay.value),
                     delayUnit: splitDelay.unit,
                     subject: automation.subject || "",
                     body: automation.body || "",
@@ -206,9 +207,11 @@ export default function AutomationConfigPage({
     steps.every((step) => {
       if (!step.body.trim()) return false
       if (step.channel === "EMAIL" && !step.subject.trim()) return false
-      if (step.delayValue < 0) return false
+      if (step.delayValue <= 0) return false
       return true
     })
+
+  const stopRuleSummary = stopOnBooking ? "Stops when client books" : "No stop rules"
 
   const buildPayload = () => ({
     name: name.trim(),
@@ -393,12 +396,24 @@ export default function AutomationConfigPage({
               </div>
             )}
 
-            <div className="flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-medium text-emerald-900">Stop chain if client books</p>
-                <p className="text-xs text-emerald-700">When enabled, this step pauses after qualifying bookings.</p>
+            <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-900">Stop chain conditions</p>
+                  <p className="text-xs text-emerald-700">Control when this automation should stop sending future steps.</p>
+                </div>
+                <Badge className="border-0 bg-white/80 text-emerald-800">{stopRuleSummary}</Badge>
               </div>
-              <Switch checked={stopOnBooking} onCheckedChange={setStopOnBooking} />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-emerald-900">Stop if client books</p>
+                  <p className="text-xs text-emerald-700">
+                    If the client books after entering this chain, all unsent steps are cancelled immediately.
+                  </p>
+                </div>
+                <Switch checked={stopOnBooking} onCheckedChange={setStopOnBooking} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -455,13 +470,13 @@ export default function AutomationConfigPage({
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Send after trigger</Label>
+                      <Label>Send after trigger event</Label>
                       <div className="grid grid-cols-2 gap-2">
                         <Input
                           type="number"
                           value={step.delayValue}
-                          min={0}
-                          onChange={(e) => updateStep(step.id, { delayValue: Math.max(0, Number(e.target.value || 0)) })}
+                          min={1}
+                          onChange={(e) => updateStep(step.id, { delayValue: Math.max(1, Number(e.target.value || 1)) })}
                         />
                         <Select
                           value={step.delayUnit}
@@ -482,7 +497,9 @@ export default function AutomationConfigPage({
                     </div>
                   </div>
 
-                  <p className="mt-2 text-xs text-gray-500">This step sends {formatDelayLabel(step.delayValue, step.delayUnit)} after trigger.</p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Choose a delay greater than 0. This step sends {formatDelayLabel(step.delayValue, step.delayUnit)} after trigger.
+                  </p>
 
                   {step.channel === "EMAIL" && (
                     <div className="mt-4 space-y-2">

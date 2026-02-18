@@ -7,7 +7,7 @@ import { Loader2, TrendingUp, Users, Star, Calendar, DollarSign, BarChart3 } fro
 interface TeacherReportStats {
   totalClasses: number
   totalStudents: number
-  avgRating: number
+  avgRating: number | null
   revenue: number
   retentionRate: number
   avgFillRate: number
@@ -19,7 +19,7 @@ interface TeacherReportStats {
 const emptyStats: TeacherReportStats = {
   totalClasses: 0,
   totalStudents: 0,
-  avgRating: 0,
+  avgRating: null,
   revenue: 0,
   retentionRate: 0,
   avgFillRate: 0,
@@ -44,7 +44,7 @@ export default function TeacherReportsPage() {
         setStats({
           totalClasses: data.totalClasses ?? 0,
           totalStudents: data.totalStudents ?? 0,
-          avgRating: data.avgRating ?? 0,
+          avgRating: typeof data.avgRating === "number" ? data.avgRating : null,
           revenue: data.revenue ?? 0,
           retentionRate: data.retentionRate ?? 0,
           avgFillRate: data.avgFillRate ?? 0,
@@ -72,7 +72,7 @@ export default function TeacherReportsPage() {
   }
 
   const maxMonthlyCount = Math.max(1, ...stats.monthlyClasses.map((month) => month.count))
-  const hasRatingData = stats.avgRating > 0
+  const hasRatingData = typeof stats.avgRating === "number" && stats.avgRating > 0
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -117,7 +117,7 @@ export default function TeacherReportsPage() {
                 <Star className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{hasRatingData ? stats.avgRating.toFixed(1) : "N/A"}</p>
+                <p className="text-2xl font-bold text-gray-900">{hasRatingData ? stats.avgRating!.toFixed(1) : "N/A"}</p>
                 <p className="text-sm text-gray-500">Average Rating</p>
               </div>
             </div>

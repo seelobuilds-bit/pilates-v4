@@ -3,6 +3,25 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { getSocialMediaMode } from "@/lib/social-media-mode"
 
+function buildAccountScope(user: { studioId: string; teacherId?: string | null }) {
+  if (user.teacherId) {
+    return {
+      OR: [
+        { studioId: user.studioId },
+        { teacherId: user.teacherId },
+      ],
+    }
+  }
+
+  return {
+    OR: [
+      { studioId: user.studioId },
+      // Include legacy teacher-owned rows created before studioId was always set.
+      { teacher: { studioId: user.studioId } },
+    ],
+  }
+}
+
 // GET - Fetch connected social accounts
 export async function GET() {
   const session = await getSession()
@@ -14,10 +33,10 @@ export async function GET() {
   try {
     const accounts = await db.socialMediaAccount.findMany({
       where: {
-        OR: [
-          { studioId: session.user.studioId },
-          ...(session.user.teacherId ? [{ teacherId: session.user.teacherId }] : [])
-        ]
+        ...buildAccountScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
       },
       include: {
         _count: {
@@ -68,7 +87,7 @@ export async function POST(request: NextRequest) {
         username,
         displayName: username,
         accessToken: accessToken || "mock_token",
-        studioId: session.user.role === "OWNER" ? session.user.studioId : null,
+        studioId: session.user.studioId,
         teacherId: session.user.teacherId
       }
     })
@@ -100,10 +119,10 @@ export async function DELETE(request: NextRequest) {
     const account = await db.socialMediaAccount.findFirst({
       where: {
         id: accountId,
-        OR: [
-          { studioId: session.user.studioId },
-          ...(session.user.teacherId ? [{ teacherId: session.user.teacherId }] : [])
-        ]
+        ...buildAccountScope({
+          studioId: session.user.studioId,
+          teacherId: session.user.teacherId,
+        }),
       }
     })
 
@@ -121,7 +140,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to disconnect account" }, { status: 500 })
   }
 }
-
 
 
 
