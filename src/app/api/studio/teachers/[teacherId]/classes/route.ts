@@ -73,8 +73,11 @@ export async function GET(
       include: {
         classType: true,
         location: true,
-        _count: {
-          select: { bookings: true }
+        bookings: {
+          select: {
+            status: true,
+            paidAmount: true
+          }
         }
       },
       orderBy: { startTime: "asc" }
@@ -88,6 +91,11 @@ export async function GET(
     // Calculate earnings for each class
     const classesWithEarnings = classes.map(cls => {
       let earnings = 0
+      const activeBookings = cls.bookings.filter((booking) => booking.status !== "CANCELLED")
+      const activeStudentCount = activeBookings.length
+      const grossRevenue = activeBookings.reduce((sum, booking) => {
+        return sum + (booking.paidAmount ?? cls.classType.price ?? 0)
+      }, 0)
       
       switch (payRate.type) {
         case "PER_CLASS":
@@ -98,11 +106,10 @@ export async function GET(
           earnings = payRate.rate * hours
           break
         case "PER_STUDENT":
-          earnings = payRate.rate * cls._count.bookings
+          earnings = payRate.rate * activeStudentCount
           break
         case "PERCENTAGE":
-          // Would need pricing info - for now just use a placeholder
-          earnings = 0
+          earnings = grossRevenue * (payRate.rate / 100)
           break
       }
 
@@ -114,7 +121,7 @@ export async function GET(
         classType: cls.classType.name,
         classTypeId: cls.classType.id,
         location: cls.location.name,
-        students: cls._count.bookings,
+        students: activeStudentCount,
         capacity: cls.capacity,
         earnings: Math.round(earnings * 100) / 100
       }
@@ -122,7 +129,7 @@ export async function GET(
 
     // Summary stats
     const totalClasses = classes.length
-    const totalStudents = classes.reduce((sum, cls) => sum + cls._count.bookings, 0)
+    const totalStudents = classesWithEarnings.reduce((sum, cls) => sum + cls.students, 0)
     const totalEarnings = classesWithEarnings.reduce((sum, cls) => sum + cls.earnings, 0)
 
     return NextResponse.json({
@@ -149,8 +156,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch classes" }, { status: 500 })
   }
 }
-
-
 
 
 
