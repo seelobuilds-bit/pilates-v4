@@ -9,6 +9,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog"
 import { ArrowLeft, Calendar, Clock, Repeat, Info } from "lucide-react"
 
 interface ClassType {
@@ -71,6 +80,10 @@ export default function NewSchedulePage() {
   const [selectedDays, setSelectedDays] = useState<number[]>([])
   const [endDate, setEndDate] = useState("")
   const [createdCount, setCreatedCount] = useState<number | null>(null)
+  const [dateTimeDialogOpen, setDateTimeDialogOpen] = useState(false)
+  const [pickerDate, setPickerDate] = useState("")
+  const [pickerHour, setPickerHour] = useState("07")
+  const [pickerMinute, setPickerMinute] = useState("00")
 
   useEffect(() => {
     async function fetchData() {
@@ -110,7 +123,18 @@ export default function NewSchedulePage() {
   }, [formData.date, isRecurring, endDate])
 
   const selectedClassType = classTypes.find(ct => ct.id === formData.classTypeId)
-  const startDateTimeValue = formData.date && formData.time ? `${formData.date}T${formData.time}` : ""
+  const startDateTimeLabel = (() => {
+    if (!formData.date || !formData.time) return "Select date & time"
+    const dateTime = new Date(`${formData.date}T${formData.time}`)
+    if (Number.isNaN(dateTime.getTime())) return `${formData.date} ${formData.time}`
+    return dateTime.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    })
+  })()
 
   const applyStartDateTime = (value: string) => {
     if (!value) {
@@ -129,6 +153,21 @@ export default function NewSchedulePage() {
     next.setHours(hour, minute, 0, 0)
     applyStartDateTime(`${toDateInputValue(next)}T${toTimeInputValue(next)}`)
   }
+
+  const applyDialogDateTime = () => {
+    if (!pickerDate) return
+    applyStartDateTime(`${pickerDate}T${pickerHour}:${pickerMinute}`)
+    setDateTimeDialogOpen(false)
+  }
+
+  useEffect(() => {
+    if (!dateTimeDialogOpen) return
+    const now = new Date()
+    const [hour = "07", minute = "00"] = (formData.time || "07:00").split(":")
+    setPickerDate(formData.date || toDateInputValue(now))
+    setPickerHour(hour)
+    setPickerMinute(minute)
+  }, [dateTimeDialogOpen, formData.date, formData.time])
 
   const toggleDay = (dayId: number) => {
     setSelectedDays(prev => 
@@ -311,15 +350,113 @@ export default function NewSchedulePage() {
 
             {/* Start Date/Time */}
             <div className="space-y-2">
-              <Label htmlFor="startDateTime">{isRecurring ? "Start Date & Time" : "Date & Time"}</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Label htmlFor="startDate">{isRecurring ? "Start Date & Time" : "Date & Time"}</Label>
+              <Dialog open={dateTimeDialogOpen} onOpenChange={setDateTimeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full justify-start text-left font-normal h-11">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                    {startDateTimeLabel}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select Date and Time</DialogTitle>
+                    <DialogDescription>Choose when this class should start.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="pickerDate">Date</Label>
+                      <Input
+                        id="pickerDate"
+                        type="date"
+                        value={pickerDate}
+                        onChange={(event) => setPickerDate(event.target.value)}
+                        min={toDateInputValue(new Date())}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Hour</Label>
+                        <Select value={pickerHour} onValueChange={setPickerHour}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, hour) => padTime(hour)).map((hour) => (
+                              <SelectItem key={hour} value={hour}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Minute</Label>
+                        <Select value={pickerMinute} onValueChange={setPickerMinute}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["00", "15", "30", "45"].map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                {minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => {
+                        const now = new Date()
+                        setPickerDate(toDateInputValue(now))
+                        setPickerHour("07")
+                        setPickerMinute("00")
+                      }}>
+                        <Clock className="h-3.5 w-3.5 mr-1.5" />
+                        Today 7:00
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => {
+                        const tomorrow = new Date()
+                        tomorrow.setDate(tomorrow.getDate() + 1)
+                        setPickerDate(toDateInputValue(tomorrow))
+                        setPickerHour("18")
+                        setPickerMinute("00")
+                      }}>
+                        <Clock className="h-3.5 w-3.5 mr-1.5" />
+                        Tomorrow 18:00
+                      </Button>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setDateTimeDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={applyDialogDateTime}
+                      disabled={!pickerDate}
+                    >
+                      Apply
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input
-                  id="startDateTime"
-                  type="datetime-local"
-                  value={startDateTimeValue}
-                  onChange={(event) => applyStartDateTime(event.target.value)}
-                  className="pl-10"
+                  id="startDate"
+                  type="date"
+                  value={formData.date}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, date: event.target.value }))}
+                  min={toDateInputValue(new Date())}
+                  required
+                />
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.time}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, time: event.target.value }))}
                   required
                 />
               </div>

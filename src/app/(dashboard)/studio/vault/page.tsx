@@ -440,6 +440,18 @@ export default function StudioVaultPage() {
     return <Badge className="bg-amber-100 text-amber-700">${course.price}</Badge>
   }
 
+  const getSubscriptionTag = (course: Course) => {
+    if (!course.includeInSubscription) return null
+
+    const plan = subscriptionPlans.find((item) => item.audience === course.audience)
+    if (plan?.name) return plan.name
+
+    if (course.audience === "STUDIO_OWNERS") return "Studio Owners Plan"
+    if (course.audience === "TEACHERS") return "Teachers Plan"
+    if (course.audience === "CLIENTS") return "At-Home Members Plan"
+    return "Subscription Plan"
+  }
+
   // Filter courses
   const filteredCourses = courses.filter(course => {
     const matchesSearch = !searchQuery || 
@@ -672,10 +684,10 @@ export default function StudioVaultPage() {
 
                       <div className="flex items-center gap-2 mb-3">
                         {getPricingBadge(course)}
-                        {course.includeInSubscription && (
-                          <Badge variant="outline" className="text-xs">
+                        {getSubscriptionTag(course) && (
+                          <Badge variant="outline" className="text-xs border-violet-200 text-violet-700 bg-violet-50">
                             <Crown className="h-3 w-3 mr-1" />
-                            Subscription
+                            {getSubscriptionTag(course)}
                           </Badge>
                         )}
                       </div>
@@ -1416,7 +1428,6 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
 
 
 
