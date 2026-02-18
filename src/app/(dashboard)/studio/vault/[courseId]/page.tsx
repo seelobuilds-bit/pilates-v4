@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect, use, useRef } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -34,18 +34,35 @@ import {
   ArrowUp,
   ArrowDown,
   Pencil,
-  Trash2
+  Trash2,
+  Upload,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  X
 } from "lucide-react"
+
+interface LessonResource {
+  id?: string
+  title: string
+  type: string
+  url: string
+}
 
 interface Lesson {
   id: string
   title: string
   description?: string | null
   contentType: string
+  videoUrl?: string | null
+  pdfUrl?: string | null
+  textContent?: string | null
+  quizContent?: string | null
   videoDuration: number | null
   isPreview: boolean
   isPublished: boolean
   order: number
+  resources: LessonResource[]
 }
 
 interface Module {
@@ -127,6 +144,11 @@ const defaultLessonForm = {
   title: "",
   description: "",
   contentType: "video",
+  videoUrl: "",
+  videoDuration: "",
+  textContent: "",
+  pdfUrl: "",
+  resources: [] as LessonResource[],
   isPreview: false,
   isPublished: false
 }
@@ -153,6 +175,8 @@ export default function StudioVaultCoursePage({
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [lessonForm, setLessonForm] = useState(defaultLessonForm)
+  const [uploadingResource, setUploadingResource] = useState(false)
+  const lessonFileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
@@ -311,10 +335,77 @@ export default function StudioVaultCoursePage({
       title: lesson.title,
       description: lesson.description || "",
       contentType: lesson.contentType || "video",
+      videoUrl: lesson.videoUrl || "",
+      videoDuration: lesson.videoDuration ? lesson.videoDuration.toString() : "",
+      textContent: lesson.textContent || "",
+      pdfUrl: lesson.pdfUrl || "",
+      resources: lesson.resources || [],
       isPreview: lesson.isPreview,
       isPublished: lesson.isPublished
     })
     setLessonDialogOpen(true)
+  }
+
+  function getResourceType(file: File) {
+    if (file.type.startsWith("image/")) return "image"
+    if (file.type.startsWith("video/")) return "video"
+    if (file.type === "application/pdf") return "pdf"
+    return "file"
+  }
+
+  async function uploadLessonResource(file: File) {
+    if (!course) return
+    setUploadingResource(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", `vault/${course.id}/lessons`)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        alert(error.error || "Upload failed")
+        return
+      }
+
+      const data = await res.json()
+      const resourceType = getResourceType(file)
+      const resource: LessonResource = {
+        title: file.name,
+        type: resourceType,
+        url: data.url
+      }
+
+      setLessonForm((prev) => ({
+        ...prev,
+        videoUrl: resourceType === "video" && !prev.videoUrl ? data.url : prev.videoUrl,
+        pdfUrl: resourceType === "pdf" && !prev.pdfUrl ? data.url : prev.pdfUrl,
+        resources: [...prev.resources, resource]
+      }))
+    } catch (error) {
+      console.error("Upload failed:", error)
+      alert("Upload failed")
+    } finally {
+      setUploadingResource(false)
+    }
+  }
+
+  async function onLessonFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    await uploadLessonResource(file)
+    event.target.value = ""
+  }
+
+  function removeLessonResource(index: number) {
+    setLessonForm((prev) => ({
+      ...prev,
+      resources: prev.resources.filter((_, resourceIndex) => resourceIndex !== index)
+    }))
   }
 
   async function createModule() {
@@ -358,6 +449,11 @@ export default function StudioVaultCoursePage({
                 title: lessonForm.title.trim(),
                 description: lessonForm.description.trim() || null,
                 contentType: lessonForm.contentType,
+                videoUrl: lessonForm.videoUrl.trim() || null,
+                videoDuration: lessonForm.videoDuration ? parseInt(lessonForm.videoDuration, 10) : null,
+                textContent: lessonForm.textContent.trim() || null,
+                pdfUrl: lessonForm.pdfUrl.trim() || null,
+                resources: lessonForm.resources,
                 isPreview: lessonForm.isPreview,
                 isPublished: lessonForm.isPublished
               }
@@ -365,6 +461,11 @@ export default function StudioVaultCoursePage({
                 title: lessonForm.title.trim(),
                 description: lessonForm.description.trim() || null,
                 contentType: lessonForm.contentType,
+                videoUrl: lessonForm.videoUrl.trim() || null,
+                videoDuration: lessonForm.videoDuration ? parseInt(lessonForm.videoDuration, 10) : null,
+                textContent: lessonForm.textContent.trim() || null,
+                pdfUrl: lessonForm.pdfUrl.trim() || null,
+                resources: lessonForm.resources,
                 isPreview: lessonForm.isPreview
               }
         )
@@ -768,6 +869,11 @@ export default function StudioVaultCoursePage({
                                   <p className="font-medium text-sm truncate">{lesson.title}</p>
                                   <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                                     <Badge variant="secondary" className="text-xs">{lesson.contentType}</Badge>
+                                    {lesson.resources.length > 0 && (
+                                      <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                        {lesson.resources.length} upload{lesson.resources.length > 1 ? "s" : ""}
+                                      </Badge>
+                                    )}
                                     {lesson.isPreview && <Badge className="bg-green-100 text-green-700 text-xs">Preview</Badge>}
                                     {!lesson.isPublished && <Badge className="bg-gray-100 text-gray-700 text-xs">Draft</Badge>}
                                   </div>
@@ -990,8 +1096,109 @@ export default function StudioVaultCoursePage({
                 id="lesson-type"
                 value={lessonForm.contentType}
                 onChange={(e) => setLessonForm({ ...lessonForm, contentType: e.target.value || "video" })}
-                placeholder="video"
+                placeholder="video, text, pdf, quiz, assignment"
               />
+            </div>
+
+            {(lessonForm.contentType === "video" || lessonForm.videoUrl) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="lesson-video-url">Video URL</Label>
+                  <Input
+                    id="lesson-video-url"
+                    value={lessonForm.videoUrl}
+                    onChange={(e) => setLessonForm({ ...lessonForm, videoUrl: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lesson-video-duration">Duration (seconds)</Label>
+                  <Input
+                    id="lesson-video-duration"
+                    type="number"
+                    min={0}
+                    value={lessonForm.videoDuration}
+                    onChange={(e) => setLessonForm({ ...lessonForm, videoDuration: e.target.value })}
+                    placeholder="600"
+                  />
+                </div>
+              </div>
+            )}
+
+            {(lessonForm.contentType === "text" || lessonForm.textContent) && (
+              <div className="space-y-2">
+                <Label htmlFor="lesson-text-content">Lesson Text</Label>
+                <Textarea
+                  id="lesson-text-content"
+                  rows={5}
+                  value={lessonForm.textContent}
+                  onChange={(e) => setLessonForm({ ...lessonForm, textContent: e.target.value })}
+                  placeholder="Write lesson notes or content..."
+                />
+              </div>
+            )}
+
+            {(lessonForm.contentType === "pdf" || lessonForm.pdfUrl) && (
+              <div className="space-y-2">
+                <Label htmlFor="lesson-pdf-url">Document URL</Label>
+                <Input
+                  id="lesson-pdf-url"
+                  value={lessonForm.pdfUrl}
+                  onChange={(e) => setLessonForm({ ...lessonForm, pdfUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+            )}
+
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Uploads</p>
+                  <p className="text-sm text-gray-500">Add videos, images, PDFs, or docs to this lesson.</p>
+                </div>
+                <input
+                  ref={lessonFileInputRef}
+                  type="file"
+                  accept="image/*,video/mp4,video/webm,video/quicktime,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                  onChange={onLessonFileChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => lessonFileInputRef.current?.click()}
+                  disabled={uploadingResource}
+                >
+                  {uploadingResource ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                  Upload
+                </Button>
+              </div>
+
+              {lessonForm.resources.length > 0 ? (
+                <div className="space-y-2">
+                  {lessonForm.resources.map((resource, index) => (
+                    <div key={`${resource.url}-${index}`} className="flex items-center gap-2 rounded-md bg-gray-50 p-2">
+                      {resource.type === "video" ? (
+                        <Video className="h-4 w-4 text-violet-600 shrink-0" />
+                      ) : resource.type === "image" ? (
+                        <ImageIcon className="h-4 w-4 text-blue-600 shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-gray-600 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{resource.title}</p>
+                        <p className="text-xs text-gray-500 truncate">{resource.url}</p>
+                      </div>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => removeLessonResource(index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No uploads yet.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border p-3">

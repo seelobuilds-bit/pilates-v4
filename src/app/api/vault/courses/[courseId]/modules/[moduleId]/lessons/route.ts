@@ -37,8 +37,23 @@ export async function POST(
       textContent,
       pdfUrl,
       quizContent,
-      isPreview
+      isPreview,
+      resources
     } = body
+
+    const lessonResources = Array.isArray(resources)
+      ? resources
+          .filter((resource) => typeof resource?.url === "string" && resource.url.trim().length > 0)
+          .map((resource) => ({
+            title: typeof resource.title === "string" && resource.title.trim().length > 0
+              ? resource.title.trim()
+              : "Resource",
+            type: typeof resource.type === "string" && resource.type.trim().length > 0
+              ? resource.type.trim().toLowerCase()
+              : "file",
+            url: resource.url.trim()
+          }))
+      : []
 
     // Get the highest order
     const lastLesson = await db.vaultLesson.findFirst({
@@ -58,7 +73,12 @@ export async function POST(
         quizContent,
         isPreview: isPreview || false,
         order: (lastLesson?.order ?? -1) + 1,
-        moduleId
+        moduleId,
+        ...(lessonResources.length > 0 && {
+          resources: {
+            create: lessonResources
+          }
+        })
       },
       include: {
         resources: true
@@ -110,8 +130,23 @@ export async function PATCH(
       pdfUrl,
       quizContent,
       isPreview,
-      isPublished
+      isPublished,
+      resources
     } = body
+
+    const lessonResources = Array.isArray(resources)
+      ? resources
+          .filter((resource) => typeof resource?.url === "string" && resource.url.trim().length > 0)
+          .map((resource) => ({
+            title: typeof resource.title === "string" && resource.title.trim().length > 0
+              ? resource.title.trim()
+              : "Resource",
+            type: typeof resource.type === "string" && resource.type.trim().length > 0
+              ? resource.type.trim().toLowerCase()
+              : "file",
+            url: resource.url.trim()
+          }))
+      : null
 
     const lesson = await db.vaultLesson.update({
       where: { id: lessonId },
@@ -125,7 +160,15 @@ export async function PATCH(
         ...(pdfUrl !== undefined && { pdfUrl }),
         ...(quizContent !== undefined && { quizContent }),
         ...(isPreview !== undefined && { isPreview }),
-        ...(isPublished !== undefined && { isPublished })
+        ...(isPublished !== undefined && { isPublished }),
+        ...(lessonResources !== null && {
+          resources: {
+            deleteMany: {},
+            ...(lessonResources.length > 0 && {
+              create: lessonResources
+            })
+          }
+        })
       },
       include: {
         resources: true
@@ -164,7 +207,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete lesson" }, { status: 500 })
   }
 }
-
 
 
 
