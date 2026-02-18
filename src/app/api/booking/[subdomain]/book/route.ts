@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
+import { normalizeSocialTrackingCode, trackSocialLinkConversion } from "@/lib/social-tracking"
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +31,8 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { classSessionId, bookingType, recurringWeeks, packSize } = body
+    const { classSessionId, bookingType, recurringWeeks, packSize, trackingCode } = body
+    const normalizedTrackingCode = normalizeSocialTrackingCode(trackingCode)
 
     // NOTE: This endpoint is intended for free bookings (no Stripe).
     // Paid bookings must go through the PaymentIntent flow.
@@ -114,6 +116,21 @@ export async function POST(
         },
       })
     })
+
+    if (normalizedTrackingCode) {
+      const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""
+      const userAgent = request.headers.get("user-agent") || ""
+      const fingerprint = `${forwardedFor}|${userAgent}|${decoded.clientId}`
+      void trackSocialLinkConversion({
+        studioId: studio.id,
+        trackingCode: normalizedTrackingCode,
+        bookingId: booking.id,
+        revenue: booking.paidAmount || 0,
+        fingerprint
+      }).catch((trackingError) => {
+        console.error("[BOOKING] Failed to track social conversion:", trackingError)
+      })
+    }
 
     // Send booking confirmation email
     console.log(`[BOOKING] Sending confirmation email to ${booking.client.email}`)

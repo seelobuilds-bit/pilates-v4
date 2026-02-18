@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getStripe } from "@/lib/stripe"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
+import { trackSocialLinkConversion } from "@/lib/social-tracking"
 
 // POST - Confirm payment succeeded and create booking
 export async function POST(
@@ -228,6 +229,22 @@ export async function POST(
     }
 
     const booking = decision.booking
+    const trackingCode = paymentIntent.metadata?.trackingCode || null
+
+    if (trackingCode) {
+      const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""
+      const userAgent = request.headers.get("user-agent") || ""
+      const fingerprint = `${forwardedFor}|${userAgent}|${payment.id}`
+      void trackSocialLinkConversion({
+        studioId: studio.id,
+        trackingCode,
+        bookingId: booking.id,
+        revenue: payment.amount / 100,
+        fingerprint
+      }).catch((trackingError) => {
+        console.error("[BOOKING] Failed to track social conversion:", trackingError)
+      })
+    }
 
     // Send booking confirmation email
     console.log(`[BOOKING] Sending confirmation email to ${booking.client.email}`)
@@ -270,7 +287,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm payment" }, { status: 500 })
   }
 }
-
 
 
 

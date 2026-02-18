@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { getStripe } from "@/lib/stripe"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
+import { trackSocialLinkConversion } from "@/lib/social-tracking"
 import Stripe from "stripe"
 
 // Disable body parsing, we need the raw body for webhook verification
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  const { clientId, studioId, classSessionId } = session.metadata || {}
+  const { clientId, studioId, classSessionId, trackingCode } = session.metadata || {}
 
   if (!clientId || !studioId || !classSessionId) {
     console.error("Missing metadata in checkout session")
@@ -185,6 +186,18 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     })
 
     if (result.kind === "BOOKED") {
+      if (trackingCode) {
+        void trackSocialLinkConversion({
+          studioId,
+          trackingCode,
+          bookingId: result.booking.id,
+          revenue: (session.amount_total || 0) / 100,
+          fingerprint: result.booking.id
+        }).catch((trackingError) => {
+          console.error("[WEBHOOK] Failed to track social conversion:", trackingError)
+        })
+      }
+
       const studioRecord = await db.studio.findUnique({
         where: { id: studioId },
         select: { name: true, subdomain: true },

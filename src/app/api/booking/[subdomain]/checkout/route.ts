@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getStripe, calculatePlatformFee } from "@/lib/stripe"
+import { normalizeSocialTrackingCode } from "@/lib/social-tracking"
 
 // POST - Create a checkout session for booking
 export async function POST(
@@ -10,7 +11,7 @@ export async function POST(
   try {
     const { subdomain } = await params
     const body = await request.json()
-    const { classSessionId, clientEmail, clientFirstName, clientLastName } = body
+    const { classSessionId, clientEmail, clientFirstName, clientLastName, trackingCode } = body
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -125,6 +126,23 @@ export async function POST(
     const amountInCents = Math.round(classSession.classType.price * 100)
     const platformFee = calculatePlatformFee(amountInCents)
 
+    const normalizedTrackingCode = normalizeSocialTrackingCode(trackingCode)
+    let attributedTrackingCode: string | null = null
+    if (normalizedTrackingCode) {
+      const trackingLink = await db.socialMediaTrackingLink.findFirst({
+        where: {
+          code: normalizedTrackingCode,
+          studioId: studio.id
+        },
+        select: {
+          id: true
+        }
+      })
+      if (trackingLink) {
+        attributedTrackingCode = normalizedTrackingCode
+      }
+    }
+
     // Create checkout session
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -154,6 +172,7 @@ export async function POST(
           clientId: client.id,
           studioId: studio.id,
           classSessionId: classSession.id,
+          ...(attributedTrackingCode ? { trackingCode: attributedTrackingCode } : {}),
         },
       },
       success_url: `${baseUrl}/${subdomain}/book?success=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -162,6 +181,7 @@ export async function POST(
         clientId: client.id,
         studioId: studio.id,
         classSessionId: classSession.id,
+        ...(attributedTrackingCode ? { trackingCode: attributedTrackingCode } : {}),
       },
     }, {
       stripeAccount: studio.stripeAccountId,
