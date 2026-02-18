@@ -171,85 +171,20 @@ export default function SchedulePage() {
     setSelectMode(false)
   }
   
-  // Bulk delete selected classes
+  const showReadOnlyNotice = () => {
+    alert("Demo mode is read-only. Editing actions are disabled.")
+  }
+
+  // Bulk delete selected classes (read-only in demo)
   const handleBulkDelete = async () => {
     if (selectedClasses.size === 0) return
-    
-    const hasBookings = filteredClasses
-      .filter(c => selectedClasses.has(c.id))
-      .some(c => c._count.bookings > 0)
-    
-    const confirmMsg = hasBookings
-      ? `Some of the ${selectedClasses.size} selected classes have bookings. Are you sure you want to delete them? Clients will need to be notified.`
-      : `Are you sure you want to delete ${selectedClasses.size} classes? This cannot be undone.`
-    
-    if (!confirm(confirmMsg)) return
-    
-    setBulkActionLoading(true)
-    try {
-      const res = await fetch('/api/studio/schedule', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classIds: Array.from(selectedClasses) })
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        alert(`Successfully deleted ${data.deleted} classes`)
-        setClasses(classes.filter(c => !selectedClasses.has(c.id)))
-        clearSelection()
-      } else {
-        const data = await res.json()
-        alert(data.message || data.error || 'Failed to delete classes')
-      }
-    } catch (error) {
-      console.error('Failed to delete classes:', error)
-      alert('Failed to delete classes')
-    } finally {
-      setBulkActionLoading(false)
-    }
+    showReadOnlyNotice()
   }
   
-  // Bulk reassign selected classes
+  // Bulk reassign selected classes (read-only in demo)
   const handleBulkReassign = async () => {
     if (selectedClasses.size === 0 || !reassignTeacherId) return
-    
-    setBulkActionLoading(true)
-    try {
-      const res = await fetch('/api/studio/schedule', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          classIds: Array.from(selectedClasses),
-          teacherId: reassignTeacherId
-        })
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        alert(`Successfully reassigned ${data.updated} classes`)
-        // Update local state
-        const newTeacher = teachers.find(t => t.id === reassignTeacherId)
-        if (newTeacher) {
-          setClasses(classes.map(c => 
-            selectedClasses.has(c.id) 
-              ? { ...c, teacher: newTeacher }
-              : c
-          ))
-        }
-        clearSelection()
-        setShowReassignModal(false)
-        setReassignTeacherId("")
-      } else {
-        const data = await res.json()
-        alert(data.message || data.error || 'Failed to reassign classes')
-      }
-    } catch (error) {
-      console.error('Failed to reassign classes:', error)
-      alert('Failed to reassign classes')
-    } finally {
-      setBulkActionLoading(false)
-    }
+    showReadOnlyNotice()
   }
 
   // Create location color map
@@ -407,37 +342,8 @@ export default function SchedulePage() {
     setViewMode(nextView)
   }
 
-  const handleCancelClass = async (classId: string) => {
-    const selectedClass = classes.find((cls) => cls.id === classId)
-    if (!selectedClass) return
-
-    const hasBookings = selectedClass._count.bookings > 0
-    const confirmMessage = hasBookings
-      ? `Cancel this class and notify ${selectedClass._count.bookings} booked client${selectedClass._count.bookings > 1 ? "s" : ""}?`
-      : "Cancel this class?"
-
-    if (!confirm(confirmMessage)) return
-
-    try {
-      const response = await fetch(`/api/studio/schedule/${classId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        alert(errorData.error || "Failed to cancel class")
-        return
-      }
-
-      const data = await response.json()
-      if (typeof data.notifiedClients === "number") {
-        alert(`Class cancelled. ${data.notifiedClients} client(s) notified.`)
-      }
-      setClasses((prev) => prev.filter((cls) => cls.id !== classId))
-    } catch (error) {
-      console.error("Failed to cancel class:", error)
-      alert("Failed to cancel class")
-    }
+  const handleCancelClass = async (_classId: string) => {
+    showReadOnlyNotice()
   }
 
   // Get selected teacher name for header
@@ -497,6 +403,9 @@ export default function SchedulePage() {
       )}
 
       {/* Header */}
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        Demo mode is read-only. You can browse schedule data, but add/edit/delete actions are disabled.
+      </div>
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">

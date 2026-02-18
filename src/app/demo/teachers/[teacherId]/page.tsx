@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -130,7 +129,6 @@ export default function TeacherDetailPage({
   params: Promise<{ teacherId: string }>
 }) {
   const resolvedParams = use(params)
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -231,63 +229,22 @@ export default function TeacherDetailPage({
     fetchPayRateAndInvoices()
   }, [resolvedParams.teacherId])
 
-  async function savePayRate() {
-    setSavingPayRate(true)
-    try {
-      const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}/pay-rate`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payRate)
-      })
-      if (!res.ok) throw new Error("Failed to save")
-    } catch (error) {
-      console.error("Failed to save pay rate:", error)
-    }
-    setSavingPayRate(false)
+  const showReadOnlyNotice = () => {
+    alert("Demo mode is read-only. Editing actions are disabled.")
   }
 
-  async function markInvoicePaid(invoiceId: string) {
-    try {
-      const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}/invoices/${invoiceId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "PAID" })
-      })
-      if (res.ok) {
-        const updated = await res.json()
-        setInvoices(invoices.map(inv => inv.id === invoiceId ? updated : inv))
-      }
-    } catch (error) {
-      console.error("Failed to update invoice:", error)
-    }
+  async function savePayRate() {
+    showReadOnlyNotice()
+  }
+
+  async function markInvoicePaid(_invoiceId: string) {
+    showReadOnlyNotice()
   }
 
   const handleSave = async () => {
     if (!teacher) return
     setSaving(true)
-
-    try {
-      const specialties = specialtiesInput
-        .split(",")
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
-
-      const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bio: teacher.bio,
-          specialties,
-          isActive: teacher.isActive
-        })
-      })
-
-      if (res.ok) {
-        router.push("/demo/teachers")
-      }
-    } catch (error) {
-      console.error("Failed to save:", error)
-    }
+    showReadOnlyNotice()
     setSaving(false)
   }
 
@@ -340,6 +297,9 @@ export default function TeacherDetailPage({
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Demo mode is read-only. Profile, access, and invoice updates are disabled.
+        </div>
         <Link href="/demo/teachers" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Teachers
@@ -366,52 +326,20 @@ export default function TeacherDetailPage({
             <Button
               variant="outline"
               size="sm"
-              className={`w-full sm:w-auto ${teacher.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
-              onClick={async () => {
-                if (!confirm(teacher.isActive 
-                  ? "Remove access? This teacher won't be able to log in or see their schedule." 
-                  : "Restore access? This teacher will be able to log in again.")) return
-                try {
-                  const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ isActive: !teacher.isActive })
-                  })
-                  if (res.ok) {
-                    setTeacher({ ...teacher, isActive: !teacher.isActive })
-                  }
-                } catch (error) {
-                  console.error("Failed to update teacher:", error)
-                }
-              }}
+              className="w-full sm:w-auto"
+              onClick={showReadOnlyNotice}
             >
               <Ban className="h-4 w-4 mr-1" />
-              {teacher.isActive ? "Remove Access" : "Restore Access"}
+              Demo Read-only
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50"
-              onClick={async () => {
-                if (!confirm("Are you sure you want to delete this teacher? This action cannot be undone.")) return
-                try {
-                  const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`, {
-                    method: "DELETE"
-                  })
-                  if (res.ok) {
-                    router.push("/demo/teachers")
-                  } else {
-                    const data = await res.json()
-                    alert(data.error || "Failed to delete teacher")
-                  }
-                } catch (error) {
-                  console.error("Failed to delete teacher:", error)
-                  alert("Failed to delete teacher")
-                }
-              }}
+              onClick={showReadOnlyNotice}
             >
               <Trash2 className="h-4 w-4 mr-1" />
-              Delete
+              Delete (Disabled)
             </Button>
           </div>
         </div>
@@ -1073,9 +1001,9 @@ export default function TeacherDetailPage({
                   <Label>Bio</Label>
                   <Textarea
                     value={teacher.bio || ""}
-                    onChange={(e) => setTeacher({ ...teacher, bio: e.target.value })}
                     placeholder="Tell clients about this teacher's background and teaching style..."
                     rows={4}
+                    disabled
                   />
                 </div>
 
@@ -1083,8 +1011,8 @@ export default function TeacherDetailPage({
                   <Label>Specialties</Label>
                   <Input
                     value={specialtiesInput}
-                    onChange={(e) => setSpecialtiesInput(e.target.value)}
                     placeholder="e.g., Reformer, Mat, Prenatal (comma separated)"
+                    disabled
                   />
                   <p className="text-xs text-gray-500">Separate multiple specialties with commas</p>
                 </div>
@@ -1096,7 +1024,7 @@ export default function TeacherDetailPage({
                   </div>
                   <Switch
                     checked={teacher.isActive}
-                    onCheckedChange={(checked) => setTeacher({ ...teacher, isActive: checked })}
+                    disabled
                   />
                 </div>
               </div>
@@ -1130,7 +1058,8 @@ export default function TeacherDetailPage({
                   <Label>Payment Type</Label>
                   <Select
                     value={payRate.type}
-                    onValueChange={(value) => setPayRate({ ...payRate, type: value as PayRate["type"] })}
+                    onValueChange={() => showReadOnlyNotice()}
+                    disabled
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -1149,15 +1078,16 @@ export default function TeacherDetailPage({
                     type="number"
                     step="0.01"
                     value={payRate.rate}
-                    onChange={(e) => setPayRate({ ...payRate, rate: parseFloat(e.target.value) || 0 })}
                     placeholder="0.00"
+                    disabled
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Currency</Label>
                   <Select
                     value={payRate.currency}
-                    onValueChange={(value) => setPayRate({ ...payRate, currency: value })}
+                    onValueChange={() => showReadOnlyNotice()}
+                    disabled
                   >
                     <SelectTrigger>
                       <SelectValue />
