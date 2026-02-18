@@ -335,14 +335,16 @@ export function Sidebar() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsMobileOpen(true)}
-        aria-label="Open sidebar"
-        className="fixed left-3 top-3 z-[75] inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white/95 p-2 text-gray-700 shadow-sm backdrop-blur lg:hidden"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+      {!isMobileOpen && (
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen(true)}
+          aria-label="Open sidebar"
+          className="fixed left-3 top-3 z-[75] inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white/95 p-2 text-gray-700 shadow-sm backdrop-blur lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
 
       {isMobileOpen && (
         <button
