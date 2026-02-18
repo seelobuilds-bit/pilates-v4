@@ -376,6 +376,7 @@ export default function BookingPage() {
   const paymentSuccess = searchParams.get("success") === "true"
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
+  const classSessionIdFromUrl = searchParams.get("classSessionId")
   const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
@@ -496,6 +497,39 @@ export default function BookingPage() {
       fetchSlots()
     }
   }, [step, selectedLocation, selectedClass, selectedTeacher, selectedDate])
+
+  useEffect(() => {
+    if (!classSessionIdFromUrl || !studioData || selectedSlot?.id === classSessionIdFromUrl) return
+    const classSessionId = classSessionIdFromUrl
+
+    let cancelled = false
+    async function preselectClassSession() {
+      try {
+        const res = await fetch(
+          `/api/booking/${subdomain}/slots?classSessionId=${encodeURIComponent(classSessionId)}`
+        )
+        if (!res.ok) return
+
+        const slots: TimeSlot[] = await res.json()
+        const slot = slots[0]
+        if (!slot || cancelled) return
+
+        setSelectedLocation(slot.location)
+        setSelectedClass(slot.classType)
+        setSelectedTeacher(slot.teacher)
+        setSelectedDate(slot.startTime.split("T")[0] || "")
+        setSelectedSlot(slot)
+        setStep("checkout")
+      } catch {
+        // Leave normal booking flow intact if preselect fails.
+      }
+    }
+
+    void preselectClassSession()
+    return () => {
+      cancelled = true
+    }
+  }, [classSessionIdFromUrl, selectedSlot?.id, studioData, subdomain])
 
   async function fetchSlots() {
     setSlotsLoading(true)
