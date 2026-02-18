@@ -208,10 +208,10 @@ export default function StudioLeaderboardsPage() {
           </div>
           
           {/* Studio vs Teacher Toggle */}
-          <div className="flex w-full overflow-x-auto rounded-xl border bg-white p-1 shadow-sm sm:w-auto">
+          <div className="flex w-full flex-wrap rounded-xl border bg-white p-1 shadow-sm sm:w-auto">
             <button
               onClick={() => setActiveTab("studio")}
-              className={`shrink-0 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 sm:px-6 ${
+              className={`flex-1 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 sm:flex-none sm:px-6 ${
                 activeTab === "studio"
                   ? "bg-violet-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -225,7 +225,7 @@ export default function StudioLeaderboardsPage() {
             </button>
             <button
               onClick={() => setActiveTab("teacher")}
-              className={`shrink-0 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 sm:px-6 ${
+              className={`flex-1 px-3 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 sm:flex-none sm:px-6 ${
                 activeTab === "teacher"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
@@ -368,9 +368,9 @@ export default function StudioLeaderboardsPage() {
       {/* All Leaderboards by Category */}
       {grouped.length > 0 && (
       <Tabs defaultValue={grouped[0]?.id || "content"} className="space-y-6">
-        <TabsList className="bg-white border flex w-full overflow-x-auto whitespace-nowrap p-1">
+        <TabsList className="h-auto w-full justify-start gap-1 rounded-xl border bg-white p-1">
           {grouped.map(cat => (
-            <TabsTrigger key={cat.id} value={cat.id} className="gap-2 shrink-0">
+            <TabsTrigger key={cat.id} value={cat.id} className="gap-2 rounded-lg px-4 py-2 data-[state=active]:shadow-sm">
               {getCategoryIcon(cat.icon)}
               {cat.name}
               <Badge variant="secondary" className="ml-1 text-xs">
@@ -658,7 +658,6 @@ export default function StudioLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

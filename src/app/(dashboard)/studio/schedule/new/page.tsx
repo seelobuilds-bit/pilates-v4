@@ -38,6 +38,18 @@ const DAYS_OF_WEEK = [
   { id: 6, name: "Sat", fullName: "Saturday" },
 ]
 
+function padTime(value: number) {
+  return value.toString().padStart(2, "0")
+}
+
+function toDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}`
+}
+
+function toTimeInputValue(date: Date) {
+  return `${padTime(date.getHours())}:${padTime(date.getMinutes())}`
+}
+
 export default function NewSchedulePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -98,6 +110,25 @@ export default function NewSchedulePage() {
   }, [formData.date, isRecurring, endDate])
 
   const selectedClassType = classTypes.find(ct => ct.id === formData.classTypeId)
+  const startDateTimeValue = formData.date && formData.time ? `${formData.date}T${formData.time}` : ""
+
+  const applyStartDateTime = (value: string) => {
+    if (!value) {
+      setFormData((prev) => ({ ...prev, date: "", time: "" }))
+      return
+    }
+
+    const [date, rawTime = ""] = value.split("T")
+    const time = rawTime.slice(0, 5)
+    setFormData((prev) => ({ ...prev, date, time }))
+  }
+
+  const applyQuickDateTime = (dayOffset: number, hour: number, minute: number) => {
+    const next = new Date()
+    next.setDate(next.getDate() + dayOffset)
+    next.setHours(hour, minute, 0, 0)
+    applyStartDateTime(`${toDateInputValue(next)}T${toTimeInputValue(next)}`)
+  }
 
   const toggleDay = (dayId: number) => {
     setSelectedDays(prev => 
@@ -278,35 +309,37 @@ export default function NewSchedulePage() {
               </Select>
             </div>
 
-            {/* Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">{isRecurring ? "Start Date" : "Date"}</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+            {/* Start Date/Time */}
+            <div className="space-y-2">
+              <Label htmlFor="startDateTime">{isRecurring ? "Start Date & Time" : "Date & Time"}</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="startDateTime"
+                  type="datetime-local"
+                  value={startDateTimeValue}
+                  onChange={(event) => applyStartDateTime(event.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="time"
-                    type="time"
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => applyQuickDateTime(0, 7, 0)}>
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Today 7:00
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => applyQuickDateTime(0, 18, 0)}>
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Today 18:00
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => applyQuickDateTime(1, 7, 0)}>
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Tomorrow 7:00
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => applyQuickDateTime(1, 18, 0)}>
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Tomorrow 18:00
+                </Button>
               </div>
             </div>
 
@@ -415,11 +448,11 @@ export default function NewSchedulePage() {
               <Link href="/studio/schedule">
                 <Button type="button" variant="outline">Cancel</Button>
               </Link>
-              <Button 
-                type="submit" 
-                className="bg-violet-600 hover:bg-violet-700"
-                disabled={loading || !formData.classTypeId || !formData.teacherId || !formData.locationId || (isRecurring && selectedDays.length === 0)}
-              >
+                <Button 
+                  type="submit" 
+                  className="bg-violet-600 hover:bg-violet-700"
+                  disabled={loading || !formData.classTypeId || !formData.teacherId || !formData.locationId || !formData.date || !formData.time || (isRecurring && selectedDays.length === 0)}
+                >
                 {loading ? "Creating..." : isRecurring ? `Create ${expectedCount} Classes` : "Create Class"}
               </Button>
             </div>

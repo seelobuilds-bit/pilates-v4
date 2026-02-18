@@ -285,12 +285,12 @@ export default function EditLocationPage({
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="bg-white shadow-sm border-0 flex w-full overflow-x-auto whitespace-nowrap">
-          <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+        <TabsList className="h-auto w-full justify-start gap-1 rounded-xl border border-violet-100 bg-violet-50/60 p-1">
+          <TabsTrigger value="reports" className="rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports
           </TabsTrigger>
-          <TabsTrigger value="settings" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="settings" className="rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">
             <MapPin className="h-4 w-4 mr-2" />
             Settings
           </TabsTrigger>
