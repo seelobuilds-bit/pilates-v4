@@ -35,10 +35,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-129 Reporting rating/review placeholder cleanup | codex-main | codex/T-129-reporting-rating-placeholders | Remove hardcoded rating placeholders and present explicit unavailable states across studio/teacher reporting APIs + UI | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/45 |
 | T-130 Teacher invoice earnings placeholder fix | codex-main | codex/T-130-invoice-earnings-placeholder-fix | Replace `PERCENTAGE` payout placeholder with real revenue-based calculation (exclude cancelled bookings) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/46 |
 | T-131 Leaderboard user-rank null-state integrity | codex-main | codex/T-131-leaderboard-rank-null-fix | Avoid emitting rank `0`; return `null` for not-yet-ranked participants so UI shows correct empty state | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/47 |
-| T-132 Reports custom date-range integrity | codex-main | codex/T-132-reports-custom-date-range-integrity | Ensure studio reports custom range sends/uses explicit `startDate` + `endDate` and aligns previous-period calculations to selected span | In Progress | TBD |
+| T-132 Reports custom date-range integrity | codex-main | codex/T-132-reports-custom-date-range-integrity | Ensure studio reports custom range sends/uses explicit `startDate` + `endDate` and aligns previous-period calculations to selected span | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/48 |
+| T-133 Teacher reporting studio-scope enforcement | codex-main | codex/T-133-teacher-reporting-studio-scope | Enforce `studioId` scoping in teacher reporting APIs to prevent cross-tenant metric bleed and keep report totals tenant-correct | In Progress | TBD |
 
 ## Merge Order
-1. T-132 Reports custom date-range integrity
+1. T-133 Teacher reporting studio-scope enforcement
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

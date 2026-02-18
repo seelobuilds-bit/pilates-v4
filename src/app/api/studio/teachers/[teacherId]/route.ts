@@ -52,7 +52,8 @@ export async function GET(
 
     const allClassSessions = await db.classSession.findMany({
       where: {
-        teacherId: teacher.id
+        teacherId: teacher.id,
+        studioId: session.user.studioId
       },
       include: {
         classType: { select: { name: true } },
@@ -64,6 +65,7 @@ export async function GET(
 
     const allBookings = await db.booking.findMany({
       where: {
+        studioId: session.user.studioId,
         classSession: {
           teacherId: teacher.id
         }
