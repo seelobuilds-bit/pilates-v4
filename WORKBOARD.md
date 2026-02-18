@@ -49,10 +49,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-143 Reporting smoke strictness gates | codex-main | codex/T-143-reporting-smoke-strict-mode | Add optional strict-mode env gates to fail CI when report integrity is skipped or any smoke checks are skipped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/59 |
 | T-144 Reporting smoke runbook/docs | codex-main | codex/T-144-reporting-smoke-docs | Document reporting smoke env setup and strict-mode rollout for local and GitHub Actions usage | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/60 |
 | T-145 Smoke suite hardening (auth/debug compatibility) | codex-main | codex/T-145-smoke-suite-hardening | Align smoke/authz tests with production-safe debug endpoint behavior and redirect-following auth checks so release signals are accurate | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/61 |
-| T-146 Mobile foundation (Expo + mobile auth + studio variants) | codex-main | codex/T-146-mobile-foundation | Create mobile workspace, shared auth/session bootstrap for owner/teacher/client, and private per-studio app variant build pipeline | In Progress | TBD |
+| T-146 Mobile foundation (Expo + mobile auth + studio variants) | codex-main | codex/T-146-mobile-foundation | Create mobile workspace, shared auth/session bootstrap for owner/teacher/client, and private per-studio app variant build pipeline | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/62 |
+| T-147 Mobile schedule + inbox data feed (phase 2) | codex-main | codex/T-147-mobile-schedule-feed | Add role-aware mobile schedule/inbox APIs and wire Schedule/Inbox tabs to live backend data for owner/teacher/client | In Progress | TBD |
 
 ## Merge Order
-1. T-146 Mobile foundation (Expo + mobile auth + studio variants)
+1. T-147 Mobile schedule + inbox data feed (phase 2)
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

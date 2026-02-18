@@ -29,3 +29,68 @@ export interface MobileBootstrapResponse {
   studio: StudioSummary
   metrics: Record<string, number>
 }
+
+export interface MobileScheduleItem {
+  id: string
+  bookingId?: string
+  bookingStatus?: string
+  startTime: string
+  endTime: string
+  capacity: number
+  bookedCount: number
+  classType: {
+    id: string
+    name: string
+  }
+  teacher: {
+    id: string
+    firstName: string
+    lastName: string
+  }
+  location: {
+    id: string
+    name: string
+  }
+}
+
+export interface MobileScheduleResponse {
+  role: MobileRole
+  studio: StudioSummary
+  from: string
+  to: string
+  items: MobileScheduleItem[]
+}
+
+export interface MobileConversationSummary {
+  clientId: string
+  clientName: string
+  clientEmail: string
+  clientPhone: string | null
+  messageCount: number
+  unreadCount: number
+  lastMessage: {
+    id: string
+    direction: "INBOUND" | "OUTBOUND"
+    channel: "EMAIL" | "SMS"
+    body: string
+    createdAt: string
+  } | null
+}
+
+export interface MobileInboxMessage {
+  id: string
+  channel: "EMAIL" | "SMS"
+  direction: "INBOUND" | "OUTBOUND"
+  subject?: string | null
+  body: string
+  fromName?: string | null
+  toName?: string | null
+  createdAt: string
+}
+
+export interface MobileInboxResponse {
+  role: MobileRole
+  studio: StudioSummary
+  conversations?: MobileConversationSummary[]
+  messages?: MobileInboxMessage[]
+}

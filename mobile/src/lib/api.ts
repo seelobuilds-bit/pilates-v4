@@ -1,5 +1,11 @@
 import { mobileConfig } from "@/src/lib/config"
-import type { MobileBootstrapResponse, MobileLoginResponse, MobileSessionUser } from "@/src/types/mobile"
+import type {
+  MobileBootstrapResponse,
+  MobileInboxResponse,
+  MobileLoginResponse,
+  MobileScheduleResponse,
+  MobileSessionUser,
+} from "@/src/types/mobile"
 
 interface ApiRequestOptions extends RequestInit {
   token?: string | null
@@ -43,6 +49,25 @@ export const mobileApi = {
 
   bootstrap(token: string) {
     return request<MobileBootstrapResponse>("/api/mobile/bootstrap", {
+      method: "GET",
+      token,
+    })
+  },
+
+  schedule(token: string, params?: { from?: string; to?: string }) {
+    const search = new URLSearchParams()
+    if (params?.from) search.set("from", params.from)
+    if (params?.to) search.set("to", params.to)
+    const path = search.size ? `/api/mobile/schedule?${search.toString()}` : "/api/mobile/schedule"
+
+    return request<MobileScheduleResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  inbox(token: string) {
+    return request<MobileInboxResponse>("/api/mobile/inbox", {
       method: "GET",
       token,
     })
