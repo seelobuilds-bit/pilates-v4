@@ -55,10 +55,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-150 Mobile inbox actions (thread + send) | codex-main | codex/T-150-mobile-inbox-actions | Add mobile conversation thread endpoint + send endpoint and wire owner/teacher Inbox tab to open thread and send email/SMS from app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/65 |
 | T-151 Mobile schedule booking actions (client) | codex-main | codex/T-151-mobile-schedule-booking-actions | Add client browse/book/cancel capabilities in mobile schedule (free classes), including API endpoints and in-app mode toggle | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/67 |
 | T-152 Mobile client inbox compose | codex-main | codex/T-152-mobile-client-inbox-compose | Allow clients to send mobile inbox messages to studio and wire composer UI in client inbox flow | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/68 |
-| T-153 Mobile paid booking handoff (web checkout) | codex-main | codex/T-153-mobile-paid-booking-handoff | Replace paid-class dead-end in mobile schedule with actionable "Book on Web Checkout" handoff for clients | In Progress | TBD |
+| T-153 Mobile paid booking handoff (web checkout) | codex-main | codex/T-153-mobile-paid-booking-handoff | Replace paid-class dead-end in mobile schedule with actionable "Book on Web Checkout" handoff for clients | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/69 |
+| T-154 Mobile home quick actions + metric label polish | codex-main | codex/T-154-mobile-home-quick-actions | Add role-specific home quick actions (web handoff) and readable metric labels for owner/teacher/client mobile home | In Progress | TBD |
 
 ## Merge Order
-1. T-153 Mobile paid booking handoff (web checkout)
+1. T-154 Mobile home quick actions + metric label polish
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
