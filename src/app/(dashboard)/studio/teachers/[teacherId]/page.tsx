@@ -129,6 +129,7 @@ export default function TeacherDetailPage({
   const resolvedParams = use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
   const [specialtiesInput, setSpecialtiesInput] = useState("")
@@ -145,14 +146,18 @@ export default function TeacherDetailPage({
     async function fetchTeacher() {
       try {
         const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setTeacher(data)
-          setSpecialtiesInput(data.specialties?.join(", ") || "")
-          setExtendedStats(data.extendedStats || emptyTeacherStats)
+        if (!res.ok) {
+          setError("We couldn't load this teacher right now.")
+          return
         }
+
+        const data = await res.json()
+        setTeacher(data)
+        setSpecialtiesInput(data.specialties?.join(", ") || "")
+        setExtendedStats(data.extendedStats || emptyTeacherStats)
       } catch (error) {
         console.error("Failed to fetch teacher:", error)
+        setError("We couldn't load this teacher right now.")
       }
       setLoading(false)
     }
@@ -280,6 +285,23 @@ export default function TeacherDetailPage({
     )
   }
 
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50/50 min-h-screen">
+        <div className="max-w-md mx-auto mt-12 text-center">
+          <p className="text-gray-900 font-semibold mb-2">Unable to load teacher</p>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+            <Link href="/studio/teachers">
+              <Button variant="outline">Back to Teachers</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!teacher) {
     return (
       <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -383,6 +405,7 @@ export default function TeacherDetailPage({
 
       {/* Stats Row */}
       {hasTeacherReportData && (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
@@ -642,9 +665,9 @@ export default function TeacherDetailPage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-10 text-center">
                 <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No data in selected period</h3>
                 <p className="text-gray-500">
-                  This teacher has no tracked class activity yet, so reporting is empty.
+                  Try changing your date range or check back once more activity is recorded.
                 </p>
               </CardContent>
             </Card>

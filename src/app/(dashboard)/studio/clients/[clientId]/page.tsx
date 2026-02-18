@@ -106,6 +106,7 @@ export default function ClientDetailPage({
   const resolvedParams = use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [client, setClient] = useState<Client | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
@@ -116,15 +117,19 @@ export default function ClientDetailPage({
     async function fetchClient() {
       try {
         const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setClient(data.client)
-          setBookings(data.bookings || [])
-          setStats(data.stats || emptyClientStats)
-          setCommunications(data.communications || [])
+        if (!res.ok) {
+          setError("We couldn't load this client right now.")
+          return
         }
+
+        const data = await res.json()
+        setClient(data.client)
+        setBookings(data.bookings || [])
+        setStats(data.stats || emptyClientStats)
+        setCommunications(data.communications || [])
       } catch (error) {
         console.error("Error fetching client:", error)
+        setError("We couldn't load this client right now.")
       } finally {
         setLoading(false)
       }
@@ -149,6 +154,23 @@ export default function ClientDetailPage({
     return (
       <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50/50 min-h-screen">
+        <div className="max-w-md mx-auto mt-12 text-center">
+          <p className="text-gray-900 font-semibold mb-2">Unable to load client</p>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+            <Link href="/studio/clients">
+              <Button variant="outline">Back to Clients</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
@@ -508,9 +530,9 @@ export default function ClientDetailPage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-10 text-center">
                 <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No data in selected period</h3>
                 <p className="text-gray-500">
-                  This client has no tracked booking activity yet, so reporting is empty.
+                  Try changing your date range or check back once more activity is recorded.
                 </p>
               </CardContent>
             </Card>
