@@ -68,6 +68,7 @@ export default function EditLocationPage({
   const resolvedParams = use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [location, setLocation] = useState<Location | null>(null)
   const [stats, setStats] = useState<LocationStats | null>(null)
@@ -85,22 +86,26 @@ export default function EditLocationPage({
     async function fetchLocation() {
       try {
         const res = await fetch(`/api/studio/locations/${resolvedParams.locationId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setLocation(data)
-          setStats(data.stats || emptyLocationStats)
-          setFormData({
-            name: data.name,
-            address: data.address,
-            city: data.city,
-            state: data.state,
-            zipCode: data.zipCode,
-            phone: data.phone || "",
-            isActive: data.isActive
-          })
+        if (!res.ok) {
+          setError("We couldn't load this location right now.")
+          return
         }
+
+        const data = await res.json()
+        setLocation(data)
+        setStats(data.stats || emptyLocationStats)
+        setFormData({
+          name: data.name,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          phone: data.phone || "",
+          isActive: data.isActive
+        })
       } catch (error) {
         console.error("Error fetching location:", error)
+        setError("We couldn't load this location right now.")
       } finally {
         setLoading(false)
       }
@@ -137,6 +142,23 @@ export default function EditLocationPage({
     return (
       <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50/50 min-h-screen">
+        <div className="max-w-md mx-auto mt-12 text-center">
+          <p className="text-gray-900 font-semibold mb-2">Unable to load location</p>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+            <Link href="/studio/locations">
+              <Button variant="outline">Back to Locations</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
@@ -392,9 +414,9 @@ export default function EditLocationPage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-10 text-center">
                 <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No data in selected period</h3>
                 <p className="text-gray-500">
-                  This location has no tracked activity yet, so reporting is empty.
+                  Try changing your date range or check back once more activity is recorded.
                 </p>
               </CardContent>
             </Card>

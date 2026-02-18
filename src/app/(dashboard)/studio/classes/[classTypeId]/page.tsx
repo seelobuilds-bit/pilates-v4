@@ -83,6 +83,7 @@ export default function EditClassTypePage({
   const resolvedParams = use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [classType, setClassType] = useState<ClassType | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
@@ -108,21 +109,24 @@ export default function EditClassTypePage({
           fetch("/api/studio/teachers")
         ])
         
-        if (classTypeRes.ok) {
-          const data = await classTypeRes.json()
-          setClassType(data)
-          setFormData({
-            name: data.name,
-            description: data.description || "",
-            duration: data.duration.toString(),
-            capacity: data.capacity.toString(),
-            price: data.price.toString(),
-            isActive: data.isActive
-          })
-          setSelectedLocations(data.locationIds || [])
-          setSelectedTeachers(data.teacherIds || [])
-          setStats(data.stats || emptyClassTypeStats)
+        if (!classTypeRes.ok) {
+          setError("We couldn't load this class right now.")
+          return
         }
+
+        const data = await classTypeRes.json()
+        setClassType(data)
+        setFormData({
+          name: data.name,
+          description: data.description || "",
+          duration: data.duration.toString(),
+          capacity: data.capacity.toString(),
+          price: data.price.toString(),
+          isActive: data.isActive
+        })
+        setSelectedLocations(data.locationIds || [])
+        setSelectedTeachers(data.teacherIds || [])
+        setStats(data.stats || emptyClassTypeStats)
         
         if (locationsRes.ok) {
           const locData = await locationsRes.json()
@@ -144,6 +148,7 @@ export default function EditClassTypePage({
 
       } catch (error) {
         console.error("Error fetching data:", error)
+        setError("We couldn't load this class right now.")
       } finally {
         setLoading(false)
       }
@@ -217,6 +222,23 @@ export default function EditClassTypePage({
     )
   }
 
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50/50 min-h-screen">
+        <div className="max-w-md mx-auto mt-12 text-center">
+          <p className="text-gray-900 font-semibold mb-2">Unable to load class</p>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+            <Link href="/studio/classes">
+              <Button variant="outline">Back to Classes</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!classType) {
     return (
       <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -261,7 +283,7 @@ export default function EditClassTypePage({
       </div>
 
       {/* Stats Row */}
-      {stats && (
+      {stats && hasClassReportData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
@@ -751,9 +773,9 @@ export default function EditClassTypePage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-10 text-center">
                 <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No report data yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No data in selected period</h3>
                 <p className="text-gray-500">
-                  This class type has no tracked activity yet, so reporting is empty.
+                  Try changing your date range or check back once more activity is recorded.
                 </p>
               </CardContent>
             </Card>
