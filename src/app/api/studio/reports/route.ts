@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
@@ -255,7 +256,7 @@ export async function GET(request: NextRequest) {
     classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
 
     const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-    const fill = session.capacity > 0 ? Math.round((attendedCount / session.capacity) * 100) : 0
+    const fill = ratioPercentage(attendedCount, session.capacity, 0)
 
     const slotLabel = new Date(session.startTime).toLocaleTimeString("en-US", {
       hour: "numeric",
@@ -293,11 +294,12 @@ export async function GET(request: NextRequest) {
   }, 0)
   const overallAverageFill =
     classSessions.length > 0
-      ? Math.round(
+      ? roundTo(
           classSessions.reduce((sum, session) => {
             const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-            return sum + (session.capacity > 0 ? (attendedCount / session.capacity) * 100 : 0)
-          }, 0) / classSessions.length
+            return sum + ratioPercentage(attendedCount, session.capacity, 4)
+          }, 0) / classSessions.length,
+          0
         )
       : 0
 
@@ -568,12 +570,10 @@ export async function GET(request: NextRequest) {
     (message) => message.clickedAt || message.status === "CLICKED"
   ).length
 
-  const emailOpenRate = emailsSent > 0 ? Math.round((openedEmails / emailsSent) * 1000) / 10 : 0
-  const emailClickRate = emailsSent > 0 ? Math.round((clickedEmails / emailsSent) * 1000) / 10 : 0
-  const previousEmailOpenRate =
-    previousEmailsSent > 0 ? Math.round((previousOpenedEmails / previousEmailsSent) * 1000) / 10 : 0
-  const previousEmailClickRate =
-    previousEmailsSent > 0 ? Math.round((previousClickedEmails / previousEmailsSent) * 1000) / 10 : 0
+  const emailOpenRate = ratioPercentage(openedEmails, emailsSent, 1)
+  const emailClickRate = ratioPercentage(clickedEmails, emailsSent, 1)
+  const previousEmailOpenRate = ratioPercentage(previousOpenedEmails, previousEmailsSent, 1)
+  const previousEmailClickRate = ratioPercentage(previousClickedEmails, previousEmailsSent, 1)
 
   const emailRecipientClientIds = Array.from(
     new Set(
@@ -684,25 +684,18 @@ export async function GET(request: NextRequest) {
   const attendedBookingsPreviousPeriod = previousBookings.filter((booking) =>
     ATTENDED_BOOKING_STATUSES.has(booking.status)
   )
-  const noShowRate =
-    attendedBookingsThisPeriod.length > 0
-      ? Math.round(
-          (attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length /
-            attendedBookingsThisPeriod.length) *
-            1000
-        ) / 10
-      : 0
-  const previousNoShowRate =
-    attendedBookingsPreviousPeriod.length > 0
-      ? Math.round(
-          (attendedBookingsPreviousPeriod.filter((booking) => booking.status === "NO_SHOW").length /
-            attendedBookingsPreviousPeriod.length) *
-            1000
-        ) / 10
-      : 0
+  const noShowRate = ratioPercentage(
+    attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length,
+    attendedBookingsThisPeriod.length,
+    1
+  )
+  const previousNoShowRate = ratioPercentage(
+    attendedBookingsPreviousPeriod.filter((booking) => booking.status === "NO_SHOW").length,
+    attendedBookingsPreviousPeriod.length,
+    1
+  )
 
-  const socialConversionRate =
-    totalSocialTriggered > 0 ? Math.round((totalSocialBooked / totalSocialTriggered) * 1000) / 10 : 0
+  const socialConversionRate = ratioPercentage(totalSocialBooked, totalSocialTriggered, 1)
 
   const previousClassCountByTeacherId = new Map(
     previousClassCounts.map((row) => [row.teacherId, row._count.teacherId])
@@ -787,10 +780,8 @@ export async function GET(request: NextRequest) {
     .map((bucket) => {
       const uniqueClients = bucket.clientVisits.size
       const repeatClients = Array.from(bucket.clientVisits.values()).filter((count) => count > 1).length
-      const avgFill =
-        bucket.totalCapacity > 0 ? Math.round((bucket.attended / bucket.totalCapacity) * 100) : 0
-      const retention =
-        uniqueClients > 0 ? Math.round((repeatClients / uniqueClients) * 1000) / 10 : 0
+      const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
+      const retention = ratioPercentage(repeatClients, uniqueClients, 1)
       const trend =
         bucket.classes > bucket.previousClasses
           ? "up"
@@ -803,7 +794,7 @@ export async function GET(request: NextRequest) {
         name: bucket.name,
         classes: bucket.classes,
         avgFill,
-        revenue: Math.round(bucket.revenue * 100) / 100,
+        revenue: roundCurrency(bucket.revenue),
         rating: bucket.rating,
         retention,
         trend,
@@ -891,7 +882,7 @@ export async function GET(request: NextRequest) {
   }
   const cohortRetention = cohortBuckets.map((bucket) => ({
     cohort: bucket.cohort,
-    retained: bucket.total > 0 ? Math.round((bucket.retained / bucket.total) * 1000) / 10 : 0
+    retained: ratioPercentage(bucket.retained, bucket.total, 1)
   }))
 
   const cancellationReasonCounts = new Map<string, number>()
@@ -919,10 +910,7 @@ export async function GET(request: NextRequest) {
   const membershipBreakdown = membershipBuckets.map((bucket) => ({
     type: bucket.type,
     count: bucket.count,
-    percent:
-      activeClientsList.length > 0
-        ? Math.round((bucket.count / activeClientsList.length) * 1000) / 10
-        : 0
+    percent: ratioPercentage(bucket.count, activeClientsList.length, 1)
   }))
 
   const marketingInsights =
@@ -954,21 +942,21 @@ export async function GET(request: NextRequest) {
   const byTimeSlot = Array.from(byTimeSlotMap.values())
     .map((item) => ({
       time: item.time,
-      fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+      fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
       classes: item.classes
     }))
     .sort((a, b) => b.fill - a.fill)
 
   const byDay = Array.from(byDayMap.values()).map((item) => ({
     day: item.day,
-    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
     classes: item.classes
   }))
 
   const classFillRows = Array.from(byClassTypeMap.values()).map((item) => ({
     id: item.id,
     name: item.name,
-    fill: item.classes > 0 ? Math.round(item.fillTotal / item.classes) : 0,
+    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
     waitlist: item.waitlist
   }))
 
