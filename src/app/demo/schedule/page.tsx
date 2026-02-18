@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
@@ -199,13 +199,13 @@ export default function SchedulePage() {
     const endDate = new Date(weekDates[6])
     endDate.setHours(23, 59, 59, 999)
     
-    const classesRes = await fetch(`/api/studio/schedule?start=${startDate}&end=${endDate.toISOString()}`)
+    const classesRes = await fetch(`/api/demo/schedule?start=${startDate}&end=${endDate.toISOString()}`)
     if (classesRes.ok) {
       const classesData = await classesRes.json()
       setClasses(classesData)
     }
 
-    const blockedRes = await fetch(`/api/studio/blocked-times?start=${startDate}&end=${endDate.toISOString()}`)
+    const blockedRes = await fetch(`/api/demo/blocked-times?start=${startDate}&end=${endDate.toISOString()}`)
     if (blockedRes.ok) {
       const blockedData = await blockedRes.json()
       setBlockedTimes(blockedData)
@@ -218,21 +218,21 @@ export default function SchedulePage() {
       setLoading(true)
       try {
         // Fetch locations
-        const locRes = await fetch('/api/studio/locations')
+        const locRes = await fetch('/api/demo/locations')
         if (locRes.ok) {
           const locData = await locRes.json()
           setLocations(locData)
         }
 
         // Fetch teachers
-        const teacherRes = await fetch('/api/studio/teachers')
+        const teacherRes = await fetch('/api/demo/teachers')
         if (teacherRes.ok) {
           const teacherData = await teacherRes.json()
           setTeachers(teacherData)
         }
 
         // Fetch class types
-        const classTypeRes = await fetch('/api/studio/class-types')
+        const classTypeRes = await fetch('/api/demo/class-types')
         if (classTypeRes.ok) {
           const classTypeData = await classTypeRes.json()
           setClassTypes(classTypeData)
@@ -265,28 +265,25 @@ export default function SchedulePage() {
     return true
   })
 
-  const listFilteredClasses = useMemo(() => {
-    const now = new Date()
-    const query = searchQuery.trim().toLowerCase()
-
-    return filteredClasses
-      .filter((cls) => {
-        const classStart = new Date(cls.startTime)
-        if (timeScope === "upcoming" && classStart < now) return false
-        if (timeScope === "past" && classStart >= now) return false
-        return true
-      })
-      .filter((cls) => {
-        if (!query) return true
-        const instructor = `${cls.teacher.user.firstName} ${cls.teacher.user.lastName}`.toLowerCase()
-        return (
-          cls.classType.name.toLowerCase().includes(query) ||
-          instructor.includes(query) ||
-          cls.location.name.toLowerCase().includes(query)
-        )
-      })
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-  }, [filteredClasses, searchQuery, timeScope])
+  const now = new Date()
+  const query = searchQuery.trim().toLowerCase()
+  const listFilteredClasses = filteredClasses
+    .filter((cls) => {
+      const classStart = new Date(cls.startTime)
+      if (timeScope === "upcoming" && classStart < now) return false
+      if (timeScope === "past" && classStart >= now) return false
+      return true
+    })
+    .filter((cls) => {
+      if (!query) return true
+      const instructor = `${cls.teacher.user.firstName} ${cls.teacher.user.lastName}`.toLowerCase()
+      return (
+        cls.classType.name.toLowerCase().includes(query) ||
+        instructor.includes(query) ||
+        cls.location.name.toLowerCase().includes(query)
+      )
+    })
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
 
   // Group classes by day
   const classesByDay: Record<number, ClassSession[]> = {}

@@ -157,7 +157,7 @@ export default function TeacherDetailPage({
           params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
         }
 
-        const res = await fetch(`/api/studio/teachers/${resolvedParams.teacherId}?${params.toString()}`)
+        const res = await fetch(`/api/demo/teachers/${resolvedParams.teacherId}?${params.toString()}`)
         if (!res.ok) {
           setError("We couldn't load this teacher right now.")
           return
@@ -191,7 +191,7 @@ export default function TeacherDetailPage({
         endOfWeek.setHours(23, 59, 59, 999)
 
         const res = await fetch(
-          `/api/studio/teachers/${resolvedParams.teacherId}/blocked-times?start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`
+          `/api/demo/teachers/${resolvedParams.teacherId}/blocked-times?start=${startOfWeek.toISOString()}&end=${endOfWeek.toISOString()}`
         )
         if (res.ok) {
           const data = await res.json()
@@ -209,8 +209,8 @@ export default function TeacherDetailPage({
     async function fetchPayRateAndInvoices() {
       try {
         const [payRateRes, invoicesRes] = await Promise.all([
-          fetch(`/api/studio/teachers/${resolvedParams.teacherId}/pay-rate`),
-          fetch(`/api/studio/teachers/${resolvedParams.teacherId}/invoices`)
+          fetch(`/api/demo/teachers/${resolvedParams.teacherId}/pay-rate`),
+          fetch(`/api/demo/teachers/${resolvedParams.teacherId}/invoices`)
         ])
         
         if (payRateRes.ok) {
