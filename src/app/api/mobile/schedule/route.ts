@@ -8,6 +8,40 @@ function parseDateOrFallback(value: string | null, fallback: Date) {
   return Number.isNaN(parsed.getTime()) ? fallback : parsed
 }
 
+function mapSession(session: {
+  id: string
+  startTime: Date
+  endTime: Date
+  capacity: number
+  teacherId: string
+  classType: { id: string; name: string; price: number }
+  teacher: { user: { firstName: string; lastName: string } }
+  location: { id: string; name: string }
+  _count: { bookings: number }
+}) {
+  return {
+    id: session.id,
+    startTime: session.startTime.toISOString(),
+    endTime: session.endTime.toISOString(),
+    capacity: session.capacity,
+    bookedCount: session._count.bookings,
+    classType: {
+      id: session.classType.id,
+      name: session.classType.name,
+      price: session.classType.price,
+    },
+    teacher: {
+      id: session.teacherId,
+      firstName: session.teacher.user.firstName,
+      lastName: session.teacher.user.lastName,
+    },
+    location: {
+      id: session.location.id,
+      name: session.location.name,
+    },
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = extractBearerToken(request.headers.get("authorization"))
@@ -38,6 +72,7 @@ export async function GET(request: NextRequest) {
     const defaultTo = new Date(from)
     defaultTo.setDate(defaultTo.getDate() + 14)
     const to = parseDateOrFallback(request.nextUrl.searchParams.get("to"), defaultTo)
+    const mode = request.nextUrl.searchParams.get("mode") || "booked"
 
     if (to < from) {
       return NextResponse.json({ error: "Invalid date range" }, { status: 400 })
@@ -51,13 +86,11 @@ export async function GET(request: NextRequest) {
             gte: from,
             lte: to,
           },
-          ...(decoded.role === "TEACHER" && decoded.teacherId
-            ? { teacherId: decoded.teacherId }
-            : {}),
+          ...(decoded.role === "TEACHER" && decoded.teacherId ? { teacherId: decoded.teacherId } : {}),
         },
         include: {
           classType: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, price: true },
           },
           teacher: {
             include: {
@@ -85,30 +118,85 @@ export async function GET(request: NextRequest) {
         studio,
         from: from.toISOString(),
         to: to.toISOString(),
-        items: sessions.map((session) => ({
-          id: session.id,
-          startTime: session.startTime.toISOString(),
-          endTime: session.endTime.toISOString(),
-          capacity: session.capacity,
-          bookedCount: session._count.bookings,
-          classType: {
-            id: session.classType.id,
-            name: session.classType.name,
-          },
-          teacher: {
-            id: session.teacherId,
-            firstName: session.teacher.user.firstName,
-            lastName: session.teacher.user.lastName,
-          },
-          location: {
-            id: session.location.id,
-            name: session.location.name,
-          },
-        })),
+        mode,
+        items: sessions.map(mapSession),
       })
     }
 
     const clientId = decoded.clientId || decoded.sub
+
+    if (mode === "all") {
+      const [sessions, bookings] = await Promise.all([
+        db.classSession.findMany({
+          where: {
+            studioId: studio.id,
+            startTime: {
+              gte: from,
+              lte: to,
+            },
+          },
+          include: {
+            classType: {
+              select: { id: true, name: true, price: true },
+            },
+            teacher: {
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
+            location: {
+              select: { id: true, name: true },
+            },
+            _count: {
+              select: { bookings: true },
+            },
+          },
+          orderBy: { startTime: "asc" },
+          take: 300,
+        }),
+        db.booking.findMany({
+          where: {
+            studioId: studio.id,
+            clientId,
+            classSession: {
+              startTime: {
+                gte: from,
+                lte: to,
+              },
+            },
+          },
+          select: {
+            id: true,
+            status: true,
+            classSessionId: true,
+          },
+        }),
+      ])
+
+      const bookingsBySession = new Map(bookings.map((booking) => [booking.classSessionId, booking]))
+
+      return NextResponse.json({
+        role: "CLIENT",
+        studio,
+        from: from.toISOString(),
+        to: to.toISOString(),
+        mode,
+        items: sessions.map((session) => {
+          const booking = bookingsBySession.get(session.id)
+          return {
+            ...mapSession(session),
+            bookingId: booking?.id,
+            bookingStatus: booking?.status,
+          }
+        }),
+      })
+    }
+
     const bookings = await db.booking.findMany({
       where: {
         studioId: studio.id,
@@ -124,7 +212,7 @@ export async function GET(request: NextRequest) {
         classSession: {
           include: {
             classType: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, price: true },
             },
             teacher: {
               include: {
@@ -158,27 +246,11 @@ export async function GET(request: NextRequest) {
       studio,
       from: from.toISOString(),
       to: to.toISOString(),
+      mode,
       items: bookings.map((booking) => ({
-        id: booking.classSession.id,
+        ...mapSession(booking.classSession),
         bookingId: booking.id,
         bookingStatus: booking.status,
-        startTime: booking.classSession.startTime.toISOString(),
-        endTime: booking.classSession.endTime.toISOString(),
-        capacity: booking.classSession.capacity,
-        bookedCount: booking.classSession._count.bookings,
-        classType: {
-          id: booking.classSession.classType.id,
-          name: booking.classSession.classType.name,
-        },
-        teacher: {
-          id: booking.classSession.teacherId,
-          firstName: booking.classSession.teacher.user.firstName,
-          lastName: booking.classSession.teacher.user.lastName,
-        },
-        location: {
-          id: booking.classSession.location.id,
-          name: booking.classSession.location.name,
-        },
       })),
     })
   } catch (error) {
