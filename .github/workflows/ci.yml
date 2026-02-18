@@ -67,11 +67,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install mobile dependencies
+        run: pnpm --dir mobile install --frozen-lockfile
+
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Mobile typecheck
+        run: pnpm --dir mobile typecheck
+
       - name: Lint
         run: pnpm lint
+
+      - name: Mobile lint
+        run: pnpm --dir mobile lint
 
       - name: Build
         env:

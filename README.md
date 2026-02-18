@@ -45,6 +45,20 @@ Supabase rollout notes, including:
 
 See `/Users/charlie/Development/pilates-v4/docs/supabase-migration.md`.
 
+## Mobile Apps (Private Studio Builds)
+
+Mobile code now lives in `/Users/charlie/Development/pilates-v4/mobile` (Expo + React Native).
+
+Reference runbook:
+- `/Users/charlie/Development/pilates-v4/docs/mobile-private-apps.md`
+
+Per-studio private app workflow:
+- Generate studio variant env in `mobile/`:
+  - `pnpm --dir mobile prepare:studio --slug <studio-subdomain> --name \"Studio Name\"`
+- Build private binaries:
+  - `pnpm --dir mobile build:ios:production`
+  - `pnpm --dir mobile build:android:production`
+
 ## Owner flow smoke test
 
 Run a lightweight owner-route smoke check against a running app (defaults to `http://localhost:3000`):
