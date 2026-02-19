@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "expo-router"
 import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -52,6 +53,7 @@ function ScheduleCard({
   onBook,
   onCancel,
   onOpenWebBooking,
+  onViewDetails,
   currencyCode,
   primaryColor,
 }: {
@@ -64,6 +66,7 @@ function ScheduleCard({
   onBook: (classSessionId: string) => void
   onCancel: (bookingId: string) => void
   onOpenWebBooking: (classSessionId: string) => void
+  onViewDetails: (sessionId: string) => void
 }) {
   const { date, time } = formatDateRange(item.startTime, item.endTime)
   const teacher = `${item.teacher.firstName} ${item.teacher.lastName}`
@@ -84,9 +87,13 @@ function ScheduleCard({
 
       {item.bookingStatus ? <Text style={[styles.bookingStatus, { color: primaryColor }]}>Booking: {item.bookingStatus}</Text> : null}
 
-      {isClient && browsingMode ? (
-        <View style={styles.cardActions}>
-          {hasBooking && item.bookingId ? (
+      <View style={styles.cardActions}>
+        <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+          <Text style={styles.detailsButtonText}>View Details</Text>
+        </Pressable>
+
+        {isClient && browsingMode ? (
+          hasBooking && item.bookingId ? (
             <Pressable
               style={[styles.actionButton, styles.cancelButton, actionLoading && styles.actionButtonDisabled]}
               onPress={() => onCancel(item.bookingId!)}
@@ -110,15 +117,16 @@ function ScheduleCard({
             >
               <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Book Class"}</Text>
             </Pressable>
-          )}
-        </View>
-      ) : null}
+          )
+        ) : null}
+      </View>
     </View>
   )
 }
 
 export default function ScheduleScreen() {
   const { token, user } = useAuth()
+  const router = useRouter()
   const [items, setItems] = useState<MobileScheduleItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -232,6 +240,13 @@ export default function ScheduleScreen() {
     [user?.studio?.subdomain]
   )
 
+  const handleViewDetails = useCallback(
+    (sessionId: string) => {
+      router.push(`/(app)/schedule/${sessionId}` as never)
+    },
+    [router]
+  )
+
   useEffect(() => {
     void loadSchedule()
   }, [loadSchedule])
@@ -288,6 +303,7 @@ export default function ScheduleScreen() {
             onBook={handleBook}
             onCancel={handleCancel}
             onOpenWebBooking={handleOpenWebBooking}
+            onViewDetails={handleViewDetails}
           />
         )}
         contentContainerStyle={styles.listContent}
@@ -364,6 +380,20 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     marginTop: 8,
+    gap: 8,
+  },
+  detailsButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
   },
   actionButton: {
     borderRadius: 10,

@@ -22,6 +22,7 @@ import type {
   MobilePushRegisterParams,
   MobilePushStatus,
   MobileReportsResponse,
+  MobileScheduleDetailResponse,
   MobileScheduleResponse,
   MobileSessionUser,
   MobileSocialResponse,
@@ -133,6 +134,13 @@ export const mobileApi = {
     const path = search.size ? `/api/mobile/schedule?${search.toString()}` : "/api/mobile/schedule"
 
     return request<MobileScheduleResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  scheduleDetail(token: string, sessionId: string) {
+    return request<MobileScheduleDetailResponse>(`/api/mobile/schedule/${sessionId}`, {
       method: "GET",
       token,
     })
