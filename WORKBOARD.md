@@ -85,10 +85,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-180 Mobile native store surface | codex-main | codex/t-180-mobile-native-store-surface | Add role-aware mobile store API + native Store screen and route owner workspace Store action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/97 |
 | T-181 Mobile native vault surface | codex-main | codex/t-181-mobile-native-vault-surface | Add role-aware mobile vault API + native Vault screen and route owner/teacher workspace Vault action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/98 |
 | T-182 Mobile native community surface | codex-main | codex/t-182-mobile-native-community-surface | Add role-aware mobile community chat API + native Community screen and route owner/teacher workspace Community action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/99 |
-| T-183 Mobile native marketing overview | codex-main | codex/t-183-mobile-native-marketing-overview | Add owner-only mobile marketing overview API + native Marketing screen and route owner workspace Marketing action in-app | In Progress | TBD |
+| T-183 Mobile native marketing overview | codex-main | codex/t-183-mobile-native-marketing-overview | Add owner-only mobile marketing overview API + native Marketing screen and route owner workspace Marketing action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/100 |
+| T-184 Mobile settings native handoff | codex-main | codex/t-184-mobile-settings-native-handoff | Route owner/teacher workspace Settings action to native Profile surface to reduce web handoffs | In Progress | TBD |
 
 ## Merge Order
-1. T-183 Mobile native marketing overview
+1. T-184 Mobile settings native handoff
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
