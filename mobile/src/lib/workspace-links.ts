@@ -18,6 +18,7 @@ export type NativeAppRoute =
   | "/(app)/payments"
   | "/(app)/store"
   | "/(app)/vault"
+  | "/(app)/community"
 
 export type WorkspaceFeature = {
   id: string
@@ -52,7 +53,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "native", nativeRoute: "/(app)/locations", group: "Operations" },
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "native", nativeRoute: "/(app)/teachers", group: "People" },
-    { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "web", href: "/studio/community", group: "People" },
+    { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "native", nativeRoute: "/(app)/community", group: "People" },
     { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "web", href: "/studio/marketing", group: "Growth" },
     { id: "owner-leaderboards", label: "Leaderboards", description: "Studio rankings and goals", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "owner-payments", label: "Payments", description: "Transaction history", icon: "card-outline", target: "native", nativeRoute: "/(app)/payments", group: "Commerce" },
@@ -71,7 +72,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-class-flows", label: "Class Flows", description: "Programming content", icon: "play-circle-outline", target: "native", nativeRoute: "/(app)/class-flows", group: "Operations" },
     { id: "teacher-clients", label: "Clients", description: "Client progress and notes", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "teacher-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "People" },
-    { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "web", href: "/teacher/community", group: "People" },
+    { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "native", nativeRoute: "/(app)/community", group: "People" },
     { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "web", href: "/teacher/social", group: "Growth" },
     { id: "teacher-leaderboards", label: "Leaderboards", description: "Performance ranking", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "teacher-invoices", label: "Invoices", description: "Invoice records", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },

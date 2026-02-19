@@ -279,6 +279,41 @@ export interface MobilePaymentsResponse {
   stats: MobilePaymentsStats
 }
 
+export type MobileCommunityAudience = "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
+
+export interface MobileCommunityPlanSummary {
+  id: string
+  name: string
+  audience: MobileCommunityAudience
+  chatId: string | null
+  isEnabled: boolean
+  memberCount: number
+}
+
+export interface MobileCommunityMessage {
+  id: string
+  content: string
+  type: string
+  createdAt: string
+  senderName: string
+  senderRole: string
+  isMine: boolean
+}
+
+export interface MobileCommunityResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  plans: MobileCommunityPlanSummary[]
+  activePlanId: string | null
+  chat: {
+    id: string
+    name: string
+    audience: MobileCommunityAudience
+    memberCount: number
+  } | null
+  messages: MobileCommunityMessage[]
+}
+
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
 
 export interface MobileLeaderboardParticipant {

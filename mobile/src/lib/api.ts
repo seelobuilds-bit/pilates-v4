@@ -3,6 +3,8 @@ import type {
   MobileBootstrapResponse,
   MobileClassFlowsResponse,
   MobileClassTypesResponse,
+  MobileCommunityMessage,
+  MobileCommunityResponse,
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
@@ -142,6 +144,24 @@ export const mobileApi = {
     return request<MobileClassTypesResponse>(path, {
       method: "GET",
       token,
+    })
+  },
+
+  community(token: string, params?: { planId?: string }) {
+    const search = new URLSearchParams()
+    if (params?.planId) search.set("planId", params.planId)
+    const path = search.size ? `/api/mobile/community?${search.toString()}` : "/api/mobile/community"
+    return request<MobileCommunityResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  sendCommunityMessage(token: string, params: { planId: string; content: string }) {
+    return request<{ message: MobileCommunityMessage }>("/api/mobile/community", {
+      method: "POST",
+      token,
+      body: JSON.stringify(params),
     })
   },
 
