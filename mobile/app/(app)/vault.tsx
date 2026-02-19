@@ -33,7 +33,13 @@ function pricingLabel(item: MobileVaultCourseSummary) {
   return formatCurrency(item.price, item.currency)
 }
 
-function CourseCard({ item }: { item: MobileVaultCourseSummary }) {
+function CourseCard({
+  item,
+  onViewDetails,
+}: {
+  item: MobileVaultCourseSummary
+  onViewDetails: (courseId: string) => void
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -65,6 +71,10 @@ function CourseCard({ item }: { item: MobileVaultCourseSummary }) {
         <Text style={styles.metaPill}>{item.includeInSubscription ? "In Subscription" : "Standalone"}</Text>
         {item.creatorName ? <Text style={styles.metaPill}>By {item.creatorName}</Text> : null}
       </View>
+
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -136,6 +146,12 @@ export default function VaultScreen() {
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
   const vaultWebHref = user?.role === "TEACHER" ? "/teacher/vault" : "/studio/vault"
+  const handleViewDetails = useCallback(
+    (courseId: string) => {
+      router.push(`/(app)/vault/${courseId}` as never)
+    },
+    [router]
+  )
 
   return (
     <View style={styles.container}>
@@ -197,7 +213,7 @@ export default function VaultScreen() {
         <FlatList
           data={data?.courses || []}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <CourseCard item={item} />}
+          renderItem={({ item }) => <CourseCard item={item} onViewDetails={handleViewDetails} />}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadVault(true)} />}
           ListEmptyComponent={!loading ? <View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyText}</Text></View> : null}
@@ -393,6 +409,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  detailsButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,

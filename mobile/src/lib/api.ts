@@ -31,6 +31,7 @@ import type {
   MobileTeachersResponse,
   MobileTeacherDetailResponse,
   MobileVaultAudience,
+  MobileVaultCourseDetailResponse,
   MobileVaultResponse,
 } from "@/src/types/mobile"
 
@@ -374,6 +375,13 @@ export const mobileApi = {
     if (params?.audience) search.set("audience", params.audience)
     const path = search.size ? `/api/mobile/vault?${search.toString()}` : "/api/mobile/vault"
     return request<MobileVaultResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  vaultCourseDetail(token: string, courseId: string) {
+    return request<MobileVaultCourseDetailResponse>(`/api/mobile/vault/courses/${courseId}`, {
       method: "GET",
       token,
     })
