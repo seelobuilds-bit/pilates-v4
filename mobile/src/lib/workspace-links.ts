@@ -19,6 +19,7 @@ export type NativeAppRoute =
   | "/(app)/store"
   | "/(app)/vault"
   | "/(app)/community"
+  | "/(app)/marketing"
 
 export type WorkspaceFeature = {
   id: string
@@ -54,7 +55,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "native", nativeRoute: "/(app)/teachers", group: "People" },
     { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "native", nativeRoute: "/(app)/community", group: "People" },
-    { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "web", href: "/studio/marketing", group: "Growth" },
+    { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "native", nativeRoute: "/(app)/marketing", group: "Growth" },
     { id: "owner-leaderboards", label: "Leaderboards", description: "Studio rankings and goals", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "owner-payments", label: "Payments", description: "Transaction history", icon: "card-outline", target: "native", nativeRoute: "/(app)/payments", group: "Commerce" },
     { id: "owner-invoices", label: "Invoices", description: "Invoice tracking", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },

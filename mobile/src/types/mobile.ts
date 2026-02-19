@@ -314,6 +314,58 @@ export interface MobileCommunityResponse {
   messages: MobileCommunityMessage[]
 }
 
+export type MobileMarketingCampaignStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "PAUSED" | "CANCELLED"
+export type MobileMarketingAutomationStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED"
+export type MobileMarketingChannel = "EMAIL" | "SMS"
+
+export interface MobileMarketingCampaignSummary {
+  id: string
+  name: string
+  channel: MobileMarketingChannel
+  status: MobileMarketingCampaignStatus
+  scheduledAt: string | null
+  sentAt: string | null
+  totalRecipients: number
+  sentCount: number
+  deliveredCount: number
+  openedCount: number
+  clickedCount: number
+  failedCount: number
+  createdAt: string
+}
+
+export interface MobileMarketingAutomationSummary {
+  id: string
+  name: string
+  trigger: string
+  channel: MobileMarketingChannel
+  status: MobileMarketingAutomationStatus
+  totalSent: number
+  totalDelivered: number
+  totalOpened: number
+  totalClicked: number
+  stepCount: number
+  updatedAt: string
+}
+
+export interface MobileMarketingResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  filters: {
+    search: string
+  }
+  stats: {
+    campaignsTotal: number
+    campaignsScheduled: number
+    campaignsSent: number
+    automationsTotal: number
+    automationsActive: number
+    automationsDraft: number
+  }
+  campaigns: MobileMarketingCampaignSummary[]
+  automations: MobileMarketingAutomationSummary[]
+}
+
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
 
 export interface MobileLeaderboardParticipant {

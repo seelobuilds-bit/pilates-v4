@@ -12,6 +12,7 @@ import type {
   MobileLeaderboardsResponse,
   MobileLoginResponse,
   MobileLocationsResponse,
+  MobileMarketingResponse,
   MobilePaymentsResponse,
   MobilePushRegisterParams,
   MobilePushStatus,
@@ -152,6 +153,16 @@ export const mobileApi = {
     if (params?.planId) search.set("planId", params.planId)
     const path = search.size ? `/api/mobile/community?${search.toString()}` : "/api/mobile/community"
     return request<MobileCommunityResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  marketing(token: string, params?: { search?: string }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    const path = search.size ? `/api/mobile/marketing?${search.toString()}` : "/api/mobile/marketing"
+    return request<MobileMarketingResponse>(path, {
       method: "GET",
       token,
     })

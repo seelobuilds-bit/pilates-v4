@@ -45,7 +45,7 @@ export default function WorkspaceScreen() {
     setOpeningFeatureId(feature.id)
     try {
       if (feature.target === "native" && feature.nativeRoute) {
-        router.push(feature.nativeRoute)
+        router.push(feature.nativeRoute as never)
         return
       }
       await Linking.openURL(toWorkspaceUrl(feature.href))

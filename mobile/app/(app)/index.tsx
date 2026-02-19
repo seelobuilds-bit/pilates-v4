@@ -54,7 +54,7 @@ export default function HomeScreen() {
     setOpeningActionId(action.id)
     try {
       if (action.target === "native" && action.nativeRoute) {
-        router.push(action.nativeRoute)
+        router.push(action.nativeRoute as never)
         return
       }
       await Linking.openURL(toWorkspaceUrl(action.href))
