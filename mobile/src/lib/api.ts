@@ -1,6 +1,7 @@
 import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
+  MobileClassTypesResponse,
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
@@ -119,6 +120,17 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/clients?${search.toString()}` : "/api/mobile/clients"
     return request<MobileClientsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  classTypes(token: string, params?: { search?: string; status?: "active" | "all" }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/class-types?${search.toString()}` : "/api/mobile/class-types"
+    return request<MobileClassTypesResponse>(path, {
       method: "GET",
       token,
     })

@@ -74,10 +74,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-169 Mobile visual parity foundation | codex-main | codex/t-169-mobile-visual-parity-foundation | Add shared mobile theme tokens and align app chrome/home/schedule/inbox/profile styling closer to web design system | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/86 |
 | T-170 Mobile workspace expansion + demo shell sync | codex-main | codex/t-170-mobile-workspace-and-demo-sync | Add role-aware mobile workspace feature hub + align `/demo` shell/navigation with current studio sidebar patterns and configurable demo source studio | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/87 |
 | T-171 Mobile native routing + tab-bar safe area | codex-main | codex/t-171-mobile-native-routing-and-tabbar-safearea | Fix clipped bottom tab bar via safe-area sizing and route dashboard/reports/schedule/inbox actions to native mobile screens where available | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/88 |
-| T-172 Mobile native people surface | codex-main | codex/t-172-mobile-native-people-surface | Add role-aware mobile clients API + native People screen and route workspace People actions in-app for owner/teacher accounts | In Progress | TBD |
+| T-172 Mobile native people surface | codex-main | codex/t-172-mobile-native-people-surface | Add role-aware mobile clients API + native People screen and route workspace People actions in-app for owner/teacher accounts | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/89 |
+| T-173 Mobile native classes surface | codex-main | codex/t-173-mobile-native-classes-surface | Add role-aware mobile class-types API + native Classes screen and route workspace Classes action in-app for owner accounts | In Progress | TBD |
 
 ## Merge Order
-1. T-172 Mobile native people surface
+1. T-173 Mobile native classes surface
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
