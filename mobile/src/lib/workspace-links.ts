@@ -11,6 +11,7 @@ export type NativeAppRoute =
   | "/(app)/people"
   | "/(app)/classes"
   | "/(app)/teachers"
+  | "/(app)/locations"
 
 export type WorkspaceFeature = {
   id: string
@@ -42,7 +43,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-schedule", label: "Schedule", description: "Calendar and class sessions", icon: "calendar-outline", target: "native", nativeRoute: "/(app)/schedule", group: "Operations" },
     { id: "owner-classes", label: "Classes", description: "Class types and rules", icon: "grid-outline", target: "native", nativeRoute: "/(app)/classes", group: "Operations" },
     { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "web", href: "/studio/class-flows", group: "Operations" },
-    { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "web", href: "/studio/locations", group: "Operations" },
+    { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "native", nativeRoute: "/(app)/locations", group: "Operations" },
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "native", nativeRoute: "/(app)/teachers", group: "People" },
     { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "web", href: "/studio/community", group: "People" },

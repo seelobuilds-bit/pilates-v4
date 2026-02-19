@@ -173,6 +173,27 @@ export interface MobileTeachersResponse {
   teachers: MobileTeacherSummary[]
 }
 
+export interface MobileLocationSummary {
+  id: string
+  name: string
+  address: string
+  city: string
+  state: string
+  zipCode: string
+  phone: string | null
+  isActive: boolean
+  createdAt: string
+  upcomingSessions: number
+  totalSessions: number
+}
+
+export interface MobileLocationsResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  status: "active" | "all"
+  locations: MobileLocationSummary[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

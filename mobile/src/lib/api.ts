@@ -6,6 +6,7 @@ import type {
   MobileInboxResponse,
   MobileInboxThreadResponse,
   MobileLoginResponse,
+  MobileLocationsResponse,
   MobilePushRegisterParams,
   MobilePushStatus,
   MobileScheduleResponse,
@@ -143,6 +144,17 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/teachers?${search.toString()}` : "/api/mobile/teachers"
     return request<MobileTeachersResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  locations(token: string, params?: { search?: string; status?: "active" | "all" }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/locations?${search.toString()}` : "/api/mobile/locations"
+    return request<MobileLocationsResponse>(path, {
       method: "GET",
       token,
     })
