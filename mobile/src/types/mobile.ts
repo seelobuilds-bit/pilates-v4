@@ -194,6 +194,46 @@ export interface MobileLocationsResponse {
   locations: MobileLocationSummary[]
 }
 
+export type MobileInvoiceStatus = "DRAFT" | "PENDING" | "SENT" | "PAID" | "CANCELLED"
+
+export interface MobileInvoiceSummary {
+  id: string
+  invoiceNumber: string
+  status: MobileInvoiceStatus
+  periodStart: string
+  periodEnd: string
+  subtotal: number
+  tax: number
+  total: number
+  paidAmount: number | null
+  currency: string
+  sentAt: string | null
+  paidAt: string | null
+  createdAt: string
+  teacher: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  } | null
+}
+
+export interface MobileInvoiceStats {
+  total: number
+  pending: number
+  paid: number
+  totalPending: number
+  totalPaid: number
+}
+
+export interface MobileInvoicesResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  status: "all" | MobileInvoiceStatus
+  invoices: MobileInvoiceSummary[]
+  stats: MobileInvoiceStats
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

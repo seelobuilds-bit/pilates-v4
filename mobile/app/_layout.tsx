@@ -16,6 +16,7 @@ type AppRoute =
   | "/(app)/classes"
   | "/(app)/teachers"
   | "/(app)/locations"
+  | "/(app)/invoices"
 
 const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
   "/(app)",
@@ -28,6 +29,7 @@ const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
   "/(app)/classes",
   "/(app)/teachers",
   "/(app)/locations",
+  "/(app)/invoices",
 ])
 
 function parseRequestedAppRoute(segments: string[]): AppRoute {

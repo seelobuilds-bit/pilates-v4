@@ -12,6 +12,7 @@ export type NativeAppRoute =
   | "/(app)/classes"
   | "/(app)/teachers"
   | "/(app)/locations"
+  | "/(app)/invoices"
 
 export type WorkspaceFeature = {
   id: string
@@ -50,7 +51,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "web", href: "/studio/marketing", group: "Growth" },
     { id: "owner-leaderboards", label: "Leaderboards", description: "Studio rankings and goals", icon: "trophy-outline", target: "web", href: "/studio/leaderboards", group: "Growth" },
     { id: "owner-payments", label: "Payments", description: "Transaction history", icon: "card-outline", target: "web", href: "/studio/payments", group: "Commerce" },
-    { id: "owner-invoices", label: "Invoices", description: "Invoice tracking", icon: "receipt-outline", target: "web", href: "/studio/invoices", group: "Commerce" },
+    { id: "owner-invoices", label: "Invoices", description: "Invoice tracking", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
     { id: "owner-store", label: "Store", description: "Products and offers", icon: "bag-handle-outline", target: "web", href: "/studio/store", group: "Commerce" },
     { id: "owner-vault", label: "The Vault", description: "Courses and media", icon: "folder-open-outline", target: "web", href: "/studio/vault", group: "Content" },
     { id: "owner-settings", label: "Settings", description: "Studio preferences", icon: "settings-outline", target: "web", href: "/studio/settings", group: "Settings" },
@@ -68,7 +69,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "web", href: "/teacher/community", group: "People" },
     { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "web", href: "/teacher/social", group: "Growth" },
     { id: "teacher-leaderboards", label: "Leaderboards", description: "Performance ranking", icon: "trophy-outline", target: "web", href: "/teacher/leaderboards", group: "Growth" },
-    { id: "teacher-invoices", label: "Invoices", description: "Invoice records", icon: "receipt-outline", target: "web", href: "/teacher/invoices", group: "Commerce" },
+    { id: "teacher-invoices", label: "Invoices", description: "Invoice records", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
     { id: "teacher-vault", label: "The Vault", description: "Training resources", icon: "folder-open-outline", target: "web", href: "/teacher/vault", group: "Content" },
     { id: "teacher-settings", label: "Settings", description: "Profile and account preferences", icon: "settings-outline", target: "web", href: "/teacher/settings", group: "Settings" },
   ]
