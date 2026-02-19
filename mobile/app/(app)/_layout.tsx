@@ -207,6 +207,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="vault/[courseId]"
+        options={{
+          title: "Vault Course",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="community"
         options={{
           title: "Community",

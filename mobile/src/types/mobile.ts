@@ -1127,6 +1127,107 @@ export interface MobileVaultResponse {
   }
 }
 
+export interface MobileVaultCourseDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  course: {
+    id: string
+    title: string
+    slug: string
+    subtitle: string | null
+    description: string
+    thumbnailUrl: string | null
+    promoVideoUrl: string | null
+    audience: MobileVaultAudience
+    category: string | null
+    tags: string[]
+    difficulty: string | null
+    pricingType: MobileVaultPricingType
+    price: number
+    currency: string
+    subscriptionInterval: string | null
+    subscriptionPrice: number | null
+    accessType: string
+    accessDays: number | null
+    dripIntervalDays: number | null
+    hasLiveEvents: boolean
+    hasCertificate: boolean
+    includeInSubscription: boolean
+    isPublished: boolean
+    isFeatured: boolean
+    enrollmentCount: number
+    reviewCount: number
+    averageRating: number
+    createdAt: string
+    updatedAt: string
+    publishedAt: string | null
+    creator: {
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+    } | null
+  }
+  stats: {
+    totalEnrollments: number
+    activeEnrollments: number
+    completedEnrollments: number
+    completionRate: number
+    averageProgress: number
+    totalModules: number
+    publishedModules: number
+    totalLessons: number
+    publishedLessons: number
+  }
+  instructors: {
+    id: string
+    role: string
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+    }
+  }[]
+  modules: {
+    id: string
+    title: string
+    description: string | null
+    order: number
+    dripDelay: number | null
+    isPublished: boolean
+    lessonCount: number
+    publishedLessons: number
+    lessons: {
+      id: string
+      title: string
+      order: number
+      contentType: string
+      isPreview: boolean
+      isPublished: boolean
+      videoDuration: number | null
+      resourceCount: number
+    }[]
+  }[]
+  recentEnrollments: {
+    id: string
+    status: string
+    enrolledAt: string
+    expiresAt: string | null
+    completedAt: string | null
+    progressPercent: number
+    lessonsCompleted: number
+    lastAccessedAt: string | null
+    paidAmount: number | null
+    participant: {
+      type: "CLIENT" | "TEACHER" | "OWNER" | "UNKNOWN"
+      firstName: string
+      lastName: string
+      email: string
+    }
+  }[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 
