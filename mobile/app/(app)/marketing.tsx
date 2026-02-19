@@ -19,7 +19,13 @@ function formatDate(value: string | null) {
   }).format(date)
 }
 
-function CampaignCard({ item }: { item: MobileMarketingCampaignSummary }) {
+function CampaignCard({
+  item,
+  onViewDetails,
+}: {
+  item: MobileMarketingCampaignSummary
+  onViewDetails: (campaignId: string) => void
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -38,6 +44,9 @@ function CampaignCard({ item }: { item: MobileMarketingCampaignSummary }) {
         <Text style={styles.metaPill}>Failed {item.failedCount}</Text>
       </View>
       <Text style={styles.metaText}>Scheduled {formatDate(item.scheduledAt)} · Sent {formatDate(item.sentAt)}</Text>
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -121,6 +130,13 @@ export default function MarketingScreen() {
     return "No marketing activity yet."
   }, [isAllowedRole, trimmedSearch])
 
+  const handleViewCampaignDetails = useCallback(
+    (campaignId: string) => {
+      router.push(`/(app)/marketing/${campaignId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -158,7 +174,7 @@ export default function MarketingScreen() {
             <>
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Campaigns</Text>
-                {data.campaigns.length > 0 ? data.campaigns.map((campaign) => <CampaignCard key={campaign.id} item={campaign} />) : <Text style={styles.metaText}>No campaigns found.</Text>}
+                {data.campaigns.length > 0 ? data.campaigns.map((campaign) => <CampaignCard key={campaign.id} item={campaign} onViewDetails={handleViewCampaignDetails} />) : <Text style={styles.metaText}>No campaigns found.</Text>}
               </View>
 
               <View style={styles.sectionWrap}>
@@ -291,6 +307,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  detailsButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,
