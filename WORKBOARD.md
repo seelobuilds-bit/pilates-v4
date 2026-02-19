@@ -88,10 +88,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-183 Mobile native marketing overview | codex-main | codex/t-183-mobile-native-marketing-overview | Add owner-only mobile marketing overview API + native Marketing screen and route owner workspace Marketing action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/100 |
 | T-184 Mobile settings native handoff | codex-main | codex/t-184-mobile-settings-native-handoff | Route owner/teacher workspace Settings action to native Profile surface to reduce web handoffs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/101 |
 | T-185 Mobile teacher social overview | codex-main | codex/t-185-mobile-teacher-social-overview | Add role-aware mobile social overview API + native Social screen and route teacher workspace Social Media action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/102 |
-| T-186 Mobile client workspace native handoff | codex-main | codex/t-186-mobile-client-workspace-native-handoff | Route client workspace actions (Book Classes, My Account) to native Schedule/Profile surfaces | In Progress | TBD |
+| T-186 Mobile client workspace native handoff | codex-main | codex/t-186-mobile-client-workspace-native-handoff | Route client workspace actions (Book Classes, My Account) to native Schedule/Profile surfaces | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/103 |
+| T-187 Mobile auth route allowlist hardening | codex-main | codex/t-187-mobile-auth-route-allowlist-hardening | Preserve hidden native routes (Marketing/Social) across auth/deep-link redirects by extending allowlist and router replace handling | In Progress | TBD |
 
 ## Merge Order
-1. T-186 Mobile client workspace native handoff
+1. T-187 Mobile auth route allowlist hardening
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

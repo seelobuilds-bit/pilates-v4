@@ -22,6 +22,8 @@ type AppRoute =
   | "/(app)/store"
   | "/(app)/vault"
   | "/(app)/community"
+  | "/(app)/marketing"
+  | "/(app)/social"
   | "/(app)/leaderboards"
 
 const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
@@ -41,6 +43,8 @@ const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
   "/(app)/store",
   "/(app)/vault",
   "/(app)/community",
+  "/(app)/marketing",
+  "/(app)/social",
   "/(app)/leaderboards",
 ])
 
@@ -84,7 +88,7 @@ function RootNavigator() {
       const target = pendingPushRoute || (postLoginRoute && APP_ROUTE_ALLOWLIST.has(postLoginRoute) ? postLoginRoute : "/(app)")
       setPostLoginRoute(null)
       setPendingPushRoute(null)
-      router.replace(target)
+      router.replace(target as never)
     }
   }, [loading, pendingPushRoute, postLoginRoute, requestedAppRoute, router, segments, user])
 
@@ -96,7 +100,7 @@ function RootNavigator() {
       return
     }
 
-    router.replace(pendingPushRoute)
+    router.replace(pendingPushRoute as never)
     setPendingPushRoute(null)
   }, [loading, pendingPushRoute, router, segments, user])
 
