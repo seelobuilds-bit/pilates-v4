@@ -18,6 +18,7 @@ import type {
   MobilePushStatus,
   MobileScheduleResponse,
   MobileSessionUser,
+  MobileSocialResponse,
   MobileStoreOverviewResponse,
   MobileTeachersResponse,
   MobileVaultAudience,
@@ -163,6 +164,16 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/marketing?${search.toString()}` : "/api/mobile/marketing"
     return request<MobileMarketingResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  social(token: string, params?: { search?: string }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    const path = search.size ? `/api/mobile/social?${search.toString()}` : "/api/mobile/social"
+    return request<MobileSocialResponse>(path, {
       method: "GET",
       token,
     })
