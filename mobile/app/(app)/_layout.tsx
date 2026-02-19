@@ -111,6 +111,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="invoices"
+        options={{
+          title: "Invoices",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="receipt" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

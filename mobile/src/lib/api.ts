@@ -5,6 +5,7 @@ import type {
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
+  MobileInvoicesResponse,
   MobileLoginResponse,
   MobileLocationsResponse,
   MobilePushRegisterParams,
@@ -155,6 +156,17 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/locations?${search.toString()}` : "/api/mobile/locations"
     return request<MobileLocationsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  invoices(token: string, params?: { search?: string; status?: "all" | "DRAFT" | "PENDING" | "SENT" | "PAID" | "CANCELLED" }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/invoices?${search.toString()}` : "/api/mobile/invoices"
+    return request<MobileInvoicesResponse>(path, {
       method: "GET",
       token,
     })
