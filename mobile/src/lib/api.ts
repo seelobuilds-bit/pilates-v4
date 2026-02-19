@@ -1,6 +1,7 @@
 import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
+  MobileClassFlowsResponse,
   MobileClassTypesResponse,
   MobileClientsResponse,
   MobileInboxResponse,
@@ -137,6 +138,50 @@ export const mobileApi = {
     return request<MobileClassTypesResponse>(path, {
       method: "GET",
       token,
+    })
+  },
+
+  classFlows(
+    token: string,
+    params?: {
+      categoryId?: string
+      type?: "VIDEO" | "PDF" | "ARTICLE" | "QUIZ"
+      difficulty?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT"
+      featuredOnly?: boolean
+      search?: string
+    }
+  ) {
+    const search = new URLSearchParams()
+    if (params?.categoryId) search.set("categoryId", params.categoryId)
+    if (params?.type) search.set("type", params.type)
+    if (params?.difficulty) search.set("difficulty", params.difficulty)
+    if (params?.featuredOnly) search.set("featuredOnly", "1")
+    if (params?.search) search.set("search", params.search)
+    const path = search.size ? `/api/mobile/class-flows?${search.toString()}` : "/api/mobile/class-flows"
+    return request<MobileClassFlowsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  updateClassFlowProgress(
+    token: string,
+    contentId: string,
+    params: { progressPercent?: number; isCompleted?: boolean; notes?: string | null }
+  ) {
+    return request<{
+      success: boolean
+      progress: {
+        isCompleted: boolean
+        progressPercent: number
+        lastViewedAt: string | null
+        completedAt: string | null
+        notes: string | null
+      }
+    }>(`/api/mobile/class-flows/${contentId}/progress`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(params),
     })
   },
 

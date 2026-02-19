@@ -286,6 +286,74 @@ export interface MobileLeaderboardsResponse {
   myRanks: Record<string, { rank: number; score: number } | null>
 }
 
+export type MobileClassFlowType = "VIDEO" | "PDF" | "ARTICLE" | "QUIZ"
+export type MobileClassFlowDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT"
+export type MobileTrainingRequestStatus = "PENDING" | "APPROVED" | "SCHEDULED" | "COMPLETED" | "CANCELLED"
+
+export interface MobileClassFlowProgress {
+  isCompleted: boolean
+  progressPercent: number
+  lastViewedAt: string | null
+  completedAt: string | null
+  notes: string | null
+}
+
+export interface MobileClassFlowContentSummary {
+  id: string
+  title: string
+  description: string | null
+  type: MobileClassFlowType
+  difficulty: MobileClassFlowDifficulty
+  duration: number | null
+  videoUrl: string | null
+  pdfUrl: string | null
+  thumbnailUrl: string | null
+  isFeatured: boolean
+  tags: string[]
+  progress: MobileClassFlowProgress | null
+}
+
+export interface MobileClassFlowCategorySummary {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  contentCount: number
+  contents: MobileClassFlowContentSummary[]
+}
+
+export interface MobileTrainingRequestSummary {
+  id: string
+  title: string
+  status: MobileTrainingRequestStatus
+  createdAt: string
+  preferredDate1: string | null
+  scheduledDate: string | null
+}
+
+export interface MobileClassFlowsResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  filters: {
+    categoryId: string | null
+    type: MobileClassFlowType | null
+    difficulty: MobileClassFlowDifficulty | null
+    featuredOnly: boolean
+    search: string
+  }
+  stats: {
+    categories: number
+    totalContent: number
+    featuredContent: number
+    completedContent: number
+    pendingTrainingRequests: number
+  }
+  categories: MobileClassFlowCategorySummary[]
+  featured: MobileClassFlowContentSummary[]
+  recentRequests: MobileTrainingRequestSummary[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

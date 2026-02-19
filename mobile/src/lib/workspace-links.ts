@@ -14,6 +14,7 @@ export type NativeAppRoute =
   | "/(app)/locations"
   | "/(app)/invoices"
   | "/(app)/leaderboards"
+  | "/(app)/class-flows"
 
 export type WorkspaceFeature = {
   id: string
@@ -44,7 +45,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "Overview" },
     { id: "owner-schedule", label: "Schedule", description: "Calendar and class sessions", icon: "calendar-outline", target: "native", nativeRoute: "/(app)/schedule", group: "Operations" },
     { id: "owner-classes", label: "Classes", description: "Class types and rules", icon: "grid-outline", target: "native", nativeRoute: "/(app)/classes", group: "Operations" },
-    { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "web", href: "/studio/class-flows", group: "Operations" },
+    { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "native", nativeRoute: "/(app)/class-flows", group: "Operations" },
     { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "native", nativeRoute: "/(app)/locations", group: "Operations" },
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "native", nativeRoute: "/(app)/teachers", group: "People" },
@@ -64,7 +65,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-dashboard", label: "Dashboard", description: "Daily summary and tasks", icon: "speedometer-outline", target: "native", nativeRoute: "/(app)", group: "Overview" },
     { id: "teacher-reports", label: "Reports", description: "Teaching performance snapshot", icon: "bar-chart-outline", target: "native", nativeRoute: "/(app)/reports", group: "Overview" },
     { id: "teacher-schedule", label: "My Schedule", description: "Classes and timetable", icon: "calendar-outline", target: "native", nativeRoute: "/(app)/schedule", group: "Operations" },
-    { id: "teacher-class-flows", label: "Class Flows", description: "Programming content", icon: "play-circle-outline", target: "web", href: "/teacher/class-flows", group: "Operations" },
+    { id: "teacher-class-flows", label: "Class Flows", description: "Programming content", icon: "play-circle-outline", target: "native", nativeRoute: "/(app)/class-flows", group: "Operations" },
     { id: "teacher-clients", label: "Clients", description: "Client progress and notes", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "teacher-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "People" },
     { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "web", href: "/teacher/community", group: "People" },
