@@ -96,10 +96,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-191 Mobile class detail view | codex-main | codex/t-191-mobile-class-detail-view | Add mobile class-type detail API + screen and wire Classes list rows to native per-class detail with session/booking stats | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/108 |
 | T-192 Mobile teacher detail view | codex-main | codex/t-192-mobile-teacher-detail-view | Add mobile teacher detail API + screen and wire Teachers list rows to native per-teacher detail with session/booking stats | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/109 |
 | T-193 Mobile location detail view | codex-main | codex/t-193-mobile-location-detail-view | Add mobile location detail API + screen and wire Locations list rows to native per-location detail with session/booking stats | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/110 |
-| T-194 Mobile invoice detail view | codex-main | codex/t-194-mobile-invoice-detail-view | Add mobile invoice detail API + screen and wire Invoices list rows to native per-invoice detail with line items and status timeline | In Progress | TBD |
+| T-194 Mobile invoice detail view | codex-main | codex/t-194-mobile-invoice-detail-view | Add mobile invoice detail API + screen and wire Invoices list rows to native per-invoice detail with line items and status timeline | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/111 |
+| T-195 Mobile payment detail view | codex-main | codex/t-195-mobile-payment-detail-view | Add mobile payment detail API + screen and wire Payments list rows to native per-payment detail with booking and timeline info | In Progress | TBD |
 
 ## Merge Order
-1. T-194 Mobile invoice detail view
+1. T-195 Mobile payment detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

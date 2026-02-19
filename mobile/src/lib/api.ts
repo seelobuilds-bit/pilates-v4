@@ -18,6 +18,7 @@ import type {
   MobileLocationDetailResponse,
   MobileMarketingResponse,
   MobilePaymentsResponse,
+  MobilePaymentDetailResponse,
   MobilePushRegisterParams,
   MobilePushStatus,
   MobileReportsResponse,
@@ -327,6 +328,13 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/payments?${search.toString()}` : "/api/mobile/payments"
     return request<MobilePaymentsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  paymentDetail(token: string, paymentId: string) {
+    return request<MobilePaymentDetailResponse>(`/api/mobile/payments/${paymentId}`, {
       method: "GET",
       token,
     })
