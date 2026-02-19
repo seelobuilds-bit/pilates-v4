@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileConfig } from "@/src/lib/config"
+import { mobileTheme, withOpacity } from "@/src/lib/theme"
 
 export default function LoginScreen() {
   const { signIn } = useAuth()
@@ -34,8 +35,11 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to {studioLabel}</Text>
-        <Text style={styles.subtitle}>Sign in as studio owner, teacher, or client.</Text>
+        <View style={[styles.brandCard, { borderColor: withOpacity(mobileConfig.primaryColor, 0.32), backgroundColor: withOpacity(mobileConfig.primaryColor, 0.1) }]}>
+          <Text style={styles.kicker}>CURRENT Mobile</Text>
+          <Text style={styles.title}>Welcome to {studioLabel}</Text>
+          <Text style={styles.subtitle}>Sign in as studio owner, teacher, or client.</Text>
+        </View>
         {!mobileConfig.studioSubdomain ? (
           <Text style={styles.warning}>Studio subdomain is missing in mobile env config.</Text>
         ) : null}
@@ -69,7 +73,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: mobileTheme.colors.canvas,
   },
   container: {
     flex: 1,
@@ -77,14 +81,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 12,
   },
+  brandCard: {
+    borderRadius: mobileTheme.radius.xl,
+    borderWidth: 1,
+    padding: 14,
+    gap: 4,
+  },
+  kicker: {
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontSize: 11,
+    color: mobileTheme.colors.textSubtle,
+  },
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   subtitle: {
     marginBottom: 8,
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
   },
   warning: {
     marginBottom: 8,
@@ -93,15 +109,16 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "white",
+    color: mobileTheme.colors.text,
+    backgroundColor: mobileTheme.colors.surface,
   },
   button: {
     marginTop: 4,
-    borderRadius: 10,
+    borderRadius: mobileTheme.radius.lg,
     backgroundColor: mobileConfig.primaryColor,
     paddingVertical: 14,
     alignItems: "center",

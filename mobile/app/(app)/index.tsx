@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
-import { mobileConfig } from "@/src/lib/config"
-import { getStudioPrimaryColor, mobileTheme } from "@/src/lib/theme"
-import type { MobileRole } from "@/src/types/mobile"
+import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
+import { getWorkspaceFeatures, toWorkspaceUrl, type WorkspaceFeature } from "@/src/lib/workspace-links"
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
@@ -24,40 +23,16 @@ const METRIC_LABELS: Record<string, string> = {
   completedBookings: "Completed Bookings",
 }
 
-type QuickAction = {
-  id: string
-  label: string
-  url: string
-}
-
 function formatMetricLabel(key: string) {
   return METRIC_LABELS[key] || key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase())
 }
 
-function buildQuickActions(role: MobileRole | undefined, base: string, subdomain: string): QuickAction[] {
-  if (!role) return []
-
-  if (role === "OWNER") {
-    return [
-      { id: "owner-dashboard", label: "Open Dashboard", url: `${base}/studio?source=mobile` },
-      { id: "owner-schedule", label: "Open Schedule", url: `${base}/studio/schedule?source=mobile` },
-      { id: "owner-reports", label: "Open Reports", url: `${base}/studio/reports?source=mobile` },
-    ]
+function buildQuickActions(features: WorkspaceFeature[]) {
+  if (features.length === 0) {
+    return []
   }
 
-  if (role === "TEACHER") {
-    return [
-      { id: "teacher-dashboard", label: "Open Dashboard", url: `${base}/teacher?source=mobile` },
-      { id: "teacher-schedule", label: "Open Schedule", url: `${base}/teacher/schedule?source=mobile` },
-      { id: "teacher-reports", label: "Open Reports", url: `${base}/teacher/reports?source=mobile` },
-    ]
-  }
-
-  if (!subdomain) return []
-  return [
-    { id: "client-account", label: "My Account", url: `${base}/${subdomain}/account?source=mobile` },
-    { id: "client-book", label: "Book a Class", url: `${base}/${subdomain}/book?source=mobile` },
-  ]
+  return features.slice(0, 4)
 }
 
 export default function HomeScreen() {
@@ -69,16 +44,14 @@ export default function HomeScreen() {
     void refreshBootstrap()
   }, [refreshBootstrap])
 
-  const subdomain = (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "")
-    .trim()
-    .toLowerCase()
-  const webBase = mobileConfig.apiBaseUrl.replace(/\/$/, "")
-  const quickActions = useMemo(() => buildQuickActions(user?.role, webBase, subdomain), [subdomain, user?.role, webBase])
+  const subdomain = (bootstrap?.studio?.subdomain || user?.studio?.subdomain || "").trim().toLowerCase()
+  const roleFeatures = useMemo(() => getWorkspaceFeatures(user?.role, subdomain), [subdomain, user?.role])
+  const quickActions = useMemo(() => buildQuickActions(roleFeatures), [roleFeatures])
 
-  const handleOpenAction = useCallback(async (action: QuickAction) => {
+  const handleOpenAction = useCallback(async (action: WorkspaceFeature) => {
     setOpeningActionId(action.id)
     try {
-      await Linking.openURL(action.url)
+      await Linking.openURL(toWorkspaceUrl(action.href))
     } finally {
       setOpeningActionId(null)
     }
@@ -89,9 +62,12 @@ export default function HomeScreen() {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void refreshBootstrap()} />}
     >
-      <Text style={styles.heading}>Hello {user?.firstName ?? "there"}</Text>
-      <Text style={styles.subheading}>Role: {user?.role ?? "-"}</Text>
-      <Text style={styles.subheading}>Studio: {bootstrap?.studio?.name ?? user?.studio?.name ?? "-"}</Text>
+      <View style={[styles.heroCard, { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
+        <Text style={styles.heroTitle}>Hello {user?.firstName ?? "there"}</Text>
+        <Text style={styles.heroSubtitle}>
+          {bootstrap?.studio?.name ?? user?.studio?.name ?? "Studio"} - {user?.role ?? "-"}
+        </Text>
+      </View>
 
       <View style={styles.metricsGrid}>
         {Object.entries(bootstrap?.metrics || {}).map(([key, value]) => (
@@ -120,6 +96,7 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </View>
+          <Text style={styles.hintText}>Need more? Open the `Workspace` tab for full feature access.</Text>
         </View>
       ) : null}
 
@@ -134,16 +111,21 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: mobileTheme.colors.canvas,
   },
-  heading: {
+  heroCard: {
+    borderRadius: mobileTheme.radius.xl,
+    borderWidth: 1,
+    padding: 14,
+    gap: 4,
+  },
+  heroTitle: {
     fontSize: 24,
     fontWeight: "700",
     color: mobileTheme.colors.text,
   },
-  subheading: {
+  heroSubtitle: {
     color: mobileTheme.colors.textMuted,
   },
   metricsGrid: {
-    marginTop: 10,
     gap: 10,
   },
   metricCard: {
@@ -188,6 +170,10 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: "white",
     fontWeight: "700",
+  },
+  hintText: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   note: {
     marginTop: 14,

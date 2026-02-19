@@ -17,7 +17,7 @@ import {
 
 export const dynamic = "force-dynamic"
 
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoReportsPage() {
   const studio = await db.studio.findFirst({

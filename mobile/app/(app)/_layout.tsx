@@ -58,6 +58,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="workspace"
+        options={{
+          title: "Workspace",
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

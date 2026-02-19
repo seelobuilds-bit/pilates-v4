@@ -1,6 +1,6 @@
 import { db } from "@/lib/db"
 
-export const DEMO_STUDIO_SUBDOMAIN = "zenith"
+export const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export async function getDemoStudioId() {
   const studio = await db.studio.findUnique({

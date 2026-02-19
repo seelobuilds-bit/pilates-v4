@@ -10,7 +10,7 @@ export interface MobilePushRegistrationResult {
   reason?: "not_device" | "permission_denied" | "missing_project_id" | "token_unavailable"
 }
 
-export type MobilePushRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/profile"
+export type MobilePushRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/workspace" | "/(app)/profile"
 
 let pushPresentationConfigured = false
 

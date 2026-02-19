@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from "lucide-react"
 
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoClientsPage() {
   const studio = await db.studio.findFirst({

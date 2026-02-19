@@ -3,7 +3,7 @@ import { DashboardView } from "@/components/studio"
 import type { DashboardData } from "@/components/studio"
 
 // Demo uses data from a real studio (Zenith) to always reflect the current state
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoDashboardPage() {
   // Find the demo studio
