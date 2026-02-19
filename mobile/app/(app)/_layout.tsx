@@ -95,6 +95,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="class-flows"
+        options={{
+          title: "Class Flows",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="play-circle" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="teachers"
         options={{
           title: "Teachers",
