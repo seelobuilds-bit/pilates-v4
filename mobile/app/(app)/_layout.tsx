@@ -230,6 +230,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="marketing/[campaignId]"
+        options={{
+          title: "Campaign",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="social"
         options={{
           title: "Social",

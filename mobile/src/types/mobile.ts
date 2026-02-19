@@ -728,6 +728,64 @@ export interface MobileMarketingResponse {
   automations: MobileMarketingAutomationSummary[]
 }
 
+export interface MobileMarketingCampaignDetailResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  campaign: {
+    id: string
+    name: string
+    channel: MobileMarketingChannel
+    status: MobileMarketingCampaignStatus
+    subject: string | null
+    body: string
+    htmlBody: string | null
+    scheduledAt: string | null
+    sentAt: string | null
+    targetAll: boolean
+    totalRecipients: number
+    sentCount: number
+    deliveredCount: number
+    openedCount: number
+    clickedCount: number
+    failedCount: number
+    createdAt: string
+    updatedAt: string
+    segment: {
+      id: string
+      name: string
+    } | null
+    location: {
+      id: string
+      name: string
+    } | null
+    template: {
+      id: string
+      name: string
+      type: string
+    } | null
+  }
+  stats: {
+    deliveryRate: number
+    openRate: number
+    clickRate: number
+    failureRate: number
+  }
+  recentMessages: {
+    id: string
+    channel: "EMAIL" | "SMS"
+    direction: "INBOUND" | "OUTBOUND"
+    status: string
+    toAddress: string
+    toName: string | null
+    sentAt: string | null
+    deliveredAt: string | null
+    openedAt: string | null
+    clickedAt: string | null
+    failedReason: string | null
+    createdAt: string
+  }[]
+}
+
 export type MobileSocialPlatform = "INSTAGRAM" | "TIKTOK"
 export type MobileSocialRole = "OWNER" | "TEACHER"
 

@@ -17,6 +17,7 @@ import type {
   MobileLocationsResponse,
   MobileLocationDetailResponse,
   MobileMarketingResponse,
+  MobileMarketingCampaignDetailResponse,
   MobilePaymentsResponse,
   MobilePaymentDetailResponse,
   MobilePushRegisterParams,
@@ -205,6 +206,13 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/marketing?${search.toString()}` : "/api/mobile/marketing"
     return request<MobileMarketingResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  marketingCampaignDetail(token: string, campaignId: string) {
+    return request<MobileMarketingCampaignDetailResponse>(`/api/mobile/marketing/campaigns/${campaignId}`, {
       method: "GET",
       token,
     })
