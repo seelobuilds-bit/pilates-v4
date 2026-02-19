@@ -148,6 +148,31 @@ export interface MobileClassTypesResponse {
   classTypes: MobileClassTypeSummary[]
 }
 
+export interface MobileTeacherSummary {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  bio: string | null
+  specialties: string[]
+  isActive: boolean
+  createdAt: string
+  upcomingSessions: number
+  totalSessions: number
+  payRate: {
+    type: "PER_CLASS" | "PER_HOUR" | "PER_STUDENT" | "PERCENTAGE"
+    rate: number
+    currency: string
+  } | null
+}
+
+export interface MobileTeachersResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  status: "active" | "all"
+  teachers: MobileTeacherSummary[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

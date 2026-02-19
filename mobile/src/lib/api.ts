@@ -10,6 +10,7 @@ import type {
   MobilePushStatus,
   MobileScheduleResponse,
   MobileSessionUser,
+  MobileTeachersResponse,
 } from "@/src/types/mobile"
 
 interface ApiRequestOptions extends RequestInit {
@@ -131,6 +132,17 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/class-types?${search.toString()}` : "/api/mobile/class-types"
     return request<MobileClassTypesResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  teachers(token: string, params?: { search?: string; status?: "active" | "all" }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/teachers?${search.toString()}` : "/api/mobile/teachers"
+    return request<MobileTeachersResponse>(path, {
       method: "GET",
       token,
     })
