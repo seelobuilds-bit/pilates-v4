@@ -17,6 +17,8 @@ import type {
   MobileSessionUser,
   MobileStoreOverviewResponse,
   MobileTeachersResponse,
+  MobileVaultAudience,
+  MobileVaultResponse,
 } from "@/src/types/mobile"
 
 interface ApiRequestOptions extends RequestInit {
@@ -243,6 +245,18 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/store?${search.toString()}` : "/api/mobile/store"
     return request<MobileStoreOverviewResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  vault(token: string, params?: { search?: string; status?: "all" | "published" | "draft"; audience?: "all" | MobileVaultAudience }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    if (params?.audience) search.set("audience", params.audience)
+    const path = search.size ? `/api/mobile/vault?${search.toString()}` : "/api/mobile/vault"
+    return request<MobileVaultResponse>(path, {
       method: "GET",
       token,
     })

@@ -459,6 +459,52 @@ export interface MobileStoreOverviewResponse {
   }
 }
 
+export type MobileVaultAudience = "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
+export type MobileVaultPricingType = "FREE" | "ONE_TIME" | "SUBSCRIPTION" | "BUNDLE"
+export type MobileVaultStatus = "all" | "published" | "draft"
+
+export interface MobileVaultCourseSummary {
+  id: string
+  title: string
+  slug: string
+  subtitle: string | null
+  description: string
+  thumbnailUrl: string | null
+  audience: MobileVaultAudience
+  category: string | null
+  difficulty: string | null
+  pricingType: MobileVaultPricingType
+  price: number
+  currency: string
+  isPublished: boolean
+  isFeatured: boolean
+  includeInSubscription: boolean
+  enrollmentCount: number
+  averageRating: number
+  moduleCount: number
+  reviewCount: number
+  createdAt: string
+  creatorName: string | null
+}
+
+export interface MobileVaultResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  filters: {
+    search: string
+    audience: "all" | MobileVaultAudience
+    status: MobileVaultStatus
+  }
+  categories: string[]
+  courses: MobileVaultCourseSummary[]
+  stats: {
+    totalCourses: number
+    publishedCourses: number
+    featuredCourses: number
+    totalEnrollments: number
+  }
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

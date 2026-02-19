@@ -17,6 +17,7 @@ export type NativeAppRoute =
   | "/(app)/class-flows"
   | "/(app)/payments"
   | "/(app)/store"
+  | "/(app)/vault"
 
 export type WorkspaceFeature = {
   id: string
@@ -57,7 +58,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-payments", label: "Payments", description: "Transaction history", icon: "card-outline", target: "native", nativeRoute: "/(app)/payments", group: "Commerce" },
     { id: "owner-invoices", label: "Invoices", description: "Invoice tracking", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
     { id: "owner-store", label: "Store", description: "Products and offers", icon: "bag-handle-outline", target: "native", nativeRoute: "/(app)/store", group: "Commerce" },
-    { id: "owner-vault", label: "The Vault", description: "Courses and media", icon: "folder-open-outline", target: "web", href: "/studio/vault", group: "Content" },
+    { id: "owner-vault", label: "The Vault", description: "Courses and media", icon: "folder-open-outline", target: "native", nativeRoute: "/(app)/vault", group: "Content" },
     { id: "owner-settings", label: "Settings", description: "Studio preferences", icon: "settings-outline", target: "web", href: "/studio/settings", group: "Settings" },
   ]
 }
@@ -74,7 +75,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "web", href: "/teacher/social", group: "Growth" },
     { id: "teacher-leaderboards", label: "Leaderboards", description: "Performance ranking", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "teacher-invoices", label: "Invoices", description: "Invoice records", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
-    { id: "teacher-vault", label: "The Vault", description: "Training resources", icon: "folder-open-outline", target: "web", href: "/teacher/vault", group: "Content" },
+    { id: "teacher-vault", label: "The Vault", description: "Training resources", icon: "folder-open-outline", target: "native", nativeRoute: "/(app)/vault", group: "Content" },
     { id: "teacher-settings", label: "Settings", description: "Profile and account preferences", icon: "settings-outline", target: "web", href: "/teacher/settings", group: "Settings" },
   ]
 }
