@@ -172,6 +172,13 @@ export default function PaymentsScreen() {
     return "No payments available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
+  const handleViewPayment = useCallback(
+    (paymentId: string) => {
+      router.push(`/(app)/payments/${paymentId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -218,7 +225,17 @@ export default function PaymentsScreen() {
         <FlatList
           data={payments}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PaymentCard item={item} />}
+          renderItem={({ item }) => (
+            <View style={styles.paymentRowWrap}>
+              <PaymentCard item={item} />
+              <Pressable
+                style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
+                onPress={() => handleViewPayment(item.id)}
+              >
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+              </Pressable>
+            </View>
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadPayments(true)} />}
           ListEmptyComponent={
@@ -322,6 +339,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingBottom: 24,
   },
+  paymentRowWrap: {
+    gap: 6,
+  },
   card: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -406,6 +426,17 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 12,
+  },
+  viewButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
   },
   errorText: {
     color: mobileTheme.colors.danger,

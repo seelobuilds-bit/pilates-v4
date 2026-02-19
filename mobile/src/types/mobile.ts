@@ -533,6 +533,50 @@ export interface MobilePaymentsResponse {
   stats: MobilePaymentsStats
 }
 
+export interface MobilePaymentDetailResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  payment: {
+    id: string
+    amount: number
+    currency: string
+    status: MobilePaymentStatus
+    description: string | null
+    createdAt: string
+    updatedAt: string
+    receiptUrl: string | null
+    failureMessage: string | null
+    refundedAmount: number | null
+    refundedAt: string | null
+    stripePaymentIntentId: string | null
+    stripeChargeId: string | null
+    stripeRefundId: string | null
+    stripeCheckoutSessionId: string | null
+    stripeFee: number | null
+    applicationFee: number | null
+    netAmount: number | null
+    client: {
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+    }
+    bookings: {
+      id: string
+      status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW"
+      createdAt: string
+      classSession: {
+        id: string
+        startTime: string
+        classType: {
+          id: string
+          name: string
+        }
+      }
+    }[]
+  }
+}
+
 export type MobileCommunityAudience = "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
 
 export interface MobileCommunityPlanSummary {
