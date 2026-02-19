@@ -140,6 +140,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="locations/[locationId]"
+        options={{
+          title: "Location",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="invoices"
         options={{
           title: "Invoices",

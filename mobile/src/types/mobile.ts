@@ -364,6 +364,52 @@ export interface MobileLocationsResponse {
   locations: MobileLocationSummary[]
 }
 
+export interface MobileLocationDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  location: {
+    id: string
+    name: string
+    address: string
+    city: string
+    state: string
+    zipCode: string
+    phone: string | null
+    isActive: boolean
+    createdAt: string
+  }
+  stats: {
+    totalSessions: number
+    upcomingSessions: number
+    totalBookings: number
+    completedBookings: number
+    fillRate: number
+    completionRate: number
+    totalRevenue: number
+    averageRevenuePerSession: number
+  }
+  topClassTypes: {
+    classType: string
+    count: number
+  }[]
+  recentSessions: {
+    id: string
+    startTime: string
+    endTime: string
+    capacity: number
+    bookedCount: number
+    classType: {
+      id: string
+      name: string
+    }
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+    }
+  }[]
+}
+
 export type MobileInvoiceStatus = "DRAFT" | "PENDING" | "SENT" | "PAID" | "CANCELLED"
 
 export interface MobileInvoiceSummary {
