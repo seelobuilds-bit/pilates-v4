@@ -37,13 +37,6 @@ function webBaseUrl() {
   return mobileConfig.apiBaseUrl.replace(/\/$/, "")
 }
 
-function withSubdomain(path: string, subdomain: string) {
-  if (!subdomain) {
-    return path
-  }
-  return `/${subdomain}${path.startsWith("/") ? path : `/${path}`}`
-}
-
 function ownerFeatures(): WorkspaceFeature[] {
   return [
     { id: "owner-dashboard", label: "Dashboard", description: "Studio metrics and operations", icon: "speedometer-outline", target: "native", nativeRoute: "/(app)", group: "Overview" },
@@ -83,15 +76,15 @@ function teacherFeatures(): WorkspaceFeature[] {
   ]
 }
 
-function clientFeatures(subdomain: string): WorkspaceFeature[] {
+function clientFeatures(): WorkspaceFeature[] {
   return [
     {
       id: "client-book",
       label: "Book Classes",
       description: "Find and reserve sessions",
       icon: "calendar-outline",
-      target: "web",
-      href: withSubdomain("/book", subdomain),
+      target: "native",
+      nativeRoute: "/(app)/schedule",
       group: "Overview",
     },
     {
@@ -99,17 +92,17 @@ function clientFeatures(subdomain: string): WorkspaceFeature[] {
       label: "My Account",
       description: "Bookings and profile settings",
       icon: "person-circle-outline",
-      target: "web",
-      href: withSubdomain("/account", subdomain),
+      target: "native",
+      nativeRoute: "/(app)/profile",
       group: "Settings",
     },
   ]
 }
 
-export function getWorkspaceFeatures(role: MobileRole | undefined, studioSubdomain: string) {
+export function getWorkspaceFeatures(role: MobileRole | undefined, _studioSubdomain: string) {
   if (role === "OWNER") return ownerFeatures()
   if (role === "TEACHER") return teacherFeatures()
-  return clientFeatures(studioSubdomain)
+  return clientFeatures()
 }
 
 export function toWorkspaceUrl(href: string | undefined) {
