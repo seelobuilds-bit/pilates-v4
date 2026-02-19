@@ -90,10 +90,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-185 Mobile teacher social overview | codex-main | codex/t-185-mobile-teacher-social-overview | Add role-aware mobile social overview API + native Social screen and route teacher workspace Social Media action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/102 |
 | T-186 Mobile client workspace native handoff | codex-main | codex/t-186-mobile-client-workspace-native-handoff | Route client workspace actions (Book Classes, My Account) to native Schedule/Profile surfaces | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/103 |
 | T-187 Mobile auth route allowlist hardening | codex-main | codex/t-187-mobile-auth-route-allowlist-hardening | Preserve hidden native routes (Marketing/Social) across auth/deep-link redirects by extending allowlist and router replace handling | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/104 |
-| T-188 Mobile native reports feed | codex-main | codex/t-188-mobile-native-reports-feed | Add role-aware `/api/mobile/reports` endpoint and upgrade native Reports screen with 7/30/90 day trends and highlights | In Progress | TBD |
+| T-188 Mobile native reports feed | codex-main | codex/t-188-mobile-native-reports-feed | Add role-aware `/api/mobile/reports` endpoint and upgrade native Reports screen with 7/30/90 day trends and highlights | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/105 |
+| T-189 Mobile home trend cards | codex-main | codex/t-189-mobile-home-trends | Upgrade mobile Home screen with trend-aware KPI cards and highlights from native reports API while keeping role quick actions | In Progress | TBD |
 
 ## Merge Order
-1. T-188 Mobile native reports feed
+1. T-189 Mobile home trend cards
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
