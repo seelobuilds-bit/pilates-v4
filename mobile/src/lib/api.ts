@@ -16,6 +16,7 @@ import type {
   MobilePaymentsResponse,
   MobilePushRegisterParams,
   MobilePushStatus,
+  MobileReportsResponse,
   MobileScheduleResponse,
   MobileSessionUser,
   MobileSocialResponse,
@@ -103,6 +104,16 @@ export const mobileApi = {
 
   bootstrap(token: string) {
     return request<MobileBootstrapResponse>("/api/mobile/bootstrap", {
+      method: "GET",
+      token,
+    })
+  },
+
+  reports(token: string, params?: { days?: 7 | 30 | 90 }) {
+    const search = new URLSearchParams()
+    if (params?.days) search.set("days", String(params.days))
+    const path = search.size ? `/api/mobile/reports?${search.toString()}` : "/api/mobile/reports"
+    return request<MobileReportsResponse>(path, {
       method: "GET",
       token,
     })
