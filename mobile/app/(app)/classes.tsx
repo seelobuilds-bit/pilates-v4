@@ -103,6 +103,13 @@ export default function ClassesScreen() {
     return statusFilter === "active" ? "No active classes yet." : "No classes available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
+  const handleViewClassType = useCallback(
+    (classTypeId: string) => {
+      router.push(`/(app)/classes/${classTypeId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -155,7 +162,17 @@ export default function ClassesScreen() {
         <FlatList
           data={classTypes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ClassCard item={item} currency={currency} />}
+          renderItem={({ item }) => (
+            <View style={styles.classRowWrap}>
+              <ClassCard item={item} currency={currency} />
+              <Pressable
+                style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
+                onPress={() => handleViewClassType(item.id)}
+              >
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+              </Pressable>
+            </View>
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadClassTypes(true)} />}
           ListEmptyComponent={
@@ -227,6 +244,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingBottom: 24,
   },
+  classRowWrap: {
+    gap: 6,
+  },
   card: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -282,6 +302,17 @@ const styles = StyleSheet.create({
   statusInactive: {
     backgroundColor: "#fee2e2",
     color: "#991b1b",
+  },
+  viewButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
   },
   errorText: {
     color: mobileTheme.colors.danger,

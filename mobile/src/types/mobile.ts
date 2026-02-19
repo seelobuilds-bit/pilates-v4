@@ -224,6 +224,51 @@ export interface MobileClassTypesResponse {
   classTypes: MobileClassTypeSummary[]
 }
 
+export interface MobileClassTypeDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  classType: {
+    id: string
+    name: string
+    description: string | null
+    duration: number
+    capacity: number
+    price: number
+    isActive: boolean
+    createdAt: string
+  }
+  stats: {
+    totalSessions: number
+    upcomingSessions: number
+    totalBookings: number
+    completedBookings: number
+    fillRate: number
+    completionRate: number
+    totalRevenue: number
+    averageRevenuePerSession: number
+  }
+  topLocations: {
+    location: string
+    count: number
+  }[]
+  recentSessions: {
+    id: string
+    startTime: string
+    endTime: string
+    capacity: number
+    bookedCount: number
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+    }
+    location: {
+      id: string
+      name: string
+    }
+  }[]
+}
+
 export interface MobileTeacherSummary {
   id: string
   firstName: string

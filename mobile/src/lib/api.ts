@@ -2,6 +2,7 @@ import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
   MobileClassFlowsResponse,
+  MobileClassTypeDetailResponse,
   MobileClassTypesResponse,
   MobileCommunityMessage,
   MobileCommunityResponse,
@@ -163,6 +164,13 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/class-types?${search.toString()}` : "/api/mobile/class-types"
     return request<MobileClassTypesResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  classTypeDetail(token: string, classTypeId: string) {
+    return request<MobileClassTypeDetailResponse>(`/api/mobile/class-types/${classTypeId}`, {
       method: "GET",
       token,
     })

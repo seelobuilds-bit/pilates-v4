@@ -102,6 +102,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="classes/[classTypeId]"
+        options={{
+          title: "Class",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="class-flows"
         options={{
           title: "Class Flows",
