@@ -110,6 +110,24 @@ export interface MobileInboxThreadResponse {
   messages: MobileInboxMessage[]
 }
 
+export interface MobileClientSummary {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string | null
+  isActive: boolean
+  totalBookings: number
+  lastBookingAt: string | null
+  createdAt: string
+}
+
+export interface MobileClientsResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  clients: MobileClientSummary[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 
