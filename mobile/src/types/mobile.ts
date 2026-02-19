@@ -234,6 +234,51 @@ export interface MobileInvoicesResponse {
   stats: MobileInvoiceStats
 }
 
+export type MobilePaymentStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "REFUNDED"
+  | "PARTIALLY_REFUNDED"
+
+export interface MobilePaymentSummary {
+  id: string
+  amount: number
+  currency: string
+  status: MobilePaymentStatus
+  description: string | null
+  createdAt: string
+  receiptUrl: string | null
+  failureMessage: string | null
+  refundedAmount: number | null
+  bookingCount: number
+  client: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
+export interface MobilePaymentsStats {
+  total: number
+  pending: number
+  succeeded: number
+  failed: number
+  refunded: number
+  grossProcessed: number
+  refundedTotal: number
+}
+
+export interface MobilePaymentsResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  status: "all" | MobilePaymentStatus
+  payments: MobilePaymentSummary[]
+  stats: MobilePaymentsStats
+}
+
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
 
 export interface MobileLeaderboardParticipant {

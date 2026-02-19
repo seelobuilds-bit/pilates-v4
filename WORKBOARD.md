@@ -80,10 +80,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-175 Mobile native locations surface | codex-main | codex/t-175-mobile-native-locations-surface | Add role-aware mobile locations API + native Locations screen and route owner workspace Locations action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/92 |
 | T-176 Mobile native invoices surface | codex-main | codex/t-176-mobile-native-invoices-surface | Add role-aware mobile invoices API + native Invoices screen and route owner/teacher workspace Invoices actions in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/93 |
 | T-177 Mobile native leaderboards surface | codex-main | codex/t-177-mobile-native-leaderboards-surface | Add role-aware mobile leaderboards API + native Leaderboards screen and route owner/teacher workspace Leaderboards actions in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/94 |
-| T-178 Mobile native class flows surface | codex-main | codex/t-178-mobile-native-class-flows-surface | Add role-aware mobile class-flows APIs + native Class Flows screen and route owner/teacher workspace Class Flows actions in-app | In Progress | TBD |
+| T-178 Mobile native class flows surface | codex-main | codex/t-178-mobile-native-class-flows-surface | Add role-aware mobile class-flows APIs + native Class Flows screen and route owner/teacher workspace Class Flows actions in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/95 |
+| T-179 Mobile native payments surface | codex-main | codex/t-179-mobile-native-payments-surface | Add role-aware mobile payments API + native Payments screen and route owner workspace Payments action in-app | In Progress | TBD |
 
 ## Merge Order
-1. T-178 Mobile native class flows surface
+1. T-179 Mobile native payments surface
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

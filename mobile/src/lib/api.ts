@@ -10,6 +10,7 @@ import type {
   MobileLeaderboardsResponse,
   MobileLoginResponse,
   MobileLocationsResponse,
+  MobilePaymentsResponse,
   MobilePushRegisterParams,
   MobilePushStatus,
   MobileScheduleResponse,
@@ -213,6 +214,23 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/invoices?${search.toString()}` : "/api/mobile/invoices"
     return request<MobileInvoicesResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  payments(
+    token: string,
+    params?: {
+      search?: string
+      status?: "all" | "PENDING" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "REFUNDED" | "PARTIALLY_REFUNDED"
+    }
+  ) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/payments?${search.toString()}` : "/api/mobile/payments"
+    return request<MobilePaymentsResponse>(path, {
       method: "GET",
       token,
     })
