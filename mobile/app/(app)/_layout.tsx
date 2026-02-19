@@ -155,6 +155,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="invoices/[invoiceId]"
+        options={{
+          title: "Invoice",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="payments"
         options={{
           title: "Payments",
