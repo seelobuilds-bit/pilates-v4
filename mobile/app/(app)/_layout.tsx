@@ -1,10 +1,13 @@
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { mobileConfig } from "@/src/lib/config"
 import { getStudioPrimaryColor, mobileTheme } from "@/src/lib/theme"
 
 export default function AppLayout() {
   const primaryColor = getStudioPrimaryColor()
+  const insets = useSafeAreaInsets()
+  const tabBarBottomPadding = Math.max(8, insets.bottom)
 
   return (
     <Tabs
@@ -25,9 +28,12 @@ export default function AppLayout() {
           backgroundColor: mobileTheme.colors.surface,
           borderTopColor: mobileTheme.colors.border,
           borderTopWidth: 1,
-          height: 62,
-          paddingBottom: 6,
-          paddingTop: 6,
+          height: 54 + tabBarBottomPadding,
+          paddingBottom: tabBarBottomPadding,
+          paddingTop: 8,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
         tabBarLabelStyle: {
           fontWeight: "600",
@@ -62,6 +68,14 @@ export default function AppLayout() {
         options={{
           title: "Workspace",
           tabBarIcon: ({ color, size }) => <Ionicons name="grid" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: "Reports",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

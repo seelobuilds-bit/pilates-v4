@@ -72,10 +72,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-167 Mobile push schema rollout safety | codex-main | codex/t-167-mobile-push-schema-rollout-safe | Add schema-mismatch fallback paths for push register/status/send token queries so mobile push stays available until all DBs apply new category column | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/84 |
 | T-168 Mobile currency display parity | codex-main | codex/t-168-mobile-currency-display-parity | Return studio currency in mobile auth/bootstrap/schedule/inbox payloads and format mobile schedule prices using studio currency instead of hardcoded USD | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/85 |
 | T-169 Mobile visual parity foundation | codex-main | codex/t-169-mobile-visual-parity-foundation | Add shared mobile theme tokens and align app chrome/home/schedule/inbox/profile styling closer to web design system | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/86 |
-| T-170 Mobile workspace expansion + demo shell sync | codex-main | codex/t-170-mobile-workspace-and-demo-sync | Add role-aware mobile workspace feature hub + align `/demo` shell/navigation with current studio sidebar patterns and configurable demo source studio | In Progress | TBD |
+| T-170 Mobile workspace expansion + demo shell sync | codex-main | codex/t-170-mobile-workspace-and-demo-sync | Add role-aware mobile workspace feature hub + align `/demo` shell/navigation with current studio sidebar patterns and configurable demo source studio | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/87 |
+| T-171 Mobile native routing + tab-bar safe area | codex-main | codex/t-171-mobile-native-routing-and-tabbar-safearea | Fix clipped bottom tab bar via safe-area sizing and route dashboard/reports/schedule/inbox actions to native mobile screens where available | In Progress | TBD |
 
 ## Merge Order
-1. T-170 Mobile workspace expansion + demo shell sync
+1. T-171 Mobile native routing + tab-bar safe area
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

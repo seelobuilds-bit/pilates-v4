@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons"
 import { useMemo, useState } from "react"
+import { useRouter } from "expo-router"
 import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -17,6 +18,7 @@ const GROUP_ORDER: WorkspaceFeature["group"][] = [
 
 export default function WorkspaceScreen() {
   const { user, bootstrap } = useAuth()
+  const router = useRouter()
   const primaryColor = getStudioPrimaryColor()
   const [search, setSearch] = useState("")
   const [openingFeatureId, setOpeningFeatureId] = useState<string | null>(null)
@@ -42,6 +44,10 @@ export default function WorkspaceScreen() {
   const openFeature = async (feature: WorkspaceFeature) => {
     setOpeningFeatureId(feature.id)
     try {
+      if (feature.target === "native" && feature.nativeRoute) {
+        router.push(feature.nativeRoute)
+        return
+      }
       await Linking.openURL(toWorkspaceUrl(feature.href))
     } finally {
       setOpeningFeatureId(null)
@@ -91,6 +97,7 @@ export default function WorkspaceScreen() {
                     <Ionicons name={feature.icon as never} size={18} color={primaryColor} />
                   </View>
                   <Text style={styles.cardTitle}>{feature.label}</Text>
+                  <Text style={styles.targetBadge}>{feature.target === "native" ? "In app" : "Web"}</Text>
                   <Text style={styles.cardDescription}>{opening ? "Opening..." : feature.description}</Text>
                 </Pressable>
               )
@@ -173,6 +180,12 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 13,
+  },
+  targetBadge: {
+    color: mobileTheme.colors.textFaint,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   cardDescription: {
     color: mobileTheme.colors.textSubtle,

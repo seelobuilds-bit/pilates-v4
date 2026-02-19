@@ -5,9 +5,9 @@ import { ActivityIndicator, View } from "react-native"
 import { AuthProvider, useAuth } from "@/src/context/auth-context"
 import { configurePushPresentation, routeFromPushPayload } from "@/src/lib/push"
 
-type AppRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/workspace" | "/(app)/profile"
+type AppRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/workspace" | "/(app)/profile" | "/(app)/reports"
 
-const APP_ROUTE_ALLOWLIST = new Set<AppRoute>(["/(app)", "/(app)/schedule", "/(app)/inbox", "/(app)/workspace", "/(app)/profile"])
+const APP_ROUTE_ALLOWLIST = new Set<AppRoute>(["/(app)", "/(app)/schedule", "/(app)/inbox", "/(app)/workspace", "/(app)/profile", "/(app)/reports"])
 
 function parseRequestedAppRoute(segments: string[]): AppRoute {
   const section = segments[1]
