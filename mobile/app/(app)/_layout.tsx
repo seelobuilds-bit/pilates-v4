@@ -95,6 +95,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="teachers"
+        options={{
+          title: "Teachers",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="school" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

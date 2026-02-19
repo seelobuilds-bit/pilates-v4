@@ -10,6 +10,7 @@ export type NativeAppRoute =
   | "/(app)/reports"
   | "/(app)/people"
   | "/(app)/classes"
+  | "/(app)/teachers"
 
 export type WorkspaceFeature = {
   id: string
@@ -43,7 +44,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "web", href: "/studio/class-flows", group: "Operations" },
     { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "web", href: "/studio/locations", group: "Operations" },
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
-    { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "web", href: "/studio/teachers", group: "People" },
+    { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "native", nativeRoute: "/(app)/teachers", group: "People" },
     { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "web", href: "/studio/community", group: "People" },
     { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "web", href: "/studio/marketing", group: "Growth" },
     { id: "owner-leaderboards", label: "Leaderboards", description: "Studio rankings and goals", icon: "trophy-outline", target: "web", href: "/studio/leaderboards", group: "Growth" },
