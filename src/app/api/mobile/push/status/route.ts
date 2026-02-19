@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { normalizeMobilePushCategories } from "@/lib/mobile-push-categories"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
 export async function GET(request: NextRequest) {
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
         },
         select: {
           lastSeenAt: true,
+          notificationCategories: true,
         },
       }),
     ])
@@ -63,6 +65,7 @@ export async function GET(request: NextRequest) {
         enabledCount,
         disabledCount: Math.max(totalCount - enabledCount, 0),
         latestSeenAt: latestDevice?.lastSeenAt?.toISOString() || null,
+        notificationCategories: normalizeMobilePushCategories(latestDevice?.notificationCategories),
       },
     })
   } catch (error) {

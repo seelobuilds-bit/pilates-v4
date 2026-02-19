@@ -25,6 +25,8 @@ Ship one shared mobile codebase while distributing private branded apps per stud
 - `POST /api/mobile/push/test`
 - `GET /api/mobile/push/status`
 
+Push registration supports per-device category filtering (`INBOX`, `BOOKINGS`, `SYSTEM`) via `notificationCategories`.
+
 ## Studio Onboarding Flow
 
 1. Generate env template:

@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
         await sendMobilePushNotification({
           studioId: studio.id,
           userIds: recipientUserIds,
+          category: "INBOX",
           title: `New message from ${client.firstName} ${client.lastName}`,
           body: message,
           data: {
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
         await sendMobilePushNotification({
           studioId: studio.id,
           clientIds: [client.id],
+          category: "INBOX",
           title: `Message from ${studio.name}`,
           body: message,
           data: {
@@ -211,6 +213,7 @@ export async function POST(request: NextRequest) {
       await sendMobilePushNotification({
         studioId: studio.id,
         clientIds: [client.id],
+        category: "INBOX",
         title: `Message from ${studio.name}`,
         body: message,
         data: {
