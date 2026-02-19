@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
           await sendMobilePushNotification({
             studioId: studio.id,
             userIds: targetUserIds,
+            category: "BOOKINGS",
             title: "Booking reactivated",
             body: `${client.firstName} ${client.lastName} rebooked ${classSession.classType.name} (${formatStartTime(classSession.startTime)})`,
             data: {
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
       await sendMobilePushNotification({
         studioId: studio.id,
         userIds: targetUserIds,
+        category: "BOOKINGS",
         title: "New class booking",
         body: `${client.firstName} ${client.lastName} booked ${classSession.classType.name} (${formatStartTime(classSession.startTime)})`,
         data: {

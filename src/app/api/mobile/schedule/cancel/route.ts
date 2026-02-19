@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
       await sendMobilePushNotification({
         studioId: studio.id,
         userIds: targetUserIds,
+        category: "BOOKINGS",
         title: "Booking cancelled",
         body: `${booking.client.firstName} ${booking.client.lastName} cancelled ${booking.classSession.classType.name} (${formatStartTime(booking.classSession.startTime)})`,
         data: {

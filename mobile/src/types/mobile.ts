@@ -110,6 +110,7 @@ export interface MobileInboxThreadResponse {
 }
 
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
+export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 
 export interface MobilePushRegisterParams {
   expoPushToken: string
@@ -117,4 +118,13 @@ export interface MobilePushRegisterParams {
   deviceId?: string | null
   appVersion?: string | null
   buildNumber?: string | null
+  notificationCategories?: MobilePushCategory[]
+}
+
+export interface MobilePushStatus {
+  totalCount: number
+  enabledCount: number
+  disabledCount: number
+  latestSeenAt: string | null
+  notificationCategories: MobilePushCategory[]
 }

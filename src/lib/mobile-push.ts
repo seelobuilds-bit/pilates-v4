@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import type { MobilePushCategory } from "@/lib/mobile-push-categories"
 
 const EXPO_PUSH_SEND_URL = "https://exp.host/--/api/v2/push/send"
 const EXPO_PUSH_ACCESS_TOKEN = String(process.env.EXPO_PUSH_ACCESS_TOKEN || "").trim()
@@ -11,6 +12,7 @@ type PushTarget = {
   userIds?: string[]
   clientIds?: string[]
   roles?: PushRole[]
+  category?: MobilePushCategory
 }
 
 export interface SendMobilePushParams extends PushTarget {
@@ -44,6 +46,22 @@ function clipPushText(value: string, max = 180) {
   return `${normalized.slice(0, max - 1)}…`
 }
 
+function isCategoryEnabledForDevice(
+  notificationCategories: MobilePushCategory[] | null | undefined,
+  category?: MobilePushCategory
+) {
+  if (!category) {
+    return true
+  }
+
+  if (!Array.isArray(notificationCategories)) {
+    // Backwards-safe behavior for legacy rows.
+    return true
+  }
+
+  return notificationCategories.includes(category)
+}
+
 async function findTokens(target: PushTarget) {
   const userIds = uniq(target.userIds || [])
   const clientIds = uniq(target.clientIds || [])
@@ -52,7 +70,7 @@ async function findTokens(target: PushTarget) {
     return []
   }
 
-  return db.mobilePushDevice.findMany({
+  const devices = await db.mobilePushDevice.findMany({
     where: {
       studioId: target.studioId,
       isEnabled: true,
@@ -72,8 +90,11 @@ async function findTokens(target: PushTarget) {
     },
     select: {
       expoPushToken: true,
+      notificationCategories: true,
     },
   })
+
+  return devices.filter((device) => isCategoryEnabledForDevice(device.notificationCategories, target.category))
 }
 
 export async function sendMobilePushNotification(params: SendMobilePushParams): Promise<SendMobilePushResult> {

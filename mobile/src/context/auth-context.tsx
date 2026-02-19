@@ -3,10 +3,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { mobileApi, setMobileApiUnauthorizedHandler } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 import { registerForPushNotificationsAsync } from "@/src/lib/push"
-import type { MobileBootstrapResponse, MobileSessionUser } from "@/src/types/mobile"
+import type { MobileBootstrapResponse, MobilePushCategory, MobileSessionUser } from "@/src/types/mobile"
 
 const SESSION_TOKEN_KEY = "current_mobile_session_token"
 const PUSH_ENABLED_KEY = "current_mobile_push_enabled"
+const PUSH_CATEGORIES_KEY = "current_mobile_push_categories"
+const PUSH_CATEGORY_OPTIONS: MobilePushCategory[] = ["INBOX", "BOOKINGS", "SYSTEM"]
 
 interface AuthContextValue {
   user: MobileSessionUser | null
@@ -14,10 +16,12 @@ interface AuthContextValue {
   loading: boolean
   bootstrap: MobileBootstrapResponse | null
   pushEnabled: boolean
+  pushCategories: MobilePushCategory[]
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   refreshBootstrap: () => Promise<void>
   updatePushEnabled: (next: boolean) => Promise<void>
+  updatePushCategoryPreference: (category: MobilePushCategory, next: boolean) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -34,20 +38,40 @@ async function persistPushEnabled(next: boolean) {
   await SecureStore.setItemAsync(PUSH_ENABLED_KEY, next ? "1" : "0")
 }
 
+async function persistPushCategories(next: MobilePushCategory[]) {
+  await SecureStore.setItemAsync(PUSH_CATEGORIES_KEY, JSON.stringify(next))
+}
+
+function normalizePushCategories(input: unknown): MobilePushCategory[] {
+  if (!Array.isArray(input)) {
+    return [...PUSH_CATEGORY_OPTIONS]
+  }
+
+  const allowed = new Set(PUSH_CATEGORY_OPTIONS)
+  const normalized = Array.from(
+    new Set(input.map((value) => String(value || "").trim().toUpperCase()))
+  ).filter((value): value is MobilePushCategory => allowed.has(value as MobilePushCategory))
+
+  return PUSH_CATEGORY_OPTIONS.filter((category) => normalized.includes(category))
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<MobileSessionUser | null>(null)
   const [bootstrap, setBootstrap] = useState<MobileBootstrapResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [pushEnabled, setPushEnabled] = useState(true)
+  const [pushCategories, setPushCategories] = useState<MobilePushCategory[]>([...PUSH_CATEGORY_OPTIONS])
   const [pushPreferenceReady, setPushPreferenceReady] = useState(false)
   const registeredPushTokenRef = useRef<string | null>(null)
+  const registeredPushSignatureRef = useRef<string | null>(null)
 
   const clearSession = useCallback(async () => {
     setToken(null)
     setUser(null)
     setBootstrap(null)
     registeredPushTokenRef.current = null
+    registeredPushSignatureRef.current = null
     await persistToken(null)
   }, [])
 
@@ -96,18 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearSession, token])
 
-  const registerCurrentPushDevice = useCallback(async (currentToken: string) => {
+  const registerCurrentPushDevice = useCallback(async (currentToken: string, notificationCategories: MobilePushCategory[]) => {
     const registration = await registerForPushNotificationsAsync()
     if (!registration.enabled || !registration.params) {
       return
     }
 
-    if (registeredPushTokenRef.current === registration.params.expoPushToken) {
+    const nextSignature = `${registration.params.expoPushToken}|${notificationCategories.join(",")}`
+    if (registeredPushSignatureRef.current === nextSignature) {
       return
     }
 
-    await mobileApi.registerPushToken(currentToken, registration.params)
+    await mobileApi.registerPushToken(currentToken, {
+      ...registration.params,
+      notificationCategories,
+    })
     registeredPushTokenRef.current = registration.params.expoPushToken
+    registeredPushSignatureRef.current = nextSignature
   }, [])
 
   const unregisterCurrentPushDevice = useCallback(async (currentToken: string) => {
@@ -125,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await mobileApi.unregisterPushToken(currentToken, { expoPushToken: pushToken })
     registeredPushTokenRef.current = null
+    registeredPushSignatureRef.current = null
   }, [])
 
   const updatePushEnabled = useCallback(
@@ -135,13 +165,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token) return
 
       if (next) {
-        await registerCurrentPushDevice(token)
+        await registerCurrentPushDevice(token, pushCategories)
         return
       }
 
       await unregisterCurrentPushDevice(token)
     },
-    [registerCurrentPushDevice, token, unregisterCurrentPushDevice]
+    [pushCategories, registerCurrentPushDevice, token, unregisterCurrentPushDevice]
+  )
+
+  const updatePushCategoryPreference = useCallback(
+    async (category: MobilePushCategory, next: boolean) => {
+      const nextSet = new Set(pushCategories)
+      if (next) {
+        nextSet.add(category)
+      } else {
+        nextSet.delete(category)
+      }
+
+      const nextCategories = PUSH_CATEGORY_OPTIONS.filter((item) => nextSet.has(item))
+      setPushCategories(nextCategories)
+      await persistPushCategories(nextCategories)
+
+      if (!token || !pushEnabled) {
+        return
+      }
+
+      await registerCurrentPushDevice(token, nextCategories)
+    },
+    [pushCategories, pushEnabled, registerCurrentPushDevice, token]
   )
 
   const hydrateFromToken = useCallback(async (sessionToken: string) => {
@@ -185,6 +237,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedPushEnabled = await SecureStore.getItemAsync(PUSH_ENABLED_KEY)
         setPushEnabled(storedPushEnabled !== "0")
+
+        const storedPushCategories = await SecureStore.getItemAsync(PUSH_CATEGORIES_KEY)
+        if (!storedPushCategories) {
+          setPushCategories([...PUSH_CATEGORY_OPTIONS])
+        } else {
+          try {
+            setPushCategories(normalizePushCategories(JSON.parse(storedPushCategories)))
+          } catch {
+            setPushCategories([...PUSH_CATEGORY_OPTIONS])
+          }
+        }
+
         setPushPreferenceReady(true)
 
         const storedToken = await SecureStore.getItemAsync(SESSION_TOKEN_KEY)
@@ -209,7 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function syncPushRegistration() {
       try {
-        await registerCurrentPushDevice(currentToken)
+        await registerCurrentPushDevice(currentToken, pushCategories)
         if (cancelled) {
           return
         }
@@ -223,7 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [pushEnabled, pushPreferenceReady, registerCurrentPushDevice, token])
+  }, [pushCategories, pushEnabled, pushPreferenceReady, registerCurrentPushDevice, token])
 
   const value = useMemo(
     () => ({
@@ -232,12 +296,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       bootstrap,
       pushEnabled,
+      pushCategories,
       signIn,
       signOut,
       refreshBootstrap,
       updatePushEnabled,
+      updatePushCategoryPreference,
     }),
-    [bootstrap, loading, pushEnabled, refreshBootstrap, signIn, signOut, token, updatePushEnabled, user]
+    [
+      bootstrap,
+      loading,
+      pushCategories,
+      pushEnabled,
+      refreshBootstrap,
+      signIn,
+      signOut,
+      token,
+      updatePushCategoryPreference,
+      updatePushEnabled,
+      user,
+    ]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

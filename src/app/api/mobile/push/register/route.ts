@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { normalizeMobilePushCategories } from "@/lib/mobile-push-categories"
 
 function normalizePlatform(value: unknown): "IOS" | "ANDROID" | "WEB" | "UNKNOWN" {
   const normalized = String(value || "")
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     const deviceId = String(body?.deviceId || "").trim() || null
     const appVersion = String(body?.appVersion || "").trim() || null
     const buildNumber = String(body?.buildNumber || "").trim() || null
+    const notificationCategories = normalizeMobilePushCategories(body?.notificationCategories)
 
     if (!expoPushToken) {
       return NextResponse.json({ error: "expoPushToken is required" }, { status: 400 })
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
         deviceId,
         appVersion,
         buildNumber,
+        notificationCategories,
         isEnabled: true,
         lastSeenAt: now,
         disabledAt: null,
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest) {
         deviceId,
         appVersion,
         buildNumber,
+        notificationCategories,
         isEnabled: true,
         lastSeenAt: now,
         disabledAt: null,
@@ -96,6 +100,7 @@ export async function POST(request: NextRequest) {
         id: true,
         platform: true,
         isEnabled: true,
+        notificationCategories: true,
         updatedAt: true,
       },
     })

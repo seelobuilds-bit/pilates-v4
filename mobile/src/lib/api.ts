@@ -5,6 +5,7 @@ import type {
   MobileInboxThreadResponse,
   MobileLoginResponse,
   MobilePushRegisterParams,
+  MobilePushStatus,
   MobileScheduleResponse,
   MobileSessionUser,
 } from "@/src/types/mobile"
@@ -155,7 +156,10 @@ export const mobileApi = {
   },
 
   registerPushToken(token: string, params: MobilePushRegisterParams) {
-    return request<{ success: boolean; device?: { id: string; platform: string; isEnabled: boolean } }>(
+    return request<{
+      success: boolean
+      device?: { id: string; platform: string; isEnabled: boolean; notificationCategories?: string[] }
+    }>(
       "/api/mobile/push/register",
       {
         method: "POST",
@@ -187,12 +191,7 @@ export const mobileApi = {
   pushStatus(token: string) {
     return request<{
       success: boolean
-      push: {
-        totalCount: number
-        enabledCount: number
-        disabledCount: number
-        latestSeenAt: string | null
-      }
+      push: MobilePushStatus
     }>("/api/mobile/push/status", {
       method: "GET",
       token,

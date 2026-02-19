@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
         ? await sendMobilePushNotification({
             studioId: studio.id,
             clientIds: [decoded.clientId || decoded.sub],
+            category: "SYSTEM",
             title: `${studio.name} test notification`,
             body: message,
             data: {
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
         : await sendMobilePushNotification({
             studioId: studio.id,
             userIds: [decoded.sub],
+            category: "SYSTEM",
             title: `${studio.name} test notification`,
             body: message,
             data: {

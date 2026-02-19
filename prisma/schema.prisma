@@ -33,6 +33,12 @@ enum MobilePushPlatform {
   UNKNOWN
 }
 
+enum MobilePushCategory {
+  INBOX
+  BOOKINGS
+  SYSTEM
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -794,6 +800,7 @@ model MobilePushDevice {
   appVersion    String?
   buildNumber   String?
   isEnabled     Boolean             @default(true)
+  notificationCategories MobilePushCategory[] @default([INBOX, BOOKINGS, SYSTEM])
   lastSeenAt    DateTime            @default(now())
   disabledAt    DateTime?
   createdAt     DateTime            @default(now())
