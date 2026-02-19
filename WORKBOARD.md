@@ -70,10 +70,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-165 Mobile push registration diagnostics | codex-main | codex/t-165-mobile-push-status-diagnostics | Add push status API and profile diagnostics (enabled/total registrations + last activity) to improve device-level debugging | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/82 |
 | T-166 Mobile push category preferences | codex-main | codex/t-166-mobile-push-category-preferences | Add per-device push category controls (Inbox/Bookings/System), persist preference, and enforce server-side delivery filtering | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/83 |
 | T-167 Mobile push schema rollout safety | codex-main | codex/t-167-mobile-push-schema-rollout-safe | Add schema-mismatch fallback paths for push register/status/send token queries so mobile push stays available until all DBs apply new category column | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/84 |
-| T-168 Mobile currency display parity | codex-main | codex/t-168-mobile-currency-display-parity | Return studio currency in mobile auth/bootstrap/schedule/inbox payloads and format mobile schedule prices using studio currency instead of hardcoded USD | In Progress | TBD |
+| T-168 Mobile currency display parity | codex-main | codex/t-168-mobile-currency-display-parity | Return studio currency in mobile auth/bootstrap/schedule/inbox payloads and format mobile schedule prices using studio currency instead of hardcoded USD | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/85 |
+| T-169 Mobile visual parity foundation | codex-main | codex/t-169-mobile-visual-parity-foundation | Add shared mobile theme tokens and align app chrome/home/schedule/inbox/profile styling closer to web design system | In Progress | TBD |
 
 ## Merge Order
-1. T-168 Mobile currency display parity
+1. T-169 Mobile visual parity foundation
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

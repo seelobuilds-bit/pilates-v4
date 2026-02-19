@@ -1,14 +1,38 @@
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { mobileConfig } from "@/src/lib/config"
+import { getStudioPrimaryColor, mobileTheme } from "@/src/lib/theme"
 
 export default function AppLayout() {
+  const primaryColor = getStudioPrimaryColor()
+
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: mobileConfig.primaryColor },
-        headerTintColor: "white",
-        tabBarActiveTintColor: mobileConfig.primaryColor,
+        sceneStyle: { backgroundColor: mobileTheme.colors.canvas },
+        headerStyle: {
+          backgroundColor: mobileTheme.colors.surface,
+        },
+        headerShadowVisible: false,
+        headerTintColor: mobileTheme.colors.text,
+        headerTitleStyle: {
+          fontWeight: "700",
+          color: mobileTheme.colors.text,
+        },
+        tabBarActiveTintColor: primaryColor,
+        tabBarInactiveTintColor: mobileTheme.colors.textSubtle,
+        tabBarStyle: {
+          backgroundColor: mobileTheme.colors.surface,
+          borderTopColor: mobileTheme.colors.border,
+          borderTopWidth: 1,
+          height: 62,
+          paddingBottom: 6,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontWeight: "600",
+          fontSize: 12,
+        },
       }}
     >
       <Tabs.Screen

@@ -3,6 +3,7 @@ import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } 
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
+import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileScheduleItem } from "@/src/types/mobile"
 
 function formatDateRange(startIso: string, endIso: string) {
@@ -52,12 +53,14 @@ function ScheduleCard({
   onCancel,
   onOpenWebBooking,
   currencyCode,
+  primaryColor,
 }: {
   item: MobileScheduleItem
   isClient: boolean
   browsingMode: boolean
   actionLoading: boolean
   currencyCode: string
+  primaryColor: string
   onBook: (classSessionId: string) => void
   onCancel: (bookingId: string) => void
   onOpenWebBooking: (classSessionId: string) => void
@@ -79,7 +82,7 @@ function ScheduleCard({
       </Text>
       <Text style={styles.metaText}>Price: {item.classType.price > 0 ? formatCurrency(item.classType.price, currencyCode) : "Free"}</Text>
 
-      {item.bookingStatus ? <Text style={styles.bookingStatus}>Booking: {item.bookingStatus}</Text> : null}
+      {item.bookingStatus ? <Text style={[styles.bookingStatus, { color: primaryColor }]}>Booking: {item.bookingStatus}</Text> : null}
 
       {isClient && browsingMode ? (
         <View style={styles.cardActions}>
@@ -101,7 +104,7 @@ function ScheduleCard({
             </Pressable>
           ) : (
             <Pressable
-              style={[styles.actionButton, styles.bookButton, actionLoading && styles.actionButtonDisabled]}
+              style={[styles.actionButton, styles.bookButton, { backgroundColor: primaryColor }, actionLoading && styles.actionButtonDisabled]}
               onPress={() => onBook(item.id)}
               disabled={actionLoading}
             >
@@ -125,6 +128,7 @@ export default function ScheduleScreen() {
   const isClient = user?.role === "CLIENT"
   const [clientMode, setClientMode] = useState<"booked" | "all">("booked")
   const [currencyCode, setCurrencyCode] = useState("USD")
+  const primaryColor = getStudioPrimaryColor()
 
   const dateRange = useMemo(() => {
     const from = new Date()
@@ -240,16 +244,26 @@ export default function ScheduleScreen() {
       {isClient ? (
         <View style={styles.modeRow}>
           <Pressable
-            style={[styles.modeButton, clientMode === "booked" && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              clientMode === "booked" && [styles.modeButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+            ]}
             onPress={() => setClientMode("booked")}
           >
-            <Text style={[styles.modeButtonText, clientMode === "booked" && styles.modeButtonTextActive]}>My Bookings</Text>
+            <Text style={[styles.modeButtonText, clientMode === "booked" && [styles.modeButtonTextActive, { color: primaryColor }]]}>
+              My Bookings
+            </Text>
           </Pressable>
           <Pressable
-            style={[styles.modeButton, clientMode === "all" && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              clientMode === "all" && [styles.modeButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+            ]}
             onPress={() => setClientMode("all")}
           >
-            <Text style={[styles.modeButtonText, clientMode === "all" && styles.modeButtonTextActive]}>Browse Classes</Text>
+            <Text style={[styles.modeButtonText, clientMode === "all" && [styles.modeButtonTextActive, { color: primaryColor }]]}>
+              Browse Classes
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -270,6 +284,7 @@ export default function ScheduleScreen() {
             browsingMode={isClient && clientMode === "all"}
             actionLoading={actionLoadingId === item.id || actionLoadingId === item.bookingId}
             currencyCode={currencyCode}
+            primaryColor={primaryColor}
             onBook={handleBook}
             onCancel={handleCancel}
             onOpenWebBooking={handleOpenWebBooking}
@@ -287,15 +302,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 8,
-    backgroundColor: "#f8fafc",
+    backgroundColor: mobileTheme.colors.canvas,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   subtitle: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     marginBottom: 4,
   },
   modeRow: {
@@ -305,47 +320,46 @@ const styles = StyleSheet.create({
   },
   modeButton: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 10,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
   modeButtonActive: {
-    borderColor: "#1d4ed8",
-    backgroundColor: "#dbeafe",
+    borderWidth: 1,
   },
   modeButtonText: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     fontWeight: "600",
   },
   modeButtonTextActive: {
-    color: "#1d4ed8",
+    fontWeight: "700",
   },
   listContent: {
     gap: 10,
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: mobileTheme.colors.border,
     padding: 12,
     gap: 3,
   },
   className: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
     marginBottom: 4,
   },
   metaText: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
   },
   bookingStatus: {
     marginTop: 4,
-    color: "#1d4ed8",
+    color: mobileTheme.colors.text,
     fontWeight: "600",
   },
   cardActions: {
@@ -358,7 +372,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bookButton: {
-    backgroundColor: "#1d4ed8",
+    backgroundColor: mobileTheme.colors.text,
   },
   cancelButton: {
     backgroundColor: "#ef4444",
@@ -374,12 +388,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   loading: {
-    color: "#475569",
+    color: mobileTheme.colors.textFaint,
   },
   empty: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
   },
   error: {
-    color: "#dc2626",
+    color: mobileTheme.colors.danger,
   },
 })

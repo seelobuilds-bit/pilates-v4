@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileConfig } from "@/src/lib/config"
+import { getStudioPrimaryColor, mobileTheme } from "@/src/lib/theme"
 import type { MobileRole } from "@/src/types/mobile"
 
 function MetricCard({ label, value }: { label: string; value: number }) {
@@ -62,6 +63,7 @@ function buildQuickActions(role: MobileRole | undefined, base: string, subdomain
 export default function HomeScreen() {
   const { user, bootstrap, refreshBootstrap, loading } = useAuth()
   const [openingActionId, setOpeningActionId] = useState<string | null>(null)
+  const primaryColor = getStudioPrimaryColor()
 
   useEffect(() => {
     void refreshBootstrap()
@@ -104,7 +106,11 @@ export default function HomeScreen() {
             {quickActions.map((action) => (
               <Pressable
                 key={action.id}
-                style={[styles.actionButton, openingActionId === action.id && styles.actionButtonDisabled]}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: primaryColor },
+                  openingActionId === action.id && styles.actionButtonDisabled,
+                ]}
                 onPress={() => void handleOpenAction(action)}
                 disabled={openingActionId === action.id}
               >
@@ -126,49 +132,50 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     gap: 10,
+    backgroundColor: mobileTheme.colors.canvas,
   },
   heading: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   subheading: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
   },
   metricsGrid: {
     marginTop: 10,
     gap: 10,
   },
   metricCard: {
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: mobileTheme.colors.border,
     borderRadius: 12,
     padding: 12,
   },
   metricLabel: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
     textTransform: "capitalize",
   },
   metricValue: {
     marginTop: 6,
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   actionSection: {
     marginTop: 6,
     gap: 8,
   },
   sectionTitle: {
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
     fontWeight: "700",
   },
   actionGrid: {
     gap: 8,
   },
   actionButton: {
-    backgroundColor: "#1d4ed8",
+    backgroundColor: mobileTheme.colors.text,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
@@ -184,6 +191,6 @@ const styles = StyleSheet.create({
   },
   note: {
     marginTop: 14,
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
   },
 })
