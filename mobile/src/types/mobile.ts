@@ -157,6 +157,53 @@ export interface MobileClientsResponse {
   clients: MobileClientSummary[]
 }
 
+export interface MobileClientDetailBooking {
+  id: string
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW"
+  createdAt: string
+  paidAmount: number
+  classSession: {
+    startTime: string
+    endTime: string
+    classType: {
+      id: string
+      name: string
+    }
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+    }
+    location: {
+      id: string
+      name: string
+    }
+  }
+}
+
+export interface MobileClientDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  client: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phone: string | null
+    isActive: boolean
+    createdAt: string
+    lastBookingAt: string | null
+    stats: {
+      totalBookings: number
+      completedBookings: number
+      cancelledBookings: number
+      noShowBookings: number
+      totalSpent: number
+    }
+  }
+  recentBookings: MobileClientDetailBooking[]
+}
+
 export interface MobileClassTypeSummary {
   id: string
   name: string

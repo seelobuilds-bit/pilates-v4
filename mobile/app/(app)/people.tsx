@@ -95,6 +95,13 @@ export default function PeopleScreen() {
     router.push({ pathname: "/(app)/inbox", params: { clientId } })
   }, [router])
 
+  const handleViewClient = useCallback(
+    (clientId: string) => {
+      router.push(`/(app)/people/${clientId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -125,12 +132,20 @@ export default function PeopleScreen() {
           renderItem={({ item }) => (
             <View style={styles.clientRowWrap}>
               <ClientCard item={item} />
-              <Pressable
-                style={[styles.messageButton, { borderColor: withOpacity(primaryColor, 0.45), backgroundColor: withOpacity(primaryColor, 0.11) }]}
-                onPress={() => handleMessageClient(item.id)}
-              >
-                <Text style={[styles.messageButtonText, { color: primaryColor }]}>Message</Text>
-              </Pressable>
+              <View style={styles.clientActionsRow}>
+                <Pressable
+                  style={[styles.secondaryButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.08) }]}
+                  onPress={() => handleViewClient(item.id)}
+                >
+                  <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>View</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.primaryButton, { borderColor: withOpacity(primaryColor, 0.45), backgroundColor: withOpacity(primaryColor, 0.11) }]}
+                  onPress={() => handleMessageClient(item.id)}
+                >
+                  <Text style={[styles.primaryButtonText, { color: primaryColor }]}>Message</Text>
+                </Pressable>
+              </View>
             </View>
           )}
           contentContainerStyle={styles.listContent}
@@ -184,6 +199,10 @@ const styles = StyleSheet.create({
   },
   clientRowWrap: {
     gap: 6,
+  },
+  clientActionsRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   card: {
     borderWidth: 1,
@@ -242,14 +261,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  messageButton: {
+  primaryButton: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: mobileTheme.radius.lg,
     paddingVertical: 9,
     alignItems: "center",
     justifyContent: "center",
   },
-  messageButtonText: {
+  primaryButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryButtonText: {
     fontWeight: "700",
     fontSize: 13,
   },

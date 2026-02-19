@@ -91,10 +91,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-186 Mobile client workspace native handoff | codex-main | codex/t-186-mobile-client-workspace-native-handoff | Route client workspace actions (Book Classes, My Account) to native Schedule/Profile surfaces | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/103 |
 | T-187 Mobile auth route allowlist hardening | codex-main | codex/t-187-mobile-auth-route-allowlist-hardening | Preserve hidden native routes (Marketing/Social) across auth/deep-link redirects by extending allowlist and router replace handling | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/104 |
 | T-188 Mobile native reports feed | codex-main | codex/t-188-mobile-native-reports-feed | Add role-aware `/api/mobile/reports` endpoint and upgrade native Reports screen with 7/30/90 day trends and highlights | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/105 |
-| T-189 Mobile home trend cards | codex-main | codex/t-189-mobile-home-trends | Upgrade mobile Home screen with trend-aware KPI cards and highlights from native reports API while keeping role quick actions | In Progress | TBD |
+| T-189 Mobile home trend cards | codex-main | codex/t-189-mobile-home-trends | Upgrade mobile Home screen with trend-aware KPI cards and highlights from native reports API while keeping role quick actions | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/106 |
+| T-190 Mobile client detail view | codex-main | codex/t-190-mobile-client-detail-view | Add mobile client detail API + screen and link People list rows to native per-client detail with stats and recent bookings | In Progress | TBD |
 
 ## Merge Order
-1. T-189 Mobile home trend cards
+1. T-190 Mobile client detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
