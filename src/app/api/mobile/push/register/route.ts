@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { MobilePushActorType, MobilePushPlatform, MobilePushRole } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
-import { normalizeMobilePushCategories } from "@/lib/mobile-push-categories"
+import {
+  isPrismaMissingColumnError,
+  normalizeMobilePushCategories,
+} from "@/lib/mobile-push-categories"
 
-function normalizePlatform(value: unknown): "IOS" | "ANDROID" | "WEB" | "UNKNOWN" {
+function normalizePlatform(value: unknown): MobilePushPlatform {
   const normalized = String(value || "")
     .trim()
     .toUpperCase()
@@ -47,8 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "expoPushToken is required" }, { status: 400 })
     }
 
-    const actorType = decoded.actorType === "CLIENT" ? "CLIENT" : "USER"
-    const role = decoded.role
+    const actorType: MobilePushActorType = decoded.actorType === "CLIENT" ? "CLIENT" : "USER"
+    const role = decoded.role as MobilePushRole
 
     if (role !== "OWNER" && role !== "TEACHER" && role !== "CLIENT") {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
@@ -58,52 +62,92 @@ export async function POST(request: NextRequest) {
     const clientId = actorType === "CLIENT" ? decoded.clientId || decoded.sub : null
 
     const now = new Date()
-
-    const device = await db.mobilePushDevice.upsert({
-      where: {
-        studioId_expoPushToken: {
-          studioId: decoded.studioId,
-          expoPushToken,
-        },
-      },
-      create: {
+    const platform: MobilePushPlatform = normalizePlatform(body?.platform)
+    const where = {
+      studioId_expoPushToken: {
         studioId: decoded.studioId,
-        actorType,
-        role,
-        userId,
-        clientId,
         expoPushToken,
-        platform: normalizePlatform(body?.platform),
-        deviceId,
-        appVersion,
-        buildNumber,
+      },
+    }
+    const createData = {
+      studioId: decoded.studioId,
+      actorType,
+      role,
+      userId,
+      clientId,
+      expoPushToken,
+      platform,
+      deviceId,
+      appVersion,
+      buildNumber,
+      isEnabled: true,
+      lastSeenAt: now,
+      disabledAt: null as Date | null,
+    }
+    const updateData = {
+      actorType,
+      role,
+      userId,
+      clientId,
+      platform,
+      deviceId,
+      appVersion,
+      buildNumber,
+      isEnabled: true,
+      lastSeenAt: now,
+      disabledAt: null as Date | null,
+    }
+
+    let device: {
+      id: string
+      platform: "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
+      isEnabled: boolean
+      updatedAt: Date
+      notificationCategories?: string[]
+    }
+
+    try {
+      device = await db.mobilePushDevice.upsert({
+        where,
+        create: {
+          ...createData,
+          notificationCategories,
+        },
+        update: {
+          ...updateData,
+          notificationCategories,
+        },
+        select: {
+          id: true,
+          platform: true,
+          isEnabled: true,
+          notificationCategories: true,
+          updatedAt: true,
+        },
+      })
+    } catch (error) {
+      if (!isPrismaMissingColumnError(error)) {
+        throw error
+      }
+
+      // Rollout-safe fallback when DB schema has not yet added notificationCategories.
+      const legacyDevice = await db.mobilePushDevice.upsert({
+        where,
+        create: createData,
+        update: updateData,
+        select: {
+          id: true,
+          platform: true,
+          isEnabled: true,
+          updatedAt: true,
+        },
+      })
+
+      device = {
+        ...legacyDevice,
         notificationCategories,
-        isEnabled: true,
-        lastSeenAt: now,
-        disabledAt: null,
-      },
-      update: {
-        actorType,
-        role,
-        userId,
-        clientId,
-        platform: normalizePlatform(body?.platform),
-        deviceId,
-        appVersion,
-        buildNumber,
-        notificationCategories,
-        isEnabled: true,
-        lastSeenAt: now,
-        disabledAt: null,
-      },
-      select: {
-        id: true,
-        platform: true,
-        isEnabled: true,
-        notificationCategories: true,
-        updatedAt: true,
-      },
-    })
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -26,6 +26,7 @@ Ship one shared mobile codebase while distributing private branded apps per stud
 - `GET /api/mobile/push/status`
 
 Push registration supports per-device category filtering (`INBOX`, `BOOKINGS`, `SYSTEM`) via `notificationCategories`.
+Apply `scripts/sql/2026-02-19-mobile-push-category-preferences.sql` in each DB environment for full server-side category filtering.
 
 ## Studio Onboarding Flow
 

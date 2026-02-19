@@ -68,10 +68,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-163 Mobile notification tap deep-link routing | codex-main | codex/t-163-mobile-push-deeplink-routing | Handle push-tap routing (cold start + in-app) so notification types land users in Inbox/Schedule/Profile tabs safely | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/80 |
 | T-164 Mobile per-device push preference control | codex-main | codex/t-164-mobile-push-preferences | Add persisted push pause/resume toggle on mobile profile and respect preference in registration lifecycle | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/81 |
 | T-165 Mobile push registration diagnostics | codex-main | codex/t-165-mobile-push-status-diagnostics | Add push status API and profile diagnostics (enabled/total registrations + last activity) to improve device-level debugging | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/82 |
-| T-166 Mobile push category preferences | codex-main | codex/t-166-mobile-push-category-preferences | Add per-device push category controls (Inbox/Bookings/System), persist preference, and enforce server-side delivery filtering | In Progress | TBD |
+| T-166 Mobile push category preferences | codex-main | codex/t-166-mobile-push-category-preferences | Add per-device push category controls (Inbox/Bookings/System), persist preference, and enforce server-side delivery filtering | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/83 |
+| T-167 Mobile push schema rollout safety | codex-main | codex/t-167-mobile-push-schema-rollout-safe | Add schema-mismatch fallback paths for push register/status/send token queries so mobile push stays available until all DBs apply new category column | In Progress | TBD |
 
 ## Merge Order
-1. T-166 Mobile push category preferences
+1. T-167 Mobile push schema rollout safety
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

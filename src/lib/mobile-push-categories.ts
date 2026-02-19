@@ -21,3 +21,12 @@ export function normalizeMobilePushCategories(value: unknown): MobilePushCategor
 
   return MOBILE_PUSH_DEFAULT_CATEGORIES.filter((item) => deduped.has(item))
 }
+
+export function isPrismaMissingColumnError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false
+  }
+
+  const maybeCode = (error as { code?: unknown }).code
+  return maybeCode === "P2022"
+}

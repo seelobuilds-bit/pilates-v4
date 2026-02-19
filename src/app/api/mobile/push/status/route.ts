@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { normalizeMobilePushCategories } from "@/lib/mobile-push-categories"
+import {
+  isPrismaMissingColumnError,
+  MOBILE_PUSH_DEFAULT_CATEGORIES,
+  normalizeMobilePushCategories,
+} from "@/lib/mobile-push-categories"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
 export async function GET(request: NextRequest) {
@@ -29,7 +33,7 @@ export async function GET(request: NextRequest) {
         ? { clientId: decoded.clientId || decoded.sub }
         : { userId: decoded.sub }
 
-    const [totalCount, enabledCount, latestDevice] = await Promise.all([
+    const [totalCount, enabledCount] = await Promise.all([
       db.mobilePushDevice.count({
         where: {
           studioId: studio.id,
@@ -43,7 +47,13 @@ export async function GET(request: NextRequest) {
           isEnabled: true,
         },
       }),
-      db.mobilePushDevice.findFirst({
+    ])
+
+    let latestSeenAt: string | null = null
+    let notificationCategories = [...MOBILE_PUSH_DEFAULT_CATEGORIES]
+
+    try {
+      const latestDevice = await db.mobilePushDevice.findFirst({
         where: {
           studioId: studio.id,
           ...actorFilter,
@@ -55,8 +65,30 @@ export async function GET(request: NextRequest) {
           lastSeenAt: true,
           notificationCategories: true,
         },
-      }),
-    ])
+      })
+
+      latestSeenAt = latestDevice?.lastSeenAt?.toISOString() || null
+      notificationCategories = normalizeMobilePushCategories(latestDevice?.notificationCategories)
+    } catch (error) {
+      if (!isPrismaMissingColumnError(error)) {
+        throw error
+      }
+
+      const latestDevice = await db.mobilePushDevice.findFirst({
+        where: {
+          studioId: studio.id,
+          ...actorFilter,
+        },
+        orderBy: {
+          lastSeenAt: "desc",
+        },
+        select: {
+          lastSeenAt: true,
+        },
+      })
+
+      latestSeenAt = latestDevice?.lastSeenAt?.toISOString() || null
+    }
 
     return NextResponse.json({
       success: true,
@@ -64,8 +96,8 @@ export async function GET(request: NextRequest) {
         totalCount,
         enabledCount,
         disabledCount: Math.max(totalCount - enabledCount, 0),
-        latestSeenAt: latestDevice?.lastSeenAt?.toISOString() || null,
-        notificationCategories: normalizeMobilePushCategories(latestDevice?.notificationCategories),
+        latestSeenAt,
+        notificationCategories,
       },
     })
   } catch (error) {

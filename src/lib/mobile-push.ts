@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import type { MobilePushCategory } from "@/lib/mobile-push-categories"
+import { isPrismaMissingColumnError, type MobilePushCategory } from "@/lib/mobile-push-categories"
 
 const EXPO_PUSH_SEND_URL = "https://exp.host/--/api/v2/push/send"
 const EXPO_PUSH_ACCESS_TOKEN = String(process.env.EXPO_PUSH_ACCESS_TOKEN || "").trim()
@@ -70,31 +70,47 @@ async function findTokens(target: PushTarget) {
     return []
   }
 
-  const devices = await db.mobilePushDevice.findMany({
-    where: {
-      studioId: target.studioId,
-      isEnabled: true,
-      ...(target.roles && target.roles.length > 0 ? { role: { in: target.roles } } : {}),
-      ...(
-        userIds.length > 0 && clientIds.length > 0
-          ? {
-              OR: [
-                { userId: { in: userIds } },
-                { clientId: { in: clientIds } },
-              ],
-            }
-          : {}
-      ),
-      ...(userIds.length > 0 && clientIds.length === 0 ? { userId: { in: userIds } } : {}),
-      ...(clientIds.length > 0 && userIds.length === 0 ? { clientId: { in: clientIds } } : {}),
-    },
-    select: {
-      expoPushToken: true,
-      notificationCategories: true,
-    },
-  })
+  const where = {
+    studioId: target.studioId,
+    isEnabled: true,
+    ...(target.roles && target.roles.length > 0 ? { role: { in: target.roles } } : {}),
+    ...(
+      userIds.length > 0 && clientIds.length > 0
+        ? {
+            OR: [
+              { userId: { in: userIds } },
+              { clientId: { in: clientIds } },
+            ],
+          }
+        : {}
+    ),
+    ...(userIds.length > 0 && clientIds.length === 0 ? { userId: { in: userIds } } : {}),
+    ...(clientIds.length > 0 && userIds.length === 0 ? { clientId: { in: clientIds } } : {}),
+  }
 
-  return devices.filter((device) => isCategoryEnabledForDevice(device.notificationCategories, target.category))
+  try {
+    const devices = await db.mobilePushDevice.findMany({
+      where,
+      select: {
+        expoPushToken: true,
+        notificationCategories: true,
+      },
+    })
+
+    return devices.filter((device) => isCategoryEnabledForDevice(device.notificationCategories, target.category))
+  } catch (error) {
+    if (!isPrismaMissingColumnError(error)) {
+      throw error
+    }
+
+    // Rollout-safe fallback while DB schema updates catch up.
+    return db.mobilePushDevice.findMany({
+      where,
+      select: {
+        expoPushToken: true,
+      },
+    })
+  }
 }
 
 export async function sendMobilePushNotification(params: SendMobilePushParams): Promise<SendMobilePushResult> {
