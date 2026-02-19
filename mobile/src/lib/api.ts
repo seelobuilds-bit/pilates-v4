@@ -10,6 +10,7 @@ import type {
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
+  MobileInvoiceDetailResponse,
   MobileInvoicesResponse,
   MobileLeaderboardsResponse,
   MobileLoginResponse,
@@ -302,6 +303,13 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/invoices?${search.toString()}` : "/api/mobile/invoices"
     return request<MobileInvoicesResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  invoiceDetail(token: string, invoiceId: string) {
+    return request<MobileInvoiceDetailResponse>(`/api/mobile/invoices/${invoiceId}`, {
       method: "GET",
       token,
     })

@@ -450,6 +450,44 @@ export interface MobileInvoicesResponse {
   stats: MobileInvoiceStats
 }
 
+export interface MobileInvoiceDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  invoice: {
+    id: string
+    invoiceNumber: string
+    status: MobileInvoiceStatus
+    periodStart: string
+    periodEnd: string
+    subtotal: number
+    tax: number
+    taxRate: number
+    total: number
+    paidAmount: number | null
+    paymentMethod: string | null
+    paymentReference: string | null
+    currency: string
+    notes: string | null
+    sentAt: string | null
+    paidAt: string | null
+    createdAt: string
+    updatedAt: string
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+    }
+    lineItems: {
+      description?: string
+      classId?: string
+      quantity?: number
+      rate?: number
+      amount?: number
+    }[]
+  }
+}
+
 export type MobilePaymentStatus =
   | "PENDING"
   | "PROCESSING"
