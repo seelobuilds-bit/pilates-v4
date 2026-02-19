@@ -128,6 +128,26 @@ export interface MobileClientsResponse {
   clients: MobileClientSummary[]
 }
 
+export interface MobileClassTypeSummary {
+  id: string
+  name: string
+  description: string | null
+  duration: number
+  capacity: number
+  price: number
+  isActive: boolean
+  createdAt: string
+  upcomingSessions: number
+  totalSessions: number
+}
+
+export interface MobileClassTypesResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  status: "active" | "all"
+  classTypes: MobileClassTypeSummary[]
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

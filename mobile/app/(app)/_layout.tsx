@@ -87,6 +87,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="classes"
+        options={{
+          title: "Classes",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

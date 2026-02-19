@@ -9,6 +9,7 @@ export type NativeAppRoute =
   | "/(app)/profile"
   | "/(app)/reports"
   | "/(app)/people"
+  | "/(app)/classes"
 
 export type WorkspaceFeature = {
   id: string
@@ -38,7 +39,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-reports", label: "Reports", description: "Financial and performance reporting", icon: "bar-chart-outline", target: "native", nativeRoute: "/(app)/reports", group: "Overview" },
     { id: "owner-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "Overview" },
     { id: "owner-schedule", label: "Schedule", description: "Calendar and class sessions", icon: "calendar-outline", target: "native", nativeRoute: "/(app)/schedule", group: "Operations" },
-    { id: "owner-classes", label: "Classes", description: "Class types and rules", icon: "grid-outline", target: "web", href: "/studio/classes", group: "Operations" },
+    { id: "owner-classes", label: "Classes", description: "Class types and rules", icon: "grid-outline", target: "native", nativeRoute: "/(app)/classes", group: "Operations" },
     { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "web", href: "/studio/class-flows", group: "Operations" },
     { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "web", href: "/studio/locations", group: "Operations" },
     { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
