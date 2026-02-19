@@ -8,6 +8,7 @@ export type NativeAppRoute =
   | "/(app)/workspace"
   | "/(app)/profile"
   | "/(app)/reports"
+  | "/(app)/people"
 
 export type WorkspaceFeature = {
   id: string
@@ -40,7 +41,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-classes", label: "Classes", description: "Class types and rules", icon: "grid-outline", target: "web", href: "/studio/classes", group: "Operations" },
     { id: "owner-class-flows", label: "Class Flows", description: "Flows and training requests", icon: "play-circle-outline", target: "web", href: "/studio/class-flows", group: "Operations" },
     { id: "owner-locations", label: "Locations", description: "Rooms and location setup", icon: "location-outline", target: "web", href: "/studio/locations", group: "Operations" },
-    { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "web", href: "/studio/clients", group: "People" },
+    { id: "owner-clients", label: "Clients", description: "Client records and activity", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "owner-teachers", label: "Teachers", description: "Teacher management", icon: "school-outline", target: "web", href: "/studio/teachers", group: "People" },
     { id: "owner-community", label: "Community", description: "Community feed and comments", icon: "chatbubbles-outline", target: "web", href: "/studio/community", group: "People" },
     { id: "owner-marketing", label: "Marketing", description: "Campaigns and automations", icon: "megaphone-outline", target: "web", href: "/studio/marketing", group: "Growth" },
@@ -59,7 +60,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-reports", label: "Reports", description: "Teaching performance snapshot", icon: "bar-chart-outline", target: "native", nativeRoute: "/(app)/reports", group: "Overview" },
     { id: "teacher-schedule", label: "My Schedule", description: "Classes and timetable", icon: "calendar-outline", target: "native", nativeRoute: "/(app)/schedule", group: "Operations" },
     { id: "teacher-class-flows", label: "Class Flows", description: "Programming content", icon: "play-circle-outline", target: "web", href: "/teacher/class-flows", group: "Operations" },
-    { id: "teacher-clients", label: "Clients", description: "Client progress and notes", icon: "people-outline", target: "web", href: "/teacher/clients", group: "People" },
+    { id: "teacher-clients", label: "Clients", description: "Client progress and notes", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "teacher-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "People" },
     { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "web", href: "/teacher/community", group: "People" },
     { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "web", href: "/teacher/social", group: "Growth" },

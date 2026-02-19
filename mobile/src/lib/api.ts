@@ -1,6 +1,7 @@
 import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
+  MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
   MobileLoginResponse,
@@ -108,6 +109,16 @@ export const mobileApi = {
 
   inbox(token: string) {
     return request<MobileInboxResponse>("/api/mobile/inbox", {
+      method: "GET",
+      token,
+    })
+  },
+
+  clients(token: string, params?: { search?: string }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    const path = search.size ? `/api/mobile/clients?${search.toString()}` : "/api/mobile/clients"
+    return request<MobileClientsResponse>(path, {
       method: "GET",
       token,
     })
