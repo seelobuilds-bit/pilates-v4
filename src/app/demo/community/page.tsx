@@ -11,7 +11,7 @@ import {
   Plus
 } from "lucide-react"
 
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoCommunityPage() {
   const studio = await db.studio.findFirst({

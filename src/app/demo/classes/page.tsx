@@ -12,7 +12,7 @@ import {
   Dumbbell
 } from "lucide-react"
 
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoClassesPage() {
   const studio = await db.studio.findFirst({

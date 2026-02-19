@@ -3,7 +3,7 @@ import { LeaderboardsView } from "@/components/studio"
 import type { LeaderboardData, Leaderboard as LeaderboardType, LeaderboardEntry } from "@/components/studio"
 
 // Demo uses data from a real studio (Zenith) to always reflect the current state
-const DEMO_STUDIO_SUBDOMAIN = "zenith"
+const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoLeaderboardsPage() {
   // Find the demo studio (to show their rankings)

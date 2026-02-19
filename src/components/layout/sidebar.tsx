@@ -2,30 +2,32 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { type ComponentType, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
+import {
+  NavGroup,
+  NavLink,
+  defaultWorkingLinkHrefs,
+  studioLinkGroups,
+  studioLinkHrefs,
+  studioLinks,
+} from "@/components/layout/nav-config"
 import {
   LayoutDashboard,
   Building2,
   Calendar,
   Settings,
   LogOut,
-  GraduationCap,
   UserCircle,
-  Megaphone,
   ChevronLeft,
   BarChart3,
-  MapPin,
-  BookOpen,
   Inbox,
-  CreditCard,
   PlayCircle,
   Instagram,
   FileText,
   Lock,
   MessageSquare,
-  ShoppingBag,
   Trophy,
   Headphones,
   Target,
@@ -33,17 +35,6 @@ import {
   Menu,
   X,
 } from "lucide-react"
-
-type NavLink = {
-  href: string
-  label: string
-  icon: ComponentType<{ className?: string }>
-}
-
-type NavGroup = {
-  title: string
-  links: NavLink[]
-}
 
 type SidebarMode = "full" | "working"
 
@@ -63,61 +54,6 @@ const hqLinks: NavLink[] = [
   { href: "/hq/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/hq/settings", label: "Settings", icon: Settings },
 ]
-
-const studioLinkGroups: NavGroup[] = [
-  {
-    title: "Overview",
-    links: [
-      { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/studio/inbox", label: "Inbox", icon: Inbox },
-      { href: "/studio/reports", label: "Reports", icon: BarChart3 },
-    ],
-  },
-  {
-    title: "Operations",
-    links: [
-      { href: "/studio/schedule", label: "Schedule", icon: Calendar },
-      { href: "/studio/classes", label: "Classes", icon: BookOpen },
-      { href: "/studio/class-flows", label: "Class Flows", icon: PlayCircle },
-      { href: "/studio/locations", label: "Locations", icon: MapPin },
-    ],
-  },
-  {
-    title: "People",
-    links: [
-      { href: "/studio/clients", label: "Clients", icon: UserCircle },
-      { href: "/studio/teachers", label: "Teachers", icon: GraduationCap },
-      { href: "/studio/community", label: "Community", icon: MessageSquare },
-    ],
-  },
-  {
-    title: "Commerce",
-    links: [
-      { href: "/studio/payments", label: "Payments", icon: CreditCard },
-      { href: "/studio/invoices", label: "Invoices", icon: FileText },
-      { href: "/studio/store", label: "Store", icon: ShoppingBag },
-    ],
-  },
-  {
-    title: "Growth",
-    links: [
-      { href: "/studio/marketing", label: "Marketing", icon: Megaphone },
-      { href: "/studio/leaderboards", label: "Leaderboards", icon: Trophy },
-    ],
-  },
-  {
-    title: "Content",
-    links: [{ href: "/studio/vault", label: "The Vault", icon: Lock }],
-  },
-  {
-    title: "Settings",
-    links: [{ href: "/studio/settings", label: "Settings", icon: Settings }],
-  },
-]
-
-const studioLinks = studioLinkGroups.flatMap((group) => group.links)
-const defaultWorkingLinkHrefs = ["/studio/reports", "/studio/schedule", "/studio/inbox", "/studio"]
-const studioLinkHrefs = studioLinks.map((link) => link.href)
 
 const teacherLinks: NavLink[] = [
   { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
