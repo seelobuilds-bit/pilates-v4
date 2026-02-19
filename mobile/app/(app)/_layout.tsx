@@ -125,6 +125,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="teachers/[teacherId]"
+        options={{
+          title: "Teacher",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="locations"
         options={{
           title: "Locations",

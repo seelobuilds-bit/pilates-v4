@@ -294,6 +294,55 @@ export interface MobileTeachersResponse {
   teachers: MobileTeacherSummary[]
 }
 
+export interface MobileTeacherDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  teacher: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    bio: string | null
+    specialties: string[]
+    isActive: boolean
+    createdAt: string
+    payRate: {
+      type: "PER_CLASS" | "PER_HOUR" | "PER_STUDENT" | "PERCENTAGE"
+      rate: number
+      currency: string
+    } | null
+  }
+  stats: {
+    totalSessions: number
+    upcomingSessions: number
+    totalBookings: number
+    completedBookings: number
+    fillRate: number
+    completionRate: number
+    totalRevenue: number
+    averageRevenuePerSession: number
+  }
+  topClassTypes: {
+    classType: string
+    count: number
+  }[]
+  recentSessions: {
+    id: string
+    startTime: string
+    endTime: string
+    capacity: number
+    bookedCount: number
+    classType: {
+      id: string
+      name: string
+    }
+    location: {
+      id: string
+      name: string
+    }
+  }[]
+}
+
 export interface MobileLocationSummary {
   id: string
   name: string

@@ -24,6 +24,7 @@ import type {
   MobileSocialResponse,
   MobileStoreOverviewResponse,
   MobileTeachersResponse,
+  MobileTeacherDetailResponse,
   MobileVaultAudience,
   MobileVaultResponse,
 } from "@/src/types/mobile"
@@ -264,6 +265,13 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/teachers?${search.toString()}` : "/api/mobile/teachers"
     return request<MobileTeachersResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  teacherDetail(token: string, teacherId: string) {
+    return request<MobileTeacherDetailResponse>(`/api/mobile/teachers/${teacherId}`, {
       method: "GET",
       token,
     })

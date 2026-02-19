@@ -120,6 +120,13 @@ export default function TeachersScreen() {
     return statusFilter === "active" ? "No active teachers yet." : "No teachers available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
+  const handleViewTeacher = useCallback(
+    (teacherId: string) => {
+      router.push(`/(app)/teachers/${teacherId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -172,7 +179,17 @@ export default function TeachersScreen() {
         <FlatList
           data={teachers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <TeacherCard teacher={item} />}
+          renderItem={({ item }) => (
+            <View style={styles.teacherRowWrap}>
+              <TeacherCard teacher={item} />
+              <Pressable
+                style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
+                onPress={() => handleViewTeacher(item.id)}
+              >
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+              </Pressable>
+            </View>
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadTeachers(true)} />}
           ListEmptyComponent={
@@ -244,6 +261,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingBottom: 24,
   },
+  teacherRowWrap: {
+    gap: 6,
+  },
   card: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -309,6 +329,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
+  },
+  viewButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
   },
   errorText: {
     color: mobileTheme.colors.danger,
