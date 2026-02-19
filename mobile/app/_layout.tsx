@@ -21,6 +21,7 @@ type AppRoute =
   | "/(app)/payments"
   | "/(app)/store"
   | "/(app)/vault"
+  | "/(app)/community"
   | "/(app)/leaderboards"
 
 const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
@@ -39,6 +40,7 @@ const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
   "/(app)/payments",
   "/(app)/store",
   "/(app)/vault",
+  "/(app)/community",
   "/(app)/leaderboards",
 ])
 
