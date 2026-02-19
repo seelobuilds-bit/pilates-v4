@@ -92,6 +92,70 @@ export interface MobileScheduleResponse {
   items: MobileScheduleItem[]
 }
 
+export interface MobileScheduleDetailResponse {
+  role: MobileRole
+  studio: StudioSummary
+  session: {
+    id: string
+    startTime: string
+    endTime: string
+    capacity: number
+    bookedCount: number
+    remainingSpots: number
+    waitlistCount: number
+    notes: string | null
+    classType: {
+      id: string
+      name: string
+      description: string | null
+      duration: number
+      price: number
+    }
+    teacher: {
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+    }
+    location: {
+      id: string
+      name: string
+      address: string
+      city: string
+      state: string
+      zipCode: string
+    }
+    bookingSummary: {
+      pending: number
+      confirmed: number
+      completed: number
+      cancelled: number
+      noShow: number
+    }
+  }
+  clientBooking?: {
+    id: string
+    status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW"
+    paidAmount: number | null
+    createdAt: string
+    cancelledAt: string | null
+  } | null
+  canBook?: boolean
+  canCheckoutOnWeb?: boolean
+  recentBookings?: {
+    id: string
+    status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW"
+    paidAmount: number | null
+    createdAt: string
+    cancelledAt: string | null
+    client: {
+      firstName: string
+      lastName: string
+      email: string
+    }
+  }[]
+}
+
 export interface MobileConversationSummary {
   clientId: string
   clientName: string

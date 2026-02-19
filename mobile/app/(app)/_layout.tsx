@@ -57,6 +57,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="schedule/[sessionId]"
+        options={{
+          title: "Session",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="inbox"
         options={{
           title: "Inbox",
