@@ -21,11 +21,20 @@ export async function GET(request: NextRequest) {
         name: true,
         subdomain: true,
         primaryColor: true,
+        stripeCurrency: true,
       },
     })
 
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
+    }
+
+    const studioSummary = {
+      id: studio.id,
+      name: studio.name,
+      subdomain: studio.subdomain,
+      primaryColor: studio.primaryColor,
+      currency: studio.stripeCurrency,
     }
 
     if (decoded.actorType === "USER") {
@@ -52,7 +61,7 @@ export async function GET(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         teacherId: user.teacher?.id || null,
-        studio,
+        studio: studioSummary,
       })
     }
 
@@ -78,7 +87,7 @@ export async function GET(request: NextRequest) {
       firstName: client.firstName,
       lastName: client.lastName,
       clientId: client.id,
-      studio,
+      studio: studioSummary,
     })
   } catch (error) {
     console.error("Mobile me error:", error)

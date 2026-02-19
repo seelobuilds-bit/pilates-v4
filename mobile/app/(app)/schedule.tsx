@@ -26,6 +26,23 @@ function formatDateRange(startIso: string, endIso: string) {
   return { date, time }
 }
 
+function normalizeCurrencyCode(value: string | null | undefined) {
+  const normalized = String(value || "").trim().toUpperCase()
+  return normalized || "USD"
+}
+
+function formatCurrency(value: number, currency: string) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: normalizeCurrencyCode(currency),
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    return `${value}`
+  }
+}
+
 function ScheduleCard({
   item,
   isClient,
@@ -34,11 +51,13 @@ function ScheduleCard({
   onBook,
   onCancel,
   onOpenWebBooking,
+  currencyCode,
 }: {
   item: MobileScheduleItem
   isClient: boolean
   browsingMode: boolean
   actionLoading: boolean
+  currencyCode: string
   onBook: (classSessionId: string) => void
   onCancel: (bookingId: string) => void
   onOpenWebBooking: (classSessionId: string) => void
@@ -58,7 +77,7 @@ function ScheduleCard({
       <Text style={styles.metaText}>
         Spots: {item.bookedCount}/{item.capacity}
       </Text>
-      <Text style={styles.metaText}>Price: {item.classType.price > 0 ? `$${item.classType.price}` : "Free"}</Text>
+      <Text style={styles.metaText}>Price: {item.classType.price > 0 ? formatCurrency(item.classType.price, currencyCode) : "Free"}</Text>
 
       {item.bookingStatus ? <Text style={styles.bookingStatus}>Booking: {item.bookingStatus}</Text> : null}
 
@@ -105,6 +124,7 @@ export default function ScheduleScreen() {
 
   const isClient = user?.role === "CLIENT"
   const [clientMode, setClientMode] = useState<"booked" | "all">("booked")
+  const [currencyCode, setCurrencyCode] = useState("USD")
 
   const dateRange = useMemo(() => {
     const from = new Date()
@@ -136,6 +156,7 @@ export default function ScheduleScreen() {
           mode: isClient ? clientMode : undefined,
         })
         setItems(response.items)
+        setCurrencyCode(normalizeCurrencyCode(response.studio?.currency))
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load schedule"
         setError(message)
@@ -248,6 +269,7 @@ export default function ScheduleScreen() {
             isClient={isClient}
             browsingMode={isClient && clientMode === "all"}
             actionLoading={actionLoadingId === item.id || actionLoadingId === item.bookingId}
+            currencyCode={currencyCode}
             onBook={handleBook}
             onCancel={handleCancel}
             onOpenWebBooking={handleOpenWebBooking}
