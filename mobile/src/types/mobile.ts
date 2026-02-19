@@ -1010,6 +1010,77 @@ export interface MobileStoreOverviewResponse {
   }
 }
 
+export interface MobileStoreProductDetailResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  product: {
+    id: string
+    price: number
+    compareAtPrice: number | null
+    isActive: boolean
+    hasCustomLogo: boolean
+    logoUrl: string | null
+    logoPlacement: string | null
+    customTitle: string | null
+    customDescription: string | null
+    displayOrder: number
+    createdAt: string
+    updatedAt: string
+    catalog: {
+      id: string
+      name: string
+      slug: string
+      description: string
+      shortDescription: string | null
+      category: string
+      images: string[]
+      suggestedRetail: number
+      baseCost: number
+      inStock: boolean
+      leadTimeDays: number
+      materials: string | null
+      careInstructions: string | null
+    }
+    variants: {
+      id: string
+      price: number | null
+      isActive: boolean
+      variant: {
+        id: string
+        name: string
+        sku: string
+        size: string | null
+        color: string | null
+        inStock: boolean
+      }
+    }[]
+  }
+  stats: {
+    unitsSold: number
+    grossSales: number
+    pendingFulfillmentUnits: number
+  }
+  recentOrders: {
+    id: string
+    quantity: number
+    unitPrice: number
+    totalPrice: number
+    fulfilledQuantity: number
+    variantName: string | null
+    order: {
+      id: string
+      orderNumber: string
+      status: string
+      paymentStatus: string
+      customerName: string
+      customerEmail: string
+      createdAt: string
+      shippedAt: string | null
+      deliveredAt: string | null
+    }
+  }[]
+}
+
 export type MobileVaultAudience = "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
 export type MobileVaultPricingType = "FREE" | "ONE_TIME" | "SUBSCRIPTION" | "BUNDLE"
 export type MobileVaultStatus = "all" | "published" | "draft"

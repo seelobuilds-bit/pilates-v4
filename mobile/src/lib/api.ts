@@ -27,6 +27,7 @@ import type {
   MobileSessionUser,
   MobileSocialResponse,
   MobileStoreOverviewResponse,
+  MobileStoreProductDetailResponse,
   MobileTeachersResponse,
   MobileTeacherDetailResponse,
   MobileVaultAudience,
@@ -354,6 +355,13 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/store?${search.toString()}` : "/api/mobile/store"
     return request<MobileStoreOverviewResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  storeProductDetail(token: string, studioProductId: string) {
+    return request<MobileStoreProductDetailResponse>(`/api/mobile/store/products/${studioProductId}`, {
       method: "GET",
       token,
     })

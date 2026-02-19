@@ -192,6 +192,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="store/[productId]"
+        options={{
+          title: "Store Product",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="vault"
         options={{
           title: "The Vault",

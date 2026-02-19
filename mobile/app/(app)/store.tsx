@@ -19,7 +19,15 @@ function formatCurrency(value: number, currencyCode: string) {
   }
 }
 
-function ProductCard({ item, currency }: { item: MobileStoreProductSummary; currency: string }) {
+function ProductCard({
+  item,
+  currency,
+  onViewDetails,
+}: {
+  item: MobileStoreProductSummary
+  currency: string
+  onViewDetails: (studioProductId: string) => void
+}) {
   const title = item.customTitle || item.product.name
   const image = item.product.images?.[0]
 
@@ -42,6 +50,9 @@ function ProductCard({ item, currency }: { item: MobileStoreProductSummary; curr
         <Text style={styles.metaPill}>Order {item.displayOrder}</Text>
         {item.hasCustomLogo ? <Text style={styles.metaPill}>Custom Logo</Text> : null}
       </View>
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -120,6 +131,13 @@ export default function StoreScreen() {
     return "No products found for this store."
   }, [isAllowedRole, trimmedSearch])
 
+  const handleViewDetails = useCallback(
+    (studioProductId: string) => {
+      router.push(`/(app)/store/${studioProductId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -170,7 +188,7 @@ export default function StoreScreen() {
         <FlatList
           data={data?.store.products || []}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ProductCard item={item} currency={currency} />}
+          renderItem={({ item }) => <ProductCard item={item} currency={currency} onViewDetails={handleViewDetails} />}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadStore(true)} />}
           ListEmptyComponent={
@@ -356,6 +374,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  detailsButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   footerSection: {
     borderWidth: 1,
