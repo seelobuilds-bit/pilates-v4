@@ -143,6 +143,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="vault"
+        options={{
+          title: "The Vault",
+          href: null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="folder-open" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="leaderboards"
         options={{
           title: "Leaderboards",
