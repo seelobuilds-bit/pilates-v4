@@ -97,6 +97,13 @@ export default function LocationsScreen() {
     return statusFilter === "active" ? "No active locations yet." : "No locations available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
+  const handleViewLocation = useCallback(
+    (locationId: string) => {
+      router.push(`/(app)/locations/${locationId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -149,7 +156,17 @@ export default function LocationsScreen() {
         <FlatList
           data={locations}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <LocationCard item={item} />}
+          renderItem={({ item }) => (
+            <View style={styles.locationRowWrap}>
+              <LocationCard item={item} />
+              <Pressable
+                style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
+                onPress={() => handleViewLocation(item.id)}
+              >
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+              </Pressable>
+            </View>
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadLocations(true)} />}
           ListEmptyComponent={
@@ -221,6 +238,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingBottom: 24,
   },
+  locationRowWrap: {
+    gap: 6,
+  },
   card: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -276,6 +296,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  viewButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
   },
   errorText: {
     color: mobileTheme.colors.danger,
