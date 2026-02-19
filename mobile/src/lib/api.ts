@@ -5,6 +5,7 @@ import type {
   MobileClassTypesResponse,
   MobileCommunityMessage,
   MobileCommunityResponse,
+  MobileClientDetailResponse,
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
@@ -144,6 +145,13 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/clients?${search.toString()}` : "/api/mobile/clients"
     return request<MobileClientsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  clientDetail(token: string, clientId: string) {
+    return request<MobileClientDetailResponse>(`/api/mobile/clients/${clientId}`, {
       method: "GET",
       token,
     })
