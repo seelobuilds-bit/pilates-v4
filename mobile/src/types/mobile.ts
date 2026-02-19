@@ -31,6 +31,35 @@ export interface MobileBootstrapResponse {
   metrics: Record<string, number>
 }
 
+export type MobileReportMetricFormat = "number" | "currency" | "percent"
+
+export interface MobileReportMetric {
+  id: string
+  label: string
+  value: number
+  previousValue: number
+  changePct: number
+  format: MobileReportMetricFormat
+}
+
+export interface MobileReportHighlight {
+  label: string
+  value: string
+}
+
+export interface MobileReportsResponse {
+  role: MobileRole
+  studio: StudioSummary
+  periodDays: 7 | 30 | 90
+  generatedAt: string
+  range: {
+    start: string
+    end: string
+  }
+  metrics: MobileReportMetric[]
+  highlights: MobileReportHighlight[]
+}
+
 export interface MobileScheduleItem {
   id: string
   bookingId?: string
