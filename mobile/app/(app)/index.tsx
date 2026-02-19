@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "expo-router"
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -37,6 +38,7 @@ function buildQuickActions(features: WorkspaceFeature[]) {
 
 export default function HomeScreen() {
   const { user, bootstrap, refreshBootstrap, loading } = useAuth()
+  const router = useRouter()
   const [openingActionId, setOpeningActionId] = useState<string | null>(null)
   const primaryColor = getStudioPrimaryColor()
 
@@ -51,11 +53,15 @@ export default function HomeScreen() {
   const handleOpenAction = useCallback(async (action: WorkspaceFeature) => {
     setOpeningActionId(action.id)
     try {
+      if (action.target === "native" && action.nativeRoute) {
+        router.push(action.nativeRoute)
+        return
+      }
       await Linking.openURL(toWorkspaceUrl(action.href))
     } finally {
       setOpeningActionId(null)
     }
-  }, [])
+  }, [router])
 
   return (
     <ScrollView
