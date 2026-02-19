@@ -61,11 +61,20 @@ export async function GET(request: NextRequest) {
         name: true,
         subdomain: true,
         primaryColor: true,
+        stripeCurrency: true,
       },
     })
 
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
+    }
+
+    const studioSummary = {
+      id: studio.id,
+      name: studio.name,
+      subdomain: studio.subdomain,
+      primaryColor: studio.primaryColor,
+      currency: studio.stripeCurrency,
     }
 
     const from = parseDateOrFallback(request.nextUrl.searchParams.get("from"), new Date())
@@ -115,7 +124,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         role: decoded.role,
-        studio,
+        studio: studioSummary,
         from: from.toISOString(),
         to: to.toISOString(),
         mode,
@@ -182,7 +191,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         role: "CLIENT",
-        studio,
+        studio: studioSummary,
         from: from.toISOString(),
         to: to.toISOString(),
         mode,
@@ -243,7 +252,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       role: "CLIENT",
-      studio,
+      studio: studioSummary,
       from: from.toISOString(),
       to: to.toISOString(),
       mode,

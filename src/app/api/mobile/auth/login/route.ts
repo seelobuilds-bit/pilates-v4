@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const studio = await db.studio.findUnique({
       where: { subdomain: studioSubdomain },
-      select: { id: true, name: true, subdomain: true, primaryColor: true },
+      select: { id: true, name: true, subdomain: true, primaryColor: true, stripeCurrency: true },
     })
 
     if (!studio) {
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
               name: studio.name,
               subdomain: studio.subdomain,
               primaryColor: studio.primaryColor,
+              currency: studio.stripeCurrency,
             },
           },
         })
@@ -143,6 +144,7 @@ export async function POST(request: NextRequest) {
           name: studio.name,
           subdomain: studio.subdomain,
           primaryColor: studio.primaryColor,
+          currency: studio.stripeCurrency,
         },
       },
     })

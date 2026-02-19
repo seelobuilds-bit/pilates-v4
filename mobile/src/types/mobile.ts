@@ -5,6 +5,7 @@ export interface StudioSummary {
   name: string
   subdomain: string
   primaryColor?: string | null
+  currency?: string | null
 }
 
 export interface MobileSessionUser {

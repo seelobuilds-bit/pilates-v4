@@ -37,11 +37,20 @@ export async function GET(request: NextRequest) {
         name: true,
         subdomain: true,
         primaryColor: true,
+        stripeCurrency: true,
       },
     })
 
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
+    }
+
+    const studioSummary = {
+      id: studio.id,
+      name: studio.name,
+      subdomain: studio.subdomain,
+      primaryColor: studio.primaryColor,
+      currency: studio.stripeCurrency,
     }
 
     if (decoded.role === "CLIENT") {
@@ -57,7 +66,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         role: "CLIENT",
-        studio,
+        studio: studioSummary,
         messages: messages.map((message) => ({
           id: message.id,
           channel: message.channel,
@@ -217,7 +226,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       role: decoded.role,
-      studio,
+      studio: studioSummary,
       conversations,
     })
   } catch (error) {
