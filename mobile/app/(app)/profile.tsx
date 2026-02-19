@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
+import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobilePushCategory } from "@/src/types/mobile"
 
 const PUSH_CATEGORY_OPTIONS: {
@@ -26,6 +27,7 @@ export default function ProfileScreen() {
     updatePushCategoryPreference,
     signOut,
   } = useAuth()
+  const primaryColor = getStudioPrimaryColor()
   const [openingDeletionRequest, setOpeningDeletionRequest] = useState(false)
   const [sendingTestPush, setSendingTestPush] = useState(false)
   const [updatingPushPreference, setUpdatingPushPreference] = useState(false)
@@ -170,13 +172,17 @@ export default function ProfileScreen() {
                 key={option.key}
                 style={[
                   styles.categoryButton,
-                  isEnabled ? styles.categoryButtonEnabled : styles.categoryButtonDisabled,
+                  isEnabled
+                    ? [styles.categoryButtonEnabled, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]
+                    : styles.categoryButtonDisabled,
                   (!pushEnabled || isUpdating) && styles.categoryButtonMuted,
                 ]}
                 onPress={() => void handleTogglePushCategory(option.key, !isEnabled)}
                 disabled={!pushEnabled || isUpdating}
               >
-                <Text style={[styles.categoryButtonLabel, isEnabled ? styles.categoryButtonLabelEnabled : styles.categoryButtonLabelDisabled]}>
+                <Text
+                  style={[styles.categoryButtonLabel, isEnabled ? [styles.categoryButtonLabelEnabled, { color: primaryColor }] : styles.categoryButtonLabelDisabled]}
+                >
                   {isUpdating ? "Updating..." : `${isEnabled ? "On" : "Off"} - ${option.label}`}
                 </Text>
                 <Text style={styles.categoryButtonDescription}>{option.description}</Text>
@@ -220,7 +226,7 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
 
-        <Pressable style={styles.button} onPress={() => void signOut()}>
+        <Pressable style={[styles.button, { backgroundColor: primaryColor }]} onPress={() => void signOut()}>
           <Text style={styles.buttonText}>Sign out</Text>
         </Pressable>
       </View>
@@ -229,9 +235,9 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 10 },
-  title: { fontSize: 24, fontWeight: "700", color: "#0f172a" },
-  row: { color: "#334155" },
+  container: { flex: 1, padding: 16, gap: 10, backgroundColor: mobileTheme.colors.canvas },
+  title: { fontSize: 24, fontWeight: "700", color: mobileTheme.colors.text },
+  row: { color: mobileTheme.colors.textMuted },
   actions: {
     marginTop: 8,
     gap: 8,
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryTitle: {
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
     fontWeight: "700",
   },
   categoryButton: {
@@ -253,11 +259,11 @@ const styles = StyleSheet.create({
   },
   categoryButtonEnabled: {
     backgroundColor: "#eff6ff",
-    borderColor: "#93c5fd",
+    borderColor: mobileTheme.colors.borderMuted,
   },
   categoryButtonDisabled: {
-    backgroundColor: "#f8fafc",
-    borderColor: "#cbd5e1",
+    backgroundColor: mobileTheme.colors.surface,
+    borderColor: mobileTheme.colors.borderMuted,
   },
   categoryButtonMuted: {
     opacity: 0.6,
@@ -266,39 +272,39 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   categoryButtonLabelEnabled: {
-    color: "#1d4ed8",
+    color: mobileTheme.colors.text,
   },
   categoryButtonLabelDisabled: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
   },
   categoryButtonDescription: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
     fontSize: 12,
   },
   categoryHint: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
     fontSize: 12,
   },
   button: {
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: "#1d4ed8",
+    backgroundColor: mobileTheme.colors.text,
     alignItems: "center",
   },
   buttonText: { color: "white", fontWeight: "700" },
   secondaryButton: {
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     alignItems: "center",
   },
   secondaryButtonDisabled: {
     opacity: 0.6,
   },
   secondaryButtonText: {
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
     fontWeight: "700",
   },
 })

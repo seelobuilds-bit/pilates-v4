@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
+import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileConversationSummary, MobileInboxMessage } from "@/src/types/mobile"
 
 function formatTimestamp(iso: string) {
@@ -17,15 +18,17 @@ function formatTimestamp(iso: string) {
 function ConversationCard({
   item,
   onOpen,
+  primaryColor,
 }: {
   item: MobileConversationSummary
   onOpen: (conversation: MobileConversationSummary) => void
+  primaryColor: string
 }) {
   return (
     <Pressable style={styles.card} onPress={() => onOpen(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{item.clientName}</Text>
-        {item.unreadCount > 0 ? <Text style={styles.badge}>{item.unreadCount}</Text> : null}
+        {item.unreadCount > 0 ? <Text style={[styles.badge, { backgroundColor: primaryColor }]}>{item.unreadCount}</Text> : null}
       </View>
       <Text style={styles.cardMeta}>{item.clientEmail}</Text>
       <Text style={styles.cardMeta}>Messages: {item.messageCount}</Text>
@@ -43,14 +46,14 @@ function ConversationCard({
   )
 }
 
-function MessageCard({ item }: { item: MobileInboxMessage }) {
+function MessageCard({ item, primaryColor }: { item: MobileInboxMessage; primaryColor: string }) {
   const inbound = item.direction === "INBOUND"
 
   return (
-    <View style={[styles.card, inbound ? styles.inboundCard : styles.outboundCard]}>
+    <View style={[styles.card, inbound ? styles.inboundCard : [styles.outboundCard, { borderLeftColor: primaryColor }]]}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{inbound ? "Inbound" : "Outbound"}</Text>
-        <Text style={styles.messageChannel}>{item.channel}</Text>
+        <Text style={[styles.messageChannel, { color: primaryColor }]}>{item.channel}</Text>
       </View>
       <Text style={styles.lastMessageTime}>{formatTimestamp(item.createdAt)}</Text>
       <Text style={styles.lastMessageBody}>{item.body}</Text>
@@ -60,6 +63,7 @@ function MessageCard({ item }: { item: MobileInboxMessage }) {
 
 export default function InboxScreen() {
   const { token, user } = useAuth()
+  const primaryColor = getStudioPrimaryColor()
   const [conversations, setConversations] = useState<MobileConversationSummary[]>([])
   const [messages, setMessages] = useState<MobileInboxMessage[]>([])
   const [loading, setLoading] = useState(true)
@@ -245,7 +249,7 @@ export default function InboxScreen() {
         <FlatList
           data={threadMessages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MessageCard item={item} />}
+          renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} />}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={threadLoading} onRefresh={() => void loadThread(activeConversation.clientId)} />}
@@ -254,16 +258,22 @@ export default function InboxScreen() {
         <View style={styles.composerWrap}>
           <View style={styles.channelRow}>
             <Pressable
-              style={[styles.channelButton, channel === "EMAIL" && styles.channelButtonActive]}
+              style={[
+                styles.channelButton,
+                channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
               onPress={() => setChannel("EMAIL")}
             >
-              <Text style={[styles.channelButtonText, channel === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+              <Text style={[styles.channelButtonText, channel === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Email</Text>
             </Pressable>
             <Pressable
-              style={[styles.channelButton, channel === "SMS" && styles.channelButtonActive]}
+              style={[
+                styles.channelButton,
+                channel === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
               onPress={() => setChannel("SMS")}
             >
-              <Text style={[styles.channelButtonText, channel === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+              <Text style={[styles.channelButtonText, channel === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
             </Pressable>
           </View>
 
@@ -285,7 +295,7 @@ export default function InboxScreen() {
           />
 
           <Pressable
-            style={[styles.sendButton, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
+            style={[styles.sendButton, { backgroundColor: primaryColor }, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
             onPress={() => void sendMessage()}
             disabled={sending || !composerText.trim()}
           >
@@ -313,30 +323,43 @@ export default function InboxScreen() {
         {isClient ? (
           <View style={styles.channelRow}>
             <Pressable
-              style={[styles.channelButton, clientChannelFilter === "ALL" && styles.channelButtonActive]}
+              style={[
+                styles.channelButton,
+                clientChannelFilter === "ALL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
               onPress={() => setClientChannelFilter("ALL")}
             >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && styles.channelButtonTextActive]}>All</Text>
+              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>All</Text>
             </Pressable>
             <Pressable
-              style={[styles.channelButton, clientChannelFilter === "EMAIL" && styles.channelButtonActive]}
+              style={[
+                styles.channelButton,
+                clientChannelFilter === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
               onPress={() => setClientChannelFilter("EMAIL")}
             >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+              <Text
+                style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}
+              >
+                Email
+              </Text>
             </Pressable>
             <Pressable
-              style={[styles.channelButton, clientChannelFilter === "SMS" && styles.channelButtonActive]}
+              style={[
+                styles.channelButton,
+                clientChannelFilter === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
               onPress={() => setClientChannelFilter("SMS")}
             >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
             </Pressable>
           </View>
         ) : (
           <Pressable
-            style={[styles.unreadToggle, unreadOnly && styles.unreadToggleActive]}
+            style={[styles.unreadToggle, unreadOnly && [styles.unreadToggleActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setUnreadOnly((prev) => !prev)}
           >
-            <Text style={[styles.unreadToggleText, unreadOnly && styles.unreadToggleTextActive]}>
+            <Text style={[styles.unreadToggleText, unreadOnly && [styles.unreadToggleTextActive, { color: primaryColor }]]}>
               {unreadOnly ? "Unread only: ON" : "Unread only: OFF"}
             </Text>
           </Pressable>
@@ -356,7 +379,7 @@ export default function InboxScreen() {
           <FlatList
             data={filteredMessages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <MessageCard item={item} />}
+            renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} />}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
@@ -365,16 +388,22 @@ export default function InboxScreen() {
           <View style={styles.composerWrap}>
             <View style={styles.channelRow}>
               <Pressable
-                style={[styles.channelButton, channel === "EMAIL" && styles.channelButtonActive]}
+                style={[
+                  styles.channelButton,
+                  channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
                 onPress={() => setChannel("EMAIL")}
               >
-                <Text style={[styles.channelButtonText, channel === "EMAIL" && styles.channelButtonTextActive]}>Email</Text>
+                <Text style={[styles.channelButtonText, channel === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Email</Text>
               </Pressable>
               <Pressable
-                style={[styles.channelButton, channel === "SMS" && styles.channelButtonActive]}
+                style={[
+                  styles.channelButton,
+                  channel === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
                 onPress={() => setChannel("SMS")}
               >
-                <Text style={[styles.channelButtonText, channel === "SMS" && styles.channelButtonTextActive]}>SMS</Text>
+                <Text style={[styles.channelButtonText, channel === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
               </Pressable>
             </View>
 
@@ -396,7 +425,7 @@ export default function InboxScreen() {
             />
 
             <Pressable
-              style={[styles.sendButton, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
+              style={[styles.sendButton, { backgroundColor: primaryColor }, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
               onPress={() => void sendMessage()}
               disabled={sending || !composerText.trim()}
             >
@@ -408,7 +437,7 @@ export default function InboxScreen() {
         <FlatList
           data={filteredConversations}
           keyExtractor={(item) => item.clientId}
-          renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} />}
+          renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} primaryColor={primaryColor} />}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
@@ -423,7 +452,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 8,
-    backgroundColor: "#f8fafc",
+    backgroundColor: mobileTheme.colors.canvas,
   },
   threadHeader: {
     flexDirection: "row",
@@ -432,23 +461,23 @@ const styles = StyleSheet.create({
   },
   backButton: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
   },
   backButtonText: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     fontWeight: "600",
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   subtitle: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     marginBottom: 4,
   },
   filtersWrap: {
@@ -456,32 +485,31 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
   },
   unreadToggle: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 8,
     paddingHorizontal: 11,
     paddingVertical: 7,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
   },
   unreadToggleActive: {
-    borderColor: "#1d4ed8",
-    backgroundColor: "#dbeafe",
+    borderWidth: 1,
   },
   unreadToggleText: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 12,
   },
   unreadToggleTextActive: {
-    color: "#1d4ed8",
+    fontWeight: "700",
   },
   list: {
     flex: 1,
@@ -491,10 +519,10 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: mobileTheme.colors.border,
     padding: 12,
     gap: 4,
   },
@@ -504,7 +532,7 @@ const styles = StyleSheet.create({
   },
   outboundCard: {
     borderLeftWidth: 4,
-    borderLeftColor: "#1d4ed8",
+    borderLeftColor: mobileTheme.colors.text,
   },
   cardHeader: {
     flexDirection: "row",
@@ -514,36 +542,36 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0f172a",
+    color: mobileTheme.colors.text,
   },
   cardMeta: {
-    color: "#475569",
+    color: mobileTheme.colors.textFaint,
   },
   lastMessageTime: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
     fontSize: 12,
   },
   lastMessageBody: {
-    color: "#1e293b",
+    color: mobileTheme.colors.text,
   },
   badge: {
     minWidth: 22,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 11,
-    backgroundColor: "#1d4ed8",
+    backgroundColor: mobileTheme.colors.text,
     color: "white",
     textAlign: "center",
     fontWeight: "700",
     overflow: "hidden",
   },
   messageChannel: {
-    color: "#1d4ed8",
+    color: mobileTheme.colors.text,
     fontWeight: "600",
     fontSize: 12,
   },
   loading: {
-    color: "#475569",
+    color: mobileTheme.colors.textFaint,
   },
   threadLoadingWrap: {
     flexDirection: "row",
@@ -551,17 +579,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   empty: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
   },
   emptyHint: {
-    color: "#64748b",
+    color: mobileTheme.colors.textSubtle,
   },
   error: {
-    color: "#dc2626",
+    color: mobileTheme.colors.danger,
   },
   composerWrap: {
     borderTopWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: mobileTheme.colors.border,
     paddingTop: 10,
     gap: 8,
   },
@@ -571,46 +599,47 @@ const styles = StyleSheet.create({
   },
   channelButton: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
   },
   channelButtonActive: {
-    borderColor: "#1d4ed8",
-    backgroundColor: "#dbeafe",
+    borderWidth: 1,
   },
   channelButtonText: {
-    color: "#334155",
+    color: mobileTheme.colors.textMuted,
     fontWeight: "600",
   },
   channelButtonTextActive: {
-    color: "#1d4ed8",
+    fontWeight: "700",
   },
   subjectInput: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
+    color: mobileTheme.colors.text,
   },
   messageInput: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "white",
+    backgroundColor: mobileTheme.colors.surface,
     minHeight: 80,
     textAlignVertical: "top",
+    color: mobileTheme.colors.text,
   },
   sendButton: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
-    backgroundColor: "#1d4ed8",
+    backgroundColor: mobileTheme.colors.text,
     paddingVertical: 12,
   },
   sendButtonDisabled: {
