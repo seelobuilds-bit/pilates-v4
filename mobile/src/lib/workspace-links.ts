@@ -20,6 +20,7 @@ export type NativeAppRoute =
   | "/(app)/vault"
   | "/(app)/community"
   | "/(app)/marketing"
+  | "/(app)/social"
 
 export type WorkspaceFeature = {
   id: string
@@ -74,7 +75,7 @@ function teacherFeatures(): WorkspaceFeature[] {
     { id: "teacher-clients", label: "Clients", description: "Client progress and notes", icon: "people-outline", target: "native", nativeRoute: "/(app)/people", group: "People" },
     { id: "teacher-inbox", label: "Inbox", description: "Client communication", icon: "mail-open-outline", target: "native", nativeRoute: "/(app)/inbox", group: "People" },
     { id: "teacher-community", label: "Community", description: "Community activity", icon: "chatbubbles-outline", target: "native", nativeRoute: "/(app)/community", group: "People" },
-    { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "web", href: "/teacher/social", group: "Growth" },
+    { id: "teacher-social", label: "Social Media", description: "Social planning and tracking", icon: "images-outline", target: "native", nativeRoute: "/(app)/social", group: "Growth" },
     { id: "teacher-leaderboards", label: "Leaderboards", description: "Performance ranking", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "teacher-invoices", label: "Invoices", description: "Invoice records", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
     { id: "teacher-vault", label: "The Vault", description: "Training resources", icon: "folder-open-outline", target: "native", nativeRoute: "/(app)/vault", group: "Content" },

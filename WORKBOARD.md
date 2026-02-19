@@ -86,10 +86,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-181 Mobile native vault surface | codex-main | codex/t-181-mobile-native-vault-surface | Add role-aware mobile vault API + native Vault screen and route owner/teacher workspace Vault action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/98 |
 | T-182 Mobile native community surface | codex-main | codex/t-182-mobile-native-community-surface | Add role-aware mobile community chat API + native Community screen and route owner/teacher workspace Community action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/99 |
 | T-183 Mobile native marketing overview | codex-main | codex/t-183-mobile-native-marketing-overview | Add owner-only mobile marketing overview API + native Marketing screen and route owner workspace Marketing action in-app | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/100 |
-| T-184 Mobile settings native handoff | codex-main | codex/t-184-mobile-settings-native-handoff | Route owner/teacher workspace Settings action to native Profile surface to reduce web handoffs | In Progress | TBD |
+| T-184 Mobile settings native handoff | codex-main | codex/t-184-mobile-settings-native-handoff | Route owner/teacher workspace Settings action to native Profile surface to reduce web handoffs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/101 |
+| T-185 Mobile teacher social overview | codex-main | codex/t-185-mobile-teacher-social-overview | Add role-aware mobile social overview API + native Social screen and route teacher workspace Social Media action in-app | In Progress | TBD |
 
 ## Merge Order
-1. T-184 Mobile settings native handoff
+1. T-185 Mobile teacher social overview
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

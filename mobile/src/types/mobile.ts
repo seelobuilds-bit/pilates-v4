@@ -366,6 +366,108 @@ export interface MobileMarketingResponse {
   automations: MobileMarketingAutomationSummary[]
 }
 
+export type MobileSocialPlatform = "INSTAGRAM" | "TIKTOK"
+export type MobileSocialRole = "OWNER" | "TEACHER"
+
+export interface MobileSocialAccountSummary {
+  id: string
+  platform: MobileSocialPlatform
+  username: string
+  displayName: string | null
+  followerCount: number
+  isActive: boolean
+  lastSyncedAt: string | null
+  flowCount: number
+  messageCount: number
+}
+
+export interface MobileSocialFlowSummary {
+  id: string
+  name: string
+  triggerType: string
+  isActive: boolean
+  totalTriggered: number
+  totalBooked: number
+  updatedAt: string
+  account: {
+    id: string
+    platform: MobileSocialPlatform
+    username: string
+  }
+}
+
+export interface MobileSocialTrackingLinkSummary {
+  id: string
+  code: string
+  campaign: string | null
+  source: string
+  medium: string
+  clicks: number
+  conversions: number
+  revenue: number
+  fullTrackingUrl: string
+  createdAt: string
+}
+
+export interface MobileSocialResponse {
+  role: MobileSocialRole
+  studio: StudioSummary
+  filters: {
+    search: string
+  }
+  stats: {
+    totalAccounts: number
+    activeFlows: number
+    unreadMessages: number
+    unreadConversations: number
+    totalTrackingClicks: number
+    totalTrackingConversions: number
+    totalTrackingRevenue: number
+  }
+  accounts: MobileSocialAccountSummary[]
+  flows: MobileSocialFlowSummary[]
+  trackingLinks: MobileSocialTrackingLinkSummary[]
+  homework: {
+    active: {
+      id: string
+      status: string
+      isCompleted: boolean
+      startedAt: string
+      completedAt: string | null
+      progress: Record<string, number>
+      trackingCode: string | null
+      fullTrackingUrl: string | null
+      homework: {
+        id: string
+        title: string
+        points: number
+        moduleTitle: string
+        categoryName: string
+      }
+    } | null
+    totals: {
+      submissions: number
+      active: number
+      completed: number
+    }
+  }
+  training: {
+    totalModules: number
+    completedModules: number
+    averageWatchedPercent: number
+  }
+  trending: {
+    id: string
+    platform: MobileSocialPlatform
+    creatorUsername: string
+    category: string | null
+    contentStyle: string | null
+    viewCount: number
+    engagementRate: number
+    postUrl: string
+  }[]
+}
+
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
 
 export interface MobileLeaderboardParticipant {
