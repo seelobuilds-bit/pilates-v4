@@ -91,6 +91,10 @@ export default function PeopleScreen() {
     return "No clients available yet."
   }, [isAllowedRole, trimmedSearch])
 
+  const handleMessageClient = useCallback((clientId: string) => {
+    router.push({ pathname: "/(app)/inbox", params: { clientId } })
+  }, [router])
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -118,7 +122,17 @@ export default function PeopleScreen() {
         <FlatList
           data={clients}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ClientCard item={item} />}
+          renderItem={({ item }) => (
+            <View style={styles.clientRowWrap}>
+              <ClientCard item={item} />
+              <Pressable
+                style={[styles.messageButton, { borderColor: withOpacity(primaryColor, 0.45), backgroundColor: withOpacity(primaryColor, 0.11) }]}
+                onPress={() => handleMessageClient(item.id)}
+              >
+                <Text style={[styles.messageButtonText, { color: primaryColor }]}>Message</Text>
+              </Pressable>
+            </View>
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadClients(true)} />}
           ListEmptyComponent={
@@ -167,6 +181,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
     gap: 8,
+  },
+  clientRowWrap: {
+    gap: 6,
   },
   card: {
     borderWidth: 1,
@@ -224,6 +241,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  messageButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  messageButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
   },
   errorText: {
     color: mobileTheme.colors.danger,

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -62,6 +63,8 @@ function MessageCard({ item, primaryColor }: { item: MobileInboxMessage; primary
 }
 
 export default function InboxScreen() {
+  const router = useRouter()
+  const params = useLocalSearchParams<{ clientId?: string | string[] }>()
   const { token, user } = useAuth()
   const primaryColor = getStudioPrimaryColor()
   const [conversations, setConversations] = useState<MobileConversationSummary[]>([])
@@ -82,9 +85,15 @@ export default function InboxScreen() {
   const [search, setSearch] = useState("")
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [clientChannelFilter, setClientChannelFilter] = useState<"ALL" | "EMAIL" | "SMS">("ALL")
+  const handledRouteClientIdRef = useRef<string | null>(null)
 
   const isClient = useMemo(() => user?.role === "CLIENT", [user?.role])
   const searchNormalized = search.trim().toLowerCase()
+  const routeClientId = useMemo(() => {
+    const raw = params.clientId
+    if (Array.isArray(raw)) return raw[0] || null
+    return raw || null
+  }, [params.clientId])
 
   const filteredConversations = useMemo(() => {
     return conversations.filter((conversation) => {
@@ -223,6 +232,25 @@ export default function InboxScreen() {
   useEffect(() => {
     void loadInbox()
   }, [loadInbox])
+
+  useEffect(() => {
+    if (isClient || !routeClientId || conversations.length === 0) {
+      return
+    }
+
+    if (handledRouteClientIdRef.current === routeClientId) {
+      return
+    }
+
+    const matched = conversations.find((conversation) => conversation.clientId === routeClientId)
+    if (!matched) {
+      return
+    }
+
+    handledRouteClientIdRef.current = routeClientId
+    openConversation(matched)
+    router.replace("/(app)/inbox")
+  }, [conversations, isClient, openConversation, routeClientId, router])
 
   if (!isClient && activeConversation) {
     return (
