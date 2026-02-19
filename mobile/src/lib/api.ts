@@ -6,6 +6,7 @@ import type {
   MobileInboxResponse,
   MobileInboxThreadResponse,
   MobileInvoicesResponse,
+  MobileLeaderboardsResponse,
   MobileLoginResponse,
   MobileLocationsResponse,
   MobilePushRegisterParams,
@@ -167,6 +168,16 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/invoices?${search.toString()}` : "/api/mobile/invoices"
     return request<MobileInvoicesResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  leaderboards(token: string, params?: { type?: "STUDIO" | "TEACHER" }) {
+    const search = new URLSearchParams()
+    if (params?.type) search.set("type", params.type)
+    const path = search.size ? `/api/mobile/leaderboards?${search.toString()}` : "/api/mobile/leaderboards"
+    return request<MobileLeaderboardsResponse>(path, {
       method: "GET",
       token,
     })

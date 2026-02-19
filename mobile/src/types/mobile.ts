@@ -234,6 +234,58 @@ export interface MobileInvoicesResponse {
   stats: MobileInvoiceStats
 }
 
+export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
+
+export interface MobileLeaderboardParticipant {
+  id: string
+  name: string
+  subdomain?: string
+  studioId?: string
+}
+
+export interface MobileLeaderboardEntry {
+  id: string
+  studioId: string | null
+  teacherId: string | null
+  score: number
+  rank: number | null
+  previousRank: number | null
+  lastUpdated: string
+  participant: MobileLeaderboardParticipant | null
+}
+
+export interface MobileLeaderboardPeriod {
+  id: string
+  name: string
+  startDate: string
+  endDate: string
+  totalEntries: number
+  entries: MobileLeaderboardEntry[]
+}
+
+export interface MobileLeaderboardSummary {
+  id: string
+  name: string
+  description: string | null
+  category: string
+  participantType: MobileLeaderboardParticipantType
+  timeframe: string
+  metricName: string
+  metricUnit: string | null
+  color: string | null
+  icon: string | null
+  isFeatured: boolean
+  currentPeriod: MobileLeaderboardPeriod | null
+}
+
+export interface MobileLeaderboardsResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  participantType: MobileLeaderboardParticipantType
+  leaderboards: MobileLeaderboardSummary[]
+  myRanks: Record<string, { rank: number; score: number } | null>
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 
