@@ -399,6 +399,66 @@ export interface MobileClassFlowsResponse {
   recentRequests: MobileTrainingRequestSummary[]
 }
 
+export interface MobileStoreProductSummary {
+  id: string
+  price: number
+  compareAtPrice: number | null
+  isActive: boolean
+  hasCustomLogo: boolean
+  customTitle: string | null
+  displayOrder: number
+  product: {
+    id: string
+    name: string
+    category: string
+    images: string[]
+    suggestedRetail: number
+    inStock: boolean
+  }
+}
+
+export interface MobileStoreOrderSummary {
+  id: string
+  orderNumber: string
+  status: string
+  paymentStatus: string
+  total: number
+  customerName: string
+  createdAt: string
+}
+
+export interface MobileStoreSampleOrderSummary {
+  id: string
+  status: string
+  total: number
+  createdAt: string
+}
+
+export interface MobileStoreOverviewResponse {
+  role: "OWNER"
+  studio: StudioSummary
+  subdomain: string
+  filters: {
+    search: string
+    status: "active" | "all"
+  }
+  store: {
+    isEnabled: boolean
+    storeName: string
+    storeDescription: string | null
+    accentColor: string | null
+    products: MobileStoreProductSummary[]
+    orders: MobileStoreOrderSummary[]
+    sampleOrders: MobileStoreSampleOrderSummary[]
+  }
+  stats: {
+    totalProducts: number
+    activeProducts: number
+    pendingOrders: number
+    totalRevenue: number
+  }
+}
+
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
 export type MobilePushCategory = "INBOX" | "BOOKINGS" | "SYSTEM"
 

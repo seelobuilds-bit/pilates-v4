@@ -16,6 +16,7 @@ export type NativeAppRoute =
   | "/(app)/leaderboards"
   | "/(app)/class-flows"
   | "/(app)/payments"
+  | "/(app)/store"
 
 export type WorkspaceFeature = {
   id: string
@@ -55,7 +56,7 @@ function ownerFeatures(): WorkspaceFeature[] {
     { id: "owner-leaderboards", label: "Leaderboards", description: "Studio rankings and goals", icon: "trophy-outline", target: "native", nativeRoute: "/(app)/leaderboards", group: "Growth" },
     { id: "owner-payments", label: "Payments", description: "Transaction history", icon: "card-outline", target: "native", nativeRoute: "/(app)/payments", group: "Commerce" },
     { id: "owner-invoices", label: "Invoices", description: "Invoice tracking", icon: "receipt-outline", target: "native", nativeRoute: "/(app)/invoices", group: "Commerce" },
-    { id: "owner-store", label: "Store", description: "Products and offers", icon: "bag-handle-outline", target: "web", href: "/studio/store", group: "Commerce" },
+    { id: "owner-store", label: "Store", description: "Products and offers", icon: "bag-handle-outline", target: "native", nativeRoute: "/(app)/store", group: "Commerce" },
     { id: "owner-vault", label: "The Vault", description: "Courses and media", icon: "folder-open-outline", target: "web", href: "/studio/vault", group: "Content" },
     { id: "owner-settings", label: "Settings", description: "Studio preferences", icon: "settings-outline", target: "web", href: "/studio/settings", group: "Settings" },
   ]

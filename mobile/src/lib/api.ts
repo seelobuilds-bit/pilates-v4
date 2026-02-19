@@ -15,6 +15,7 @@ import type {
   MobilePushStatus,
   MobileScheduleResponse,
   MobileSessionUser,
+  MobileStoreOverviewResponse,
   MobileTeachersResponse,
 } from "@/src/types/mobile"
 
@@ -231,6 +232,17 @@ export const mobileApi = {
     if (params?.status) search.set("status", params.status)
     const path = search.size ? `/api/mobile/payments?${search.toString()}` : "/api/mobile/payments"
     return request<MobilePaymentsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  store(token: string, params?: { search?: string; status?: "active" | "all" }) {
+    const search = new URLSearchParams()
+    if (params?.search) search.set("search", params.search)
+    if (params?.status) search.set("status", params.status)
+    const path = search.size ? `/api/mobile/store?${search.toString()}` : "/api/mobile/store"
+    return request<MobileStoreOverviewResponse>(path, {
       method: "GET",
       token,
     })
