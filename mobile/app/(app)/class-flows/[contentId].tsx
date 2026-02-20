@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -36,6 +36,8 @@ export default function ClassFlowContentDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [progressDraft, setProgressDraft] = useState(0)
+  const [notesDraft, setNotesDraft] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   const resolvedContentId = useMemo(() => String(contentId || "").trim(), [contentId])
@@ -70,12 +72,27 @@ export default function ClassFlowContentDetailScreen() {
     void loadContent()
   }, [loadContent])
 
-  const handleMarkComplete = useCallback(async () => {
+  useEffect(() => {
+    if (!data) return
+    setProgressDraft(data.progress?.progressPercent ?? 0)
+    setNotesDraft(data.progress?.notes ?? "")
+  }, [data])
+
+  const handleSaveProgress = useCallback(async (overrideProgress?: number) => {
     if (!token || !resolvedContentId || !data?.permissions.canUpdateProgress) return
+
+    const nextProgressRaw = typeof overrideProgress === "number" ? overrideProgress : progressDraft
+    const nextProgress = Math.max(0, Math.min(100, Math.round(nextProgressRaw)))
+    const nextNotes = notesDraft.trim()
+
     setSaving(true)
     setError(null)
     try {
-      await mobileApi.updateClassFlowProgress(token, resolvedContentId, { isCompleted: true, progressPercent: 100 })
+      await mobileApi.updateClassFlowProgress(token, resolvedContentId, {
+        progressPercent: nextProgress,
+        isCompleted: nextProgress >= 100,
+        notes: nextNotes.length ? nextNotes : null,
+      })
       await loadContent(true)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update progress"
@@ -83,7 +100,7 @@ export default function ClassFlowContentDetailScreen() {
     } finally {
       setSaving(false)
     }
-  }, [data?.permissions.canUpdateProgress, loadContent, resolvedContentId, token])
+  }, [data?.permissions.canUpdateProgress, loadContent, notesDraft, progressDraft, resolvedContentId, token])
 
   const openResource = useCallback(async (url: string | null) => {
     if (!url) return
@@ -186,10 +203,54 @@ export default function ClassFlowContentDetailScreen() {
               <Text style={styles.rowValue}>{formatDateTime(data.progress?.completedAt || null)}</Text>
             </View>
             {data.progress?.notes ? <Text style={styles.metaText}>Notes: {data.progress.notes}</Text> : null}
-            {isTeacher && data.permissions.canUpdateProgress && !completed ? (
-              <Pressable style={[styles.solidButton, { backgroundColor: primaryColor }]} onPress={() => void handleMarkComplete()} disabled={saving}>
-                <Text style={styles.solidButtonText}>{saving ? "Saving..." : "Mark complete"}</Text>
-              </Pressable>
+            {isTeacher && data.permissions.canUpdateProgress ? (
+              <>
+                <Text style={styles.rowLabel}>Set progress</Text>
+                <View style={styles.progressChipRow}>
+                  {[0, 25, 50, 75, 100].map((value) => {
+                    const selected = value === progressDraft
+                    return (
+                      <Pressable
+                        key={value}
+                        style={[
+                          styles.progressChip,
+                          selected ? { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) } : null,
+                        ]}
+                        onPress={() => setProgressDraft(value)}
+                        disabled={saving}
+                      >
+                        <Text style={[styles.progressChipText, selected ? { color: primaryColor } : null]}>{value}%</Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+                <TextInput
+                  value={notesDraft}
+                  onChangeText={setNotesDraft}
+                  placeholder="Add private teaching notes..."
+                  multiline
+                  style={styles.notesInput}
+                  editable={!saving}
+                />
+                <View style={styles.buttonRow}>
+                  <Pressable
+                    style={[styles.outlineButton, saving && styles.disabledButton]}
+                    onPress={() => void handleSaveProgress()}
+                    disabled={saving}
+                  >
+                    <Text style={styles.outlineButtonText}>{saving ? "Saving..." : "Save progress"}</Text>
+                  </Pressable>
+                  {!completed ? (
+                    <Pressable
+                      style={[styles.solidButton, { backgroundColor: primaryColor }, saving && styles.disabledButton]}
+                      onPress={() => void handleSaveProgress(100)}
+                      disabled={saving}
+                    >
+                      <Text style={styles.solidButtonText}>Mark complete</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </>
             ) : null}
           </View>
 
@@ -321,6 +382,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
+  progressChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  progressChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  progressChipText: {
+    color: mobileTheme.colors.textSubtle,
+    fontWeight: "700",
+    fontSize: 12,
+  },
   buttonRow: {
     flexDirection: "row",
     gap: 8,
@@ -339,6 +418,17 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 12,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    color: mobileTheme.colors.text,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    minHeight: 72,
+    textAlignVertical: "top",
   },
   solidButton: {
     borderRadius: mobileTheme.radius.lg,
