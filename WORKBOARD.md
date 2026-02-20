@@ -104,10 +104,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-199 Mobile marketing campaign detail view | codex-main | codex/t-199-mobile-marketing-campaign-detail-view | Add mobile marketing campaign detail API + screen and wire campaign cards to native per-campaign detail with delivery/open/click stats and recent message outcomes | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/116 |
 | T-200 Mobile marketing automation detail view | codex-main | codex/t-200-mobile-marketing-automation-detail-view | Add mobile marketing automation detail API + screen and wire automation cards to native per-automation detail with step timing, trigger rules, and recent message outcomes | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/117 |
 | T-201 Mobile social flow detail view | codex-main | codex/t-201-mobile-social-flow-detail-view | Add mobile social flow detail API + screen and wire Social flow cards to native per-flow detail with trigger configuration, conversion funnel, and recent events | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/118 |
-| T-202 Mobile class flow content detail view | codex-main | codex/t-202-mobile-class-flow-content-detail-view | Add mobile class flow content detail API + screen and wire Class Flows cards to native per-content detail with resource availability, progress timeline, and related training requests | In Progress | TBD |
+| T-202 Mobile class flow content detail view | codex-main | codex/t-202-mobile-class-flow-content-detail-view | Add mobile class flow content detail API + screen and wire Class Flows cards to native per-content detail with resource availability, progress timeline, and related training requests | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/119 |
+| T-203 Mobile leaderboard detail view | codex-main | codex/t-203-mobile-leaderboard-detail-view | Add mobile leaderboard detail API + screen and wire Leaderboards cards to native per-leaderboard detail with active period rankings, period history, and participant trend context | In Progress | TBD |
 
 ## Merge Order
-1. T-202 Mobile class flow content detail view
+1. T-203 Mobile leaderboard detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

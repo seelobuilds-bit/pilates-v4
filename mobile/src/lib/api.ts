@@ -13,6 +13,7 @@ import type {
   MobileInboxThreadResponse,
   MobileInvoiceDetailResponse,
   MobileInvoicesResponse,
+  MobileLeaderboardDetailResponse,
   MobileLeaderboardsResponse,
   MobileLoginResponse,
   MobileLocationsResponse,
@@ -424,6 +425,13 @@ export const mobileApi = {
     if (params?.type) search.set("type", params.type)
     const path = search.size ? `/api/mobile/leaderboards?${search.toString()}` : "/api/mobile/leaderboards"
     return request<MobileLeaderboardsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  leaderboardDetail(token: string, leaderboardId: string) {
+    return request<MobileLeaderboardDetailResponse>(`/api/mobile/leaderboards/${leaderboardId}`, {
       method: "GET",
       token,
     })
