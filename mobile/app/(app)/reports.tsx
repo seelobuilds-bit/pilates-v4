@@ -147,6 +147,7 @@ export default function ReportsScreen() {
     if (metricOrder === "default") return filtered
     return [...filtered].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
   }, [data?.metrics, metricOrder, metricTrendFilter])
+  const hasCustomView = metricOrder !== "default" || metricTrendFilter !== "all"
 
   const openWebReports = useCallback(async () => {
     const target = user?.role === "TEACHER" ? "/teacher/reports" : "/studio/reports"
@@ -216,6 +217,17 @@ export default function ReportsScreen() {
               )
             })}
           </View>
+          {hasCustomView ? (
+            <Pressable
+              style={styles.resetViewButton}
+              onPress={() => {
+                setMetricOrder("default")
+                setMetricTrendFilter("all")
+              }}
+            >
+              <Text style={[styles.resetViewButtonText, { color: primaryColor }]}>Reset view</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -394,6 +406,20 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     color: mobileTheme.colors.textSubtle,
+    fontWeight: "700",
+    fontSize: 11,
+  },
+  resetViewButton: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 2,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  resetViewButtonText: {
     fontWeight: "700",
     fontSize: 11,
   },
