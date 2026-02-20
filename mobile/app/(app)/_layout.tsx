@@ -86,6 +86,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="reports/[metricId]"
+        options={{
+          title: "Metric",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="people"
         options={{
           title: "People",

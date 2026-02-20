@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "expo-router"
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -51,6 +52,7 @@ function changeBadge(metric: MobileReportMetric) {
 }
 
 export default function ReportsScreen() {
+  const router = useRouter()
   const { token, user } = useAuth()
   const primaryColor = getStudioPrimaryColor()
   const [days, setDays] = useState<7 | 30 | 90>(30)
@@ -145,14 +147,19 @@ export default function ReportsScreen() {
               {data.metrics.map((metric) => {
                 const badge = changeBadge(metric)
                 return (
-                  <View key={metric.id} style={styles.metricCard}>
+                  <Pressable
+                    key={metric.id}
+                    style={styles.metricCard}
+                    onPress={() => router.push(`/(app)/reports/${metric.id}?days=${days}` as never)}
+                  >
                     <View style={styles.metricHeader}>
                       <Text style={styles.metricLabel}>{metric.label}</Text>
                       <Text style={[styles.changeBadge, { backgroundColor: badge.backgroundColor, color: badge.color }]}>{badge.label}</Text>
                     </View>
                     <Text style={styles.metricValue}>{formatMetricValue(metric, currency)}</Text>
                     <Text style={styles.metricPrevious}>Prev {formatPreviousValue(metric, currency)}</Text>
-                  </View>
+                    <Text style={styles.metricHint}>View detail</Text>
+                  </Pressable>
                 )
               })}
             </View>
@@ -272,6 +279,12 @@ const styles = StyleSheet.create({
   metricPrevious: {
     color: mobileTheme.colors.textMuted,
     fontSize: 11,
+  },
+  metricHint: {
+    marginTop: 4,
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 11,
+    fontWeight: "700",
   },
   sectionCard: {
     borderWidth: 1,
