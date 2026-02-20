@@ -95,6 +95,16 @@ export default function ReportMetricDetailScreen() {
   const currency = data?.studio.currency || user?.studio.currency || "usd"
   const metric = useMemo(() => data?.metrics.find((item) => item.id === resolvedMetricId) || null, [data?.metrics, resolvedMetricId])
   const badge = metric ? changeBadge(metric) : null
+  const metricSeries = useMemo(() => {
+    if (!data || !metric) return []
+    return data.series.map((point) => {
+      const value = point.metrics[metric.id] ?? 0
+      return {
+        label: point.label,
+        value,
+      }
+    })
+  }, [data, metric])
 
   return (
     <ScrollView
@@ -145,6 +155,22 @@ export default function ReportMetricDetailScreen() {
             <Text style={styles.metaText}>Window: {formatDate(data.range.start)} - {formatDate(data.range.end)}</Text>
             <Text style={styles.metaText}>Generated: {formatDate(data.generatedAt)}</Text>
             <Text style={styles.metaText}>Role: {data.role}</Text>
+          </View>
+
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Trend</Text>
+            {metricSeries.length === 0 ? (
+              <Text style={styles.metaText}>No trend points available for this period.</Text>
+            ) : (
+              metricSeries.map((point, index) => (
+                <View key={`${point.label}-${index}`} style={styles.trendRow}>
+                  <Text style={styles.trendLabel}>{point.label}</Text>
+                  <Text style={styles.trendValue}>
+                    {formatMetricValue({ ...metric, value: point.value }, currency)}
+                  </Text>
+                </View>
+              ))
+            )}
           </View>
 
           <View style={styles.sectionCard}>
@@ -273,6 +299,24 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "600",
     fontSize: 13,
+  },
+  trendRow: {
+    borderTopWidth: 1,
+    borderTopColor: mobileTheme.colors.borderMuted,
+    paddingTop: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  trendLabel: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 12,
+  },
+  trendValue: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,

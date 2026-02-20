@@ -47,6 +47,13 @@ export interface MobileReportHighlight {
   value: string
 }
 
+export interface MobileReportSeriesPoint {
+  label: string
+  start: string
+  end: string
+  metrics: Record<string, number>
+}
+
 export interface MobileReportsResponse {
   role: MobileRole
   studio: StudioSummary
@@ -58,6 +65,7 @@ export interface MobileReportsResponse {
   }
   metrics: MobileReportMetric[]
   highlights: MobileReportHighlight[]
+  series: MobileReportSeriesPoint[]
 }
 
 export interface MobileScheduleItem {
