@@ -51,7 +51,13 @@ function CampaignCard({
   )
 }
 
-function AutomationCard({ item }: { item: MobileMarketingAutomationSummary }) {
+function AutomationCard({
+  item,
+  onViewDetails,
+}: {
+  item: MobileMarketingAutomationSummary
+  onViewDetails: (automationId: string) => void
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -70,6 +76,9 @@ function AutomationCard({ item }: { item: MobileMarketingAutomationSummary }) {
         <Text style={styles.metaPill}>Clicked {item.totalClicked}</Text>
       </View>
       <Text style={styles.metaText}>Updated {formatDate(item.updatedAt)}</Text>
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -137,6 +146,13 @@ export default function MarketingScreen() {
     [router]
   )
 
+  const handleViewAutomationDetails = useCallback(
+    (automationId: string) => {
+      router.push(`/(app)/marketing/automations/${automationId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -179,7 +195,7 @@ export default function MarketingScreen() {
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Automations</Text>
-                {data.automations.length > 0 ? data.automations.map((automation) => <AutomationCard key={automation.id} item={automation} />) : <Text style={styles.metaText}>No automations found.</Text>}
+                {data.automations.length > 0 ? data.automations.map((automation) => <AutomationCard key={automation.id} item={automation} onViewDetails={handleViewAutomationDetails} />) : <Text style={styles.metaText}>No automations found.</Text>}
               </View>
             </>
           ) : (

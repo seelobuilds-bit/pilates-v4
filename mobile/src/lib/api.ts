@@ -18,6 +18,7 @@ import type {
   MobileLocationDetailResponse,
   MobileMarketingResponse,
   MobileMarketingCampaignDetailResponse,
+  MobileMarketingAutomationDetailResponse,
   MobilePaymentsResponse,
   MobilePaymentDetailResponse,
   MobilePushRegisterParams,
@@ -213,6 +214,13 @@ export const mobileApi = {
 
   marketingCampaignDetail(token: string, campaignId: string) {
     return request<MobileMarketingCampaignDetailResponse>(`/api/mobile/marketing/campaigns/${campaignId}`, {
+      method: "GET",
+      token,
+    })
+  },
+
+  marketingAutomationDetail(token: string, automationId: string) {
+    return request<MobileMarketingAutomationDetailResponse>(`/api/mobile/marketing/automations/${automationId}`, {
       method: "GET",
       token,
     })
