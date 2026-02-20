@@ -367,3 +367,100 @@ export async function GET(
     return NextResponse.json({ error: "Failed to load vault course detail" }, { status: 500 })
   }
 }
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ courseId: string }> }
+) {
+  try {
+    const token = extractBearerToken(request.headers.get("authorization"))
+    if (!token) {
+      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    }
+
+    const decoded = verifyMobileToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    if (decoded.role !== "OWNER") {
+      return NextResponse.json({ error: "Course publishing is available for studio owner accounts only" }, { status: 403 })
+    }
+
+    const studio = await db.studio.findUnique({
+      where: { id: decoded.studioId },
+      select: {
+        id: true,
+        subdomain: true,
+      },
+    })
+
+    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
+    }
+
+    const payload = await request.json().catch(() => null)
+    const action = payload?.action
+    if (action !== "publish" && action !== "unpublish") {
+      return NextResponse.json({ error: "Invalid action. Use publish or unpublish." }, { status: 400 })
+    }
+
+    const { courseId } = await params
+    const course = await db.vaultCourse.findFirst({
+      where: {
+        id: courseId,
+        studioId: studio.id,
+      },
+      select: {
+        id: true,
+        isPublished: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    })
+
+    if (!course) {
+      return NextResponse.json({ error: "Vault course not found" }, { status: 404 })
+    }
+
+    const nextPublished = action === "publish"
+    if (course.isPublished === nextPublished) {
+      return NextResponse.json({
+        success: true,
+        course: {
+          id: course.id,
+          isPublished: course.isPublished,
+          publishedAt: course.publishedAt?.toISOString() || null,
+          updatedAt: course.updatedAt.toISOString(),
+        },
+      })
+    }
+
+    const updatedCourse = await db.vaultCourse.update({
+      where: { id: course.id },
+      data: {
+        isPublished: nextPublished,
+        publishedAt: nextPublished && !course.isPublished ? new Date() : course.publishedAt,
+      },
+      select: {
+        id: true,
+        isPublished: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      course: {
+        id: updatedCourse.id,
+        isPublished: updatedCourse.isPublished,
+        publishedAt: updatedCourse.publishedAt?.toISOString() || null,
+        updatedAt: updatedCourse.updatedAt.toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error("Mobile vault course publish action error:", error)
+    return NextResponse.json({ error: "Failed to update vault course status" }, { status: 500 })
+  }
+}

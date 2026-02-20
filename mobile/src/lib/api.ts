@@ -40,6 +40,8 @@ import type {
   MobileTeachersResponse,
   MobileTeacherDetailResponse,
   MobileVaultAudience,
+  MobileVaultCoursePublishAction,
+  MobileVaultCoursePublishActionResponse,
   MobileVaultCourseDetailResponse,
   MobileVaultResponse,
 } from "@/src/types/mobile"
@@ -441,6 +443,14 @@ export const mobileApi = {
     return request<MobileVaultCourseDetailResponse>(`/api/mobile/vault/courses/${courseId}`, {
       method: "GET",
       token,
+    })
+  },
+
+  vaultCoursePublish(token: string, courseId: string, action: MobileVaultCoursePublishAction) {
+    return request<MobileVaultCoursePublishActionResponse>(`/api/mobile/vault/courses/${courseId}`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ action }),
     })
   },
 

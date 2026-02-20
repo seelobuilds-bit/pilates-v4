@@ -1413,6 +1413,7 @@ export interface MobileStoreProductDetailResponse {
 export type MobileVaultAudience = "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
 export type MobileVaultPricingType = "FREE" | "ONE_TIME" | "SUBSCRIPTION" | "BUNDLE"
 export type MobileVaultStatus = "all" | "published" | "draft"
+export type MobileVaultCoursePublishAction = "publish" | "unpublish"
 
 export interface MobileVaultCourseSummary {
   id: string
@@ -1555,6 +1556,16 @@ export interface MobileVaultCourseDetailResponse {
       email: string
     }
   }[]
+}
+
+export interface MobileVaultCoursePublishActionResponse {
+  success: boolean
+  course: {
+    id: string
+    isPublished: boolean
+    publishedAt: string | null
+    updatedAt: string
+  }
 }
 
 export type MobilePushPlatform = "IOS" | "ANDROID" | "WEB" | "UNKNOWN"
