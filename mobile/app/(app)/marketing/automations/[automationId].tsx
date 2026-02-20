@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -34,6 +34,7 @@ export default function MarketingAutomationDetailScreen() {
   const [data, setData] = useState<MobileMarketingAutomationDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const resolvedAutomationId = useMemo(() => String(automationId || "").trim(), [automationId])
@@ -68,6 +69,58 @@ export default function MarketingAutomationDetailScreen() {
     void loadAutomation()
   }, [loadAutomation])
 
+  const statusAction = useMemo(() => {
+    if (!data?.automation) {
+      return null
+    }
+
+    if (data.automation.status === "ACTIVE") {
+      return {
+        action: "pause" as const,
+        label: "Pause Automation",
+        hint: "Stops new sends while keeping the sequence and stats.",
+      }
+    }
+
+    if (data.automation.status === "PAUSED" || data.automation.status === "DRAFT") {
+      return {
+        action: "activate" as const,
+        label: "Activate Automation",
+        hint: "Starts trigger-based sends using your current sequence.",
+      }
+    }
+
+    return null
+  }, [data?.automation])
+
+  const handleStatusAction = useCallback(async () => {
+    if (!token || !resolvedAutomationId || !statusAction) {
+      return
+    }
+
+    setUpdatingStatus(true)
+    setError(null)
+    try {
+      const response = await mobileApi.marketingAutomationStatus(token, resolvedAutomationId, statusAction.action)
+      setData((previous) => {
+        if (!previous) return previous
+        return {
+          ...previous,
+          automation: {
+            ...previous.automation,
+            status: response.automation.status,
+            updatedAt: response.automation.updatedAt,
+          },
+        }
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update automation status"
+      setError(message)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }, [resolvedAutomationId, statusAction, token])
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -80,6 +133,22 @@ export default function MarketingAutomationDetailScreen() {
             <Text style={styles.nameText}>{data.automation.name}</Text>
             <Text style={styles.metaText}>{data.automation.channel} • {data.automation.trigger}</Text>
             <Text style={styles.metaText}>{data.automation.status} • Updated {formatDateTime(data.automation.updatedAt)}</Text>
+            {statusAction ? (
+              <View style={styles.actionWrap}>
+                <Pressable
+                  disabled={updatingStatus}
+                  style={[styles.actionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+                  onPress={() => void handleStatusAction()}
+                >
+                  <Text style={[styles.actionButtonText, { color: primaryColor }]}>
+                    {updatingStatus ? "Updating..." : statusAction.label}
+                  </Text>
+                </Pressable>
+                <Text style={styles.actionHint}>{statusAction.hint}</Text>
+              </View>
+            ) : data.automation.status === "ARCHIVED" ? (
+              <Text style={styles.metaText}>Archived automations are read-only on mobile.</Text>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -183,6 +252,25 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 16,
+  },
+  actionWrap: {
+    marginTop: 6,
+    gap: 6,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  actionHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   sectionCard: {
     borderWidth: 1,
