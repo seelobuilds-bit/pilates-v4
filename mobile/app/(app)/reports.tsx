@@ -129,6 +129,14 @@ export default function ReportsScreen() {
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
   const canOpenWeb = user?.role === "OWNER" || user?.role === "TEACHER"
+  const metricFilterCounts = useMemo(() => {
+    const metrics = data?.metrics ?? []
+    return {
+      all: metrics.length,
+      improving: metrics.filter((metric) => metric.changePct > 0).length,
+      declining: metrics.filter((metric) => metric.changePct < 0).length,
+    }
+  }, [data?.metrics])
   const visibleMetrics = useMemo(() => {
     if (!data?.metrics) return []
     const filtered = data.metrics.filter((metric) => {
@@ -193,6 +201,7 @@ export default function ReportsScreen() {
           <View style={styles.filterRow}>
             {METRIC_TREND_FILTER_OPTIONS.map((option) => {
               const selected = option.id === metricTrendFilter
+              const count = metricFilterCounts[option.id]
               return (
                 <Pressable
                   key={option.id}
@@ -202,7 +211,7 @@ export default function ReportsScreen() {
                   ]}
                   onPress={() => setMetricTrendFilter(option.id)}
                 >
-                  <Text style={[styles.filterButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+                  <Text style={[styles.filterButtonText, selected ? { color: primaryColor } : null]}>{`${option.label} (${count})`}</Text>
                 </Pressable>
               )
             })}
