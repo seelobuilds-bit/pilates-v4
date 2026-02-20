@@ -108,10 +108,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-203 Mobile leaderboard detail view | codex-main | codex/t-203-mobile-leaderboard-detail-view | Add mobile leaderboard detail API + screen and wire Leaderboards cards to native per-leaderboard detail with active period rankings, period history, and participant trend context | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/120 |
 | T-204 Mobile class flow progress controls | codex-main | codex/t-204-mobile-class-flow-progress-controls | Add teacher progress controls in class-flow detail so partial completion percentage and notes can be updated from mobile (not only one-tap complete) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/121 |
 | T-205 Mobile reports metric detail view | codex-main | codex/t-205-mobile-reports-metric-detail-view | Add native metric detail drill-down from mobile Reports cards with current vs previous values, period context, and role-aware highlights | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/122 |
-| T-206 Mobile reports trend series | codex-main | codex/t-206-mobile-reports-trend-series | Add role-aware trend series buckets in mobile reports API and render per-metric trend rows in native reports detail for better historical context | In Progress | TBD |
+| T-206 Mobile reports trend series | codex-main | codex/t-206-mobile-reports-trend-series | Add role-aware trend series buckets in mobile reports API and render per-metric trend rows in native reports detail for better historical context | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/123 |
+| T-207 Mobile reports overview trend preview | codex-main | codex/t-207-mobile-reports-overview-trend-preview | Surface quick trend preview on Reports KPI cards using bucket series (start vs latest + direction cue) for faster at-a-glance decision making | In Progress | TBD |
 
 ## Merge Order
-1. T-206 Mobile reports trend series
+1. T-207 Mobile reports overview trend preview
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
