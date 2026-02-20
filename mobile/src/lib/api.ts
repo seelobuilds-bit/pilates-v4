@@ -28,6 +28,7 @@ import type {
   MobileScheduleResponse,
   MobileSessionUser,
   MobileSocialResponse,
+  MobileSocialFlowDetailResponse,
   MobileStoreOverviewResponse,
   MobileStoreProductDetailResponse,
   MobileTeachersResponse,
@@ -231,6 +232,13 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/social?${search.toString()}` : "/api/mobile/social"
     return request<MobileSocialResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  socialFlowDetail(token: string, flowId: string) {
+    return request<MobileSocialFlowDetailResponse>(`/api/mobile/social/flows/${flowId}`, {
       method: "GET",
       token,
     })

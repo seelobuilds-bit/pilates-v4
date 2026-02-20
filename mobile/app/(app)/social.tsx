@@ -54,7 +54,13 @@ function AccountCard({ item }: { item: MobileSocialAccountSummary }) {
   )
 }
 
-function FlowCard({ item }: { item: MobileSocialFlowSummary }) {
+function FlowCard({
+  item,
+  onViewDetails,
+}: {
+  item: MobileSocialFlowSummary
+  onViewDetails: (flowId: string) => void
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -71,6 +77,9 @@ function FlowCard({ item }: { item: MobileSocialFlowSummary }) {
         <Text style={styles.metaPill}>Booked {formatNumber(item.totalBooked)}</Text>
       </View>
       <Text style={styles.metaText}>Updated {formatDate(item.updatedAt)}</Text>
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -151,6 +160,12 @@ export default function SocialScreen() {
 
   const webSocialHref = user?.role === "TEACHER" ? "/teacher/social" : "/studio/marketing/social"
   const currency = data?.studio.currency || "USD"
+  const handleViewFlowDetails = useCallback(
+    (flowId: string) => {
+      router.push(`/(app)/social/flows/${flowId}` as never)
+    },
+    [router]
+  )
 
   return (
     <View style={styles.container}>
@@ -194,7 +209,7 @@ export default function SocialScreen() {
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Active Flows</Text>
-                {data.flows.length > 0 ? data.flows.slice(0, 8).map((flow) => <FlowCard key={flow.id} item={flow} />) : <Text style={styles.metaText}>No social flows yet.</Text>}
+                {data.flows.length > 0 ? data.flows.slice(0, 8).map((flow) => <FlowCard key={flow.id} item={flow} onViewDetails={handleViewFlowDetails} />) : <Text style={styles.metaText}>No social flows yet.</Text>}
               </View>
 
               <View style={styles.sectionWrap}>
@@ -350,6 +365,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  detailsButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,

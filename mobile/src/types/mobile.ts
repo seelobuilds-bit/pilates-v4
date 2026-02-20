@@ -954,6 +954,73 @@ export interface MobileSocialResponse {
   }[]
 }
 
+export interface MobileSocialFlowDetailResponse {
+  role: MobileSocialRole
+  studio: StudioSummary
+  flow: {
+    id: string
+    name: string
+    description: string | null
+    triggerType: string
+    triggerKeywords: string[]
+    responseMessage: string
+    followUpMessages: {
+      message: string
+      delayMinutes: number
+    }[]
+    includeBookingLink: boolean
+    bookingMessage: string | null
+    isActive: boolean
+    totalTriggered: number
+    totalResponded: number
+    totalBooked: number
+    postId: string | null
+    postUrl: string | null
+    createdAt: string
+    updatedAt: string
+    account: {
+      id: string
+      platform: MobileSocialPlatform
+      username: string
+      displayName: string | null
+      followerCount: number
+      isActive: boolean
+      lastSyncedAt: string | null
+    }
+  }
+  stats: {
+    responseRate: number
+    bookingRate: number
+    clickRateFromEvents: number
+    conversionRateFromEvents: number
+  }
+  trackingLinks: MobileSocialTrackingLinkSummary[]
+  recentEvents: {
+    id: string
+    platformUserId: string
+    platformUsername: string | null
+    triggerContent: string | null
+    triggerType: string
+    responseSent: boolean
+    responseAt: string | null
+    clickedLink: boolean
+    clickedAt: string | null
+    converted: boolean
+    convertedAt: string | null
+    bookingId: string | null
+    createdAt: string
+  }[]
+  recentMessages: {
+    id: string
+    direction: "INBOUND" | "OUTBOUND"
+    content: string
+    isRead: boolean
+    createdAt: string
+    platformUserId: string
+    platformUsername: string | null
+  }[]
+}
+
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"
 
 export interface MobileLeaderboardParticipant {
