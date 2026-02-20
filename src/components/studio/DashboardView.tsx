@@ -2,9 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   DollarSign,
   Users,
@@ -27,6 +31,7 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
+  X,
   GripVertical,
   Eye,
   EyeOff,
@@ -87,7 +92,21 @@ function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: Widget
 }
 
 export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const now = new Date()
+  const supportsRangeFiltering = Boolean(data.selectedRange)
+  const selectedRange =
+    data.selectedRange ??
+    {
+      key: "this_month" as const,
+      label: "This month",
+      compareLabel: "same period last month",
+      startDate: "",
+      endDate: "",
+    }
+  const isCustomRange = selectedRange.key === "custom"
   const storageKey = useMemo(() => `${STORAGE_KEY_PREFIX}:${linkPrefix}`, [linkPrefix])
   const reportStatCardIds = useMemo(() => data.reportDatapoints.map((datapoint) => datapoint.id), [data.reportDatapoints])
   const availableStatCardIds = useMemo<StatCardId[]>(
@@ -103,6 +122,17 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   )
   const [draggedWidget, setDraggedWidget] = useState<WidgetId | null>(null)
   const [showLayoutControls, setShowLayoutControls] = useState(false)
+  const [showCustomDate, setShowCustomDate] = useState(false)
+  const [customStartDate, setCustomStartDate] = useState(selectedRange.startDate)
+  const [customEndDate, setCustomEndDate] = useState(selectedRange.endDate)
+
+  const isCustomRangeValid = Boolean(
+    customStartDate &&
+      customEndDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(customStartDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(customEndDate) &&
+      new Date(customStartDate) <= new Date(customEndDate)
+  )
 
   useEffect(() => {
     const defaultHiddenStats = availableStatCardIds.filter(
@@ -162,6 +192,48 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     )
   }, [storageKey, widgetOrder, hiddenWidgets, statCardOrder, hiddenStatCards])
 
+  useEffect(() => {
+    if (!supportsRangeFiltering) return
+    if (isCustomRange) {
+      setCustomStartDate(selectedRange.startDate)
+      setCustomEndDate(selectedRange.endDate)
+    }
+  }, [supportsRangeFiltering, isCustomRange, selectedRange.startDate, selectedRange.endDate])
+
+  const updateDashboardRange = (period: "this_month" | "7" | "30" | "90" | "365" | "custom", startDate?: string, endDate?: string) => {
+    if (!supportsRangeFiltering) return
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("period", period)
+    if (period === "custom" && startDate && endDate) {
+      params.set("startDate", startDate)
+      params.set("endDate", endDate)
+    } else {
+      params.delete("startDate")
+      params.delete("endDate")
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const handlePeriodChange = (value: string) => {
+    if (!supportsRangeFiltering) return
+    if (value === "custom") {
+      if (selectedRange.key === "custom") {
+        setCustomStartDate(selectedRange.startDate)
+        setCustomEndDate(selectedRange.endDate)
+      }
+      setShowCustomDate(true)
+      return
+    }
+    setShowCustomDate(false)
+    updateDashboardRange(value as "this_month" | "7" | "30" | "90" | "365")
+  }
+
+  const applyCustomDateRange = () => {
+    if (!supportsRangeFiltering || !isCustomRangeValid) return
+    setShowCustomDate(false)
+    updateDashboardRange("custom", customStartDate, customEndDate)
+  }
+
   const visibleWidgets = useMemo(
     () => widgetOrder.filter((widget) => !hiddenWidgets.includes(widget)),
     [widgetOrder, hiddenWidgets]
@@ -185,10 +257,14 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   }
 
   const statCardMeta = useMemo<Record<StatCardId, { title: string; source: "dashboard" | "reports" }>>(() => {
+    const periodBookingTitle =
+      selectedRange.key === "this_month" ? "Bookings This Month" : "Bookings in Period"
+    const periodRevenueTitle =
+      selectedRange.key === "this_month" ? "Revenue This Month" : "Revenue in Period"
     const baseMeta: Record<BaseStatCardId, { title: string; source: "dashboard" }> = {
-      monthlyRevenue: { title: "Monthly Revenue", source: "dashboard" },
+      monthlyRevenue: { title: periodRevenueTitle, source: "dashboard" },
       activeClients: { title: "Active Clients", source: "dashboard" },
-      weekBookings: { title: "This Week Bookings", source: "dashboard" },
+      weekBookings: { title: periodBookingTitle, source: "dashboard" },
       atRiskClients: { title: "At Risk Clients", source: "dashboard" },
     }
 
@@ -201,7 +277,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       ...baseMeta,
       ...reportMeta,
     }
-  }, [data.reportDatapoints])
+  }, [data.reportDatapoints, selectedRange.key])
 
   const reportDatapointsById = useMemo(
     () => new Map(data.reportDatapoints.map((datapoint) => [datapoint.id, datapoint])),
@@ -262,12 +338,15 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
+                            <p className="text-sm text-gray-500 mb-1">{statCardMeta[cardId]?.title ?? "Revenue in Period"}</p>
                             <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.stats.monthlyRevenue, data.currency)}</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                              <span className="text-emerald-500 font-medium">+{data.stats.revenueChange}%</span>
-                              <span className="text-gray-400">vs last month</span>
+                              <span className="text-emerald-500 font-medium">
+                                {data.stats.revenueChange > 0 ? "+" : ""}
+                                {data.stats.revenueChange}%
+                              </span>
+                              <span className="text-gray-400">vs {selectedRange.compareLabel}</span>
                             </p>
                           </div>
                           <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
@@ -289,7 +368,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <UserPlus className="h-3.5 w-3.5 text-blue-500" />
                               <span className="text-blue-500 font-medium">+{data.stats.newClientsThisWeek}</span>
-                              <span className="text-gray-400">this week</span>
+                              <span className="text-gray-400">
+                                {selectedRange.key === "this_month" ? "this month" : "in period"}
+                              </span>
                             </p>
                           </div>
                           <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -306,7 +387,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-sm text-gray-500 mb-1">This Week</p>
+                            <p className="text-sm text-gray-500 mb-1">{statCardMeta[cardId]?.title ?? "Bookings in Period"}</p>
                             <p className="text-2xl font-bold text-gray-900">{data.stats.weekBookings} bookings</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <Calendar className="h-3.5 w-3.5 text-violet-500" />
@@ -747,9 +828,87 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{data.greeting}!</h1>
           <p className="text-gray-500 mt-1">{data.currentDate}</p>
+          {supportsRangeFiltering && (
+            <p className="text-sm text-gray-500 mt-1">
+              Showing metric cards for <span className="font-medium text-gray-700">{selectedRange.label}</span>
+            </p>
+          )}
         </div>
 
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          {supportsRangeFiltering && (
+            <div className="relative w-full sm:w-auto">
+              <Select value={isCustomRange ? "custom" : selectedRange.key} onValueChange={handlePeriodChange}>
+                <SelectTrigger className="w-full bg-white sm:w-[220px]">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this_month">This month</SelectItem>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                  <SelectItem value="365">Last 365 days</SelectItem>
+                  <SelectItem value="custom">Custom Range...</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {showCustomDate && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowCustomDate(false)} />
+                  <Card className="fixed inset-x-3 top-24 z-50 border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]">
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">
+                        <h3 className="font-semibold text-gray-900">Select Date Range</h3>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowCustomDate(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="dashboard-custom-start-date">Start Date</Label>
+                            <Input
+                              id="dashboard-custom-start-date"
+                              type="date"
+                              value={customStartDate}
+                              max={customEndDate || undefined}
+                              onChange={(event) => setCustomStartDate(event.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="dashboard-custom-end-date">End Date</Label>
+                            <Input
+                              id="dashboard-custom-end-date"
+                              type="date"
+                              value={customEndDate}
+                              min={customStartDate || undefined}
+                              onChange={(event) => setCustomEndDate(event.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setShowCustomDate(false)}>
+                            Cancel
+                          </Button>
+                          <Button
+                            className="bg-violet-600 hover:bg-violet-700"
+                            disabled={!isCustomRangeValid}
+                            onClick={applyCustomDateRange}
+                          >
+                            Apply Range
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
             <Link href={`${linkPrefix}/clients/new`} className="min-w-0">
               <Button variant="outline" size="sm" className="w-full sm:w-auto">

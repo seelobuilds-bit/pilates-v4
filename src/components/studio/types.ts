@@ -84,6 +84,13 @@ export interface DashboardData {
   greeting: string
   currentDate: string
   currency: string
+  selectedRange?: {
+    key: "this_month" | "7" | "30" | "90" | "365" | "custom"
+    label: string
+    compareLabel: string
+    startDate: string
+    endDate: string
+  }
   stats: {
     monthlyRevenue: number
     revenueChange: number
@@ -394,7 +401,6 @@ export interface CommunityData {
     messages: ChatMessage[]
   } | null
 }
-
 
 
 
