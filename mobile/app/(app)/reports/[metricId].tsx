@@ -105,6 +105,10 @@ export default function ReportMetricDetailScreen() {
       }
     })
   }, [data, metric])
+  const metricSeriesMax = useMemo(
+    () => Math.max(1, ...metricSeries.map((point) => Math.abs(point.value))),
+    [metricSeries]
+  )
 
   return (
     <ScrollView
@@ -165,6 +169,16 @@ export default function ReportMetricDetailScreen() {
               metricSeries.map((point, index) => (
                 <View key={`${point.label}-${index}`} style={styles.trendRow}>
                   <Text style={styles.trendLabel}>{point.label}</Text>
+                  <View style={styles.trendTrack}>
+                    <View
+                      style={[
+                        styles.trendFill,
+                        {
+                          width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
+                        },
+                      ]}
+                    />
+                  </View>
                   <Text style={styles.trendValue}>
                     {formatMetricValue({ ...metric, value: point.value }, currency)}
                   </Text>
@@ -305,18 +319,32 @@ const styles = StyleSheet.create({
     borderTopColor: mobileTheme.colors.borderMuted,
     paddingTop: 8,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
   },
   trendLabel: {
     color: mobileTheme.colors.textMuted,
     fontSize: 12,
+    width: 58,
+  },
+  trendTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "#e2e8f0",
+  },
+  trendFill: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#0f766e",
   },
   trendValue: {
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 12,
+    minWidth: 68,
+    textAlign: "right",
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,
