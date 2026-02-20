@@ -110,10 +110,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-205 Mobile reports metric detail view | codex-main | codex/t-205-mobile-reports-metric-detail-view | Add native metric detail drill-down from mobile Reports cards with current vs previous values, period context, and role-aware highlights | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/122 |
 | T-206 Mobile reports trend series | codex-main | codex/t-206-mobile-reports-trend-series | Add role-aware trend series buckets in mobile reports API and render per-metric trend rows in native reports detail for better historical context | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/123 |
 | T-207 Mobile reports overview trend preview | codex-main | codex/t-207-mobile-reports-overview-trend-preview | Surface quick trend preview on Reports KPI cards using bucket series (start vs latest + direction cue) for faster at-a-glance decision making | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/124 |
-| T-208 Mobile metric trend bars | codex-main | codex/t-208-mobile-metric-trend-bars | Add compact visual trend bars on metric detail screen for fast historical scanning without reading each row value | In Progress | TBD |
+| T-208 Mobile metric trend bars | codex-main | codex/t-208-mobile-metric-trend-bars | Add compact visual trend bars on metric detail screen for fast historical scanning without reading each row value | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/125 |
+| T-209 Mobile reports card sparklines | codex-main | codex/t-209-mobile-reports-card-sparklines | Add compact sparkline bars on Reports overview KPI cards so users can scan recent direction before drilling into detail | In Progress | TBD |
 
 ## Merge Order
-1. T-208 Mobile metric trend bars
+1. T-209 Mobile reports card sparklines
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
