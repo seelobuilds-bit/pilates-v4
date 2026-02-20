@@ -125,6 +125,13 @@ export default function InboxScreen() {
       return haystack.includes(searchNormalized)
     })
   }, [clientChannelFilter, messages, searchNormalized])
+  const clientChannelCounts = useMemo(() => {
+    return {
+      ALL: messages.length,
+      EMAIL: messages.filter((message) => message.channel === "EMAIL").length,
+      SMS: messages.filter((message) => message.channel === "SMS").length,
+    } as const
+  }, [messages])
 
   const loadInbox = useCallback(
     async (isRefresh = false) => {
@@ -358,7 +365,9 @@ export default function InboxScreen() {
               ]}
               onPress={() => setClientChannelFilter("ALL")}
             >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>All</Text>
+              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
+                {`All (${clientChannelCounts.ALL})`}
+              </Text>
             </Pressable>
             <Pressable
               style={[
@@ -370,7 +379,7 @@ export default function InboxScreen() {
               <Text
                 style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}
               >
-                Email
+                {`Email (${clientChannelCounts.EMAIL})`}
               </Text>
             </Pressable>
             <Pressable
@@ -380,7 +389,9 @@ export default function InboxScreen() {
               ]}
               onPress={() => setClientChannelFilter("SMS")}
             >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
+              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
+                {`SMS (${clientChannelCounts.SMS})`}
+              </Text>
             </Pressable>
           </View>
         ) : (
