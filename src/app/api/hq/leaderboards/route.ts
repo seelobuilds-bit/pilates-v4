@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { Prisma, PrizeType } from "@prisma/client"
+import { populateLeaderboardPeriodEntries } from "@/lib/leaderboards/scoring"
 
 interface PrizeInput {
   position?: number
@@ -15,6 +16,19 @@ interface PrizeInput {
   sponsorName?: string
   sponsorLogo?: string
   sponsorUrl?: string
+}
+
+function parsePeriodBoundary(value: string | undefined, endOfDay = false) {
+  if (!value || typeof value !== "string") return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const timestamp = `${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`
+    const parsed = new Date(timestamp)
+    if (Number.isNaN(parsed.getTime())) return null
+    return parsed
+  }
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
 }
 
 // GET - Fetch all leaderboards for HQ admin
@@ -235,16 +249,79 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === "createPeriod") {
+      const leaderboard = await db.leaderboard.findUnique({
+        where: { id: leaderboardId },
+        select: {
+          id: true,
+          category: true,
+          participantType: true,
+          higherIsBetter: true,
+          minimumEntries: true,
+          metricName: true,
+        },
+      })
+      if (!leaderboard) {
+        return NextResponse.json({ error: "Leaderboard not found" }, { status: 404 })
+      }
+
+      const startDate = parsePeriodBoundary(data.startDate, false)
+      const endDate = parsePeriodBoundary(data.endDate, true)
+      if (!startDate || !endDate || startDate > endDate) {
+        return NextResponse.json({ error: "Invalid period date range" }, { status: 400 })
+      }
+
       const period = await db.leaderboardPeriod.create({
         data: {
           leaderboardId,
           name: data.name,
-          startDate: new Date(data.startDate),
-          endDate: new Date(data.endDate),
-          status: "ACTIVE"
-        }
+          startDate,
+          endDate,
+          status: "ACTIVE",
+        },
       })
-      return NextResponse.json(period)
+
+      const seedResult = await populateLeaderboardPeriodEntries({ leaderboard, period })
+
+      return NextResponse.json({
+        ...period,
+        entriesCreated: seedResult.entriesCreated,
+      })
+    }
+
+    if (action === "recalculatePeriod") {
+      const period = await db.leaderboardPeriod.findUnique({
+        where: { id: periodId },
+        include: {
+          leaderboard: {
+            select: {
+              id: true,
+              category: true,
+              participantType: true,
+              higherIsBetter: true,
+              minimumEntries: true,
+              metricName: true,
+            },
+          },
+        },
+      })
+      if (!period) {
+        return NextResponse.json({ error: "Period not found" }, { status: 404 })
+      }
+
+      const seedResult = await populateLeaderboardPeriodEntries({
+        leaderboard: period.leaderboard,
+        period: {
+          id: period.id,
+          startDate: period.startDate,
+          endDate: period.endDate,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        periodId: period.id,
+        entriesCreated: seedResult.entriesCreated,
+      })
     }
 
     if (action === "finalizePeriod") {
@@ -261,17 +338,30 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: "Period not found" }, { status: 404 })
       }
 
+      const sortedEntries = [...period.entries].sort((left, right) => {
+        if (period.leaderboard.higherIsBetter) {
+          if (left.score !== right.score) return right.score - left.score
+        } else if (left.score !== right.score) {
+          return left.score - right.score
+        }
+        return left.id.localeCompare(right.id)
+      })
+
       // Update ranks
-      for (let i = 0; i < period.entries.length; i++) {
+      for (let i = 0; i < sortedEntries.length; i++) {
         await db.leaderboardEntry.update({
-          where: { id: period.entries[i].id },
+          where: { id: sortedEntries[i].id },
           data: { rank: i + 1 }
         })
       }
 
+      await db.leaderboardWinner.deleteMany({
+        where: { periodId: period.id },
+      })
+
       // Create winners for each prize
       for (const prize of period.leaderboard.prizes) {
-        const winner = period.entries[prize.position - 1]
+        const winner = sortedEntries[prize.position - 1]
         if (winner) {
           await db.leaderboardWinner.create({
             data: {
@@ -320,8 +410,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update leaderboard" }, { status: 500 })
   }
 }
-
-
 
 
 
