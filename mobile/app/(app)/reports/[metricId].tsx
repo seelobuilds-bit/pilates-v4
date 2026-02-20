@@ -71,6 +71,7 @@ export default function ReportMetricDetailScreen() {
   }, [daysParam])
 
   const [days, setDays] = useState<7 | 30 | 90>(initialDays)
+  const [showAllTrendPoints, setShowAllTrendPoints] = useState(false)
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -125,6 +126,10 @@ export default function ReportMetricDetailScreen() {
     () => Math.max(1, ...metricSeries.map((point) => Math.abs(point.value))),
     [metricSeries]
   )
+  const visibleMetricSeries = useMemo(() => {
+    if (showAllTrendPoints || metricSeries.length <= 8) return metricSeries
+    return metricSeries.slice(-8)
+  }, [metricSeries, showAllTrendPoints])
   const trendSummary = useMemo(() => {
     if (!metric || metricSeries.length === 0) return []
     const values = metricSeries.map((point) => point.value)
@@ -201,6 +206,13 @@ export default function ReportMetricDetailScreen() {
               <Text style={styles.metaText}>No trend points available for this period.</Text>
             ) : (
               <>
+                {metricSeries.length > 8 ? (
+                  <Pressable style={styles.trendToggleButton} onPress={() => setShowAllTrendPoints((current) => !current)}>
+                    <Text style={[styles.trendToggleButtonText, { color: primaryColor }]}>
+                      {showAllTrendPoints ? "Show recent 8 points" : `Show all ${metricSeries.length} points`}
+                    </Text>
+                  </Pressable>
+                ) : null}
                 <View style={styles.trendSummaryGrid}>
                   {trendSummary.map((item) => (
                     <View key={item.label} style={styles.trendSummaryChip}>
@@ -209,8 +221,8 @@ export default function ReportMetricDetailScreen() {
                     </View>
                   ))}
                 </View>
-                {metricSeries.map((point, index) => {
-                  const previousValue = index === 0 ? null : metricSeries[index - 1]?.value ?? null
+                {visibleMetricSeries.map((point, index) => {
+                  const previousValue = index === 0 ? null : visibleMetricSeries[index - 1]?.value ?? null
                   const delta = previousValue === null ? null : point.value - previousValue
                   const deltaTone = delta === null ? "muted" : delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral"
 
@@ -400,6 +412,18 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginBottom: 2,
+  },
+  trendToggleButton: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  trendToggleButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
   },
   trendSummaryChip: {
     width: "48%",
