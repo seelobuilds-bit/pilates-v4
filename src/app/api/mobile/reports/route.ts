@@ -53,6 +53,37 @@ function metric(id: string, label: string, format: MobileMetricFormat, value: nu
   }
 }
 
+function buildTrendBuckets(start: Date, end: Date, maxBuckets = 8) {
+  const totalMs = Math.max(1, end.getTime() - start.getTime())
+  const totalDays = Math.max(1, Math.ceil(totalMs / (24 * 60 * 60 * 1000)))
+  const bucketCount = Math.max(1, Math.min(maxBuckets, totalDays))
+  const bucketMs = Math.max(1, Math.ceil(totalMs / bucketCount))
+
+  const buckets: Array<{ start: Date; end: Date; label: string }> = []
+  let cursor = start.getTime()
+
+  for (let index = 0; index < bucketCount; index += 1) {
+    const bucketStart = new Date(cursor)
+    const bucketEnd = new Date(index === bucketCount - 1 ? end.getTime() : Math.min(end.getTime(), cursor + bucketMs))
+    const label = bucketStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    buckets.push({ start: bucketStart, end: bucketEnd, label })
+    cursor = bucketEnd.getTime()
+  }
+
+  return buckets
+}
+
+function bucketIndexForDate(value: Date, buckets: Array<{ start: Date; end: Date }>) {
+  const timestamp = value.getTime()
+  for (let index = 0; index < buckets.length; index += 1) {
+    const bucket = buckets[index]
+    if (timestamp >= bucket.start.getTime() && timestamp < bucket.end.getTime()) {
+      return index
+    }
+  }
+  return -1
+}
+
 function classTypeHighlights(
   sessions: Array<{
     classType: { name: string }
@@ -123,13 +154,14 @@ export async function GET(request: NextRequest) {
     const previousStart = subtractDays(currentStart, periodDays)
 
     if (decoded.role === "OWNER") {
-      const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClients, previousNewClients] = await Promise.all([
+      const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([
         db.booking.findMany({
           where: {
             studioId: studio.id,
             createdAt: { gte: currentStart, lt: periodEnd },
           },
           select: {
+            createdAt: true,
             status: true,
             paidAmount: true,
             classSession: { select: { classType: { select: { price: true } } } },
@@ -152,6 +184,7 @@ export async function GET(request: NextRequest) {
             startTime: { gte: currentStart, lt: periodEnd },
           },
           select: {
+            startTime: true,
             capacity: true,
             classType: { select: { name: true } },
             bookings: { select: { status: true } },
@@ -168,10 +201,13 @@ export async function GET(request: NextRequest) {
             bookings: { select: { status: true } },
           },
         }),
-        db.client.count({
+        db.client.findMany({
           where: {
             studioId: studio.id,
             createdAt: { gte: currentStart, lt: periodEnd },
+          },
+          select: {
+            createdAt: true,
           },
         }),
         db.client.count({
@@ -206,6 +242,49 @@ export async function GET(request: NextRequest) {
         (sum, session) => sum + session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length,
         0
       )
+      const currentNewClients = currentNewClientRows.length
+
+      const ownerBuckets = buildTrendBuckets(currentStart, periodEnd)
+      const ownerSeries = ownerBuckets.map((bucket) => ({
+        label: bucket.label,
+        start: bucket.start.toISOString(),
+        end: bucket.end.toISOString(),
+        metrics: {
+          revenue: 0,
+          bookings: 0,
+          classes: 0,
+          "fill-rate": 0,
+          "new-clients": 0,
+        },
+      }))
+      const ownerCapacityByBucket = ownerBuckets.map(() => 0)
+      const ownerAttendedByBucket = ownerBuckets.map(() => 0)
+
+      for (const booking of currentBookings) {
+        if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
+        const index = bucketIndexForDate(booking.createdAt, ownerBuckets)
+        if (index < 0) continue
+        ownerSeries[index].metrics.bookings += 1
+        ownerSeries[index].metrics.revenue = roundCurrency(ownerSeries[index].metrics.revenue + bookingRevenue(booking))
+      }
+
+      for (const session of currentSessions) {
+        const index = bucketIndexForDate(session.startTime, ownerBuckets)
+        if (index < 0) continue
+        ownerSeries[index].metrics.classes += 1
+        ownerCapacityByBucket[index] += session.capacity
+        ownerAttendedByBucket[index] += session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length
+      }
+
+      for (const client of currentNewClientRows) {
+        const index = bucketIndexForDate(client.createdAt, ownerBuckets)
+        if (index < 0) continue
+        ownerSeries[index].metrics["new-clients"] += 1
+      }
+
+      ownerSeries.forEach((point, index) => {
+        point.metrics["fill-rate"] = ratioPercentage(ownerAttendedByBucket[index], ownerCapacityByBucket[index], 1)
+      })
 
       return NextResponse.json({
         role: "OWNER",
@@ -224,6 +303,7 @@ export async function GET(request: NextRequest) {
           metric("new-clients", "New Clients", "number", currentNewClients, previousNewClients),
         ],
         highlights: classTypeHighlights(currentSessions),
+        series: ownerSeries,
       })
     }
 
@@ -240,6 +320,7 @@ export async function GET(request: NextRequest) {
             classSession: { teacherId: decoded.teacherId },
           },
           select: {
+            createdAt: true,
             status: true,
             clientId: true,
             paidAmount: true,
@@ -266,6 +347,7 @@ export async function GET(request: NextRequest) {
             startTime: { gte: currentStart, lt: periodEnd },
           },
           select: {
+            startTime: true,
             capacity: true,
             classType: { select: { name: true } },
             bookings: { select: { status: true } },
@@ -308,6 +390,51 @@ export async function GET(request: NextRequest) {
         0
       )
 
+      const teacherBuckets = buildTrendBuckets(currentStart, periodEnd)
+      const teacherSeries = teacherBuckets.map((bucket) => ({
+        label: bucket.label,
+        start: bucket.start.toISOString(),
+        end: bucket.end.toISOString(),
+        metrics: {
+          revenue: 0,
+          classes: 0,
+          students: 0,
+          "fill-rate": 0,
+          "completion-rate": 0,
+        },
+      }))
+      const teacherCapacityByBucket = teacherBuckets.map(() => 0)
+      const teacherAttendedByBucket = teacherBuckets.map(() => 0)
+      const teacherCompletedByBucket = teacherBuckets.map(() => 0)
+      const teacherNonCancelledByBucket = teacherBuckets.map(() => 0)
+      const teacherStudentsByBucket = teacherBuckets.map(() => new Set<string>())
+
+      for (const booking of currentBookings) {
+        if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
+        const index = bucketIndexForDate(booking.createdAt, teacherBuckets)
+        if (index < 0) continue
+        teacherNonCancelledByBucket[index] += 1
+        teacherSeries[index].metrics.revenue = roundCurrency(teacherSeries[index].metrics.revenue + bookingRevenue(booking))
+        teacherStudentsByBucket[index].add(booking.clientId)
+        if (booking.status === "COMPLETED") {
+          teacherCompletedByBucket[index] += 1
+        }
+      }
+
+      for (const session of currentSessions) {
+        const index = bucketIndexForDate(session.startTime, teacherBuckets)
+        if (index < 0) continue
+        teacherSeries[index].metrics.classes += 1
+        teacherCapacityByBucket[index] += session.capacity
+        teacherAttendedByBucket[index] += session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length
+      }
+
+      teacherSeries.forEach((point, index) => {
+        point.metrics.students = teacherStudentsByBucket[index].size
+        point.metrics["fill-rate"] = ratioPercentage(teacherAttendedByBucket[index], teacherCapacityByBucket[index], 1)
+        point.metrics["completion-rate"] = ratioPercentage(teacherCompletedByBucket[index], teacherNonCancelledByBucket[index], 1)
+      })
+
       return NextResponse.json({
         role: "TEACHER",
         studio: studioSummary,
@@ -331,6 +458,7 @@ export async function GET(request: NextRequest) {
           ),
         ],
         highlights: classTypeHighlights(currentSessions),
+        series: teacherSeries,
       })
     }
 
@@ -347,6 +475,11 @@ export async function GET(request: NextRequest) {
         },
         select: {
           status: true,
+          classSession: {
+            select: {
+              startTime: true,
+            },
+          },
         },
       }),
       db.booking.findMany({
@@ -392,6 +525,44 @@ export async function GET(request: NextRequest) {
     const currentCancelled = currentBookings.filter((booking) => booking.status === "CANCELLED").length
     const previousCancelled = previousBookings.filter((booking) => booking.status === "CANCELLED").length
 
+    const clientBuckets = buildTrendBuckets(currentStart, periodEnd)
+    const clientSeries = clientBuckets.map((bucket) => ({
+      label: bucket.label,
+      start: bucket.start.toISOString(),
+      end: bucket.end.toISOString(),
+      metrics: {
+        booked: 0,
+        completed: 0,
+        cancelled: 0,
+        "completion-rate": 0,
+      },
+    }))
+    const clientCompletedByBucket = clientBuckets.map(() => 0)
+    const clientBookedByBucket = clientBuckets.map(() => 0)
+
+    for (const booking of currentBookings) {
+      const index = bucketIndexForDate(booking.classSession.startTime, clientBuckets)
+      if (index < 0) continue
+
+      if (NON_CANCELLED_STATUSES.has(booking.status)) {
+        clientBookedByBucket[index] += 1
+        clientSeries[index].metrics.booked += 1
+      }
+
+      if (booking.status === "COMPLETED") {
+        clientCompletedByBucket[index] += 1
+        clientSeries[index].metrics.completed += 1
+      }
+
+      if (booking.status === "CANCELLED") {
+        clientSeries[index].metrics.cancelled += 1
+      }
+    }
+
+    clientSeries.forEach((point, index) => {
+      point.metrics["completion-rate"] = ratioPercentage(clientCompletedByBucket[index], clientBookedByBucket[index], 1)
+    })
+
     return NextResponse.json({
       role: "CLIENT",
       studio: studioSummary,
@@ -421,6 +592,7 @@ export async function GET(request: NextRequest) {
             },
           ]
         : [{ label: "Next class", value: "No upcoming bookings yet" }],
+      series: clientSeries,
     })
   } catch (error) {
     console.error("Mobile reports error:", error)
