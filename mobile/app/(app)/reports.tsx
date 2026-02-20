@@ -163,9 +163,14 @@ export default function ReportsScreen() {
             <View style={styles.metricGrid}>
               {data.metrics.map((metric) => {
                 const badge = changeBadge(metric)
-                const trendStart = data.series[0]?.metrics[metric.id]
-                const trendEnd = data.series[data.series.length - 1]?.metrics[metric.id]
+                const trendValues = data.series
+                  .map((point) => point.metrics[metric.id])
+                  .filter((value): value is number => typeof value === "number")
+                const trendStart = trendValues[0]
+                const trendEnd = trendValues[trendValues.length - 1]
                 const hasTrend = typeof trendStart === "number" && typeof trendEnd === "number"
+                const sparklineValues = trendValues.slice(-8)
+                const sparklineMax = Math.max(1, ...sparklineValues.map((value) => Math.abs(value)))
                 return (
                   <Pressable
                     key={metric.id}
@@ -182,6 +187,23 @@ export default function ReportsScreen() {
                       <Text style={styles.metricTrend}>
                         Trend {trendDirectionLabel(trendStart, trendEnd, metric, currency)}
                       </Text>
+                    ) : null}
+                    {sparklineValues.length > 1 ? (
+                      <View style={styles.sparklineRow}>
+                        {sparklineValues.map((value, index) => (
+                          <View key={`${metric.id}-spark-${index}`} style={[styles.sparklineBarTrack, { backgroundColor: withOpacity(primaryColor, 0.16) }]}>
+                            <View
+                              style={[
+                                styles.sparklineBarFill,
+                                {
+                                  backgroundColor: withOpacity(primaryColor, 0.72),
+                                  height: `${Math.max(12, Math.round((Math.abs(value) / sparklineMax) * 100))}%`,
+                                },
+                              ]}
+                            />
+                          </View>
+                        ))}
+                      </View>
                     ) : null}
                     <Text style={styles.metricHint}>View detail</Text>
                   </Pressable>
@@ -315,6 +337,22 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: mobileTheme.colors.textSubtle,
     fontSize: 11,
+  },
+  sparklineRow: {
+    flexDirection: "row",
+    gap: 4,
+    height: 22,
+    marginTop: 4,
+  },
+  sparklineBarTrack: {
+    flex: 1,
+    borderRadius: 999,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+  },
+  sparklineBarFill: {
+    width: "100%",
+    borderRadius: 999,
   },
   sectionCard: {
     borderWidth: 1,
