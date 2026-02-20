@@ -121,10 +121,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-216 Mobile reports narrow-screen layout pass | codex-main | codex/t-216-mobile-reports-narrow-screen-layout | Improve mobile Reports card/chip layout on narrow devices by switching KPI cards and trend summary chips to single-column where needed | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/133 |
 | T-217 Mobile reports filter count labels | codex-main | codex/t-217-mobile-reports-filter-counts | Add metric counts to All/Improving/Declining filter chips so users can see available metrics before switching filter state | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/134 |
 | T-218 Mobile reports reset view control | codex-main | codex/t-218-mobile-reports-reset-view | Add one-tap Reset view control to clear custom ordering/filtering and restore default Reports KPI layout quickly | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/135 |
-| T-219 Mobile inbox unread chips + counts | codex-main | codex/t-219-mobile-inbox-unread-chips | Replace owner/teacher unread ON/OFF toggle with All/Unread chips showing counts for clearer and faster conversation filtering | In Progress | TBD |
+| T-219 Mobile inbox unread chips + counts | codex-main | codex/t-219-mobile-inbox-unread-chips | Replace owner/teacher unread ON/OFF toggle with All/Unread chips showing counts for clearer and faster conversation filtering | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/136 |
+| T-220 Mobile client inbox channel counts | codex-main | codex/t-220-mobile-inbox-client-channel-counts | Add message counts to client channel filter chips (All/Email/SMS) for clearer in-app inbox filtering feedback | In Progress | TBD |
 
 ## Merge Order
-1. T-219 Mobile inbox unread chips + counts
+1. T-220 Mobile client inbox channel counts
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
