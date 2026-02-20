@@ -34,6 +34,8 @@ import type {
   MobileScheduleResponse,
   MobileSessionUser,
   MobileSocialResponse,
+  MobileSocialFlowStatusAction,
+  MobileSocialFlowStatusActionResponse,
   MobileSocialFlowDetailResponse,
   MobileStoreOverviewResponse,
   MobileStoreProductDetailResponse,
@@ -269,6 +271,14 @@ export const mobileApi = {
     return request<MobileSocialFlowDetailResponse>(`/api/mobile/social/flows/${flowId}`, {
       method: "GET",
       token,
+    })
+  },
+
+  socialFlowStatus(token: string, flowId: string, action: MobileSocialFlowStatusAction) {
+    return request<MobileSocialFlowStatusActionResponse>(`/api/mobile/social/flows/${flowId}`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ action }),
     })
   },
 
