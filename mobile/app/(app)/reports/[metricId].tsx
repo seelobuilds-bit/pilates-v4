@@ -225,6 +225,8 @@ export default function ReportMetricDetailScreen() {
                   const previousValue = index === 0 ? null : visibleMetricSeries[index - 1]?.value ?? null
                   const delta = previousValue === null ? null : point.value - previousValue
                   const deltaTone = delta === null ? "muted" : delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral"
+                  const normalizedWidth = Math.round((Math.abs(point.value) / metricSeriesMax) * 100)
+                  const trendWidth = point.value === 0 ? 0 : Math.max(4, normalizedWidth)
 
                   return (
                     <View key={`${point.label}-${index}`} style={styles.trendRow}>
@@ -234,7 +236,7 @@ export default function ReportMetricDetailScreen() {
                           style={[
                             styles.trendFill,
                             {
-                              width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
+                              width: `${trendWidth}%`,
                             },
                           ]}
                         />
