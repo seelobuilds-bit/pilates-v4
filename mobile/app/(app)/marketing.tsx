@@ -22,10 +22,18 @@ function formatDate(value: string | null) {
 function CampaignCard({
   item,
   onViewDetails,
+  onCancelCampaign,
+  isUpdating,
+  primaryColor,
 }: {
   item: MobileMarketingCampaignSummary
   onViewDetails: (campaignId: string) => void
+  onCancelCampaign: (campaignId: string) => void
+  isUpdating: boolean
+  primaryColor: string
 }) {
+  const canCancel = item.status === "SCHEDULED"
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -44,6 +52,15 @@ function CampaignCard({
         <Text style={styles.metaPill}>Failed {item.failedCount}</Text>
       </View>
       <Text style={styles.metaText}>Scheduled {formatDate(item.scheduledAt)} · Sent {formatDate(item.sentAt)}</Text>
+      {canCancel ? (
+        <Pressable
+          disabled={isUpdating}
+          style={[styles.inlineActionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+          onPress={() => onCancelCampaign(item.id)}
+        >
+          <Text style={[styles.inlineActionText, { color: primaryColor }]}>{isUpdating ? "Updating..." : "Cancel Scheduled"}</Text>
+        </Pressable>
+      ) : null}
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
         <Text style={styles.detailsButtonText}>View Details</Text>
       </Pressable>
@@ -54,10 +71,19 @@ function CampaignCard({
 function AutomationCard({
   item,
   onViewDetails,
+  onToggleAutomation,
+  isUpdating,
+  primaryColor,
 }: {
   item: MobileMarketingAutomationSummary
   onViewDetails: (automationId: string) => void
+  onToggleAutomation: (automationId: string, action: "activate" | "pause") => void
+  isUpdating: boolean
+  primaryColor: string
 }) {
+  const action = item.status === "ACTIVE" ? "pause" : item.status === "PAUSED" || item.status === "DRAFT" ? "activate" : null
+  const actionLabel = action === "pause" ? "Pause Automation" : action === "activate" ? "Activate Automation" : null
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -76,6 +102,15 @@ function AutomationCard({
         <Text style={styles.metaPill}>Clicked {item.totalClicked}</Text>
       </View>
       <Text style={styles.metaText}>Updated {formatDate(item.updatedAt)}</Text>
+      {action && actionLabel ? (
+        <Pressable
+          disabled={isUpdating}
+          style={[styles.inlineActionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+          onPress={() => onToggleAutomation(item.id, action)}
+        >
+          <Text style={[styles.inlineActionText, { color: primaryColor }]}>{isUpdating ? "Updating..." : actionLabel}</Text>
+        </Pressable>
+      ) : null}
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
         <Text style={styles.detailsButtonText}>View Details</Text>
       </Pressable>
@@ -92,6 +127,7 @@ export default function MarketingScreen() {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER"
@@ -153,6 +189,42 @@ export default function MarketingScreen() {
     [router]
   )
 
+  const handleCancelCampaign = useCallback(
+    async (campaignId: string) => {
+      if (!token) return
+      setUpdatingItemId(campaignId)
+      setError(null)
+      try {
+        await mobileApi.marketingCampaignStatus(token, campaignId, "cancel")
+        await loadMarketing(true)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update campaign status"
+        setError(message)
+      } finally {
+        setUpdatingItemId(null)
+      }
+    },
+    [loadMarketing, token]
+  )
+
+  const handleToggleAutomationStatus = useCallback(
+    async (automationId: string, action: "activate" | "pause") => {
+      if (!token) return
+      setUpdatingItemId(automationId)
+      setError(null)
+      try {
+        await mobileApi.marketingAutomationStatus(token, automationId, action)
+        await loadMarketing(true)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update automation status"
+        setError(message)
+      } finally {
+        setUpdatingItemId(null)
+      }
+    },
+    [loadMarketing, token]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -190,12 +262,38 @@ export default function MarketingScreen() {
             <>
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Campaigns</Text>
-                {data.campaigns.length > 0 ? data.campaigns.map((campaign) => <CampaignCard key={campaign.id} item={campaign} onViewDetails={handleViewCampaignDetails} />) : <Text style={styles.metaText}>No campaigns found.</Text>}
+                {data.campaigns.length > 0 ? (
+                  data.campaigns.map((campaign) => (
+                    <CampaignCard
+                      key={campaign.id}
+                      item={campaign}
+                      onViewDetails={handleViewCampaignDetails}
+                      onCancelCampaign={(campaignId) => void handleCancelCampaign(campaignId)}
+                      isUpdating={updatingItemId === campaign.id}
+                      primaryColor={primaryColor}
+                    />
+                  ))
+                ) : (
+                  <Text style={styles.metaText}>No campaigns found.</Text>
+                )}
               </View>
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Automations</Text>
-                {data.automations.length > 0 ? data.automations.map((automation) => <AutomationCard key={automation.id} item={automation} onViewDetails={handleViewAutomationDetails} />) : <Text style={styles.metaText}>No automations found.</Text>}
+                {data.automations.length > 0 ? (
+                  data.automations.map((automation) => (
+                    <AutomationCard
+                      key={automation.id}
+                      item={automation}
+                      onViewDetails={handleViewAutomationDetails}
+                      onToggleAutomation={(automationId, action) => void handleToggleAutomationStatus(automationId, action)}
+                      isUpdating={updatingItemId === automation.id}
+                      primaryColor={primaryColor}
+                    />
+                  ))
+                ) : (
+                  <Text style={styles.metaText}>No automations found.</Text>
+                )}
               </View>
             </>
           ) : (
@@ -333,6 +431,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
     backgroundColor: mobileTheme.colors.surface,
+  },
+  inlineActionButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  inlineActionText: {
+    fontWeight: "700",
+    fontSize: 12,
   },
   detailsButtonText: {
     color: mobileTheme.colors.text,
