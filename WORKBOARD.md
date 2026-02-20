@@ -119,10 +119,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-214 Mobile zero-safe trend visuals | codex-main | codex/t-214-mobile-reports-zero-safe-trends | Fix reports trend bars/sparklines so zero-value points render as true zero instead of artificial minimum bars | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/131 |
 | T-215 Mobile reports trend filter chips | codex-main | codex/t-215-mobile-reports-trend-filter-chips | Add All/Improving/Declining filter chips on mobile Reports to quickly isolate positive or negative movers | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/132 |
 | T-216 Mobile reports narrow-screen layout pass | codex-main | codex/t-216-mobile-reports-narrow-screen-layout | Improve mobile Reports card/chip layout on narrow devices by switching KPI cards and trend summary chips to single-column where needed | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/133 |
-| T-217 Mobile reports filter count labels | codex-main | codex/t-217-mobile-reports-filter-counts | Add metric counts to All/Improving/Declining filter chips so users can see available metrics before switching filter state | In Progress | TBD |
+| T-217 Mobile reports filter count labels | codex-main | codex/t-217-mobile-reports-filter-counts | Add metric counts to All/Improving/Declining filter chips so users can see available metrics before switching filter state | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/134 |
+| T-218 Mobile reports reset view control | codex-main | codex/t-218-mobile-reports-reset-view | Add one-tap Reset view control to clear custom ordering/filtering and restore default Reports KPI layout quickly | In Progress | TBD |
 
 ## Merge Order
-1. T-217 Mobile reports filter count labels
+1. T-218 Mobile reports reset view control
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
