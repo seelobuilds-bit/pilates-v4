@@ -217,19 +217,23 @@ export default function ReportsScreen() {
                     ) : null}
                     {sparklineValues.length > 1 ? (
                       <View style={styles.sparklineRow}>
-                        {sparklineValues.map((value, index) => (
-                          <View key={`${metric.id}-spark-${index}`} style={[styles.sparklineBarTrack, { backgroundColor: withOpacity(primaryColor, 0.16) }]}>
-                            <View
-                              style={[
-                                styles.sparklineBarFill,
-                                {
-                                  backgroundColor: withOpacity(primaryColor, 0.72),
-                                  height: `${Math.max(12, Math.round((Math.abs(value) / sparklineMax) * 100))}%`,
-                                },
-                              ]}
-                            />
-                          </View>
-                        ))}
+                        {sparklineValues.map((value, index) => {
+                          const normalizedHeight = Math.round((Math.abs(value) / sparklineMax) * 100)
+                          const barHeight = value === 0 ? 0 : Math.max(12, normalizedHeight)
+                          return (
+                            <View key={`${metric.id}-spark-${index}`} style={[styles.sparklineBarTrack, { backgroundColor: withOpacity(primaryColor, 0.16) }]}>
+                              <View
+                                style={[
+                                  styles.sparklineBarFill,
+                                  {
+                                    backgroundColor: withOpacity(primaryColor, 0.72),
+                                    height: `${barHeight}%`,
+                                  },
+                                ]}
+                              />
+                            </View>
+                          )
+                        })}
                       </View>
                     ) : null}
                     <Text style={styles.metricHint}>View detail</Text>
