@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -47,6 +47,7 @@ export default function SocialFlowDetailScreen() {
   const [data, setData] = useState<MobileSocialFlowDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const resolvedFlowId = useMemo(() => String(flowId || "").trim(), [flowId])
@@ -82,6 +83,49 @@ export default function SocialFlowDetailScreen() {
     void loadFlow()
   }, [loadFlow])
 
+  const statusAction = useMemo(() => {
+    if (!data?.flow) return null
+    return data.flow.isActive
+      ? ({
+          action: "pause" as const,
+          label: "Pause Flow",
+          hint: "Stops this flow from auto-responding to new triggers.",
+        })
+      : ({
+          action: "activate" as const,
+          label: "Activate Flow",
+          hint: "Re-enables this flow for new trigger events.",
+        })
+  }, [data?.flow])
+
+  const handleStatusAction = useCallback(async () => {
+    if (!token || !resolvedFlowId || !statusAction) {
+      return
+    }
+
+    setUpdatingStatus(true)
+    setError(null)
+    try {
+      const response = await mobileApi.socialFlowStatus(token, resolvedFlowId, statusAction.action)
+      setData((previous) => {
+        if (!previous) return previous
+        return {
+          ...previous,
+          flow: {
+            ...previous.flow,
+            isActive: response.flow.isActive,
+            updatedAt: response.flow.updatedAt,
+          },
+        }
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update flow status"
+      setError(message)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }, [resolvedFlowId, statusAction, token])
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -94,6 +138,20 @@ export default function SocialFlowDetailScreen() {
             <Text style={styles.nameText}>{data.flow.name}</Text>
             <Text style={styles.metaText}>{data.flow.account.platform} • @{data.flow.account.username}</Text>
             <Text style={styles.metaText}>{data.flow.isActive ? "ACTIVE" : "PAUSED"} • Updated {formatDateTime(data.flow.updatedAt)}</Text>
+            {statusAction ? (
+              <View style={styles.actionWrap}>
+                <Pressable
+                  disabled={updatingStatus}
+                  style={[styles.actionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+                  onPress={() => void handleStatusAction()}
+                >
+                  <Text style={[styles.actionButtonText, { color: primaryColor }]}>
+                    {updatingStatus ? "Updating..." : statusAction.label}
+                  </Text>
+                </Pressable>
+                <Text style={styles.actionHint}>{statusAction.hint}</Text>
+              </View>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -206,6 +264,25 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 16,
+  },
+  actionWrap: {
+    marginTop: 6,
+    gap: 6,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  actionHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   sectionCard: {
     borderWidth: 1,

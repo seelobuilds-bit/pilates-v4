@@ -882,6 +882,7 @@ export interface MobileMarketingAutomationStatusActionResponse {
 
 export type MobileSocialPlatform = "INSTAGRAM" | "TIKTOK"
 export type MobileSocialRole = "OWNER" | "TEACHER"
+export type MobileSocialFlowStatusAction = "activate" | "pause"
 
 export interface MobileSocialAccountSummary {
   id: string
@@ -1047,6 +1048,15 @@ export interface MobileSocialFlowDetailResponse {
     platformUserId: string
     platformUsername: string | null
   }[]
+}
+
+export interface MobileSocialFlowStatusActionResponse {
+  success: boolean
+  flow: {
+    id: string
+    isActive: boolean
+    updatedAt: string
+  }
 }
 
 export type MobileLeaderboardParticipantType = "STUDIO" | "TEACHER"

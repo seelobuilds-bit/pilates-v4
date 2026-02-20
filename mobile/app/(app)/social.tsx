@@ -57,10 +57,19 @@ function AccountCard({ item }: { item: MobileSocialAccountSummary }) {
 function FlowCard({
   item,
   onViewDetails,
+  onToggleFlowStatus,
+  isUpdating,
+  primaryColor,
 }: {
   item: MobileSocialFlowSummary
   onViewDetails: (flowId: string) => void
+  onToggleFlowStatus: (flowId: string, action: "activate" | "pause") => void
+  isUpdating: boolean
+  primaryColor: string
 }) {
+  const action = item.isActive ? "pause" : "activate"
+  const actionLabel = item.isActive ? "Pause Flow" : "Activate Flow"
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -77,6 +86,13 @@ function FlowCard({
         <Text style={styles.metaPill}>Booked {formatNumber(item.totalBooked)}</Text>
       </View>
       <Text style={styles.metaText}>Updated {formatDate(item.updatedAt)}</Text>
+      <Pressable
+        disabled={isUpdating}
+        style={[styles.inlineActionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+        onPress={() => onToggleFlowStatus(item.id, action)}
+      >
+        <Text style={[styles.inlineActionText, { color: primaryColor }]}>{isUpdating ? "Updating..." : actionLabel}</Text>
+      </Pressable>
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
         <Text style={styles.detailsButtonText}>View Details</Text>
       </Pressable>
@@ -109,8 +125,10 @@ export default function SocialScreen() {
 
   const [data, setData] = useState<MobileSocialResponse | null>(null)
   const [search, setSearch] = useState("")
+  const [flowStatusFilter, setFlowStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED">("ALL")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingFlowId, setUpdatingFlowId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
@@ -167,6 +185,42 @@ export default function SocialScreen() {
     [router]
   )
 
+  const handleToggleFlowStatus = useCallback(
+    async (flowId: string, action: "activate" | "pause") => {
+      if (!token) return
+      setUpdatingFlowId(flowId)
+      setError(null)
+      try {
+        await mobileApi.socialFlowStatus(token, flowId, action)
+        await loadSocial(true)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update flow status"
+        setError(message)
+      } finally {
+        setUpdatingFlowId(null)
+      }
+    },
+    [loadSocial, token]
+  )
+
+  const flowStatusCounts = useMemo(() => {
+    const flows = data?.flows || []
+    const active = flows.filter((flow) => flow.isActive).length
+    const paused = flows.length - active
+    return {
+      ALL: flows.length,
+      ACTIVE: active,
+      PAUSED: paused,
+    } as const
+  }, [data?.flows])
+
+  const filteredFlows = useMemo(() => {
+    const flows = data?.flows || []
+    if (flowStatusFilter === "ALL") return flows
+    if (flowStatusFilter === "ACTIVE") return flows.filter((flow) => flow.isActive)
+    return flows.filter((flow) => !flow.isActive)
+  }, [data?.flows, flowStatusFilter])
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -209,7 +263,64 @@ export default function SocialScreen() {
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Active Flows</Text>
-                {data.flows.length > 0 ? data.flows.slice(0, 8).map((flow) => <FlowCard key={flow.id} item={flow} onViewDetails={handleViewFlowDetails} />) : <Text style={styles.metaText}>No social flows yet.</Text>}
+                <View style={styles.filterRow}>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      flowStatusFilter === "ALL" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setFlowStatusFilter("ALL")}
+                  >
+                    <Text style={[styles.filterChipText, flowStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" }]}>
+                      {`All (${flowStatusCounts.ALL})`}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      flowStatusFilter === "ACTIVE" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setFlowStatusFilter("ACTIVE")}
+                  >
+                    <Text style={[styles.filterChipText, flowStatusFilter === "ACTIVE" && { color: primaryColor, fontWeight: "700" }]}>
+                      {`Active (${flowStatusCounts.ACTIVE})`}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      flowStatusFilter === "PAUSED" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setFlowStatusFilter("PAUSED")}
+                  >
+                    <Text style={[styles.filterChipText, flowStatusFilter === "PAUSED" && { color: primaryColor, fontWeight: "700" }]}>
+                      {`Paused (${flowStatusCounts.PAUSED})`}
+                    </Text>
+                  </Pressable>
+                </View>
+                {filteredFlows.length > 0 ? (
+                  filteredFlows.slice(0, 8).map((flow) => (
+                    <FlowCard
+                      key={flow.id}
+                      item={flow}
+                      onViewDetails={handleViewFlowDetails}
+                      onToggleFlowStatus={(id, action) => void handleToggleFlowStatus(id, action)}
+                      isUpdating={updatingFlowId === flow.id}
+                      primaryColor={primaryColor}
+                    />
+                  ))
+                ) : (
+                  <Text style={styles.metaText}>No social flows match this filter.</Text>
+                )}
               </View>
 
               <View style={styles.sectionWrap}>
@@ -375,6 +486,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
     backgroundColor: mobileTheme.colors.surface,
+  },
+  inlineActionButton: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  inlineActionText: {
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  filterChipText: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 11,
   },
   detailsButtonText: {
     color: mobileTheme.colors.text,

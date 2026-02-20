@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
+type SocialFlowAction = "activate" | "pause"
+
 function ratioPercentage(numerator: number, denominator: number, precision = 1) {
   if (denominator <= 0) return 0
   const factor = Math.pow(10, precision)
@@ -27,56 +29,83 @@ function parseFollowUpMessages(rawValue: string | null): { message: string; dela
   }
 }
 
+async function resolveSocialSession(request: NextRequest) {
+  const token = extractBearerToken(request.headers.get("authorization"))
+  if (!token) {
+    return { error: NextResponse.json({ error: "Missing bearer token" }, { status: 401 }) } as const
+  }
+
+  const decoded = verifyMobileToken(token)
+  if (!decoded) {
+    return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) } as const
+  }
+
+  if (decoded.role === "CLIENT") {
+    return {
+      error: NextResponse.json(
+        { error: "Social workspace is available for teacher and studio owner accounts only" },
+        { status: 403 }
+      ),
+    } as const
+  }
+
+  if (decoded.role === "TEACHER" && !decoded.teacherId) {
+    return { error: NextResponse.json({ error: "Teacher session invalid" }, { status: 401 }) } as const
+  }
+
+  const studio = await db.studio.findUnique({
+    where: { id: decoded.studioId },
+    select: {
+      id: true,
+      name: true,
+      subdomain: true,
+      primaryColor: true,
+      stripeCurrency: true,
+    },
+  })
+
+  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+    return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) } as const
+  }
+
+  return {
+    decoded,
+    studio,
+  } as const
+}
+
+function buildFlowScope(decoded: { role: string; teacherId?: string | null }, studioId: string, flowId: string) {
+  if (decoded.role === "TEACHER") {
+    return {
+      id: flowId,
+      account: {
+        OR: [{ studioId }, { teacherId: decoded.teacherId || null }],
+      },
+    }
+  }
+
+  return {
+    id: flowId,
+    account: {
+      OR: [{ studioId }, { teacher: { studioId } }],
+    },
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ flowId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveSocialSession(request)
+    if ("error" in auth) {
+      return auth.error
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
-
-    if (decoded.role === "CLIENT") {
-      return NextResponse.json({ error: "Social workspace is available for teacher and studio owner accounts only" }, { status: 403 })
-    }
-
-    if (decoded.role === "TEACHER" && !decoded.teacherId) {
-      return NextResponse.json({ error: "Teacher session invalid" }, { status: 401 })
-    }
-
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
-
+    const { decoded, studio } = auth
     const { flowId } = await params
     const flow = await db.socialMediaFlow.findFirst({
-      where: {
-        id: flowId,
-        account: decoded.role === "TEACHER"
-          ? {
-              OR: [{ studioId: studio.id }, { teacherId: decoded.teacherId }],
-            }
-          : {
-              OR: [{ studioId: studio.id }, { teacher: { studioId: studio.id } }],
-            },
-      },
+      where: buildFlowScope(decoded, studio.id, flowId),
       select: {
         id: true,
         name: true,
@@ -261,5 +290,73 @@ export async function GET(
   } catch (error) {
     console.error("Mobile social flow detail error:", error)
     return NextResponse.json({ error: "Failed to load social flow detail" }, { status: 500 })
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ flowId: string }> }
+) {
+  try {
+    const auth = await resolveSocialSession(request)
+    if ("error" in auth) {
+      return auth.error
+    }
+
+    const payload = await request.json().catch(() => null)
+    const action = payload?.action
+    if (action !== "activate" && action !== "pause") {
+      return NextResponse.json({ error: "Invalid action. Use activate or pause." }, { status: 400 })
+    }
+
+    const { decoded, studio } = auth
+    const { flowId } = await params
+    const flow = await db.socialMediaFlow.findFirst({
+      where: buildFlowScope(decoded, studio.id, flowId),
+      select: {
+        id: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    })
+
+    if (!flow) {
+      return NextResponse.json({ error: "Social flow not found" }, { status: 404 })
+    }
+
+    const nextIsActive = (action as SocialFlowAction) === "activate"
+
+    if (flow.isActive === nextIsActive) {
+      return NextResponse.json({
+        success: true,
+        flow: {
+          id: flow.id,
+          isActive: flow.isActive,
+          updatedAt: flow.updatedAt.toISOString(),
+        },
+      })
+    }
+
+    const updatedFlow = await db.socialMediaFlow.update({
+      where: { id: flow.id },
+      data: { isActive: nextIsActive },
+      select: {
+        id: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      flow: {
+        id: updatedFlow.id,
+        isActive: updatedFlow.isActive,
+        updatedAt: updatedFlow.updatedAt.toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error("Mobile social flow status update error:", error)
+    return NextResponse.json({ error: "Failed to update social flow status" }, { status: 500 })
   }
 }
