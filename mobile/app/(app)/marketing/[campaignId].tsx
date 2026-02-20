@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -27,6 +27,7 @@ export default function MarketingCampaignDetailScreen() {
   const [data, setData] = useState<MobileMarketingCampaignDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const resolvedCampaignId = useMemo(() => String(campaignId || "").trim(), [campaignId])
@@ -61,6 +62,46 @@ export default function MarketingCampaignDetailScreen() {
     void loadCampaign()
   }, [loadCampaign])
 
+  const statusAction = useMemo(() => {
+    if (!data?.campaign) return null
+    if (data.campaign.status === "SCHEDULED") {
+      return {
+        action: "cancel" as const,
+        label: "Cancel Scheduled Campaign",
+        hint: "Stops this scheduled send before delivery starts.",
+      }
+    }
+    return null
+  }, [data?.campaign])
+
+  const handleStatusAction = useCallback(async () => {
+    if (!token || !resolvedCampaignId || !statusAction) {
+      return
+    }
+
+    setUpdatingStatus(true)
+    setError(null)
+    try {
+      const response = await mobileApi.marketingCampaignStatus(token, resolvedCampaignId, statusAction.action)
+      setData((previous) => {
+        if (!previous) return previous
+        return {
+          ...previous,
+          campaign: {
+            ...previous.campaign,
+            status: response.campaign.status,
+            updatedAt: response.campaign.updatedAt,
+          },
+        }
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update campaign status"
+      setError(message)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }, [resolvedCampaignId, statusAction, token])
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -73,6 +114,22 @@ export default function MarketingCampaignDetailScreen() {
             <Text style={styles.nameText}>{data.campaign.name}</Text>
             <Text style={styles.metaText}>{data.campaign.channel} • {data.campaign.status}</Text>
             <Text style={styles.metaText}>Created {formatDateTime(data.campaign.createdAt)}</Text>
+            {statusAction ? (
+              <View style={styles.actionWrap}>
+                <Pressable
+                  disabled={updatingStatus}
+                  style={[styles.actionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+                  onPress={() => void handleStatusAction()}
+                >
+                  <Text style={[styles.actionButtonText, { color: primaryColor }]}>
+                    {updatingStatus ? "Updating..." : statusAction.label}
+                  </Text>
+                </Pressable>
+                <Text style={styles.actionHint}>{statusAction.hint}</Text>
+              </View>
+            ) : data.campaign.status === "CANCELLED" ? (
+              <Text style={styles.metaText}>This campaign has been cancelled.</Text>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -162,6 +219,25 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 16,
+  },
+  actionWrap: {
+    marginTop: 6,
+    gap: 6,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  actionHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   sectionCard: {
     borderWidth: 1,

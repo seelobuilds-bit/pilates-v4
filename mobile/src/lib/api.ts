@@ -20,7 +20,11 @@ import type {
   MobileLocationDetailResponse,
   MobileMarketingResponse,
   MobileMarketingCampaignDetailResponse,
+  MobileMarketingCampaignStatusAction,
+  MobileMarketingCampaignStatusActionResponse,
   MobileMarketingAutomationDetailResponse,
+  MobileMarketingAutomationStatusAction,
+  MobileMarketingAutomationStatusActionResponse,
   MobilePaymentsResponse,
   MobilePaymentDetailResponse,
   MobilePushRegisterParams,
@@ -222,10 +226,30 @@ export const mobileApi = {
     })
   },
 
+  marketingCampaignStatus(token: string, campaignId: string, action: MobileMarketingCampaignStatusAction) {
+    return request<MobileMarketingCampaignStatusActionResponse>(`/api/mobile/marketing/campaigns/${campaignId}`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ action }),
+    })
+  },
+
   marketingAutomationDetail(token: string, automationId: string) {
     return request<MobileMarketingAutomationDetailResponse>(`/api/mobile/marketing/automations/${automationId}`, {
       method: "GET",
       token,
+    })
+  },
+
+  marketingAutomationStatus(
+    token: string,
+    automationId: string,
+    action: MobileMarketingAutomationStatusAction
+  ) {
+    return request<MobileMarketingAutomationStatusActionResponse>(`/api/mobile/marketing/automations/${automationId}`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ action }),
     })
   },
 

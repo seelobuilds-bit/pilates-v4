@@ -687,6 +687,8 @@ export interface MobileCommunityResponse {
 export type MobileMarketingCampaignStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "PAUSED" | "CANCELLED"
 export type MobileMarketingAutomationStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED"
 export type MobileMarketingChannel = "EMAIL" | "SMS"
+export type MobileMarketingCampaignStatusAction = "cancel"
+export type MobileMarketingAutomationStatusAction = "activate" | "pause"
 
 export interface MobileMarketingCampaignSummary {
   id: string
@@ -794,6 +796,15 @@ export interface MobileMarketingCampaignDetailResponse {
   }[]
 }
 
+export interface MobileMarketingCampaignStatusActionResponse {
+  success: boolean
+  campaign: {
+    id: string
+    status: MobileMarketingCampaignStatus
+    updatedAt: string
+  }
+}
+
 export interface MobileMarketingAutomationDetailResponse {
   role: "OWNER"
   studio: StudioSummary
@@ -858,6 +869,15 @@ export interface MobileMarketingAutomationDetailResponse {
     failedReason: string | null
     createdAt: string
   }[]
+}
+
+export interface MobileMarketingAutomationStatusActionResponse {
+  success: boolean
+  automation: {
+    id: string
+    status: MobileMarketingAutomationStatus
+    updatedAt: string
+  }
 }
 
 export type MobileSocialPlatform = "INSTAGRAM" | "TIKTOK"
