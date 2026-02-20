@@ -166,63 +166,58 @@ export default async function StudioDashboardPage() {
     return "Good evening"
   }
 
-  // ====== REAL REVENUE CALCULATION ======
-  // Get start of previous month for comparison
+  // ====== REVENUE CALCULATION (aligned with reports period logic) ======
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+  const elapsedMsThisMonth = now.getTime() - startOfMonth.getTime()
+  const lastMonthEquivalentEnd = new Date(startOfLastMonth.getTime() + elapsedMsThisMonth)
+  const previousPeriodEnd = lastMonthEquivalentEnd < startOfMonth
+    ? lastMonthEquivalentEnd
+    : startOfMonth
 
-  // Fetch real payment data from Payment table (amount is in cents)
-  const [thisMonthPayments, lastMonthPayments, thisMonthBookingRevenue, lastMonthBookingRevenue] = await Promise.all([
-    // Payments this month (SUCCEEDED only)
-    db.payment.aggregate({
+  const [thisMonthRevenueBookings, lastMonthRevenueBookings] = await Promise.all([
+    db.booking.findMany({
       where: {
         studioId,
-        status: "SUCCEEDED",
-        createdAt: { gte: startOfMonth }
+        status: { not: "CANCELLED" },
+        classSession: {
+          startTime: { gte: startOfMonth, lt: now }
+        }
       },
-      _sum: { amount: true }
+      select: {
+        paidAmount: true,
+        classSession: {
+          select: {
+            classType: { select: { price: true } }
+          }
+        }
+      }
     }),
-    // Payments last month for comparison
-    db.payment.aggregate({
+    db.booking.findMany({
       where: {
         studioId,
-        status: "SUCCEEDED",
-        createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }
+        status: { not: "CANCELLED" },
+        classSession: {
+          startTime: { gte: startOfLastMonth, lt: previousPeriodEnd }
+        }
       },
-      _sum: { amount: true }
-    }),
-    // Also check bookings.paidAmount for legacy/direct payments (this month)
-    db.booking.aggregate({
-      where: {
-        studioId,
-        status: { in: ["CONFIRMED", "COMPLETED"] },
-        paidAmount: { not: null },
-        paymentId: null, // Only count if no linked Payment (avoid double counting)
-        createdAt: { gte: startOfMonth }
-      },
-      _sum: { paidAmount: true }
-    }),
-    // Last month booking revenue for comparison
-    db.booking.aggregate({
-      where: {
-        studioId,
-        status: { in: ["CONFIRMED", "COMPLETED"] },
-        paidAmount: { not: null },
-        paymentId: null,
-        createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }
-      },
-      _sum: { paidAmount: true }
+      select: {
+        paidAmount: true,
+        classSession: {
+          select: {
+            classType: { select: { price: true } }
+          }
+        }
+      }
     })
   ])
 
-  // Calculate total revenue (Payment amount is in cents, convert to dollars)
-  const paymentRevenue = (thisMonthPayments._sum.amount || 0) / 100
-  const bookingRevenue = thisMonthBookingRevenue._sum.paidAmount || 0
-  const thisMonthRevenue = paymentRevenue + bookingRevenue
+  const thisMonthRevenue = thisMonthRevenueBookings.reduce((sum, booking) => {
+    return sum + (booking.paidAmount ?? booking.classSession.classType.price ?? 0)
+  }, 0)
 
-  const lastMonthPaymentRevenue = (lastMonthPayments._sum.amount || 0) / 100
-  const lastMonthBookingRevenueTotal = lastMonthBookingRevenue._sum.paidAmount || 0
-  const lastMonthTotal = lastMonthPaymentRevenue + lastMonthBookingRevenueTotal
+  const lastMonthTotal = lastMonthRevenueBookings.reduce((sum, booking) => {
+    return sum + (booking.paidAmount ?? booking.classSession.classType.price ?? 0)
+  }, 0)
 
   // Calculate percent change (avoid division by zero)
   const revenuePercentChange = lastMonthTotal > 0 

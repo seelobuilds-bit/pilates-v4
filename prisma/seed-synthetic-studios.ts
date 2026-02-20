@@ -745,6 +745,7 @@ async function seedOneStudio({
   const payments: Prisma.PaymentCreateManyInput[] = []
   const waitlists: Prisma.WaitlistCreateManyInput[] = []
   const now = new Date()
+  const clampToNow = (value: Date) => (value.getTime() > now.getTime() ? new Date(now) : value)
   const sessionSlots = [
     { hour: 6, minute: 30 },
     { hour: 8, minute: 0 },
@@ -802,25 +803,35 @@ async function seedOneStudio({
 
           const bookingId = randomUUID()
           const shouldCreatePayment = status === BookingStatus.CONFIRMED || status === BookingStatus.COMPLETED || status === BookingStatus.NO_SHOW
+          const bookingCreatedAt = clampToNow(
+            new Date(startTime.getTime() - randomInt(rng, 2, 96) * 60 * 60 * 1000)
+          )
           let paymentId: string | null = null
           if (shouldCreatePayment) {
             paymentId = randomUUID()
+            const paymentAmountMinor = Math.round(classType.price * 100)
+            const stripeFeeMinor = Math.round(paymentAmountMinor * 0.029)
             payments.push({
               id: paymentId,
               studioId,
               clientId: client.id,
-              amount: classType.price,
+              amount: paymentAmountMinor,
               currency: blueprint.currency,
               status: PaymentStatus.SUCCEEDED,
               description: `${classType.name} booking - ${isoDateOnly(startTime)}`,
               stripePaymentIntentId: `pi_${randomUUID().replace(/-/g, "").slice(0, 20)}`,
               stripeChargeId: `ch_${randomUUID().replace(/-/g, "").slice(0, 20)}`,
-              stripeFee: Math.round(classType.price * 0.029 * 100) / 100,
-              netAmount: Math.round(classType.price * 0.971 * 100) / 100,
-              createdAt: new Date(startTime.getTime() - randomInt(rng, 2, 18) * 60 * 60 * 1000),
-              updatedAt: new Date(),
+              stripeFee: stripeFeeMinor,
+              netAmount: paymentAmountMinor - stripeFeeMinor,
+              createdAt: bookingCreatedAt,
+              updatedAt: bookingCreatedAt,
             })
           }
+
+          const cancelledAt =
+            status === BookingStatus.CANCELLED
+              ? clampToNow(new Date(startTime.getTime() - randomInt(rng, 1, 36) * 60 * 60 * 1000))
+              : null
 
           bookings.push({
             id: bookingId,
@@ -830,11 +841,11 @@ async function seedOneStudio({
             status,
             paidAmount: shouldCreatePayment ? classType.price : null,
             paymentId,
-            cancelledAt: status === BookingStatus.CANCELLED ? new Date(startTime.getTime() - randomInt(rng, 1, 36) * 60 * 60 * 1000) : null,
+            cancelledAt,
             cancellationReason: status === BookingStatus.CANCELLED ? pickOne(rng, ["Schedule conflict", "Travel", "Illness"]) : null,
             notes: status === BookingStatus.NO_SHOW ? "Client did not arrive." : null,
-            createdAt: new Date(startTime.getTime() - randomInt(rng, 2, 96) * 60 * 60 * 1000),
-            updatedAt: new Date(),
+            createdAt: bookingCreatedAt,
+            updatedAt: bookingCreatedAt,
           })
         }
 
