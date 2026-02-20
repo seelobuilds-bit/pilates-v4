@@ -117,10 +117,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-212 Mobile metric trend window toggle | codex-main | codex/t-212-mobile-metric-trend-window-toggle | Add show-recent/show-all toggle for trend rows on metric detail so long windows remain readable on small screens | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/129 |
 | T-213 Mobile reports top movers ordering | codex-main | codex/t-213-mobile-reports-top-movers | Add Default/Top Movers ordering controls on mobile Reports so high-volatility metrics surface first during quick scans | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/130 |
 | T-214 Mobile zero-safe trend visuals | codex-main | codex/t-214-mobile-reports-zero-safe-trends | Fix reports trend bars/sparklines so zero-value points render as true zero instead of artificial minimum bars | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/131 |
-| T-215 Mobile reports trend filter chips | codex-main | codex/t-215-mobile-reports-trend-filter-chips | Add All/Improving/Declining filter chips on mobile Reports to quickly isolate positive or negative movers | In Progress | TBD |
+| T-215 Mobile reports trend filter chips | codex-main | codex/t-215-mobile-reports-trend-filter-chips | Add All/Improving/Declining filter chips on mobile Reports to quickly isolate positive or negative movers | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/132 |
+| T-216 Mobile reports narrow-screen layout pass | codex-main | codex/t-216-mobile-reports-narrow-screen-layout | Improve mobile Reports card/chip layout on narrow devices by switching KPI cards and trend summary chips to single-column where needed | In Progress | TBD |
 
 ## Merge Order
-1. T-215 Mobile reports trend filter chips
+1. T-216 Mobile reports narrow-screen layout pass
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

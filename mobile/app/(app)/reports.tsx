@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -80,7 +80,9 @@ function trendDirectionLabel(startValue: number, endValue: number, metric: Mobil
 export default function ReportsScreen() {
   const router = useRouter()
   const { token, user } = useAuth()
+  const { width } = useWindowDimensions()
   const primaryColor = getStudioPrimaryColor()
+  const isNarrowScreen = width <= 360
   const [days, setDays] = useState<7 | 30 | 90>(30)
   const [metricOrder, setMetricOrder] = useState<(typeof METRIC_ORDER_OPTIONS)[number]["id"]>("default")
   const [metricTrendFilter, setMetricTrendFilter] = useState<(typeof METRIC_TREND_FILTER_OPTIONS)[number]["id"]>("all")
@@ -229,7 +231,7 @@ export default function ReportsScreen() {
                 return (
                   <Pressable
                     key={metric.id}
-                    style={styles.metricCard}
+                    style={[styles.metricCard, isNarrowScreen ? styles.metricCardNarrow : null]}
                     onPress={() => router.push(`/(app)/reports/${metric.id}?days=${days}` as never)}
                   >
                     <View style={styles.metricHeader}>
@@ -400,6 +402,10 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     padding: 12,
     gap: 4,
+  },
+  metricCardNarrow: {
+    width: "100%",
+    minWidth: 0,
   },
   metricHeader: {
     flexDirection: "row",

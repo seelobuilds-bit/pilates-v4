@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -62,8 +62,10 @@ function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = 
 
 export default function ReportMetricDetailScreen() {
   const { token, user } = useAuth()
+  const { width } = useWindowDimensions()
   const { metricId, days: daysParam } = useLocalSearchParams<{ metricId?: string; days?: string }>()
   const primaryColor = getStudioPrimaryColor()
+  const isNarrowScreen = width <= 360
 
   const initialDays = useMemo(() => {
     const parsed = Number(daysParam || 30)
@@ -215,7 +217,7 @@ export default function ReportMetricDetailScreen() {
                 ) : null}
                 <View style={styles.trendSummaryGrid}>
                   {trendSummary.map((item) => (
-                    <View key={item.label} style={styles.trendSummaryChip}>
+                    <View key={item.label} style={[styles.trendSummaryChip, isNarrowScreen ? styles.trendSummaryChipNarrow : null]}>
                       <Text style={styles.trendSummaryLabel}>{item.label}</Text>
                       <Text style={styles.trendSummaryValue}>{formatMetricValue({ ...metric, value: item.value }, currency)}</Text>
                     </View>
@@ -437,6 +439,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 2,
     backgroundColor: mobileTheme.colors.canvas,
+  },
+  trendSummaryChipNarrow: {
+    width: "100%",
+    minWidth: 0,
   },
   trendSummaryLabel: {
     color: mobileTheme.colors.textMuted,
