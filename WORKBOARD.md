@@ -106,10 +106,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-201 Mobile social flow detail view | codex-main | codex/t-201-mobile-social-flow-detail-view | Add mobile social flow detail API + screen and wire Social flow cards to native per-flow detail with trigger configuration, conversion funnel, and recent events | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/118 |
 | T-202 Mobile class flow content detail view | codex-main | codex/t-202-mobile-class-flow-content-detail-view | Add mobile class flow content detail API + screen and wire Class Flows cards to native per-content detail with resource availability, progress timeline, and related training requests | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/119 |
 | T-203 Mobile leaderboard detail view | codex-main | codex/t-203-mobile-leaderboard-detail-view | Add mobile leaderboard detail API + screen and wire Leaderboards cards to native per-leaderboard detail with active period rankings, period history, and participant trend context | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/120 |
-| T-204 Mobile class flow progress controls | codex-main | codex/t-204-mobile-class-flow-progress-controls | Add teacher progress controls in class-flow detail so partial completion percentage and notes can be updated from mobile (not only one-tap complete) | In Progress | TBD |
+| T-204 Mobile class flow progress controls | codex-main | codex/t-204-mobile-class-flow-progress-controls | Add teacher progress controls in class-flow detail so partial completion percentage and notes can be updated from mobile (not only one-tap complete) | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/121 |
+| T-205 Mobile reports metric detail view | codex-main | codex/t-205-mobile-reports-metric-detail-view | Add native metric detail drill-down from mobile Reports cards with current vs previous values, period context, and role-aware highlights | In Progress | TBD |
 
 ## Merge Order
-1. T-204 Mobile class flow progress controls
+1. T-205 Mobile reports metric detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
