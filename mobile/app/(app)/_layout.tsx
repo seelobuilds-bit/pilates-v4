@@ -124,6 +124,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="class-flows/[contentId]"
+        options={{
+          title: "Flow Content",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="teachers"
         options={{
           title: "Teachers",

@@ -1,6 +1,7 @@
 import { mobileConfig } from "@/src/lib/config"
 import type {
   MobileBootstrapResponse,
+  MobileClassFlowContentDetailResponse,
   MobileClassFlowsResponse,
   MobileClassTypeDetailResponse,
   MobileClassTypesResponse,
@@ -270,6 +271,13 @@ export const mobileApi = {
     if (params?.search) search.set("search", params.search)
     const path = search.size ? `/api/mobile/class-flows?${search.toString()}` : "/api/mobile/class-flows"
     return request<MobileClassFlowsResponse>(path, {
+      method: "GET",
+      token,
+    })
+  },
+
+  classFlowDetail(token: string, contentId: string) {
+    return request<MobileClassFlowContentDetailResponse>(`/api/mobile/class-flows/${contentId}`, {
       method: "GET",
       token,
     })
