@@ -274,6 +274,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="leaderboards/[leaderboardId]"
+        options={{
+          title: "Leaderboard",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

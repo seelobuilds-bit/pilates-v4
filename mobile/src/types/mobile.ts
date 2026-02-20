@@ -1073,6 +1073,61 @@ export interface MobileLeaderboardsResponse {
   myRanks: Record<string, { rank: number; score: number } | null>
 }
 
+export interface MobileLeaderboardPrize {
+  id: string
+  position: number
+  name: string
+  description: string | null
+  prizeType: string
+  prizeValue: number | null
+  prizeCurrency: string | null
+  imageUrl: string | null
+  sponsorName: string | null
+}
+
+export interface MobileLeaderboardDetailPeriod {
+  id: string
+  name: string
+  status: string
+  startDate: string
+  endDate: string
+  totalEntries: number
+  entries: MobileLeaderboardEntry[]
+}
+
+export interface MobileLeaderboardDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  leaderboard: {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    category: string
+    participantType: MobileLeaderboardParticipantType
+    timeframe: string
+    metricName: string
+    metricUnit: string | null
+    higherIsBetter: boolean
+    minimumEntries: number
+    icon: string | null
+    color: string | null
+    isFeatured: boolean
+    lastCalculated: string | null
+    prizes: MobileLeaderboardPrize[]
+  }
+  activePeriod: MobileLeaderboardDetailPeriod | null
+  myEntry: MobileLeaderboardEntry | null
+  recentPeriods: MobileLeaderboardDetailPeriod[]
+  stats: {
+    trackedPeriods: number
+    activeTopScore: number | null
+    activeAverageScore: number | null
+    myRank: number | null
+    myScore: number | null
+  }
+}
+
 export type MobileClassFlowType = "VIDEO" | "PDF" | "ARTICLE" | "QUIZ"
 export type MobileClassFlowDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT"
 export type MobileTrainingRequestStatus = "PENDING" | "APPROVED" | "SCHEDULED" | "COMPLETED" | "CANCELLED"

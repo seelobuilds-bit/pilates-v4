@@ -16,9 +16,11 @@ function formatScore(score: number, unit: string | null) {
 function LeaderboardCard({
   leaderboard,
   myRank,
+  onViewDetails,
 }: {
   leaderboard: MobileLeaderboardSummary
   myRank: { rank: number; score: number } | null
+  onViewDetails: (leaderboardId: string) => void
 }) {
   const topEntries = leaderboard.currentPeriod?.entries?.slice(0, 3) || []
 
@@ -54,6 +56,10 @@ function LeaderboardCard({
       ) : (
         <Text style={styles.metaText}>No active leaderboard period yet.</Text>
       )}
+
+      <Pressable style={styles.detailsButton} onPress={() => onViewDetails(leaderboard.id)}>
+        <Text style={styles.detailsButtonText}>View Details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -124,6 +130,13 @@ export default function LeaderboardsScreen() {
     return "No leaderboards available right now."
   }, [featuredOnly, isAllowedRole])
 
+  const handleViewDetails = useCallback(
+    (leaderboardId: string) => {
+      router.push(`/(app)/leaderboards/${leaderboardId}` as never)
+    },
+    [router]
+  )
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -181,7 +194,9 @@ export default function LeaderboardsScreen() {
         <FlatList
           data={filteredLeaderboards}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <LeaderboardCard leaderboard={item} myRank={myRanks[item.id] || null} />}
+          renderItem={({ item }) => (
+            <LeaderboardCard leaderboard={item} myRank={myRanks[item.id] || null} onViewDetails={handleViewDetails} />
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadLeaderboards(true)} />}
           ListEmptyComponent={
@@ -287,6 +302,21 @@ const styles = StyleSheet.create({
   topEntriesWrap: {
     marginTop: 4,
     gap: 5,
+  },
+  detailsButton: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: "#f8fafc",
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
   },
   entryRow: {
     flexDirection: "row",
