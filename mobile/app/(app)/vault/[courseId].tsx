@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -51,6 +51,7 @@ export default function VaultCourseDetailScreen() {
   const [data, setData] = useState<MobileVaultCourseDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingPublish, setUpdatingPublish] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const resolvedCourseId = useMemo(() => String(courseId || "").trim(), [courseId])
@@ -86,6 +87,53 @@ export default function VaultCourseDetailScreen() {
     void loadCourse()
   }, [loadCourse])
 
+  const publishAction = useMemo(() => {
+    if (!data?.course || user?.role !== "OWNER") {
+      return null
+    }
+
+    return data.course.isPublished
+      ? ({
+          action: "unpublish" as const,
+          label: "Unpublish Course",
+          hint: "Hides this course from published listings until you republish it.",
+        })
+      : ({
+          action: "publish" as const,
+          label: "Publish Course",
+          hint: "Makes this course available in published listings.",
+        })
+  }, [data?.course, user?.role])
+
+  const handlePublishAction = useCallback(async () => {
+    if (!token || !resolvedCourseId || !publishAction) {
+      return
+    }
+
+    setUpdatingPublish(true)
+    setError(null)
+    try {
+      const response = await mobileApi.vaultCoursePublish(token, resolvedCourseId, publishAction.action)
+      setData((previous) => {
+        if (!previous) return previous
+        return {
+          ...previous,
+          course: {
+            ...previous.course,
+            isPublished: response.course.isPublished,
+            publishedAt: response.course.publishedAt,
+            updatedAt: response.course.updatedAt,
+          },
+        }
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update publish status"
+      setError(message)
+    } finally {
+      setUpdatingPublish(false)
+    }
+  }, [publishAction, resolvedCourseId, token])
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -98,6 +146,20 @@ export default function VaultCourseDetailScreen() {
             <Text style={styles.nameText}>{data.course.title}</Text>
             <Text style={styles.metaText}>{audienceLabel(data.course.audience)} • {data.course.difficulty || "General"}</Text>
             <Text style={styles.metaText}>{data.course.isPublished ? "Published" : "Draft"} • {data.course.isFeatured ? "Featured" : "Standard"}</Text>
+            {publishAction ? (
+              <View style={styles.actionWrap}>
+                <Pressable
+                  disabled={updatingPublish}
+                  style={[styles.actionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+                  onPress={() => void handlePublishAction()}
+                >
+                  <Text style={[styles.actionButtonText, { color: primaryColor }]}>
+                    {updatingPublish ? "Updating..." : publishAction.label}
+                  </Text>
+                </Pressable>
+                <Text style={styles.actionHint}>{publishAction.hint}</Text>
+              </View>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -221,6 +283,25 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 16,
+  },
+  actionWrap: {
+    marginTop: 6,
+    gap: 6,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  actionHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   heroImage: {
     width: "100%",
