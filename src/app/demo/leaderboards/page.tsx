@@ -1,11 +1,18 @@
 import { db } from "@/lib/db"
 import { LeaderboardsView } from "@/components/studio"
 import type { LeaderboardData, Leaderboard as LeaderboardType, LeaderboardEntry } from "@/components/studio"
+import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 
 // Demo uses data from a real studio (Zenith) to always reflect the current state
 const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
 
 export default async function DemoLeaderboardsPage() {
+  try {
+    await runLeaderboardAutoCycle()
+  } catch (cycleError) {
+    console.error("Demo leaderboard auto-cycle skipped due to error:", cycleError)
+  }
+
   // Find the demo studio (to show their rankings)
   const studio = await db.studio.findFirst({
     where: { subdomain: DEMO_STUDIO_SUBDOMAIN }
@@ -168,6 +175,4 @@ export default async function DemoLeaderboardsPage() {
 
   return <LeaderboardsView data={leaderboardData} />
 }
-
-
 

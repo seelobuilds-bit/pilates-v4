@@ -64,6 +64,7 @@ interface Leaderboard {
   color: string | null
   isActive: boolean
   isFeatured: boolean
+  autoCalculate: boolean
   showOnDashboard: boolean
   createdAt: string
   prizes: Prize[]
@@ -142,6 +143,7 @@ export default function HQLeaderboardsPage() {
   const [showPeriodModal, setShowPeriodModal] = useState(false)
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<Leaderboard | null>(null)
   const [saving, setSaving] = useState(false)
+  const [cycling, setCycling] = useState(false)
 
   // Form state
   const [form, setForm] = useState({
@@ -155,6 +157,7 @@ export default function HQLeaderboardsPage() {
     color: "#7c3aed",
     isActive: true,
     isFeatured: false,
+    autoCalculate: true,
     prizes: [
       { position: 1, name: "", prizeType: "CASH", prizeValue: 0, sponsorName: "" },
       { position: 2, name: "", prizeType: "GIFT_CARD", prizeValue: 0, sponsorName: "" },
@@ -165,7 +168,8 @@ export default function HQLeaderboardsPage() {
   const [periodForm, setPeriodForm] = useState({
     name: "",
     startDate: "",
-    endDate: ""
+    endDate: "",
+    endAfterTimeframe: true
   })
 
   useEffect(() => {
@@ -200,8 +204,8 @@ export default function HQLeaderboardsPage() {
       })
 
       if (res.ok) {
-        const newLb = await res.json()
-        setLeaderboards([newLb, ...leaderboards])
+        await res.json()
+        await fetchLeaderboards()
         setShowCreateModal(false)
         resetForm()
       }
@@ -228,7 +232,7 @@ export default function HQLeaderboardsPage() {
       if (res.ok) {
         await fetchLeaderboards()
         setShowPeriodModal(false)
-        setPeriodForm({ name: "", startDate: "", endDate: "" })
+        setPeriodForm({ name: "", startDate: "", endDate: "", endAfterTimeframe: true })
       }
     } catch (err) {
       console.error("Failed to create period:", err)
@@ -236,7 +240,11 @@ export default function HQLeaderboardsPage() {
     setSaving(false)
   }
 
-  async function toggleLeaderboard(id: string, field: "isActive" | "isFeatured", value: boolean) {
+  async function toggleLeaderboard(
+    id: string,
+    field: "isActive" | "isFeatured" | "autoCalculate",
+    value: boolean
+  ) {
     try {
       await fetch("/api/hq/leaderboards", {
         method: "PATCH",
@@ -267,12 +275,31 @@ export default function HQLeaderboardsPage() {
       color: "#7c3aed",
       isActive: true,
       isFeatured: false,
+      autoCalculate: true,
       prizes: [
         { position: 1, name: "", prizeType: "CASH", prizeValue: 0, sponsorName: "" },
         { position: 2, name: "", prizeType: "GIFT_CARD", prizeValue: 0, sponsorName: "" },
         { position: 3, name: "", prizeType: "BADGE", prizeValue: 0, sponsorName: "" }
       ]
     })
+  }
+
+  async function runAutoCycle() {
+    setCycling(true)
+    try {
+      const res = await fetch("/api/hq/leaderboards", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "runAutoCycle" })
+      })
+
+      if (res.ok) {
+        await fetchLeaderboards()
+      }
+    } catch (err) {
+      console.error("Failed to run leaderboard auto-cycle:", err)
+    }
+    setCycling(false)
   }
 
   const getStatusBadge = (status: string) => {
@@ -296,7 +323,7 @@ export default function HQLeaderboardsPage() {
   return (
     <div className="p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Trophy className="h-7 w-7 text-amber-500" />
@@ -304,10 +331,16 @@ export default function HQLeaderboardsPage() {
           </h1>
           <p className="text-gray-500 mt-1">Create and manage competitions across Current</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Leaderboard
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={runAutoCycle} disabled={cycling}>
+            {cycling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Clock className="h-4 w-4 mr-2" />}
+            Run Auto Cycle
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Leaderboard
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -437,7 +470,14 @@ export default function HQLeaderboardsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap justify-end">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">Auto Reset</span>
+                        <Switch
+                          checked={lb.autoCalculate}
+                          onCheckedChange={(v) => toggleLeaderboard(lb.id, "autoCalculate", v)}
+                        />
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500">Featured</span>
                         <Switch
@@ -457,6 +497,7 @@ export default function HQLeaderboardsPage() {
                         size="sm"
                         onClick={() => {
                           setSelectedLeaderboard(lb)
+                          setPeriodForm({ name: "", startDate: "", endDate: "", endAfterTimeframe: true })
                           setShowPeriodModal(true)
                         }}
                       >
@@ -746,6 +787,13 @@ export default function HQLeaderboardsPage() {
                 />
                 <Label>Featured</Label>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.autoCalculate}
+                  onCheckedChange={(v) => setForm({ ...form, autoCalculate: v })}
+                />
+                <Label>Auto Reset</Label>
+              </div>
             </div>
           </div>
 
@@ -800,6 +848,19 @@ export default function HQLeaderboardsPage() {
                 />
               </div>
             </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">End After Timeframe</p>
+                <p className="text-xs text-gray-500">
+                  If off, this custom override stays active until you manually finalize it.
+                </p>
+              </div>
+              <Switch
+                checked={periodForm.endAfterTimeframe}
+                onCheckedChange={(v) => setPeriodForm({ ...periodForm, endAfterTimeframe: v })}
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -820,8 +881,6 @@ export default function HQLeaderboardsPage() {
     </div>
   )
 }
-
-
 
 
 

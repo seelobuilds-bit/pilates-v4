@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
 
     if (decoded.role === "CLIENT") {
       return NextResponse.json({ error: "Leaderboards are only available for studio and teacher accounts" }, { status: 403 })
+    }
+
+    try {
+      await runLeaderboardAutoCycle()
+    } catch (cycleError) {
+      console.error("Mobile leaderboard auto-cycle skipped due to error:", cycleError)
     }
 
     const studio = await db.studio.findUnique({

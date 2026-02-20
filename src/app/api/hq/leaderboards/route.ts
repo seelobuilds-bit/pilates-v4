@@ -3,6 +3,8 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { Prisma, PrizeType } from "@prisma/client"
 import { populateLeaderboardPeriodEntries } from "@/lib/leaderboards/scoring"
+import { getManualPeriodFinalizeToken, runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
+import { finalizeLeaderboardPeriod } from "@/lib/leaderboards/finalize"
 
 interface PrizeInput {
   position?: number
@@ -40,6 +42,12 @@ export async function GET() {
   }
 
   try {
+    try {
+      await runLeaderboardAutoCycle()
+    } catch (cycleError) {
+      console.error("HQ leaderboard auto-cycle skipped due to error:", cycleError)
+    }
+
     const leaderboards = await db.leaderboard.findMany({
       include: {
         prizes: {
@@ -152,6 +160,7 @@ export async function POST(request: NextRequest) {
       isActive,
       isFeatured,
       showOnDashboard,
+      autoCalculate,
       prizes
     } = body
 
@@ -185,6 +194,7 @@ export async function POST(request: NextRequest) {
         isActive: isActive ?? true,
         isFeatured: isFeatured ?? false,
         showOnDashboard: showOnDashboard ?? true,
+        autoCalculate: autoCalculate ?? true,
         prizes: prizes?.length > 0 ? {
           create: (prizes as PrizeInput[]).map((prize, index) => ({
             position: prize.position || index + 1,
@@ -229,6 +239,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
     const { action, leaderboardId, periodId, ...data } = body
+    const actorId = session.user.id || "hq-admin"
 
     if (action === "update") {
       const leaderboard = await db.leaderboard.update({
@@ -239,6 +250,7 @@ export async function PATCH(request: NextRequest) {
           isActive: data.isActive,
           isFeatured: data.isFeatured,
           showOnDashboard: data.showOnDashboard,
+          autoCalculate: data.autoCalculate,
           icon: data.icon,
           color: data.color,
           minimumEntries: data.minimumEntries
@@ -270,6 +282,20 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: "Invalid period date range" }, { status: 400 })
       }
 
+      const endAfterTimeframe = data.endAfterTimeframe !== false
+
+      await db.leaderboardPeriod.updateMany({
+        where: {
+          leaderboardId,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "ARCHIVED",
+          finalizedAt: new Date(),
+          finalizedBy: actorId,
+        },
+      })
+
       const period = await db.leaderboardPeriod.create({
         data: {
           leaderboardId,
@@ -277,6 +303,7 @@ export async function PATCH(request: NextRequest) {
           startDate,
           endDate,
           status: "ACTIVE",
+          finalizedBy: getManualPeriodFinalizeToken(endAfterTimeframe),
         },
       })
 
@@ -284,6 +311,7 @@ export async function PATCH(request: NextRequest) {
 
       return NextResponse.json({
         ...period,
+        endAfterTimeframe,
         entriesCreated: seedResult.entriesCreated,
       })
     }
@@ -325,69 +353,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === "finalizePeriod") {
-      // Calculate final rankings and determine winners
       const period = await db.leaderboardPeriod.findUnique({
         where: { id: periodId },
-        include: {
-          leaderboard: { include: { prizes: true } },
-          entries: { orderBy: { score: "desc" } }
-        }
+        select: { id: true },
       })
-
       if (!period) {
         return NextResponse.json({ error: "Period not found" }, { status: 404 })
       }
 
-      const sortedEntries = [...period.entries].sort((left, right) => {
-        if (period.leaderboard.higherIsBetter) {
-          if (left.score !== right.score) return right.score - left.score
-        } else if (left.score !== right.score) {
-          return left.score - right.score
-        }
-        return left.id.localeCompare(right.id)
+      const finalized = await finalizeLeaderboardPeriod({
+        periodId: period.id,
+        finalizedBy: actorId,
       })
+      return NextResponse.json({ success: true, ...finalized })
+    }
 
-      // Update ranks
-      for (let i = 0; i < sortedEntries.length; i++) {
-        await db.leaderboardEntry.update({
-          where: { id: sortedEntries[i].id },
-          data: { rank: i + 1 }
-        })
-      }
-
-      await db.leaderboardWinner.deleteMany({
-        where: { periodId: period.id },
+    if (action === "runAutoCycle") {
+      const result = await runLeaderboardAutoCycle({
+        leaderboardId: typeof leaderboardId === "string" ? leaderboardId : undefined,
       })
-
-      // Create winners for each prize
-      for (const prize of period.leaderboard.prizes) {
-        const winner = sortedEntries[prize.position - 1]
-        if (winner) {
-          await db.leaderboardWinner.create({
-            data: {
-              periodId: period.id,
-              prizeId: prize.id,
-              studioId: winner.studioId,
-              teacherId: winner.teacherId,
-              position: prize.position,
-              finalScore: winner.score,
-              prizeStatus: "pending"
-            }
-          })
-        }
-      }
-
-      // Mark period as completed
-      await db.leaderboardPeriod.update({
-        where: { id: periodId },
-        data: {
-          status: "COMPLETED",
-          finalizedAt: new Date(),
-          finalizedBy: session.user.id
-        }
-      })
-
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true, ...result })
     }
 
     if (action === "updatePrizeStatus") {
@@ -410,9 +395,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update leaderboard" }, { status: 500 })
   }
 }
-
-
-
 
 
 

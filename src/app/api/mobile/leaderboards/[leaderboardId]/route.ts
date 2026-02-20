@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ leaderboardId: string }> }
 ) {
   try {
+    const resolvedParams = await params
+    const leaderboardId = resolvedParams.leaderboardId
+
     const token = extractBearerToken(request.headers.get("authorization"))
     if (!token) {
       return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
@@ -26,6 +30,14 @@ export async function GET(
       return NextResponse.json({ error: "Teacher session invalid" }, { status: 401 })
     }
 
+    try {
+      await runLeaderboardAutoCycle({
+        leaderboardId,
+      })
+    } catch (cycleError) {
+      console.error("Mobile leaderboard detail auto-cycle skipped due to error:", cycleError)
+    }
+
     const studio = await db.studio.findUnique({
       where: { id: decoded.studioId },
       select: {
@@ -41,7 +53,6 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const { leaderboardId } = await params
     const leaderboard = await db.leaderboard.findFirst({
       where: {
         id: leaderboardId,

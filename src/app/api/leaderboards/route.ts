@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
+import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 
 // GET - Fetch leaderboards for studios/teachers
 export async function GET(request: NextRequest) {
@@ -23,6 +24,12 @@ export async function GET(request: NextRequest) {
       : null
 
   try {
+    try {
+      await runLeaderboardAutoCycle()
+    } catch (cycleError) {
+      console.error("Leaderboard auto-cycle skipped due to error:", cycleError)
+    }
+
     // Get active leaderboards
     const leaderboards = await db.leaderboard.findMany({
       where: {
@@ -258,8 +265,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
-
 
 
 
