@@ -12,6 +12,11 @@ const METRIC_ORDER_OPTIONS = [
   { id: "default", label: "Default" },
   { id: "movers", label: "Top Movers" },
 ] as const
+const METRIC_TREND_FILTER_OPTIONS = [
+  { id: "all", label: "All" },
+  { id: "improving", label: "Improving" },
+  { id: "declining", label: "Declining" },
+] as const
 
 function formatMetricValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
@@ -78,6 +83,7 @@ export default function ReportsScreen() {
   const primaryColor = getStudioPrimaryColor()
   const [days, setDays] = useState<7 | 30 | 90>(30)
   const [metricOrder, setMetricOrder] = useState<(typeof METRIC_ORDER_OPTIONS)[number]["id"]>("default")
+  const [metricTrendFilter, setMetricTrendFilter] = useState<(typeof METRIC_TREND_FILTER_OPTIONS)[number]["id"]>("all")
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -123,9 +129,14 @@ export default function ReportsScreen() {
   const canOpenWeb = user?.role === "OWNER" || user?.role === "TEACHER"
   const visibleMetrics = useMemo(() => {
     if (!data?.metrics) return []
-    if (metricOrder === "default") return data.metrics
-    return [...data.metrics].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
-  }, [data?.metrics, metricOrder])
+    const filtered = data.metrics.filter((metric) => {
+      if (metricTrendFilter === "improving") return metric.changePct > 0
+      if (metricTrendFilter === "declining") return metric.changePct < 0
+      return true
+    })
+    if (metricOrder === "default") return filtered
+    return [...filtered].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
+  }, [data?.metrics, metricOrder, metricTrendFilter])
 
   const openWebReports = useCallback(async () => {
     const target = user?.role === "TEACHER" ? "/teacher/reports" : "/studio/reports"
@@ -173,6 +184,23 @@ export default function ReportsScreen() {
                   onPress={() => setMetricOrder(option.id)}
                 >
                   <Text style={[styles.orderButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+                </Pressable>
+              )
+            })}
+          </View>
+          <View style={styles.filterRow}>
+            {METRIC_TREND_FILTER_OPTIONS.map((option) => {
+              const selected = option.id === metricTrendFilter
+              return (
+                <Pressable
+                  key={option.id}
+                  style={[
+                    styles.filterButton,
+                    selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.14) } : null,
+                  ]}
+                  onPress={() => setMetricTrendFilter(option.id)}
+                >
+                  <Text style={[styles.filterButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
                 </Pressable>
               )
             })}
@@ -241,6 +269,12 @@ export default function ReportsScreen() {
                 )
               })}
             </View>
+            {visibleMetrics.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>No metrics match this filter</Text>
+                <Text style={styles.emptyText}>Try switching to a different trend filter.</Text>
+              </View>
+            ) : null}
 
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Highlights ({days}d)</Text>
@@ -307,6 +341,12 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
+  },
   periodButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
@@ -329,6 +369,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   orderButtonText: {
+    color: mobileTheme.colors.textSubtle,
+    fontWeight: "700",
+    fontSize: 11,
+  },
+  filterButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  filterButtonText: {
     color: mobileTheme.colors.textSubtle,
     fontWeight: "700",
     fontSize: 11,

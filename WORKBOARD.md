@@ -116,10 +116,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-211 Mobile metric trend delta badges | codex-main | codex/t-211-mobile-metric-trend-delta-badges | Add per-bucket delta indicators in metric trend rows so users can see movement between adjacent points without manual subtraction | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/128 |
 | T-212 Mobile metric trend window toggle | codex-main | codex/t-212-mobile-metric-trend-window-toggle | Add show-recent/show-all toggle for trend rows on metric detail so long windows remain readable on small screens | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/129 |
 | T-213 Mobile reports top movers ordering | codex-main | codex/t-213-mobile-reports-top-movers | Add Default/Top Movers ordering controls on mobile Reports so high-volatility metrics surface first during quick scans | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/130 |
-| T-214 Mobile zero-safe trend visuals | codex-main | codex/t-214-mobile-reports-zero-safe-trends | Fix reports trend bars/sparklines so zero-value points render as true zero instead of artificial minimum bars | In Progress | TBD |
+| T-214 Mobile zero-safe trend visuals | codex-main | codex/t-214-mobile-reports-zero-safe-trends | Fix reports trend bars/sparklines so zero-value points render as true zero instead of artificial minimum bars | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/131 |
+| T-215 Mobile reports trend filter chips | codex-main | codex/t-215-mobile-reports-trend-filter-chips | Add All/Improving/Declining filter chips on mobile Reports to quickly isolate positive or negative movers | In Progress | TBD |
 
 ## Merge Order
-1. T-214 Mobile zero-safe trend visuals
+1. T-215 Mobile reports trend filter chips
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
