@@ -103,10 +103,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-198 Mobile vault course detail view | codex-main | codex/t-198-mobile-vault-course-detail-view | Add mobile vault course detail API + screen and wire Vault rows to native per-course detail with modules, instructors, and enrollment health | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/115 |
 | T-199 Mobile marketing campaign detail view | codex-main | codex/t-199-mobile-marketing-campaign-detail-view | Add mobile marketing campaign detail API + screen and wire campaign cards to native per-campaign detail with delivery/open/click stats and recent message outcomes | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/116 |
 | T-200 Mobile marketing automation detail view | codex-main | codex/t-200-mobile-marketing-automation-detail-view | Add mobile marketing automation detail API + screen and wire automation cards to native per-automation detail with step timing, trigger rules, and recent message outcomes | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/117 |
-| T-201 Mobile social flow detail view | codex-main | codex/t-201-mobile-social-flow-detail-view | Add mobile social flow detail API + screen and wire Social flow cards to native per-flow detail with trigger configuration, conversion funnel, and recent events | In Progress | TBD |
+| T-201 Mobile social flow detail view | codex-main | codex/t-201-mobile-social-flow-detail-view | Add mobile social flow detail API + screen and wire Social flow cards to native per-flow detail with trigger configuration, conversion funnel, and recent events | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/118 |
+| T-202 Mobile class flow content detail view | codex-main | codex/t-202-mobile-class-flow-content-detail-view | Add mobile class flow content detail API + screen and wire Class Flows cards to native per-content detail with resource availability, progress timeline, and related training requests | In Progress | TBD |
 
 ## Merge Order
-1. T-201 Mobile social flow detail view
+1. T-202 Mobile class flow content detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

@@ -1141,6 +1141,61 @@ export interface MobileClassFlowsResponse {
   recentRequests: MobileTrainingRequestSummary[]
 }
 
+export interface MobileClassFlowRelatedContentSummary {
+  id: string
+  title: string
+  type: MobileClassFlowType
+  difficulty: MobileClassFlowDifficulty
+  duration: number | null
+  thumbnailUrl: string | null
+  isFeatured: boolean
+  progress: MobileClassFlowProgress | null
+}
+
+export interface MobileClassFlowContentDetailResponse {
+  role: "OWNER" | "TEACHER"
+  studio: StudioSummary
+  content: {
+    id: string
+    title: string
+    description: string | null
+    type: MobileClassFlowType
+    difficulty: MobileClassFlowDifficulty
+    duration: number | null
+    videoUrl: string | null
+    pdfUrl: string | null
+    thumbnailUrl: string | null
+    articlePreview: string | null
+    isFeatured: boolean
+    tags: string[]
+    createdAt: string
+    updatedAt: string
+    category: {
+      id: string
+      name: string
+      description: string | null
+      icon: string | null
+      color: string | null
+    }
+    resourceAvailability: {
+      video: boolean
+      pdf: boolean
+      article: boolean
+    }
+  }
+  progress: MobileClassFlowProgress | null
+  relatedContent: MobileClassFlowRelatedContentSummary[]
+  recentRequests: MobileTrainingRequestSummary[]
+  stats: {
+    categoryContentCount: number
+    relatedContentCount: number
+    requestCount: number
+  }
+  permissions: {
+    canUpdateProgress: boolean
+  }
+}
+
 export interface MobileStoreProductSummary {
   id: string
   price: number

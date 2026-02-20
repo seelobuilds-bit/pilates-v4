@@ -33,12 +33,14 @@ function ContentCard({
   isTeacher,
   primaryColor,
   onMarkComplete,
+  onOpenDetails,
   busy,
 }: {
   item: ContentRow
   isTeacher: boolean
   primaryColor: string
   onMarkComplete: (contentId: string) => void
+  onOpenDetails: (contentId: string) => void
   busy: boolean
 }) {
   const progressPercent = item.progress?.progressPercent ?? 0
@@ -95,6 +97,13 @@ function ContentCard({
           <Text style={[styles.actionButtonText, { color: primaryColor }]}>{busy ? "Saving..." : "Mark complete"}</Text>
         </Pressable>
       ) : null}
+
+      <Pressable
+        style={[styles.detailButton, { borderColor: withOpacity(primaryColor, 0.45) }]}
+        onPress={() => onOpenDetails(item.id)}
+      >
+        <Text style={[styles.detailButtonText, { color: primaryColor }]}>View details</Text>
+      </Pressable>
     </View>
   )
 }
@@ -287,6 +296,9 @@ export default function ClassFlowsScreen() {
               isTeacher={isTeacher}
               primaryColor={primaryColor}
               onMarkComplete={handleMarkComplete}
+              onOpenDetails={(contentId) => {
+                router.push(`/(app)/class-flows/${contentId}` as never)
+              }}
               busy={savingContentId === item.id}
             />
           )}
@@ -518,6 +530,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   actionButtonText: {
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  detailButton: {
+    borderWidth: 1,
+    borderRadius: mobileTheme.radius.lg,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  detailButtonText: {
     fontWeight: "700",
     fontSize: 13,
   },
