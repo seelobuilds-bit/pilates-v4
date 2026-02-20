@@ -109,6 +109,24 @@ export default function ReportMetricDetailScreen() {
     () => Math.max(1, ...metricSeries.map((point) => Math.abs(point.value))),
     [metricSeries]
   )
+  const trendSummary = useMemo(() => {
+    if (!metric || metricSeries.length === 0) return []
+    const values = metricSeries.map((point) => point.value)
+    const start = values[0] ?? 0
+    const latest = values[values.length - 1] ?? 0
+    let peak = values[0] ?? 0
+    let low = values[0] ?? 0
+    for (const value of values) {
+      if (value > peak) peak = value
+      if (value < low) low = value
+    }
+    return [
+      { label: "Start", value: start },
+      { label: "Latest", value: latest },
+      { label: "Peak", value: peak },
+      { label: "Low", value: low },
+    ]
+  }, [metric, metricSeries])
 
   return (
     <ScrollView
@@ -166,24 +184,34 @@ export default function ReportMetricDetailScreen() {
             {metricSeries.length === 0 ? (
               <Text style={styles.metaText}>No trend points available for this period.</Text>
             ) : (
-              metricSeries.map((point, index) => (
-                <View key={`${point.label}-${index}`} style={styles.trendRow}>
-                  <Text style={styles.trendLabel}>{point.label}</Text>
-                  <View style={styles.trendTrack}>
-                    <View
-                      style={[
-                        styles.trendFill,
-                        {
-                          width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.trendValue}>
-                    {formatMetricValue({ ...metric, value: point.value }, currency)}
-                  </Text>
+              <>
+                <View style={styles.trendSummaryGrid}>
+                  {trendSummary.map((item) => (
+                    <View key={item.label} style={styles.trendSummaryChip}>
+                      <Text style={styles.trendSummaryLabel}>{item.label}</Text>
+                      <Text style={styles.trendSummaryValue}>{formatMetricValue({ ...metric, value: item.value }, currency)}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))
+                {metricSeries.map((point, index) => (
+                  <View key={`${point.label}-${index}`} style={styles.trendRow}>
+                    <Text style={styles.trendLabel}>{point.label}</Text>
+                    <View style={styles.trendTrack}>
+                      <View
+                        style={[
+                          styles.trendFill,
+                          {
+                            width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.trendValue}>
+                      {formatMetricValue({ ...metric, value: point.value }, currency)}
+                    </Text>
+                  </View>
+                ))}
+              </>
             )}
           </View>
 
@@ -326,6 +354,32 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontSize: 12,
     width: 58,
+  },
+  trendSummaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 2,
+  },
+  trendSummaryChip: {
+    width: "48%",
+    minWidth: 132,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+    backgroundColor: mobileTheme.colors.canvas,
+  },
+  trendSummaryLabel: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 11,
+  },
+  trendSummaryValue: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
   trendTrack: {
     flex: 1,
