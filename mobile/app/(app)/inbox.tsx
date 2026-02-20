@@ -109,6 +109,7 @@ export default function InboxScreen() {
       return haystack.includes(searchNormalized)
     })
   }, [conversations, searchNormalized, unreadOnly])
+  const unreadConversationCount = useMemo(() => conversations.filter((conversation) => conversation.unreadCount > 0).length, [conversations])
 
   const filteredMessages = useMemo(() => {
     return messages.filter((message) => {
@@ -383,14 +384,26 @@ export default function InboxScreen() {
             </Pressable>
           </View>
         ) : (
-          <Pressable
-            style={[styles.unreadToggle, unreadOnly && [styles.unreadToggleActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
-            onPress={() => setUnreadOnly((prev) => !prev)}
-          >
-            <Text style={[styles.unreadToggleText, unreadOnly && [styles.unreadToggleTextActive, { color: primaryColor }]]}>
-              {unreadOnly ? "Unread only: ON" : "Unread only: OFF"}
-            </Text>
-          </Pressable>
+          <View style={styles.unreadRow}>
+            <Pressable
+              style={[
+                styles.unreadChip,
+                !unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
+              onPress={() => setUnreadOnly(false)}
+            >
+              <Text style={[styles.unreadChipText, !unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`All (${conversations.length})`}</Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.unreadChip,
+                unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
+              onPress={() => setUnreadOnly(true)}
+            >
+              <Text style={[styles.unreadChipText, unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`Unread (${unreadConversationCount})`}</Text>
+            </Pressable>
+          </View>
         )}
       </View>
 
@@ -519,8 +532,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: mobileTheme.colors.surface,
   },
-  unreadToggle: {
-    alignSelf: "flex-start",
+  unreadRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  unreadChip: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 8,
@@ -528,15 +544,15 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     backgroundColor: mobileTheme.colors.surface,
   },
-  unreadToggleActive: {
+  unreadChipActive: {
     borderWidth: 1,
   },
-  unreadToggleText: {
+  unreadChipText: {
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 12,
   },
-  unreadToggleTextActive: {
+  unreadChipTextActive: {
     fontWeight: "700",
   },
   list: {
