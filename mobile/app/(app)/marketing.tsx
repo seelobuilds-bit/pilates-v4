@@ -125,6 +125,8 @@ export default function MarketingScreen() {
 
   const [data, setData] = useState<MobileMarketingResponse | null>(null)
   const [search, setSearch] = useState("")
+  const [campaignStatusFilter, setCampaignStatusFilter] = useState<"ALL" | MobileMarketingCampaignSummary["status"]>("ALL")
+  const [automationStatusFilter, setAutomationStatusFilter] = useState<"ALL" | MobileMarketingAutomationSummary["status"]>("ALL")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
@@ -225,6 +227,56 @@ export default function MarketingScreen() {
     [loadMarketing, token]
   )
 
+  const campaignStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: data?.campaigns.length ?? 0 }
+    for (const campaign of data?.campaigns || []) {
+      counts[campaign.status] = (counts[campaign.status] ?? 0) + 1
+    }
+    return counts
+  }, [data?.campaigns])
+
+  const automationStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: data?.automations.length ?? 0 }
+    for (const automation of data?.automations || []) {
+      counts[automation.status] = (counts[automation.status] ?? 0) + 1
+    }
+    return counts
+  }, [data?.automations])
+
+  const campaignStatusOptions = useMemo(() => {
+    const ordered = ["DRAFT", "SCHEDULED", "SENDING", "SENT", "PAUSED", "CANCELLED"] as const
+    return ordered.filter((status) => (campaignStatusCounts[status] ?? 0) > 0)
+  }, [campaignStatusCounts])
+
+  const automationStatusOptions = useMemo(() => {
+    const ordered = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"] as const
+    return ordered.filter((status) => (automationStatusCounts[status] ?? 0) > 0)
+  }, [automationStatusCounts])
+
+  const filteredCampaigns = useMemo(() => {
+    if (!data?.campaigns) return []
+    if (campaignStatusFilter === "ALL") return data.campaigns
+    return data.campaigns.filter((campaign) => campaign.status === campaignStatusFilter)
+  }, [campaignStatusFilter, data?.campaigns])
+
+  const filteredAutomations = useMemo(() => {
+    if (!data?.automations) return []
+    if (automationStatusFilter === "ALL") return data.automations
+    return data.automations.filter((automation) => automation.status === automationStatusFilter)
+  }, [automationStatusFilter, data?.automations])
+
+  useEffect(() => {
+    if (campaignStatusFilter !== "ALL" && !campaignStatusOptions.includes(campaignStatusFilter)) {
+      setCampaignStatusFilter("ALL")
+    }
+  }, [campaignStatusFilter, campaignStatusOptions])
+
+  useEffect(() => {
+    if (automationStatusFilter !== "ALL" && !automationStatusOptions.includes(automationStatusFilter)) {
+      setAutomationStatusFilter("ALL")
+    }
+  }, [automationStatusFilter, automationStatusOptions])
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -260,10 +312,104 @@ export default function MarketingScreen() {
         >
           {loading ? null : data && (data.campaigns.length > 0 || data.automations.length > 0) ? (
             <>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterLabel}>Campaign Filters</Text>
+                <View style={styles.filterRow}>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      campaignStatusFilter === "ALL" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setCampaignStatusFilter("ALL")}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        campaignStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" },
+                      ]}
+                    >
+                      {`All (${campaignStatusCounts.ALL ?? 0})`}
+                    </Text>
+                  </Pressable>
+                  {campaignStatusOptions.map((status) => (
+                    <Pressable
+                      key={status}
+                      style={[
+                        styles.filterChip,
+                        campaignStatusFilter === status && {
+                          borderColor: primaryColor,
+                          backgroundColor: withOpacity(primaryColor, 0.14),
+                        },
+                      ]}
+                      onPress={() => setCampaignStatusFilter(status)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          campaignStatusFilter === status && { color: primaryColor, fontWeight: "700" },
+                        ]}
+                      >
+                        {`${status} (${campaignStatusCounts[status] ?? 0})`}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={styles.filterLabel}>Automation Filters</Text>
+                <View style={styles.filterRow}>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      automationStatusFilter === "ALL" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setAutomationStatusFilter("ALL")}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        automationStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" },
+                      ]}
+                    >
+                      {`All (${automationStatusCounts.ALL ?? 0})`}
+                    </Text>
+                  </Pressable>
+                  {automationStatusOptions.map((status) => (
+                    <Pressable
+                      key={status}
+                      style={[
+                        styles.filterChip,
+                        automationStatusFilter === status && {
+                          borderColor: primaryColor,
+                          backgroundColor: withOpacity(primaryColor, 0.14),
+                        },
+                      ]}
+                      onPress={() => setAutomationStatusFilter(status)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          automationStatusFilter === status && { color: primaryColor, fontWeight: "700" },
+                        ]}
+                      >
+                        {`${status} (${automationStatusCounts[status] ?? 0})`}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Campaigns</Text>
-                {data.campaigns.length > 0 ? (
-                  data.campaigns.map((campaign) => (
+                {filteredCampaigns.length > 0 ? (
+                  filteredCampaigns.map((campaign) => (
                     <CampaignCard
                       key={campaign.id}
                       item={campaign}
@@ -274,14 +420,14 @@ export default function MarketingScreen() {
                     />
                   ))
                 ) : (
-                  <Text style={styles.metaText}>No campaigns found.</Text>
+                  <Text style={styles.metaText}>No campaigns match this filter.</Text>
                 )}
               </View>
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Automations</Text>
-                {data.automations.length > 0 ? (
-                  data.automations.map((automation) => (
+                {filteredAutomations.length > 0 ? (
+                  filteredAutomations.map((automation) => (
                     <AutomationCard
                       key={automation.id}
                       item={automation}
@@ -292,7 +438,7 @@ export default function MarketingScreen() {
                     />
                   ))
                 ) : (
-                  <Text style={styles.metaText}>No automations found.</Text>
+                  <Text style={styles.metaText}>No automations match this filter.</Text>
                 )}
               </View>
             </>
@@ -368,6 +514,31 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: 10,
     paddingBottom: 24,
+  },
+  filterSection: {
+    gap: 6,
+  },
+  filterLabel: {
+    color: mobileTheme.colors.text,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  filterChipText: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 11,
   },
   sectionWrap: {
     gap: 8,
