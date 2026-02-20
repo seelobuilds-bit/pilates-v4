@@ -8,6 +8,10 @@ import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
 
 const PERIOD_OPTIONS = [7, 30, 90] as const
+const METRIC_ORDER_OPTIONS = [
+  { id: "default", label: "Default" },
+  { id: "movers", label: "Top Movers" },
+] as const
 
 function formatMetricValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
@@ -73,6 +77,7 @@ export default function ReportsScreen() {
   const { token, user } = useAuth()
   const primaryColor = getStudioPrimaryColor()
   const [days, setDays] = useState<7 | 30 | 90>(30)
+  const [metricOrder, setMetricOrder] = useState<(typeof METRIC_ORDER_OPTIONS)[number]["id"]>("default")
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -116,6 +121,11 @@ export default function ReportsScreen() {
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
   const canOpenWeb = user?.role === "OWNER" || user?.role === "TEACHER"
+  const visibleMetrics = useMemo(() => {
+    if (!data?.metrics) return []
+    if (metricOrder === "default") return data.metrics
+    return [...data.metrics].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
+  }, [data?.metrics, metricOrder])
 
   const openWebReports = useCallback(async () => {
     const target = user?.role === "TEACHER" ? "/teacher/reports" : "/studio/reports"
@@ -150,6 +160,23 @@ export default function ReportsScreen() {
               )
             })}
           </View>
+          <View style={styles.orderRow}>
+            {METRIC_ORDER_OPTIONS.map((option) => {
+              const selected = option.id === metricOrder
+              return (
+                <Pressable
+                  key={option.id}
+                  style={[
+                    styles.orderButton,
+                    selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.14) } : null,
+                  ]}
+                  onPress={() => setMetricOrder(option.id)}
+                >
+                  <Text style={[styles.orderButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+                </Pressable>
+              )
+            })}
+          </View>
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -161,7 +188,7 @@ export default function ReportsScreen() {
         ) : data ? (
           <>
             <View style={styles.metricGrid}>
-              {data.metrics.map((metric) => {
+              {visibleMetrics.map((metric) => {
                 const badge = changeBadge(metric)
                 const trendValues = data.series
                   .map((point) => point.metrics[metric.id])
@@ -271,6 +298,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
+  orderRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 2,
+  },
   periodButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
@@ -283,6 +315,19 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textSubtle,
     fontWeight: "700",
     fontSize: 12,
+  },
+  orderButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  orderButtonText: {
+    color: mobileTheme.colors.textSubtle,
+    fontWeight: "700",
+    fontSize: 11,
   },
   metricGrid: {
     flexDirection: "row",
