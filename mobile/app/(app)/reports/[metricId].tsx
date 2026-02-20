@@ -44,6 +44,22 @@ function changeBadge(metric: MobileReportMetric) {
   return { label: "0%", backgroundColor: "#e2e8f0", color: "#334155" }
 }
 
+function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = "usd") {
+  const sign = delta > 0 ? "+" : delta < 0 ? "-" : ""
+  if (metric.format === "currency") {
+    const formatted = new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(Math.abs(delta))
+    return `${sign}${formatted}`
+  }
+  if (metric.format === "percent") {
+    return `${sign}${Math.abs(delta).toFixed(1)}%`
+  }
+  return `${sign}${Math.abs(Math.round(delta))}`
+}
+
 export default function ReportMetricDetailScreen() {
   const { token, user } = useAuth()
   const { metricId, days: daysParam } = useLocalSearchParams<{ metricId?: string; days?: string }>()
@@ -193,24 +209,48 @@ export default function ReportMetricDetailScreen() {
                     </View>
                   ))}
                 </View>
-                {metricSeries.map((point, index) => (
-                  <View key={`${point.label}-${index}`} style={styles.trendRow}>
-                    <Text style={styles.trendLabel}>{point.label}</Text>
-                    <View style={styles.trendTrack}>
-                      <View
-                        style={[
-                          styles.trendFill,
-                          {
-                            width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
-                          },
-                        ]}
-                      />
+                {metricSeries.map((point, index) => {
+                  const previousValue = index === 0 ? null : metricSeries[index - 1]?.value ?? null
+                  const delta = previousValue === null ? null : point.value - previousValue
+                  const deltaTone = delta === null ? "muted" : delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral"
+
+                  return (
+                    <View key={`${point.label}-${index}`} style={styles.trendRow}>
+                      <Text style={styles.trendLabel}>{point.label}</Text>
+                      <View style={styles.trendTrack}>
+                        <View
+                          style={[
+                            styles.trendFill,
+                            {
+                              width: `${Math.max(4, Math.round((Math.abs(point.value) / metricSeriesMax) * 100))}%`,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <View style={styles.trendValueGroup}>
+                        <Text style={styles.trendValue}>
+                          {formatMetricValue({ ...metric, value: point.value }, currency)}
+                        </Text>
+                        {delta === null ? (
+                          <Text style={[styles.trendDeltaText, styles.trendDeltaTextMuted]}>Start</Text>
+                        ) : (
+                          <Text
+                            style={[
+                              styles.trendDeltaText,
+                              deltaTone === "positive"
+                                ? styles.trendDeltaTextPositive
+                                : deltaTone === "negative"
+                                  ? styles.trendDeltaTextNegative
+                                  : styles.trendDeltaTextNeutral,
+                            ]}
+                          >
+                            {formatDeltaValue(delta, metric, currency)}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                    <Text style={styles.trendValue}>
-                      {formatMetricValue({ ...metric, value: point.value }, currency)}
-                    </Text>
-                  </View>
-                ))}
+                  )
+                })}
               </>
             )}
           </View>
@@ -397,8 +437,29 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontWeight: "700",
     fontSize: 12,
-    minWidth: 68,
+    minWidth: 76,
     textAlign: "right",
+  },
+  trendValueGroup: {
+    minWidth: 76,
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  trendDeltaText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  trendDeltaTextPositive: {
+    color: "#166534",
+  },
+  trendDeltaTextNegative: {
+    color: "#991b1b",
+  },
+  trendDeltaTextNeutral: {
+    color: "#334155",
+  },
+  trendDeltaTextMuted: {
+    color: mobileTheme.colors.textMuted,
   },
   metaText: {
     color: mobileTheme.colors.textSubtle,
