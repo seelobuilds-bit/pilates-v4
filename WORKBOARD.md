@@ -101,10 +101,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-196 Mobile schedule session detail view | codex-main | codex/t-196-mobile-schedule-session-detail-view | Add mobile schedule session detail API + screen and wire Schedule rows to native per-session detail with booking breakdown and client actions | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/113 |
 | T-197 Mobile store product detail view | codex-main | codex/t-197-mobile-store-product-detail-view | Add mobile store product detail API + screen and wire Store rows to native per-product detail with pricing, inventory, and recent order snapshots | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/114 |
 | T-198 Mobile vault course detail view | codex-main | codex/t-198-mobile-vault-course-detail-view | Add mobile vault course detail API + screen and wire Vault rows to native per-course detail with modules, instructors, and enrollment health | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/115 |
-| T-199 Mobile marketing campaign detail view | codex-main | codex/t-199-mobile-marketing-campaign-detail-view | Add mobile marketing campaign detail API + screen and wire campaign cards to native per-campaign detail with delivery/open/click stats and recent message outcomes | In Progress | TBD |
+| T-199 Mobile marketing campaign detail view | codex-main | codex/t-199-mobile-marketing-campaign-detail-view | Add mobile marketing campaign detail API + screen and wire campaign cards to native per-campaign detail with delivery/open/click stats and recent message outcomes | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/116 |
+| T-200 Mobile marketing automation detail view | codex-main | codex/t-200-mobile-marketing-automation-detail-view | Add mobile marketing automation detail API + screen and wire automation cards to native per-automation detail with step timing, trigger rules, and recent message outcomes | In Progress | TBD |
 
 ## Merge Order
-1. T-199 Mobile marketing campaign detail view
+1. T-200 Mobile marketing automation detail view
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

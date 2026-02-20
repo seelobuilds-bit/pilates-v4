@@ -237,6 +237,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="marketing/automations/[automationId]"
+        options={{
+          title: "Automation",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="social"
         options={{
           title: "Social",
