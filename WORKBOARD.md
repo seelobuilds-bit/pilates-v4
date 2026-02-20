@@ -113,10 +113,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-208 Mobile metric trend bars | codex-main | codex/t-208-mobile-metric-trend-bars | Add compact visual trend bars on metric detail screen for fast historical scanning without reading each row value | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/125 |
 | T-209 Mobile reports card sparklines | codex-main | codex/t-209-mobile-reports-card-sparklines | Add compact sparkline bars on Reports overview KPI cards so users can scan recent direction before drilling into detail | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/126 |
 | T-210 Mobile metric trend summary chips | codex-main | codex/t-210-mobile-metric-trend-summary-chips | Add start/latest/peak/low trend summary chips to metric detail so users can interpret trajectory immediately before reading each bucket row | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/127 |
-| T-211 Mobile metric trend delta badges | codex-main | codex/t-211-mobile-metric-trend-delta-badges | Add per-bucket delta indicators in metric trend rows so users can see movement between adjacent points without manual subtraction | In Progress | TBD |
+| T-211 Mobile metric trend delta badges | codex-main | codex/t-211-mobile-metric-trend-delta-badges | Add per-bucket delta indicators in metric trend rows so users can see movement between adjacent points without manual subtraction | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/128 |
+| T-212 Mobile metric trend window toggle | codex-main | codex/t-212-mobile-metric-trend-window-toggle | Add show-recent/show-all toggle for trend rows on metric detail so long windows remain readable on small screens | In Progress | TBD |
 
 ## Merge Order
-1. T-211 Mobile metric trend delta badges
+1. T-212 Mobile metric trend window toggle
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
