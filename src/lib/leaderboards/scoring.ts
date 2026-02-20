@@ -6,7 +6,7 @@ import {
   LeaderboardPeriod,
   Prisma,
 } from "@prisma/client"
-import { db } from "@/lib/db"
+import { db } from "../db"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NEWCOMER_WINDOW_DAYS = 120
