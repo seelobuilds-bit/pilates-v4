@@ -51,6 +51,23 @@ function changeBadge(metric: MobileReportMetric) {
   return { label: "0%", backgroundColor: "#e2e8f0", color: "#334155" }
 }
 
+function trendDirectionLabel(startValue: number, endValue: number, metric: MobileReportMetric, currency = "usd") {
+  const delta = endValue - startValue
+  const sign = delta > 0 ? "+" : delta < 0 ? "-" : ""
+  if (metric.format === "currency") {
+    const formattedAbs = new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(Math.abs(delta))
+    return `${sign}${formattedAbs}`
+  }
+  if (metric.format === "percent") {
+    return `${sign}${Math.abs(delta).toFixed(1)}%`
+  }
+  return `${sign}${Math.abs(Math.round(delta))}`
+}
+
 export default function ReportsScreen() {
   const router = useRouter()
   const { token, user } = useAuth()
@@ -146,6 +163,9 @@ export default function ReportsScreen() {
             <View style={styles.metricGrid}>
               {data.metrics.map((metric) => {
                 const badge = changeBadge(metric)
+                const trendStart = data.series[0]?.metrics[metric.id]
+                const trendEnd = data.series[data.series.length - 1]?.metrics[metric.id]
+                const hasTrend = typeof trendStart === "number" && typeof trendEnd === "number"
                 return (
                   <Pressable
                     key={metric.id}
@@ -158,6 +178,11 @@ export default function ReportsScreen() {
                     </View>
                     <Text style={styles.metricValue}>{formatMetricValue(metric, currency)}</Text>
                     <Text style={styles.metricPrevious}>Prev {formatPreviousValue(metric, currency)}</Text>
+                    {hasTrend ? (
+                      <Text style={styles.metricTrend}>
+                        Trend {trendDirectionLabel(trendStart, trendEnd, metric, currency)}
+                      </Text>
+                    ) : null}
                     <Text style={styles.metricHint}>View detail</Text>
                   </Pressable>
                 )
@@ -285,6 +310,11 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textSubtle,
     fontSize: 11,
     fontWeight: "700",
+  },
+  metricTrend: {
+    marginTop: 2,
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 11,
   },
   sectionCard: {
     borderWidth: 1,
