@@ -252,6 +252,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="social/flows/[flowId]"
+        options={{
+          title: "Social Flow",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="leaderboards"
         options={{
           title: "Leaderboards",
