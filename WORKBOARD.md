@@ -130,10 +130,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-226 Mobile community message filters | codex-main | codex/t-226-mobile-community-message-filters | Add native message search and All/Mine/Team filter chips with counts on mobile community chat | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/143 |
 | T-227 Mobile schedule search + time-window filters | codex-main | codex/t-227-mobile-schedule-filter-chips | Add native schedule search (class/teacher/location) and All/Today/7d filter chips with counts for faster on-phone navigation | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/144 |
 | T-229 Mobile people status filters | codex-main | codex/t-229-mobile-people-status-filters | Add native People filter chips (All/Active/Inactive) with counts and filter-aware empty states for owner/teacher views | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/146 |
-| T-230 Mobile classes filter counts | codex-main | codex/t-230-mobile-classes-filter-counts | Add count-aware Active/All filter chips on native Classes list and filter-aware empty states without extra API calls per filter | In Progress | TBD |
+| T-230 Mobile classes filter counts | codex-main | codex/t-230-mobile-classes-filter-counts | Add count-aware Active/All filter chips on native Classes list and filter-aware empty states without extra API calls per filter | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/147 |
+| T-231 Mobile locations filter counts | codex-main | codex/t-231-mobile-locations-filter-counts | Add count-aware Active/All filter chips on native Locations list and filter-aware empty states without extra API calls per filter | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-229
+1. All queued mobile slices merged through T-230
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
