@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
@@ -128,6 +128,8 @@ export default function ScheduleScreen() {
   const { token, user } = useAuth()
   const router = useRouter()
   const [items, setItems] = useState<MobileScheduleItem[]>([])
+  const [search, setSearch] = useState("")
+  const [windowFilter, setWindowFilter] = useState<"ALL" | "TODAY" | "WEEK">("ALL")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -137,6 +139,7 @@ export default function ScheduleScreen() {
   const [clientMode, setClientMode] = useState<"booked" | "all">("booked")
   const [currencyCode, setCurrencyCode] = useState("USD")
   const primaryColor = getStudioPrimaryColor()
+  const searchNormalized = search.trim().toLowerCase()
 
   const dateRange = useMemo(() => {
     const from = new Date()
@@ -251,10 +254,105 @@ export default function ScheduleScreen() {
     void loadSchedule()
   }, [loadSchedule])
 
+  const windowCounts = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+    const tomorrowStart = new Date(todayStart)
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+    const weekEnd = new Date(now)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+
+    const todayCount = items.filter((item) => {
+      const start = new Date(item.startTime)
+      return start >= todayStart && start < tomorrowStart
+    }).length
+
+    const weekCount = items.filter((item) => {
+      const start = new Date(item.startTime)
+      return start >= now && start <= weekEnd
+    }).length
+
+    return {
+      ALL: items.length,
+      TODAY: todayCount,
+      WEEK: weekCount,
+    } as const
+  }, [items])
+
+  const filteredItems = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+    const tomorrowStart = new Date(todayStart)
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+    const weekEnd = new Date(now)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+
+    return items.filter((item) => {
+      const start = new Date(item.startTime)
+      if (windowFilter === "TODAY" && !(start >= todayStart && start < tomorrowStart)) {
+        return false
+      }
+      if (windowFilter === "WEEK" && !(start >= now && start <= weekEnd)) {
+        return false
+      }
+      if (!searchNormalized) {
+        return true
+      }
+      const haystack =
+        `${item.classType.name} ${item.teacher.firstName} ${item.teacher.lastName} ${item.location.name}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [items, searchNormalized, windowFilter])
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Schedule</Text>
       <Text style={styles.subtitle}>Next 14 days for {user?.role?.toLowerCase() || "account"}</Text>
+
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search class, teacher, or location..."
+        style={styles.searchInput}
+      />
+
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[
+            styles.filterButton,
+            windowFilter === "ALL" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+          ]}
+          onPress={() => setWindowFilter("ALL")}
+        >
+          <Text style={[styles.filterButtonText, windowFilter === "ALL" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`All (${windowCounts.ALL})`}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.filterButton,
+            windowFilter === "TODAY" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+          ]}
+          onPress={() => setWindowFilter("TODAY")}
+        >
+          <Text style={[styles.filterButtonText, windowFilter === "TODAY" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`Today (${windowCounts.TODAY})`}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.filterButton,
+            windowFilter === "WEEK" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+          ]}
+          onPress={() => setWindowFilter("WEEK")}
+        >
+          <Text style={[styles.filterButtonText, windowFilter === "WEEK" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`7d (${windowCounts.WEEK})`}
+          </Text>
+        </Pressable>
+      </View>
 
       {isClient ? (
         <View style={styles.modeRow}>
@@ -287,10 +385,12 @@ export default function ScheduleScreen() {
 
       {loading && items.length === 0 ? <Text style={styles.loading}>Loading schedule...</Text> : null}
 
-      {!loading && items.length === 0 && !error ? <Text style={styles.empty}>No schedule items in this range.</Text> : null}
+      {!loading && filteredItems.length === 0 && !error ? (
+        <Text style={styles.empty}>{searchNormalized ? "No schedule items matched your search." : "No schedule items in this range."}</Text>
+      ) : null}
 
       <FlatList
-        data={items}
+        data={filteredItems}
         keyExtractor={(item) => `${item.bookingId || "session"}-${item.id}`}
         renderItem={({ item }) => (
           <ScheduleCard
@@ -328,6 +428,39 @@ const styles = StyleSheet.create({
   subtitle: {
     color: mobileTheme.colors.textMuted,
     marginBottom: 4,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: mobileTheme.colors.surface,
+    color: mobileTheme.colors.text,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  filterButtonActive: {
+    borderWidth: 1,
+  },
+  filterButtonText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  filterButtonTextActive: {
+    fontWeight: "700",
   },
   modeRow: {
     flexDirection: "row",
