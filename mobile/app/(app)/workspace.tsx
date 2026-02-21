@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import { getWorkspaceFeatures, toWorkspaceUrl, type WorkspaceFeature } from "@/src/lib/workspace-links"
@@ -19,7 +19,9 @@ const GROUP_ORDER: WorkspaceFeature["group"][] = [
 export default function WorkspaceScreen() {
   const { user, bootstrap } = useAuth()
   const router = useRouter()
+  const { width } = useWindowDimensions()
   const primaryColor = getStudioPrimaryColor()
+  const isNarrowScreen = width <= 380
   const [search, setSearch] = useState("")
   const [openingFeatureId, setOpeningFeatureId] = useState<string | null>(null)
   const studioSubdomain = (bootstrap?.studio?.subdomain || user?.studio?.subdomain || "").trim().toLowerCase()
@@ -89,6 +91,7 @@ export default function WorkspaceScreen() {
                   key={feature.id}
                   style={[
                     styles.card,
+                    isNarrowScreen ? styles.cardNarrow : null,
                     opening && { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.1) },
                   ]}
                   onPress={() => void openFeature(feature)}
@@ -168,6 +171,10 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     padding: 10,
     gap: 5,
+  },
+  cardNarrow: {
+    width: "100%",
+    minHeight: 96,
   },
   iconWrap: {
     width: 30,

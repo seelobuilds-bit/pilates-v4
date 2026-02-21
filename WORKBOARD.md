@@ -139,10 +139,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-236 Mobile billing status filter completeness | codex-main | codex/t-236-mobile-status-chip-completeness | Expose SENT invoices and PARTIALLY_REFUNDED payments in mobile filter chips so all backend statuses are directly filterable | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/153 |
 | T-237 Mobile leaderboards search + filter counts | codex-main | codex/t-237-mobile-leaderboards-search-filters | Add native leaderboard search plus All/Featured chips with counts and search-aware empty states for faster browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/154 |
 | T-238 Mobile class-flows local filter responsiveness | codex-main | codex/t-238-mobile-classflows-local-filters-counts | Move class-flow filter chips to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/155 |
-| T-239 Mobile vault local filter responsiveness | codex-main | codex/t-239-mobile-vault-local-filters-counts | Move vault status/audience chip filters to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | In Progress | TBD |
+| T-239 Mobile vault local filter responsiveness | codex-main | codex/t-239-mobile-vault-local-filters-counts | Move vault status/audience chip filters to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/156 |
+| T-240 Mobile workspace narrow-screen layout pass | codex-main | codex/t-240-mobile-workspace-narrow-layout | Switch workspace feature cards to single-column on narrow phones so actions remain readable and tappable | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-238
+1. All queued mobile slices merged through T-239
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
