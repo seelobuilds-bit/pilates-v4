@@ -6,7 +6,7 @@ import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobilePaymentStatus, MobilePaymentSummary, MobilePaymentsStats } from "@/src/types/mobile"
 
-type PaymentFilter = "all" | MobilePaymentStatus
+type PaymentFilter = "all" | "SUCCEEDED" | "PENDING" | "PROCESSING" | "FAILED" | "REFUNDED"
 
 function formatCurrency(value: number, currencyCode: string) {
   const normalized = String(currencyCode || "USD").toUpperCase()
@@ -132,7 +132,7 @@ export default function PaymentsScreen() {
       try {
         const response = await mobileApi.payments(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setPayments(response.payments || [])
         setStats(
@@ -155,7 +155,7 @@ export default function PaymentsScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -163,11 +163,38 @@ export default function PaymentsScreen() {
       void loadPayments()
     }, 220)
     return () => clearTimeout(timeout)
-  }, [loadPayments, statusFilter, trimmedSearch])
+  }, [loadPayments, trimmedSearch])
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<PaymentFilter, number> = {
+      all: payments.length,
+      SUCCEEDED: 0,
+      PENDING: 0,
+      PROCESSING: 0,
+      FAILED: 0,
+      REFUNDED: 0,
+    }
+
+    for (const payment of payments) {
+      if (payment.status in counts) {
+        counts[payment.status as PaymentFilter] += 1
+      }
+    }
+
+    return counts
+  }, [payments])
+
+  const filteredPayments = useMemo(() => {
+    if (statusFilter === "all") return payments
+    return payments.filter((payment) => payment.status === statusFilter)
+  }, [payments, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Payments are available for studio owner accounts only."
-    if (trimmedSearch) return "No payments matched your search."
+    if (trimmedSearch) {
+      if (statusFilter !== "all") return `No ${statusLabel(statusFilter).toLowerCase()} payments matched your search.`
+      return "No payments matched your search."
+    }
     if (statusFilter !== "all") return `No ${statusLabel(statusFilter).toLowerCase()} payments yet.`
     return "No payments available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
@@ -206,7 +233,7 @@ export default function PaymentsScreen() {
             onPress={() => setStatusFilter(filter)}
           >
             <Text style={[styles.filterButtonText, statusFilter === filter && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {filter === "all" ? "All" : statusLabel(filter)}
+              {`${filter === "all" ? "All" : statusLabel(filter)} (${statusCounts[filter]})`}
             </Text>
           </Pressable>
         ))}
@@ -223,7 +250,7 @@ export default function PaymentsScreen() {
         </View>
       ) : (
         <FlatList
-          data={payments}
+          data={filteredPayments}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.paymentRowWrap}>
