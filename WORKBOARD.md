@@ -127,10 +127,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-222 Mobile social flow status actions (native) | codex-main | codex/t-222-mobile-social-flow-actions | Add owner/teacher native social flow activate/pause controls on overview cards and flow detail with guarded mobile APIs + status filter chips | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/139 |
 | T-223 Mobile vault publish toggle (native) | codex-main | codex/t-223-mobile-vault-filters | Add owner-only native publish/unpublish control on vault course detail with guarded mobile API mutation | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/140 |
 | T-225 Mobile vault list publish actions | codex-main | codex/t-225-mobile-vault-list-publish-actions | Add owner-only quick publish/unpublish action on mobile vault course cards for faster content operations | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/142 |
-| T-226 Mobile community message filters | codex-main | codex/t-226-mobile-community-message-filters | Add native message search and All/Mine/Team filter chips with counts on mobile community chat | Needs Review | TBD |
+| T-226 Mobile community message filters | codex-main | codex/t-226-mobile-community-message-filters | Add native message search and All/Mine/Team filter chips with counts on mobile community chat | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/143 |
+| T-227 Mobile schedule search + time-window filters | codex-main | codex/t-227-mobile-schedule-filter-chips | Add native schedule search (class/teacher/location) and All/Today/7d filter chips with counts for faster on-phone navigation | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/144 |
 
 ## Merge Order
-1. T-226 Mobile community message filters
+1. All queued mobile slices merged through T-227
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
