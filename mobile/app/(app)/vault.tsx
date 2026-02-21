@@ -36,10 +36,20 @@ function pricingLabel(item: MobileVaultCourseSummary) {
 function CourseCard({
   item,
   onViewDetails,
+  onTogglePublish,
+  canManagePublishing,
+  isUpdating,
+  primaryColor,
 }: {
   item: MobileVaultCourseSummary
   onViewDetails: (courseId: string) => void
+  onTogglePublish: (courseId: string, action: "publish" | "unpublish") => void
+  canManagePublishing: boolean
+  isUpdating: boolean
+  primaryColor: string
 }) {
+  const action = item.isPublished ? "unpublish" : "publish"
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -72,6 +82,18 @@ function CourseCard({
         {item.creatorName ? <Text style={styles.metaPill}>By {item.creatorName}</Text> : null}
       </View>
 
+      {canManagePublishing ? (
+        <Pressable
+          disabled={isUpdating}
+          style={[styles.inlineActionButton, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.12) }]}
+          onPress={() => onTogglePublish(item.id, action)}
+        >
+          <Text style={[styles.inlineActionText, { color: primaryColor }]}>
+            {isUpdating ? "Updating..." : action === "publish" ? "Publish Course" : "Unpublish Course"}
+          </Text>
+        </Pressable>
+      ) : null}
+
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
         <Text style={styles.detailsButtonText}>View Details</Text>
       </Pressable>
@@ -97,6 +119,7 @@ export default function VaultScreen() {
   const [audienceFilter, setAudienceFilter] = useState<"all" | MobileVaultAudience>("all")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingCourseId, setUpdatingCourseId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
@@ -146,11 +169,30 @@ export default function VaultScreen() {
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
   const vaultWebHref = user?.role === "TEACHER" ? "/teacher/vault" : "/studio/vault"
+  const canManagePublishing = user?.role === "OWNER"
   const handleViewDetails = useCallback(
     (courseId: string) => {
       router.push(`/(app)/vault/${courseId}` as never)
     },
     [router]
+  )
+
+  const handleTogglePublish = useCallback(
+    async (courseId: string, action: "publish" | "unpublish") => {
+      if (!token || !canManagePublishing) return
+      setUpdatingCourseId(courseId)
+      setError(null)
+      try {
+        await mobileApi.vaultCoursePublish(token, courseId, action)
+        await loadVault(true)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update publish status"
+        setError(message)
+      } finally {
+        setUpdatingCourseId(null)
+      }
+    },
+    [canManagePublishing, loadVault, token]
   )
 
   return (
@@ -213,7 +255,16 @@ export default function VaultScreen() {
         <FlatList
           data={data?.courses || []}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <CourseCard item={item} onViewDetails={handleViewDetails} />}
+          renderItem={({ item }) => (
+            <CourseCard
+              item={item}
+              onViewDetails={handleViewDetails}
+              onTogglePublish={(courseId, action) => void handleTogglePublish(courseId, action)}
+              canManagePublishing={canManagePublishing}
+              isUpdating={updatingCourseId === item.id}
+              primaryColor={primaryColor}
+            />
+          )}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadVault(true)} />}
           ListEmptyComponent={!loading ? <View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyText}</Text></View> : null}
@@ -419,6 +470,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
     backgroundColor: mobileTheme.colors.surface,
+  },
+  inlineActionButton: {
+    marginTop: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  inlineActionText: {
+    fontWeight: "700",
+    fontSize: 12,
   },
   detailsButtonText: {
     color: mobileTheme.colors.text,
