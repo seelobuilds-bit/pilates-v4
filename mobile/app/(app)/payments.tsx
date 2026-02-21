@@ -6,7 +6,7 @@ import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobilePaymentStatus, MobilePaymentSummary, MobilePaymentsStats } from "@/src/types/mobile"
 
-type PaymentFilter = "all" | "SUCCEEDED" | "PENDING" | "PROCESSING" | "FAILED" | "REFUNDED"
+type PaymentFilter = "all" | "SUCCEEDED" | "PENDING" | "PROCESSING" | "FAILED" | "REFUNDED" | "PARTIALLY_REFUNDED"
 
 function formatCurrency(value: number, currencyCode: string) {
   const normalized = String(currencyCode || "USD").toUpperCase()
@@ -173,6 +173,7 @@ export default function PaymentsScreen() {
       PROCESSING: 0,
       FAILED: 0,
       REFUNDED: 0,
+      PARTIALLY_REFUNDED: 0,
     }
 
     for (const payment of payments) {
@@ -223,7 +224,7 @@ export default function PaymentsScreen() {
       />
 
       <View style={styles.filterRow}>
-        {(["all", "SUCCEEDED", "PENDING", "PROCESSING", "FAILED", "REFUNDED"] as PaymentFilter[]).map((filter) => (
+        {(["all", "SUCCEEDED", "PENDING", "PROCESSING", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] as PaymentFilter[]).map((filter) => (
           <Pressable
             key={filter}
             style={[
