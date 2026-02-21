@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -71,12 +71,14 @@ export default function LeaderboardsScreen() {
   const [participantType, setParticipantType] = useState<MobileLeaderboardParticipantType>(user?.role === "TEACHER" ? "TEACHER" : "STUDIO")
   const [leaderboards, setLeaderboards] = useState<MobileLeaderboardSummary[]>([])
   const [myRanks, setMyRanks] = useState<Record<string, { rank: number; score: number } | null>>({})
+  const [search, setSearch] = useState("")
   const [featuredOnly, setFeaturedOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
+  const trimmedSearch = search.trim().toLowerCase()
 
   useEffect(() => {
     if (user?.role === "TEACHER") {
@@ -119,16 +121,34 @@ export default function LeaderboardsScreen() {
     void loadLeaderboards()
   }, [loadLeaderboards])
 
+  const searchedLeaderboards = useMemo(() => {
+    if (!trimmedSearch) return leaderboards
+    return leaderboards.filter((leaderboard) => {
+      const haystack = `${leaderboard.name} ${leaderboard.metricName} ${leaderboard.timeframe}`.toLowerCase()
+      return haystack.includes(trimmedSearch)
+    })
+  }, [leaderboards, trimmedSearch])
+
+  const featuredCounts = useMemo(() => {
+    const featured = searchedLeaderboards.filter((item) => item.isFeatured).length
+    return {
+      all: searchedLeaderboards.length,
+      featured,
+    } as const
+  }, [searchedLeaderboards])
+
   const filteredLeaderboards = useMemo(
-    () => (featuredOnly ? leaderboards.filter((item) => item.isFeatured) : leaderboards),
-    [featuredOnly, leaderboards]
+    () => (featuredOnly ? searchedLeaderboards.filter((item) => item.isFeatured) : searchedLeaderboards),
+    [featuredOnly, searchedLeaderboards]
   )
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Leaderboards are available for studio owner and teacher accounts."
+    if (trimmedSearch && featuredOnly) return "No featured leaderboards matched your search."
+    if (trimmedSearch) return "No leaderboards matched your search."
     if (featuredOnly) return "No featured leaderboards available right now."
     return "No leaderboards available right now."
-  }, [featuredOnly, isAllowedRole])
+  }, [featuredOnly, isAllowedRole, trimmedSearch])
 
   const handleViewDetails = useCallback(
     (leaderboardId: string) => {
@@ -143,6 +163,13 @@ export default function LeaderboardsScreen() {
         <Text style={styles.title}>Leaderboards</Text>
         <Text style={styles.subtitle}>Track rankings and competition results</Text>
       </View>
+
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search leaderboards..."
+        style={styles.searchInput}
+      />
 
       <View style={styles.filterRow}>
         <Pressable
@@ -171,12 +198,23 @@ export default function LeaderboardsScreen() {
         <Pressable
           style={[
             styles.filterButton,
+            !featuredOnly && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+          ]}
+          onPress={() => setFeaturedOnly(false)}
+        >
+          <Text style={[styles.filterButtonText, !featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`All (${featuredCounts.all})`}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.filterButton,
             featuredOnly && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
           ]}
-          onPress={() => setFeaturedOnly((value) => !value)}
+          onPress={() => setFeaturedOnly(true)}
         >
           <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            Featured
+            {`Featured (${featuredCounts.featured})`}
           </Text>
         </Pressable>
       </View>
@@ -232,6 +270,15 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: mobileTheme.colors.textMuted,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    color: mobileTheme.colors.text,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   filterRow: {
     flexDirection: "row",
