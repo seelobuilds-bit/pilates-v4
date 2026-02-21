@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -48,26 +48,26 @@ function statusLabel(status: MobileInvoiceStatus) {
   return "Cancelled"
 }
 
-function StatsCards({ stats, currency }: { stats: MobileInvoiceStats; currency: string }) {
+function StatsCards({ stats, currency, isNarrowScreen }: { stats: MobileInvoiceStats; currency: string; isNarrowScreen: boolean }) {
   return (
     <View style={styles.statsGrid}>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.total}</Text>
         <Text style={styles.statLabel}>Total</Text>
       </View>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.pending}</Text>
         <Text style={styles.statLabel}>Pending</Text>
       </View>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.paid}</Text>
         <Text style={styles.statLabel}>Paid</Text>
       </View>
-      <View style={styles.statCardWide}>
+      <View style={[styles.statCardWide, isNarrowScreen ? styles.statCardWideNarrow : null]}>
         <Text style={styles.statValue}>{formatCurrency(stats.totalPending, currency)}</Text>
         <Text style={styles.statLabel}>Pending Amount</Text>
       </View>
-      <View style={styles.statCardWide}>
+      <View style={[styles.statCardWide, isNarrowScreen ? styles.statCardWideNarrow : null]}>
         <Text style={styles.statValue}>{formatCurrency(stats.totalPaid, currency)}</Text>
         <Text style={styles.statLabel}>Paid Amount</Text>
       </View>
@@ -107,7 +107,9 @@ function InvoiceCard({ item, role }: { item: MobileInvoiceSummary; role: "OWNER"
 export default function InvoicesScreen() {
   const router = useRouter()
   const { token, user } = useAuth()
+  const { width } = useWindowDimensions()
   const primaryColor = getStudioPrimaryColor()
+  const isNarrowScreen = width <= 380
   const [invoices, setInvoices] = useState<MobileInvoiceSummary[]>([])
   const [stats, setStats] = useState<MobileInvoiceStats>({
     total: 0,
@@ -223,7 +225,7 @@ export default function InvoicesScreen() {
         <Text style={styles.subtitle}>Track invoice status and payouts</Text>
       </View>
 
-      {isAllowedRole ? <StatsCards stats={stats} currency={currency} /> : null}
+      {isAllowedRole ? <StatsCards stats={stats} currency={currency} isNarrowScreen={isNarrowScreen} /> : null}
 
       <TextInput
         value={search}
@@ -322,6 +324,10 @@ const styles = StyleSheet.create({
     padding: 10,
     minWidth: 84,
   },
+  statCardNarrow: {
+    minWidth: 0,
+    flexBasis: "31%",
+  },
   statCardWide: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -329,6 +335,10 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     padding: 10,
     minWidth: 150,
+  },
+  statCardWideNarrow: {
+    minWidth: 0,
+    flexBasis: "100%",
   },
   statValue: {
     color: mobileTheme.colors.text,
