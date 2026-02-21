@@ -6,7 +6,7 @@ import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileInvoiceStats, MobileInvoiceStatus, MobileInvoiceSummary } from "@/src/types/mobile"
 
-type InvoiceFilter = "all" | "PENDING" | "PAID" | "DRAFT" | "CANCELLED"
+type InvoiceFilter = "all" | "PENDING" | "SENT" | "PAID" | "DRAFT" | "CANCELLED"
 
 function formatCurrency(value: number, currencyCode: string) {
   const normalized = String(currencyCode || "USD").toUpperCase()
@@ -179,6 +179,7 @@ export default function InvoicesScreen() {
     const counts: Record<InvoiceFilter, number> = {
       all: invoices.length,
       PENDING: 0,
+      SENT: 0,
       PAID: 0,
       DRAFT: 0,
       CANCELLED: 0,
@@ -232,7 +233,7 @@ export default function InvoicesScreen() {
       />
 
       <View style={styles.filterRow}>
-        {(["all", "PENDING", "PAID", "DRAFT", "CANCELLED"] as InvoiceFilter[]).map((filter) => (
+        {(["all", "PENDING", "SENT", "PAID", "DRAFT", "CANCELLED"] as InvoiceFilter[]).map((filter) => (
           <Pressable
             key={filter}
             style={[

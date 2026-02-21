@@ -44,6 +44,7 @@ next-env.d.ts
 
 /src/generated/prisma
 prisma/synthetic-batches/
+/mobile/releases/
 
 # Uploaded files
 /public/uploads/videos/*
