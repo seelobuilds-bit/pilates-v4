@@ -133,10 +133,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-230 Mobile classes filter counts | codex-main | codex/t-230-mobile-classes-filter-counts | Add count-aware Active/All filter chips on native Classes list and filter-aware empty states without extra API calls per filter | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/147 |
 | T-231 Mobile locations filter counts | codex-main | codex/t-231-mobile-locations-filter-counts | Add count-aware Active/All filter chips on native Locations list and filter-aware empty states without extra API calls per filter | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/148 |
 | T-232 Mobile store filter counts | codex-main | codex/t-232-mobile-store-filter-counts | Add count-aware Active/All filter chips on native Store list and filter-aware empty states without extra API calls per filter | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/149 |
-| T-233 Mobile teachers filter counts | codex-main | codex/t-233-mobile-teachers-filter-counts | Add count-aware Active/All filter chips on native Teachers list and filter-aware empty states without extra API calls per filter | In Progress | TBD |
+| T-233 Mobile teachers filter counts | codex-main | codex/t-233-mobile-teachers-filter-counts | Add count-aware Active/All filter chips on native Teachers list and filter-aware empty states without extra API calls per filter | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/150 |
+| T-234 Mobile payments filter counts | codex-main | codex/t-234-mobile-payments-filter-counts | Add count-aware payment status chips on native Payments list and apply status filtering locally for faster on-device switching | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-232
+1. All queued mobile slices merged through T-233
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
