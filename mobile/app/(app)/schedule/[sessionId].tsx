@@ -37,7 +37,7 @@ function formatStatus(status: string) {
 }
 
 export default function ScheduleSessionDetailScreen() {
-  const { token, user } = useAuth()
+  const { token, user, bootstrap } = useAuth()
   const { sessionId } = useLocalSearchParams<{ sessionId?: string }>()
   const primaryColor = getStudioPrimaryColor()
 
@@ -48,7 +48,11 @@ export default function ScheduleSessionDetailScreen() {
   const [error, setError] = useState<string | null>(null)
 
   const resolvedSessionId = useMemo(() => String(sessionId || "").trim(), [sessionId])
-  const currency = normalizeCurrencyCode(data?.studio.currency || user?.studio.currency)
+  const resolvedSubdomain = useMemo(
+    () => (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase(),
+    [bootstrap?.studio?.subdomain, user?.studio?.subdomain]
+  )
+  const currency = normalizeCurrencyCode(data?.studio.currency || bootstrap?.studio.currency || user?.studio.currency)
   const isClient = data?.role === "CLIENT"
   const isPaidClass = (data?.session.classType.price || 0) > 0
 
@@ -84,13 +88,12 @@ export default function ScheduleSessionDetailScreen() {
     setError(null)
     try {
       if (isPaidClass) {
-        const subdomain = (user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase()
-        if (!subdomain) {
+        if (!resolvedSubdomain) {
           setError("Studio subdomain is missing for web checkout")
           return
         }
         const base = mobileConfig.apiBaseUrl.replace(/\/$/, "")
-        const url = `${base}/${subdomain}/book?source=mobile&classSessionId=${encodeURIComponent(data.session.id)}`
+        const url = `${base}/${resolvedSubdomain}/book?source=mobile&classSessionId=${encodeURIComponent(data.session.id)}`
         await Linking.openURL(url)
       } else {
         await mobileApi.bookClass(token, data.session.id)
@@ -102,7 +105,7 @@ export default function ScheduleSessionDetailScreen() {
     } finally {
       setActionLoading(false)
     }
-  }, [data?.session?.id, isPaidClass, loadDetail, token, user?.studio?.subdomain])
+  }, [data?.session?.id, isPaidClass, loadDetail, resolvedSubdomain, token])
 
   const handleCancel = useCallback(async () => {
     if (!token || !data?.clientBooking?.id) return

@@ -125,7 +125,7 @@ function ScheduleCard({
 }
 
 export default function ScheduleScreen() {
-  const { token, user } = useAuth()
+  const { token, user, bootstrap } = useAuth()
   const router = useRouter()
   const [items, setItems] = useState<MobileScheduleItem[]>([])
   const [search, setSearch] = useState("")
@@ -140,6 +140,10 @@ export default function ScheduleScreen() {
   const [currencyCode, setCurrencyCode] = useState("USD")
   const primaryColor = getStudioPrimaryColor()
   const searchNormalized = search.trim().toLowerCase()
+  const resolvedSubdomain = useMemo(
+    () => (bootstrap?.studio?.subdomain || user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase(),
+    [bootstrap?.studio?.subdomain, user?.studio?.subdomain]
+  )
 
   const dateRange = useMemo(() => {
     const from = new Date()
@@ -221,8 +225,7 @@ export default function ScheduleScreen() {
 
   const handleOpenWebBooking = useCallback(
     async (classSessionId: string) => {
-      const subdomain = (user?.studio?.subdomain || mobileConfig.studioSubdomain || "").trim().toLowerCase()
-      if (!subdomain) {
+      if (!resolvedSubdomain) {
         setError("Studio subdomain is missing for web checkout")
         return
       }
@@ -230,7 +233,7 @@ export default function ScheduleScreen() {
       setActionLoadingId(classSessionId)
       setError(null)
       const base = mobileConfig.apiBaseUrl.replace(/\/$/, "")
-      const url = `${base}/${subdomain}/book?source=mobile&classSessionId=${encodeURIComponent(classSessionId)}`
+      const url = `${base}/${resolvedSubdomain}/book?source=mobile&classSessionId=${encodeURIComponent(classSessionId)}`
 
       try {
         await Linking.openURL(url)
@@ -240,7 +243,7 @@ export default function ScheduleScreen() {
         setActionLoadingId(null)
       }
     },
-    [user?.studio?.subdomain]
+    [resolvedSubdomain]
   )
 
   const handleViewDetails = useCallback(
