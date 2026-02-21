@@ -145,10 +145,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-242 Mobile vault local search responsiveness | codex-main | codex/t-242-mobile-vault-local-search | Move vault search to local filtering over fetched courses so typing/search refinement is instant and avoids repeated API fetches | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/159 |
 | T-243 Mobile schedule checkout subdomain fallback | codex-main | codex/t-243-mobile-schedule-subdomain-fallback | Use bootstrap studio subdomain fallback for mobile web-checkout handoffs so paid booking links remain valid when session user payload lacks subdomain | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/160 |
 | T-244 Mobile marketing stable status chips | codex-main | codex/t-244-mobile-marketing-stable-status-chips | Keep campaign/automation status chips visible even at zero counts so mobile filtering controls remain consistent | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/161 |
-| T-245 Mobile schedule search-scoped window counts | codex-main | codex/t-245-mobile-schedule-search-scoped-counts | Make All/Today/7d schedule chip counts respect active search text so filter counts stay consistent with visible results | In Progress | TBD |
+| T-245 Mobile schedule search-scoped window counts | codex-main | codex/t-245-mobile-schedule-search-scoped-counts | Make All/Today/7d schedule chip counts respect active search text so filter counts stay consistent with visible results | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/162 |
+| T-246 Mobile class-flows local search responsiveness | codex-main | codex/t-246-mobile-classflows-local-search | Move class-flows search to local filtering over fetched content so typing/search refinement is instant and chip counts stay search-scoped | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-244
+1. All queued mobile slices merged through T-245
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
