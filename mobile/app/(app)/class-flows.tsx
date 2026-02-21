@@ -129,6 +129,7 @@ export default function ClassFlowsScreen() {
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const isTeacher = user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadFlows = useCallback(
     async (isRefresh = false) => {
@@ -143,9 +144,7 @@ export default function ClassFlowsScreen() {
 
       setError(null)
       try {
-        const response = await mobileApi.classFlows(token, {
-          search: trimmedSearch || undefined,
-        })
+        const response = await mobileApi.classFlows(token, {})
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load class flows"
@@ -155,7 +154,7 @@ export default function ClassFlowsScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -177,53 +176,61 @@ export default function ClassFlowsScreen() {
     )
   }, [data])
 
+  const searchScopedRows = useMemo(() => {
+    if (!searchNormalized) return contentRows
+    return contentRows.filter((row) => {
+      const haystack = `${row.title} ${row.description || ""} ${row.categoryName}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [contentRows, searchNormalized])
+
   const typeCounts = useMemo(() => {
     const counts: Record<FlowFilterType, number> = {
-      all: contentRows.length,
+      all: searchScopedRows.length,
       VIDEO: 0,
       PDF: 0,
       ARTICLE: 0,
       QUIZ: 0,
     }
-    for (const row of contentRows) {
+    for (const row of searchScopedRows) {
       counts[row.type] += 1
     }
     return counts
-  }, [contentRows])
+  }, [searchScopedRows])
 
   const difficultyCounts = useMemo(() => {
     const counts: Record<FlowFilterDifficulty, number> = {
-      all: contentRows.length,
+      all: searchScopedRows.length,
       BEGINNER: 0,
       INTERMEDIATE: 0,
       ADVANCED: 0,
       EXPERT: 0,
     }
-    for (const row of contentRows) {
+    for (const row of searchScopedRows) {
       counts[row.difficulty] += 1
     }
     return counts
-  }, [contentRows])
+  }, [searchScopedRows])
 
-  const featuredCount = useMemo(() => contentRows.filter((row) => row.isFeatured).length, [contentRows])
+  const featuredCount = useMemo(() => searchScopedRows.filter((row) => row.isFeatured).length, [searchScopedRows])
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const row of contentRows) {
+    for (const row of searchScopedRows) {
       counts.set(row.categoryId, (counts.get(row.categoryId) || 0) + 1)
     }
     return counts
-  }, [contentRows])
+  }, [searchScopedRows])
 
   const filteredContentRows = useMemo(() => {
-    return contentRows.filter((row) => {
+    return searchScopedRows.filter((row) => {
       if (featuredOnly && !row.isFeatured) return false
       if (typeFilter !== "all" && row.type !== typeFilter) return false
       if (difficultyFilter !== "all" && row.difficulty !== difficultyFilter) return false
       if (categoryFilter !== "all" && row.categoryId !== categoryFilter) return false
       return true
     })
-  }, [categoryFilter, contentRows, difficultyFilter, featuredOnly, typeFilter])
+  }, [categoryFilter, difficultyFilter, featuredOnly, searchScopedRows, typeFilter])
 
   const handleMarkComplete = useCallback(
     async (contentId: string) => {
@@ -314,7 +321,7 @@ export default function ClassFlowsScreen() {
             style={[styles.filterButton, categoryFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setCategoryFilter("all")}
           >
-            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Category: All (${contentRows.length})`}</Text>
+            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Category: All (${searchScopedRows.length})`}</Text>
           </Pressable>
           {data.categories.map((category) => (
             <Pressable
