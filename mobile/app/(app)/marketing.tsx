@@ -7,6 +7,9 @@ import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme
 import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileMarketingAutomationSummary, MobileMarketingCampaignSummary, MobileMarketingResponse } from "@/src/types/mobile"
 
+const CAMPAIGN_STATUS_OPTIONS = ["DRAFT", "SCHEDULED", "SENDING", "SENT", "PAUSED", "CANCELLED"] as const
+const AUTOMATION_STATUS_OPTIONS = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"] as const
+
 function formatDate(value: string | null) {
   if (!value) return "-"
   const date = new Date(value)
@@ -243,16 +246,6 @@ export default function MarketingScreen() {
     return counts
   }, [data?.automations])
 
-  const campaignStatusOptions = useMemo(() => {
-    const ordered = ["DRAFT", "SCHEDULED", "SENDING", "SENT", "PAUSED", "CANCELLED"] as const
-    return ordered.filter((status) => (campaignStatusCounts[status] ?? 0) > 0)
-  }, [campaignStatusCounts])
-
-  const automationStatusOptions = useMemo(() => {
-    const ordered = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"] as const
-    return ordered.filter((status) => (automationStatusCounts[status] ?? 0) > 0)
-  }, [automationStatusCounts])
-
   const filteredCampaigns = useMemo(() => {
     if (!data?.campaigns) return []
     if (campaignStatusFilter === "ALL") return data.campaigns
@@ -264,18 +257,6 @@ export default function MarketingScreen() {
     if (automationStatusFilter === "ALL") return data.automations
     return data.automations.filter((automation) => automation.status === automationStatusFilter)
   }, [automationStatusFilter, data?.automations])
-
-  useEffect(() => {
-    if (campaignStatusFilter !== "ALL" && !campaignStatusOptions.includes(campaignStatusFilter)) {
-      setCampaignStatusFilter("ALL")
-    }
-  }, [campaignStatusFilter, campaignStatusOptions])
-
-  useEffect(() => {
-    if (automationStatusFilter !== "ALL" && !automationStatusOptions.includes(automationStatusFilter)) {
-      setAutomationStatusFilter("ALL")
-    }
-  }, [automationStatusFilter, automationStatusOptions])
 
   return (
     <View style={styles.container}>
@@ -334,7 +315,7 @@ export default function MarketingScreen() {
                       {`All (${campaignStatusCounts.ALL ?? 0})`}
                     </Text>
                   </Pressable>
-                  {campaignStatusOptions.map((status) => (
+                  {CAMPAIGN_STATUS_OPTIONS.map((status) => (
                     <Pressable
                       key={status}
                       style={[
@@ -381,7 +362,7 @@ export default function MarketingScreen() {
                       {`All (${automationStatusCounts.ALL ?? 0})`}
                     </Text>
                   </Pressable>
-                  {automationStatusOptions.map((status) => (
+                  {AUTOMATION_STATUS_OPTIONS.map((status) => (
                     <Pressable
                       key={status}
                       style={[
