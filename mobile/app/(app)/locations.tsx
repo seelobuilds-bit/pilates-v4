@@ -70,7 +70,7 @@ export default function LocationsScreen() {
       try {
         const response = await mobileApi.locations(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setLocations(response.locations || [])
       } catch (err) {
@@ -81,7 +81,7 @@ export default function LocationsScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -89,11 +89,24 @@ export default function LocationsScreen() {
       void loadLocations()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadLocations, trimmedSearch, statusFilter])
+  }, [loadLocations, trimmedSearch])
+
+  const statusCounts = useMemo(() => {
+    const active = locations.filter((location) => location.isActive).length
+    return {
+      active,
+      all: locations.length,
+    } as const
+  }, [locations])
+
+  const filteredLocations = useMemo(() => {
+    if (statusFilter === "all") return locations
+    return locations.filter((location) => location.isActive)
+  }, [locations, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Locations view is available for studio owner and teacher accounts."
-    if (trimmedSearch) return "No locations matched your search."
+    if (trimmedSearch) return statusFilter === "active" ? "No active locations matched your search." : "No locations matched your search."
     return statusFilter === "active" ? "No active locations yet." : "No locations available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
@@ -127,7 +140,7 @@ export default function LocationsScreen() {
           onPress={() => setStatusFilter("active")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            Active
+            {`Active (${statusCounts.active})`}
           </Text>
         </Pressable>
         <Pressable
@@ -138,7 +151,7 @@ export default function LocationsScreen() {
           onPress={() => setStatusFilter("all")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            All
+            {`All (${statusCounts.all})`}
           </Text>
         </Pressable>
       </View>
@@ -154,7 +167,7 @@ export default function LocationsScreen() {
         </View>
       ) : (
         <FlatList
-          data={locations}
+          data={filteredLocations}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.locationRowWrap}>
