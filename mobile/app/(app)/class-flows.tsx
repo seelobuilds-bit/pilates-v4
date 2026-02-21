@@ -8,6 +8,8 @@ import type { MobileClassFlowContentSummary, MobileClassFlowsResponse, MobileCla
 
 type FlowFilterType = "all" | MobileClassFlowType
 type FlowFilterDifficulty = "all" | MobileClassFlowDifficulty
+const FLOW_TYPE_OPTIONS: FlowFilterType[] = ["all", "VIDEO", "PDF", "ARTICLE", "QUIZ"]
+const FLOW_DIFFICULTY_OPTIONS: FlowFilterDifficulty[] = ["all", "BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"]
 
 type ContentRow = MobileClassFlowContentSummary & {
   categoryId: string
@@ -142,10 +144,6 @@ export default function ClassFlowsScreen() {
       setError(null)
       try {
         const response = await mobileApi.classFlows(token, {
-          categoryId: categoryFilter === "all" ? undefined : categoryFilter,
-          type: typeFilter === "all" ? undefined : typeFilter,
-          difficulty: difficultyFilter === "all" ? undefined : difficultyFilter,
-          featuredOnly,
           search: trimmedSearch || undefined,
         })
         setData(response)
@@ -157,7 +155,7 @@ export default function ClassFlowsScreen() {
         setRefreshing(false)
       }
     },
-    [categoryFilter, difficultyFilter, featuredOnly, isAllowedRole, token, trimmedSearch, typeFilter]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -179,6 +177,54 @@ export default function ClassFlowsScreen() {
     )
   }, [data])
 
+  const typeCounts = useMemo(() => {
+    const counts: Record<FlowFilterType, number> = {
+      all: contentRows.length,
+      VIDEO: 0,
+      PDF: 0,
+      ARTICLE: 0,
+      QUIZ: 0,
+    }
+    for (const row of contentRows) {
+      counts[row.type] += 1
+    }
+    return counts
+  }, [contentRows])
+
+  const difficultyCounts = useMemo(() => {
+    const counts: Record<FlowFilterDifficulty, number> = {
+      all: contentRows.length,
+      BEGINNER: 0,
+      INTERMEDIATE: 0,
+      ADVANCED: 0,
+      EXPERT: 0,
+    }
+    for (const row of contentRows) {
+      counts[row.difficulty] += 1
+    }
+    return counts
+  }, [contentRows])
+
+  const featuredCount = useMemo(() => contentRows.filter((row) => row.isFeatured).length, [contentRows])
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const row of contentRows) {
+      counts.set(row.categoryId, (counts.get(row.categoryId) || 0) + 1)
+    }
+    return counts
+  }, [contentRows])
+
+  const filteredContentRows = useMemo(() => {
+    return contentRows.filter((row) => {
+      if (featuredOnly && !row.isFeatured) return false
+      if (typeFilter !== "all" && row.type !== typeFilter) return false
+      if (difficultyFilter !== "all" && row.difficulty !== difficultyFilter) return false
+      if (categoryFilter !== "all" && row.categoryId !== categoryFilter) return false
+      return true
+    })
+  }, [categoryFilter, contentRows, difficultyFilter, featuredOnly, typeFilter])
+
   const handleMarkComplete = useCallback(
     async (contentId: string) => {
       if (!token || !isTeacher) return
@@ -198,9 +244,16 @@ export default function ClassFlowsScreen() {
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Class flows are available for studio owner and teacher accounts."
+    const hasActiveFilters =
+      featuredOnly ||
+      typeFilter !== "all" ||
+      difficultyFilter !== "all" ||
+      categoryFilter !== "all"
+    if (trimmedSearch && hasActiveFilters) return "No class flow content matched your search and filters."
     if (trimmedSearch) return "No class flow content matched your search."
+    if (hasActiveFilters) return "No class flow content matched current filters."
     return "No class flow content available right now."
-  }, [isAllowedRole, trimmedSearch])
+  }, [categoryFilter, difficultyFilter, featuredOnly, isAllowedRole, trimmedSearch, typeFilter])
 
   return (
     <View style={styles.container}>
@@ -229,27 +282,27 @@ export default function ClassFlowsScreen() {
           style={[styles.filterButton, featuredOnly && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setFeaturedOnly((value) => !value)}
         >
-          <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>Featured</Text>
+          <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Featured (${featuredCount})`}</Text>
         </Pressable>
-        {(["all", "VIDEO", "PDF", "ARTICLE", "QUIZ"] as FlowFilterType[]).map((type) => (
+        {FLOW_TYPE_OPTIONS.map((type) => (
           <Pressable
             key={type}
             style={[styles.filterButton, typeFilter === type && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setTypeFilter(type)}
           >
             <Text style={[styles.filterButtonText, typeFilter === type && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {type === "all" ? "Type: All" : type}
+              {type === "all" ? `Type: All (${typeCounts.all})` : `${type} (${typeCounts[type]})`}
             </Text>
           </Pressable>
         ))}
-        {(["all", "BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"] as FlowFilterDifficulty[]).map((difficulty) => (
+        {FLOW_DIFFICULTY_OPTIONS.map((difficulty) => (
           <Pressable
             key={difficulty}
             style={[styles.filterButton, difficultyFilter === difficulty && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setDifficultyFilter(difficulty)}
           >
             <Text style={[styles.filterButtonText, difficultyFilter === difficulty && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {difficulty === "all" ? "Level: All" : difficulty}
+              {difficulty === "all" ? `Level: All (${difficultyCounts.all})` : `${difficulty} (${difficultyCounts[difficulty]})`}
             </Text>
           </Pressable>
         ))}
@@ -261,7 +314,7 @@ export default function ClassFlowsScreen() {
             style={[styles.filterButton, categoryFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setCategoryFilter("all")}
           >
-            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>Category: All</Text>
+            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Category: All (${contentRows.length})`}</Text>
           </Pressable>
           {data.categories.map((category) => (
             <Pressable
@@ -270,7 +323,7 @@ export default function ClassFlowsScreen() {
               onPress={() => setCategoryFilter(category.id)}
             >
               <Text style={[styles.filterButtonText, categoryFilter === category.id && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-                {(category.icon ? `${category.icon} ` : "") + category.name}
+                {(category.icon ? `${category.icon} ` : "") + `${category.name} (${categoryCounts.get(category.id) || 0})`}
               </Text>
             </Pressable>
           ))}
@@ -288,7 +341,7 @@ export default function ClassFlowsScreen() {
         </View>
       ) : (
         <FlatList
-          data={contentRows}
+          data={filteredContentRows}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <ContentCard

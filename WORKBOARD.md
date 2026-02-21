@@ -137,10 +137,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-234 Mobile payments filter counts | codex-main | codex/t-234-mobile-payments-filter-counts | Add count-aware payment status chips on native Payments list and apply status filtering locally for faster on-device switching | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/151 |
 | T-235 Mobile invoices filter counts | codex-main | codex/t-235-mobile-invoices-filter-counts | Add count-aware invoice status chips on native Invoices list and apply status filtering locally for faster on-device switching | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/152 |
 | T-236 Mobile billing status filter completeness | codex-main | codex/t-236-mobile-status-chip-completeness | Expose SENT invoices and PARTIALLY_REFUNDED payments in mobile filter chips so all backend statuses are directly filterable | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/153 |
-| T-237 Mobile leaderboards search + filter counts | codex-main | codex/t-237-mobile-leaderboards-search-filters | Add native leaderboard search plus All/Featured chips with counts and search-aware empty states for faster browsing | In Progress | TBD |
+| T-237 Mobile leaderboards search + filter counts | codex-main | codex/t-237-mobile-leaderboards-search-filters | Add native leaderboard search plus All/Featured chips with counts and search-aware empty states for faster browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/154 |
+| T-238 Mobile class-flows local filter responsiveness | codex-main | codex/t-238-mobile-classflows-local-filters-counts | Move class-flow filter chips to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-236
+1. All queued mobile slices merged through T-237
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
