@@ -126,10 +126,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-221 Mobile marketing status actions (native) | codex-main | codex/t-221-mobile-marketing-automation-status-actions | Add owner-only native marketing status controls (activate/pause automation + cancel scheduled campaign) on detail and overview cards with guarded mobile APIs | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/138 |
 | T-222 Mobile social flow status actions (native) | codex-main | codex/t-222-mobile-social-flow-actions | Add owner/teacher native social flow activate/pause controls on overview cards and flow detail with guarded mobile APIs + status filter chips | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/139 |
 | T-223 Mobile vault publish toggle (native) | codex-main | codex/t-223-mobile-vault-filters | Add owner-only native publish/unpublish control on vault course detail with guarded mobile API mutation | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/140 |
-| T-225 Mobile vault list publish actions | codex-main | codex/t-225-mobile-vault-list-publish-actions | Add owner-only quick publish/unpublish action on mobile vault course cards for faster content operations | Needs Review | https://github.com/seelobuilds-bit/pilates-v4/pull/142 |
+| T-225 Mobile vault list publish actions | codex-main | codex/t-225-mobile-vault-list-publish-actions | Add owner-only quick publish/unpublish action on mobile vault course cards for faster content operations | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/142 |
+| T-226 Mobile community message filters | codex-main | codex/t-226-mobile-community-message-filters | Add native message search and All/Mine/Team filter chips with counts on mobile community chat | Needs Review | TBD |
 
 ## Merge Order
-1. T-225 Mobile vault list publish actions
+1. T-226 Mobile community message filters
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
