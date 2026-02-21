@@ -257,6 +257,15 @@ export default function ScheduleScreen() {
     void loadSchedule()
   }, [loadSchedule])
 
+  const searchScopedItems = useMemo(() => {
+    if (!searchNormalized) return items
+    return items.filter((item) => {
+      const haystack =
+        `${item.classType.name} ${item.teacher.firstName} ${item.teacher.lastName} ${item.location.name}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [items, searchNormalized])
+
   const windowCounts = useMemo(() => {
     const now = new Date()
     const todayStart = new Date(now)
@@ -266,22 +275,22 @@ export default function ScheduleScreen() {
     const weekEnd = new Date(now)
     weekEnd.setDate(weekEnd.getDate() + 7)
 
-    const todayCount = items.filter((item) => {
+    const todayCount = searchScopedItems.filter((item) => {
       const start = new Date(item.startTime)
       return start >= todayStart && start < tomorrowStart
     }).length
 
-    const weekCount = items.filter((item) => {
+    const weekCount = searchScopedItems.filter((item) => {
       const start = new Date(item.startTime)
       return start >= now && start <= weekEnd
     }).length
 
     return {
-      ALL: items.length,
+      ALL: searchScopedItems.length,
       TODAY: todayCount,
       WEEK: weekCount,
     } as const
-  }, [items])
+  }, [searchScopedItems])
 
   const filteredItems = useMemo(() => {
     const now = new Date()
@@ -292,7 +301,7 @@ export default function ScheduleScreen() {
     const weekEnd = new Date(now)
     weekEnd.setDate(weekEnd.getDate() + 7)
 
-    return items.filter((item) => {
+    return searchScopedItems.filter((item) => {
       const start = new Date(item.startTime)
       if (windowFilter === "TODAY" && !(start >= todayStart && start < tomorrowStart)) {
         return false
@@ -300,14 +309,9 @@ export default function ScheduleScreen() {
       if (windowFilter === "WEEK" && !(start >= now && start <= weekEnd)) {
         return false
       }
-      if (!searchNormalized) {
-        return true
-      }
-      const haystack =
-        `${item.classType.name} ${item.teacher.firstName} ${item.teacher.lastName} ${item.location.name}`.toLowerCase()
-      return haystack.includes(searchNormalized)
+      return true
     })
-  }, [items, searchNormalized, windowFilter])
+  }, [searchScopedItems, windowFilter])
 
   return (
     <View style={styles.container}>
@@ -389,7 +393,13 @@ export default function ScheduleScreen() {
       {loading && items.length === 0 ? <Text style={styles.loading}>Loading schedule...</Text> : null}
 
       {!loading && filteredItems.length === 0 && !error ? (
-        <Text style={styles.empty}>{searchNormalized ? "No schedule items matched your search." : "No schedule items in this range."}</Text>
+        <Text style={styles.empty}>
+          {searchNormalized && windowFilter !== "ALL"
+            ? "No schedule items matched your search and range."
+            : searchNormalized
+              ? "No schedule items matched your search."
+              : "No schedule items in this range."}
+        </Text>
       ) : null}
 
       <FlatList
