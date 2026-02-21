@@ -138,9 +138,7 @@ export default function VaultScreen() {
 
       setError(null)
       try {
-        const response = await mobileApi.vault(token, {
-          search: trimmedSearch || undefined,
-        })
+        const response = await mobileApi.vault(token, {})
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load vault"
@@ -150,7 +148,7 @@ export default function VaultScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -160,37 +158,44 @@ export default function VaultScreen() {
     return () => clearTimeout(timeout)
   }, [loadVault])
 
-  const filteredCourses = useMemo(() => {
+  const searchScopedCourses = useMemo(() => {
     const courses = data?.courses || []
+    if (!trimmedSearch) return courses
+    const normalized = trimmedSearch.toLowerCase()
     return courses.filter((course) => {
+      const haystack = `${course.title} ${course.subtitle || ""} ${course.category || ""} ${course.creatorName || ""}`.toLowerCase()
+      return haystack.includes(normalized)
+    })
+  }, [data?.courses, trimmedSearch])
+
+  const filteredCourses = useMemo(() => {
+    return searchScopedCourses.filter((course) => {
       if (statusFilter === "published" && !course.isPublished) return false
       if (audienceFilter !== "all" && course.audience !== audienceFilter) return false
       return true
     })
-  }, [audienceFilter, data?.courses, statusFilter])
+  }, [audienceFilter, searchScopedCourses, statusFilter])
 
   const statusCounts = useMemo(() => {
-    const courses = data?.courses || []
     return {
-      all: courses.length,
-      published: courses.filter((course) => course.isPublished).length,
+      all: searchScopedCourses.length,
+      published: searchScopedCourses.filter((course) => course.isPublished).length,
     } as const
-  }, [data?.courses])
+  }, [searchScopedCourses])
 
   const audienceCounts = useMemo(() => {
-    const courses = data?.courses || []
     const counts: Record<"all" | MobileVaultAudience, number> = {
-      all: courses.length,
+      all: searchScopedCourses.length,
       ALL: 0,
       CLIENTS: 0,
       TEACHERS: 0,
       STUDIO_OWNERS: 0,
     }
-    for (const course of courses) {
+    for (const course of searchScopedCourses) {
       counts[course.audience] += 1
     }
     return counts
-  }, [data?.courses])
+  }, [searchScopedCourses])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Vault is available for studio owner and teacher accounts only."

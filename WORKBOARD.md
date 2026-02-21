@@ -141,10 +141,11 @@ Ship high-impact improvements in parallel without conflicts.
 | T-238 Mobile class-flows local filter responsiveness | codex-main | codex/t-238-mobile-classflows-local-filters-counts | Move class-flow filter chips to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/155 |
 | T-239 Mobile vault local filter responsiveness | codex-main | codex/t-239-mobile-vault-local-filters-counts | Move vault status/audience chip filters to local filtering (single fetch per search) and add per-chip counts for faster on-device browsing | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/156 |
 | T-240 Mobile workspace narrow-screen layout pass | codex-main | codex/t-240-mobile-workspace-narrow-layout | Switch workspace feature cards to single-column on narrow phones so actions remain readable and tappable | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/157 |
-| T-241 Mobile billing stats narrow-screen layout pass | codex-main | codex/t-241-mobile-billing-stats-narrow-layout | Improve invoice/payment stats card layout on narrow phones so KPI cards wrap cleanly without cramped widths | In Progress | TBD |
+| T-241 Mobile billing stats narrow-screen layout pass | codex-main | codex/t-241-mobile-billing-stats-narrow-layout | Improve invoice/payment stats card layout on narrow phones so KPI cards wrap cleanly without cramped widths | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/158 |
+| T-242 Mobile vault local search responsiveness | codex-main | codex/t-242-mobile-vault-local-search | Move vault search to local filtering over fetched courses so typing/search refinement is instant and avoids repeated API fetches | In Progress | TBD |
 
 ## Merge Order
-1. All queued mobile slices merged through T-240
+1. All queued mobile slices merged through T-241
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.
