@@ -93,7 +93,7 @@ export default function TeachersScreen() {
       try {
         const response = await mobileApi.teachers(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setTeachers(response.teachers || [])
       } catch (err) {
@@ -104,7 +104,7 @@ export default function TeachersScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -112,11 +112,24 @@ export default function TeachersScreen() {
       void loadTeachers()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadTeachers, trimmedSearch, statusFilter])
+  }, [loadTeachers, trimmedSearch])
+
+  const statusCounts = useMemo(() => {
+    const active = teachers.filter((teacher) => teacher.isActive).length
+    return {
+      active,
+      all: teachers.length,
+    } as const
+  }, [teachers])
+
+  const filteredTeachers = useMemo(() => {
+    if (statusFilter === "all") return teachers
+    return teachers.filter((teacher) => teacher.isActive)
+  }, [statusFilter, teachers])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Teachers view is available for studio owner and teacher accounts."
-    if (trimmedSearch) return "No teachers matched your search."
+    if (trimmedSearch) return statusFilter === "active" ? "No active teachers matched your search." : "No teachers matched your search."
     return statusFilter === "active" ? "No active teachers yet." : "No teachers available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
@@ -150,7 +163,7 @@ export default function TeachersScreen() {
           onPress={() => setStatusFilter("active")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            Active
+            {`Active (${statusCounts.active})`}
           </Text>
         </Pressable>
         <Pressable
@@ -161,7 +174,7 @@ export default function TeachersScreen() {
           onPress={() => setStatusFilter("all")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            All
+            {`All (${statusCounts.all})`}
           </Text>
         </Pressable>
       </View>
@@ -177,7 +190,7 @@ export default function TeachersScreen() {
         </View>
       ) : (
         <FlatList
-          data={teachers}
+          data={filteredTeachers}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.teacherRowWrap}>
