@@ -47,6 +47,8 @@ export default function CommunityScreen() {
   const [data, setData] = useState<MobileCommunityResponse | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [composerText, setComposerText] = useState("")
+  const [search, setSearch] = useState("")
+  const [messageFilter, setMessageFilter] = useState<"ALL" | "MINE" | "TEAM">("ALL")
   const [refreshing, setRefreshing] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -90,6 +92,28 @@ export default function CommunityScreen() {
     [data, selectedPlanId]
   )
 
+  const searchNormalized = search.trim().toLowerCase()
+  const messageCounts = useMemo(() => {
+    const messages = data?.messages || []
+    const mine = messages.filter((message) => message.isMine).length
+    return {
+      ALL: messages.length,
+      MINE: mine,
+      TEAM: messages.length - mine,
+    } as const
+  }, [data?.messages])
+
+  const filteredMessages = useMemo(() => {
+    const messages = data?.messages || []
+    return messages.filter((message) => {
+      if (messageFilter === "MINE" && !message.isMine) return false
+      if (messageFilter === "TEAM" && message.isMine) return false
+      if (!searchNormalized) return true
+      const haystack = `${message.content} ${message.senderName}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [data?.messages, messageFilter, searchNormalized])
+
   const sendMessage = useCallback(async () => {
     if (!token || !selectedPlanId) {
       return
@@ -129,6 +153,14 @@ export default function CommunityScreen() {
     return "No messages yet. Send the first one to start the conversation."
   }, [data?.plans.length, isAllowedRole])
 
+  const emptyFilteredText = useMemo(() => {
+    if (!data?.messages?.length) return emptyText
+    if (searchNormalized) return "No messages matched your search."
+    if (messageFilter === "MINE") return "You have no messages in this plan yet."
+    if (messageFilter === "TEAM") return "No teammate messages in this plan yet."
+    return emptyText
+  }, [data?.messages?.length, emptyText, messageFilter, searchNormalized])
+
   const webCommunityHref = user?.role === "TEACHER" ? "/teacher/community" : "/studio/community"
 
   return (
@@ -156,6 +188,40 @@ export default function CommunityScreen() {
         </View>
       ) : (
         <>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search messages..."
+            style={styles.searchInput}
+          />
+
+          <View style={styles.filterRow}>
+            <Pressable
+              style={[styles.filterChip, messageFilter === "ALL" && [styles.filterChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+              onPress={() => setMessageFilter("ALL")}
+            >
+              <Text style={[styles.filterChipText, messageFilter === "ALL" && [styles.filterChipTextActive, { color: primaryColor }]]}>
+                {`All (${messageCounts.ALL})`}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterChip, messageFilter === "MINE" && [styles.filterChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+              onPress={() => setMessageFilter("MINE")}
+            >
+              <Text style={[styles.filterChipText, messageFilter === "MINE" && [styles.filterChipTextActive, { color: primaryColor }]]}>
+                {`Mine (${messageCounts.MINE})`}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterChip, messageFilter === "TEAM" && [styles.filterChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+              onPress={() => setMessageFilter("TEAM")}
+            >
+              <Text style={[styles.filterChipText, messageFilter === "TEAM" && [styles.filterChipTextActive, { color: primaryColor }]]}>
+                {`Team (${messageCounts.TEAM})`}
+              </Text>
+            </Pressable>
+          </View>
+
           <View style={styles.planRow}>
             {data?.plans.map((plan) => {
               const active = plan.id === (selectedPlanId || data.activePlanId)
@@ -175,12 +241,12 @@ export default function CommunityScreen() {
           </View>
 
           <FlatList
-            data={data?.messages || []}
+            data={filteredMessages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MessageBubble message={item} />}
             contentContainerStyle={styles.messagesContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadCommunity(true)} />}
-            ListEmptyComponent={<View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyText}</Text></View>}
+            ListEmptyComponent={<View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyFilteredText}</Text></View>}
             ListFooterComponent={
               <View style={styles.footerSection}>
                 <Text style={styles.metaText}>Need moderation tools? Use the full web community view.</Text>
@@ -257,6 +323,39 @@ const styles = StyleSheet.create({
     fontSize: 11,
     paddingHorizontal: 8,
     paddingVertical: 3,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    color: mobileTheme.colors.text,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  filterChipActive: {
+    borderWidth: 1,
+  },
+  filterChipText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  filterChipTextActive: {
+    fontWeight: "700",
   },
   planRow: {
     flexDirection: "row",
