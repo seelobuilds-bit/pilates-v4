@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -34,26 +34,26 @@ function statusLabel(status: MobilePaymentStatus) {
   return status.charAt(0) + status.slice(1).toLowerCase()
 }
 
-function StatsCards({ stats, currency }: { stats: MobilePaymentsStats; currency: string }) {
+function StatsCards({ stats, currency, isNarrowScreen }: { stats: MobilePaymentsStats; currency: string; isNarrowScreen: boolean }) {
   return (
     <View style={styles.statsGrid}>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.total}</Text>
         <Text style={styles.statLabel}>Total</Text>
       </View>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.pending}</Text>
         <Text style={styles.statLabel}>Pending</Text>
       </View>
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, isNarrowScreen ? styles.statCardNarrow : null]}>
         <Text style={styles.statValue}>{stats.succeeded}</Text>
         <Text style={styles.statLabel}>Succeeded</Text>
       </View>
-      <View style={styles.statCardWide}>
+      <View style={[styles.statCardWide, isNarrowScreen ? styles.statCardWideNarrow : null]}>
         <Text style={styles.statValue}>{formatCurrency(stats.grossProcessed, currency)}</Text>
         <Text style={styles.statLabel}>Gross Processed</Text>
       </View>
-      <View style={styles.statCardWide}>
+      <View style={[styles.statCardWide, isNarrowScreen ? styles.statCardWideNarrow : null]}>
         <Text style={styles.statValue}>{formatCurrency(stats.refundedTotal, currency)}</Text>
         <Text style={styles.statLabel}>Refunded</Text>
       </View>
@@ -96,7 +96,9 @@ function PaymentCard({ item }: { item: MobilePaymentSummary }) {
 export default function PaymentsScreen() {
   const router = useRouter()
   const { token, user } = useAuth()
+  const { width } = useWindowDimensions()
   const primaryColor = getStudioPrimaryColor()
+  const isNarrowScreen = width <= 380
   const [payments, setPayments] = useState<MobilePaymentSummary[]>([])
   const [stats, setStats] = useState<MobilePaymentsStats>({
     total: 0,
@@ -214,7 +216,7 @@ export default function PaymentsScreen() {
         <Text style={styles.subtitle}>Track transactions and payment outcomes</Text>
       </View>
 
-      {isAllowedRole ? <StatsCards stats={stats} currency={currency} /> : null}
+      {isAllowedRole ? <StatsCards stats={stats} currency={currency} isNarrowScreen={isNarrowScreen} /> : null}
 
       <TextInput
         value={search}
@@ -313,6 +315,10 @@ const styles = StyleSheet.create({
     padding: 10,
     minWidth: 84,
   },
+  statCardNarrow: {
+    minWidth: 0,
+    flexBasis: "31%",
+  },
   statCardWide: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
@@ -320,6 +326,10 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     padding: 10,
     minWidth: 150,
+  },
+  statCardWideNarrow: {
+    minWidth: 0,
+    flexBasis: "100%",
   },
   statValue: {
     color: mobileTheme.colors.text,
