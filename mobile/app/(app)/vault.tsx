@@ -140,8 +140,6 @@ export default function VaultScreen() {
       try {
         const response = await mobileApi.vault(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
-          audience: audienceFilter,
         })
         setData(response)
       } catch (err) {
@@ -152,7 +150,7 @@ export default function VaultScreen() {
         setRefreshing(false)
       }
     },
-    [audienceFilter, isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -162,11 +160,46 @@ export default function VaultScreen() {
     return () => clearTimeout(timeout)
   }, [loadVault])
 
+  const filteredCourses = useMemo(() => {
+    const courses = data?.courses || []
+    return courses.filter((course) => {
+      if (statusFilter === "published" && !course.isPublished) return false
+      if (audienceFilter !== "all" && course.audience !== audienceFilter) return false
+      return true
+    })
+  }, [audienceFilter, data?.courses, statusFilter])
+
+  const statusCounts = useMemo(() => {
+    const courses = data?.courses || []
+    return {
+      all: courses.length,
+      published: courses.filter((course) => course.isPublished).length,
+    } as const
+  }, [data?.courses])
+
+  const audienceCounts = useMemo(() => {
+    const courses = data?.courses || []
+    const counts: Record<"all" | MobileVaultAudience, number> = {
+      all: courses.length,
+      ALL: 0,
+      CLIENTS: 0,
+      TEACHERS: 0,
+      STUDIO_OWNERS: 0,
+    }
+    for (const course of courses) {
+      counts[course.audience] += 1
+    }
+    return counts
+  }, [data?.courses])
+
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Vault is available for studio owner and teacher accounts only."
+    const hasActiveFilters = statusFilter !== "all" || audienceFilter !== "all"
+    if (trimmedSearch && hasActiveFilters) return "No courses matched your search and filters."
     if (trimmedSearch) return "No courses matched your search."
-    return statusFilter === "published" ? "No published courses yet." : "No courses found."
-  }, [isAllowedRole, statusFilter, trimmedSearch])
+    if (hasActiveFilters) return "No courses matched current filters."
+    return "No courses found."
+  }, [audienceFilter, isAllowedRole, statusFilter, trimmedSearch])
 
   const vaultWebHref = user?.role === "TEACHER" ? "/teacher/vault" : "/studio/vault"
   const canManagePublishing = user?.role === "OWNER"
@@ -217,13 +250,13 @@ export default function VaultScreen() {
           style={[styles.filterButton, statusFilter === "published" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("published")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "published" && [styles.filterButtonTextActive, { color: primaryColor }]]}>Published</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "published" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Published (${statusCounts.published})`}</Text>
         </Pressable>
         <Pressable
           style={[styles.filterButton, statusFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("all")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>All</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All (${statusCounts.all})`}</Text>
         </Pressable>
       </View>
 
@@ -236,7 +269,9 @@ export default function VaultScreen() {
               style={[styles.filterButton, active && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
               onPress={() => setAudienceFilter(option.value)}
             >
-              <Text style={[styles.filterButtonText, active && [styles.filterButtonTextActive, { color: primaryColor }]]}>{option.label}</Text>
+              <Text style={[styles.filterButtonText, active && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+                {`${option.label} (${audienceCounts[option.value]})`}
+              </Text>
             </Pressable>
           )
         })}
@@ -253,7 +288,7 @@ export default function VaultScreen() {
         </View>
       ) : (
         <FlatList
-          data={data?.courses || []}
+          data={filteredCourses}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <CourseCard
