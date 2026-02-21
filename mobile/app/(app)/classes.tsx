@@ -75,7 +75,7 @@ export default function ClassesScreen() {
       try {
         const response = await mobileApi.classTypes(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setClassTypes(response.classTypes || [])
         setCurrency(response.studio?.currency || "USD")
@@ -87,7 +87,7 @@ export default function ClassesScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -95,11 +95,24 @@ export default function ClassesScreen() {
       void loadClassTypes()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadClassTypes, trimmedSearch, statusFilter])
+  }, [loadClassTypes, trimmedSearch])
+
+  const statusCounts = useMemo(() => {
+    const active = classTypes.filter((classType) => classType.isActive).length
+    return {
+      active,
+      all: classTypes.length,
+    } as const
+  }, [classTypes])
+
+  const filteredClassTypes = useMemo(() => {
+    if (statusFilter === "all") return classTypes
+    return classTypes.filter((classType) => classType.isActive)
+  }, [classTypes, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Classes view is available for studio owner and teacher accounts."
-    if (trimmedSearch) return "No classes matched your search."
+    if (trimmedSearch) return statusFilter === "active" ? "No active classes matched your search." : "No classes matched your search."
     return statusFilter === "active" ? "No active classes yet." : "No classes available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
 
@@ -133,7 +146,7 @@ export default function ClassesScreen() {
           onPress={() => setStatusFilter("active")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            Active
+            {`Active (${statusCounts.active})`}
           </Text>
         </Pressable>
         <Pressable
@@ -144,7 +157,7 @@ export default function ClassesScreen() {
           onPress={() => setStatusFilter("all")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            All
+            {`All (${statusCounts.all})`}
           </Text>
         </Pressable>
       </View>
@@ -160,7 +173,7 @@ export default function ClassesScreen() {
         </View>
       ) : (
         <FlatList
-          data={classTypes}
+          data={filteredClassTypes}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.classRowWrap}>
