@@ -6,7 +6,7 @@ import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileInvoiceStats, MobileInvoiceStatus, MobileInvoiceSummary } from "@/src/types/mobile"
 
-type InvoiceFilter = "all" | MobileInvoiceStatus
+type InvoiceFilter = "all" | "PENDING" | "PAID" | "DRAFT" | "CANCELLED"
 
 function formatCurrency(value: number, currencyCode: string) {
   const normalized = String(currencyCode || "USD").toUpperCase()
@@ -144,7 +144,7 @@ export default function InvoicesScreen() {
       try {
         const response = await mobileApi.invoices(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setInvoices(response.invoices || [])
         setStats(
@@ -165,7 +165,7 @@ export default function InvoicesScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -173,11 +173,37 @@ export default function InvoicesScreen() {
       void loadInvoices()
     }, 220)
     return () => clearTimeout(timeout)
-  }, [loadInvoices, statusFilter, trimmedSearch])
+  }, [loadInvoices, trimmedSearch])
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<InvoiceFilter, number> = {
+      all: invoices.length,
+      PENDING: 0,
+      PAID: 0,
+      DRAFT: 0,
+      CANCELLED: 0,
+    }
+
+    for (const invoice of invoices) {
+      if (invoice.status in counts) {
+        counts[invoice.status as InvoiceFilter] += 1
+      }
+    }
+
+    return counts
+  }, [invoices])
+
+  const filteredInvoices = useMemo(() => {
+    if (statusFilter === "all") return invoices
+    return invoices.filter((invoice) => invoice.status === statusFilter)
+  }, [invoices, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Invoices view is available for studio owner and teacher accounts."
-    if (trimmedSearch) return "No invoices matched your search."
+    if (trimmedSearch) {
+      if (statusFilter !== "all") return `No ${statusLabel(statusFilter).toLowerCase()} invoices matched your search.`
+      return "No invoices matched your search."
+    }
     if (statusFilter !== "all") return `No ${statusLabel(statusFilter).toLowerCase()} invoices yet.`
     return "No invoices available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
@@ -216,7 +242,7 @@ export default function InvoicesScreen() {
             onPress={() => setStatusFilter(filter)}
           >
             <Text style={[styles.filterButtonText, statusFilter === filter && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {filter === "all" ? "All" : statusLabel(filter)}
+              {`${filter === "all" ? "All" : statusLabel(filter)} (${statusCounts[filter]})`}
             </Text>
           </Pressable>
         ))}
@@ -233,7 +259,7 @@ export default function InvoicesScreen() {
         </View>
       ) : (
         <FlatList
-          data={invoices}
+          data={filteredInvoices}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.invoiceRowWrap}>
