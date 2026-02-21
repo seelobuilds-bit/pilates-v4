@@ -42,6 +42,7 @@ export default function PeopleScreen() {
   const primaryColor = getStudioPrimaryColor()
   const [clients, setClients] = useState<MobileClientSummary[]>([])
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,11 +86,28 @@ export default function PeopleScreen() {
     return () => clearTimeout(timeout)
   }, [loadClients, trimmedSearch])
 
+  const statusCounts = useMemo(() => {
+    const active = clients.filter((client) => client.isActive).length
+    return {
+      ALL: clients.length,
+      ACTIVE: active,
+      INACTIVE: clients.length - active,
+    } as const
+  }, [clients])
+
+  const filteredClients = useMemo(() => {
+    if (statusFilter === "ALL") return clients
+    if (statusFilter === "ACTIVE") return clients.filter((client) => client.isActive)
+    return clients.filter((client) => !client.isActive)
+  }, [clients, statusFilter])
+
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "People view is available for studio owner and teacher accounts."
     if (trimmedSearch) return "No clients matched your search."
+    if (statusFilter === "ACTIVE") return "No active clients matched this view."
+    if (statusFilter === "INACTIVE") return "No inactive clients matched this view."
     return "No clients available yet."
-  }, [isAllowedRole, trimmedSearch])
+  }, [isAllowedRole, statusFilter, trimmedSearch])
 
   const handleMessageClient = useCallback((clientId: string) => {
     router.push({ pathname: "/(app)/inbox", params: { clientId } })
@@ -116,6 +134,33 @@ export default function PeopleScreen() {
         style={styles.searchInput}
       />
 
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[styles.filterButton, statusFilter === "ALL" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+          onPress={() => setStatusFilter("ALL")}
+        >
+          <Text style={[styles.filterButtonText, statusFilter === "ALL" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`All (${statusCounts.ALL})`}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.filterButton, statusFilter === "ACTIVE" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+          onPress={() => setStatusFilter("ACTIVE")}
+        >
+          <Text style={[styles.filterButtonText, statusFilter === "ACTIVE" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`Active (${statusCounts.ACTIVE})`}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.filterButton, statusFilter === "INACTIVE" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
+          onPress={() => setStatusFilter("INACTIVE")}
+        >
+          <Text style={[styles.filterButtonText, statusFilter === "INACTIVE" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
+            {`Inactive (${statusCounts.INACTIVE})`}
+          </Text>
+        </Pressable>
+      </View>
+
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {!isAllowedRole ? (
@@ -127,7 +172,7 @@ export default function PeopleScreen() {
         </View>
       ) : (
         <FlatList
-          data={clients}
+          data={filteredClients}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.clientRowWrap}>
@@ -192,6 +237,30 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: mobileTheme.radius.lg,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  filterButtonActive: {
+    borderWidth: 1,
+  },
+  filterButtonText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  filterButtonTextActive: {
+    fontWeight: "700",
   },
   listContent: {
     paddingBottom: 24,
