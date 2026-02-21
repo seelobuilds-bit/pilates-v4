@@ -102,7 +102,7 @@ export default function StoreScreen() {
       try {
         const response = await mobileApi.store(token, {
           search: trimmedSearch || undefined,
-          status: statusFilter,
+          status: "all",
         })
         setData(response)
       } catch (err) {
@@ -113,7 +113,7 @@ export default function StoreScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, statusFilter, token, trimmedSearch]
+    [isAllowedRole, token, trimmedSearch]
   )
 
   useEffect(() => {
@@ -121,15 +121,29 @@ export default function StoreScreen() {
       void loadStore()
     }, 220)
     return () => clearTimeout(timeout)
-  }, [loadStore, statusFilter, trimmedSearch])
+  }, [loadStore, trimmedSearch])
 
   const currency = data?.studio.currency || "USD"
+  const products = useMemo(() => data?.store.products || [], [data?.store.products])
+
+  const statusCounts = useMemo(() => {
+    const active = products.filter((product) => product.isActive).length
+    return {
+      active,
+      all: products.length,
+    } as const
+  }, [products])
+
+  const filteredProducts = useMemo(() => {
+    if (statusFilter === "all") return products
+    return products.filter((product) => product.isActive)
+  }, [products, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Store is available for studio owner accounts only."
-    if (trimmedSearch) return "No store products matched your search."
-    return "No products found for this store."
-  }, [isAllowedRole, trimmedSearch])
+    if (trimmedSearch) return statusFilter === "active" ? "No active products matched your search." : "No store products matched your search."
+    return statusFilter === "active" ? "No active products found for this store." : "No products found for this store."
+  }, [isAllowedRole, statusFilter, trimmedSearch])
 
   const handleViewDetails = useCallback(
     (studioProductId: string) => {
@@ -165,13 +179,13 @@ export default function StoreScreen() {
           style={[styles.filterButton, statusFilter === "active" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("active")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>Active</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Active (${statusCounts.active})`}</Text>
         </Pressable>
         <Pressable
           style={[styles.filterButton, statusFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("all")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>All</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All (${statusCounts.all})`}</Text>
         </Pressable>
       </View>
 
@@ -186,7 +200,7 @@ export default function StoreScreen() {
         </View>
       ) : (
         <FlatList
-          data={data?.store.products || []}
+          data={filteredProducts}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <ProductCard item={item} currency={currency} onViewDetails={handleViewDetails} />}
           contentContainerStyle={styles.listContent}
