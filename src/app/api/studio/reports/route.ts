@@ -641,9 +641,7 @@ export async function GET(request: NextRequest) {
 
   const campaignRows = reportCampaigns.map((campaign) => {
     const campaignClients = campaignClientMap.get(campaign.id) || new Set<string>()
-    const attributedBookings = Array.from(campaignClients).reduce((sum, clientId) => {
-      return sum + (bookingsByClientId.get(clientId) || 0)
-    }, 0)
+    const attributedBookings = Array.from(campaignClients).filter((clientId) => (bookingsByClientId.get(clientId) || 0) > 0).length
     return {
       id: campaign.id,
       name: campaign.name,
@@ -654,7 +652,7 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  const bookingsFromEmail = bookingsByEmailRecipient.reduce((sum, row) => sum + row._count.clientId, 0)
+  const bookingsFromEmail = bookingsByEmailRecipient.length
 
   const reminderAutomationIds = new Set(reminderAutomations.map((automation) => automation.id))
   const remindersSent = periodMessages.filter(
