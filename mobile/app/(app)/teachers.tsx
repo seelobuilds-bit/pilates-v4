@@ -74,6 +74,7 @@ export default function TeachersScreen() {
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadTeachers = useCallback(
     async (isRefresh = false) => {
@@ -92,7 +93,6 @@ export default function TeachersScreen() {
       setError(null)
       try {
         const response = await mobileApi.teachers(token, {
-          search: trimmedSearch || undefined,
           status: "all",
         })
         setTeachers(response.teachers || [])
@@ -104,7 +104,7 @@ export default function TeachersScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -112,20 +112,28 @@ export default function TeachersScreen() {
       void loadTeachers()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadTeachers, trimmedSearch])
+  }, [loadTeachers])
+
+  const searchScopedTeachers = useMemo(() => {
+    if (!searchNormalized) return teachers
+    return teachers.filter((teacher) => {
+      const haystack = `${teacher.firstName} ${teacher.lastName} ${teacher.email} ${teacher.bio || ""} ${teacher.specialties.join(" ")}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [searchNormalized, teachers])
 
   const statusCounts = useMemo(() => {
-    const active = teachers.filter((teacher) => teacher.isActive).length
+    const active = searchScopedTeachers.filter((teacher) => teacher.isActive).length
     return {
       active,
-      all: teachers.length,
+      all: searchScopedTeachers.length,
     } as const
-  }, [teachers])
+  }, [searchScopedTeachers])
 
   const filteredTeachers = useMemo(() => {
-    if (statusFilter === "all") return teachers
-    return teachers.filter((teacher) => teacher.isActive)
-  }, [statusFilter, teachers])
+    if (statusFilter === "all") return searchScopedTeachers
+    return searchScopedTeachers.filter((teacher) => teacher.isActive)
+  }, [searchScopedTeachers, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Teachers view is available for studio owner and teacher accounts."
