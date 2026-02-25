@@ -531,7 +531,7 @@ export default function SocialMediaPage() {
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Social Media Marketing</h1>
-          <p className="text-gray-500">Training, tools, and automation for Instagram & TikTok</p>
+          <p className="text-gray-500">Growth Academy, tools, and automation for Instagram & TikTok</p>
         </div>
       </div>
 
@@ -549,7 +549,7 @@ export default function SocialMediaPage() {
         <TabsList className="app-scrollbar flex w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
           <TabsTrigger value="training" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
-            Training
+            Growth Academy
           </TabsTrigger>
           <TabsTrigger value="inspiration" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Flame className="h-4 w-4 mr-2" />
@@ -575,7 +575,7 @@ export default function SocialMediaPage() {
                   <Instagram className="h-8 w-8 opacity-80" />
                   <div>
                     <p className="text-2xl font-bold">{categories.reduce((acc, c) => acc + c.modules.length, 0)}</p>
-                    <p className="text-sm opacity-80">Training Modules</p>
+                    <p className="text-sm opacity-80">Academy Modules</p>
                   </div>
                 </div>
               </CardContent>
@@ -647,8 +647,8 @@ export default function SocialMediaPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-12 text-center">
                 <GraduationCap className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Training Coming Soon</h3>
-                <p className="text-gray-500">Social media training modules will be available here</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Growth Academy Coming Soon</h3>
+                <p className="text-gray-500">Social media Growth Academy modules will be available here</p>
               </CardContent>
             </Card>
           ) : (
@@ -1833,7 +1833,6 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-
 
 
 

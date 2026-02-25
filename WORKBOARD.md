@@ -156,6 +156,7 @@ Ship high-impact improvements in parallel without conflicts.
 | T-253 Web class-flows edit content action | codex-main | codex/t-253-web-classflows-edit-content | Fix non-functional Edit button in studio Class Flows content cards and support PATCH save flow from existing modal | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/170 |
 | T-254 Web reports revenue-by-source badge truthfulness | codex-main | codex/t-254-web-reports-revenue-source-share | Replace misleading per-source `0%` trend badge with actual contribution share label in Revenue by Source | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/172 |
 | T-255 HQ studio save-changes reliability | codex-main | codex/t-255-hq-studio-save-changes | Make HQ Studio Communications top Save Changes persist email+domain and SMS settings together with inline success/error feedback | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/173 |
+| T-256 Web reporting + HQ stability polish | codex-main | codex/t-256-web-reporting-hq-stability | Speed up reports API query fan-out, add booking-intelligence metrics, fix leaderboard participant counts/cycle copy, rename Growth Academy labels, add invoice CSV downloads, and trim HQ analytics heavy query scope | In Progress | N/A |
 
 ## Merge Order
 1. All queued mobile slices merged through T-245

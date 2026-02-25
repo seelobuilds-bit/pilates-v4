@@ -76,6 +76,14 @@ const defaultData = {
     underperforming: [] as { id: string; name: string; fill: number; avgFill: number }[],
     insights: [] as { type: string; message: string }[]
   },
+
+  bookings: {
+    total: 0,
+    uniqueClients: 0,
+    newClientBookings: 0,
+    averageBookingsPerClient: 0,
+    byStatus: [] as { status: string; count: number }[]
+  },
   
   // Instructor Performance - empty, will be populated from real teachers
   instructors: [] as {
@@ -166,6 +174,7 @@ export default function ReportsPage() {
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshNonce, setRefreshNonce] = useState(0)
   const [currency, setCurrency] = useState("usd")
   const [reportData, setReportData] = useState(defaultData)
   const [loadingReports, setLoadingReports] = useState(true)
@@ -180,10 +189,14 @@ export default function ReportsPage() {
   
   // Fetch real reports data from API
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchReportData = async () => {
       setLoadingReports(true)
       try {
-        const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`)
+        const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`, {
+          signal: controller.signal
+        })
         if (response.ok) {
           const data = await response.json()
           
@@ -265,6 +278,13 @@ export default function ReportsPage() {
                 { type: 'warning', message: 'No classes scheduled yet. Add classes to see utilisation data.' }
               ]
             },
+            bookings: {
+              total: data.bookings?.total || 0,
+              uniqueClients: data.bookings?.uniqueClients || 0,
+              newClientBookings: data.bookings?.newClientBookings || 0,
+              averageBookingsPerClient: data.bookings?.averageBookingsPerClient || 0,
+              byStatus: data.bookings?.byStatus || []
+            },
             instructors: data.instructors || [],
             retention: {
               totalClients: totalClients,
@@ -313,14 +333,17 @@ export default function ReportsPage() {
           })
         }
       } catch (error) {
+        if (controller.signal.aborted) return
         console.error('Failed to fetch report data:', error)
       } finally {
         setLoadingReports(false)
+        setRefreshing(false)
       }
     }
     
     fetchReportData()
-  }, [period])
+    return () => controller.abort()
+  }, [period, refreshNonce])
 
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -339,16 +362,7 @@ export default function ReportsPage() {
   
   const handleRefresh = async () => {
     setRefreshing(true)
-    // Re-fetch data
-    try {
-      const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`)
-      if (response.ok) {
-        // Data will be refreshed via the useEffect
-      }
-    } catch (error) {
-      console.error('Failed to refresh:', error)
-    }
-    setRefreshing(false)
+    setRefreshNonce((value) => value + 1)
   }
 
   const handlePeriodChange = (value: string) => {
@@ -440,6 +454,7 @@ export default function ReportsPage() {
     reportData.revenue.total > 0 ||
     reportData.utilisation.totalClasses > 0 ||
     reportData.utilisation.totalAttendance > 0 ||
+    reportData.bookings.total > 0 ||
     reportData.revenue.monthly.some((month) => month.amount > 0)
 
   const hasReportsData =
@@ -448,6 +463,7 @@ export default function ReportsPage() {
     reportData.revenue.bySource.length > 0 ||
     reportData.utilisation.totalClasses > 0 ||
     reportData.utilisation.byTimeSlot.length > 0 ||
+    reportData.bookings.total > 0 ||
     reportData.instructors.length > 0 ||
     reportData.retention.totalClients > 0 ||
     reportData.marketing.emailsSent > 0 ||
@@ -506,7 +522,7 @@ export default function ReportsPage() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowCustomDate(false)} />
                 <Card 
-                  className="fixed inset-x-3 top-24 z-50 border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]"
+                  className="fixed inset-x-3 top-24 z-50 max-h-[calc(100dvh-7rem)] overflow-y-auto border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]"
                 >
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">
@@ -764,6 +780,34 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-violet-600" />
+                <h3 className="font-semibold text-gray-900">Booking Intelligence</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-500">Total Bookings</p>
+                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.total.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-1">Non-cancelled bookings in selected period</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-500">Booked Clients (Unique)</p>
+                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.uniqueClients.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-1">Each client counts once, even with multiple bookings</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-500">Bookings from New Clients</p>
+                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.newClientBookings.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Avg {reportData.bookings.averageBookingsPerClient.toFixed(2)} bookings per booked client
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

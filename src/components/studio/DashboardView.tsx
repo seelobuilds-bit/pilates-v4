@@ -856,7 +856,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
               {showCustomDate && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowCustomDate(false)} />
-                  <Card className="fixed inset-x-3 top-24 z-50 border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]">
+                  <Card className="fixed inset-x-3 top-24 z-50 max-h-[calc(100dvh-7rem)] overflow-y-auto border shadow-xl bg-white sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-[340px]">
                     <CardContent className="p-0">
                       <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg">
                         <h3 className="font-semibold text-gray-900">Select Date Range</h3>

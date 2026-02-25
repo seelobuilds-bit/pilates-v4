@@ -24,18 +24,20 @@ import {
 
 export default async function HQAnalyticsPage() {
   const [studioCount, clientCount, bookingCount] = await Promise.all([
-    db.studio.count(),
-    db.client.count(),
-    db.booking.count(),
+    db.studio.count({ where: { subdomain: { not: "zenith" } } }),
+    db.client.count({ where: { studio: { subdomain: { not: "zenith" } } } }),
+    db.booking.count({ where: { studio: { subdomain: { not: "zenith" } } } }),
   ])
 
   const studios = await db.studio.findMany({
+    where: { subdomain: { not: "zenith" } },
     include: {
       _count: {
-        select: { clients: true, teachers: true, locations: true, classSessions: true }
+        select: { clients: true, teachers: true, locations: true }
       }
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    take: 12
   })
 
   // Mock additional data for comprehensive analytics
