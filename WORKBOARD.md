@@ -152,7 +152,8 @@ Ship high-impact improvements in parallel without conflicts.
 | T-249 Mobile people local search responsiveness | codex-main | codex/t-249-mobile-people-local-search | Move people search to local filtering over fetched clients so typing/search refinement is instant and status counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/166 |
 | T-250 Mobile teachers local search responsiveness | codex-main | codex/t-250-mobile-teachers-local-search | Move teachers search to local filtering over fetched roster so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/167 |
 | T-251 Mobile locations local search responsiveness | codex-main | codex/t-251-mobile-locations-local-search | Move locations search to local filtering over fetched locations so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/168 |
-| T-252 Mobile store local search responsiveness | codex-main | codex/t-252-mobile-store-local-search | Move store search to local filtering over fetched products so typing/search refinement is instant and Active/All counts stay search-scoped | In Progress | TBD |
+| T-252 Mobile store local search responsiveness | codex-main | codex/t-252-mobile-store-local-search | Move store search to local filtering over fetched products so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/169 |
+| T-253 Web class-flows edit content action | codex-main | codex/t-253-web-classflows-edit-content | Fix non-functional Edit button in studio Class Flows content cards and support PATCH save flow from existing modal | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/170 |
 
 ## Merge Order
 1. All queued mobile slices merged through T-245
