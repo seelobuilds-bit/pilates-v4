@@ -42,10 +42,12 @@ export async function GET() {
   }
 
   try {
-    try {
-      await runLeaderboardAutoCycle()
-    } catch (cycleError) {
-      console.error("HQ leaderboard auto-cycle skipped due to error:", cycleError)
+    if (process.env.LEADERBOARD_AUTO_CYCLE_ON_READ === "1") {
+      try {
+        await runLeaderboardAutoCycle()
+      } catch (cycleError) {
+        console.error("HQ leaderboard auto-cycle skipped due to error:", cycleError)
+      }
     }
 
     const leaderboards = await db.leaderboard.findMany({
@@ -395,7 +397,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update leaderboard" }, { status: 500 })
   }
 }
-
 
 
 

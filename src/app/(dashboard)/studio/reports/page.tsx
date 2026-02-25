@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
@@ -174,10 +174,11 @@ export default function ReportsPage() {
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
   const [refreshing, setRefreshing] = useState(false)
-  const [refreshNonce, setRefreshNonce] = useState(0)
   const [currency, setCurrency] = useState("usd")
   const [reportData, setReportData] = useState(defaultData)
   const [loadingReports, setLoadingReports] = useState(true)
+  const [reportsError, setReportsError] = useState<string | null>(null)
+  const activeFetchRef = useRef(0)
   const selectedCustomRange = getCustomPeriodRange(period)
   const isCustomRangeValid = Boolean(
     customStartDate &&
@@ -187,163 +188,180 @@ export default function ReportsPage() {
       new Date(customStartDate) <= new Date(customEndDate)
   )
   
+  const fetchReportData = useCallback(
+    async (requestedPeriod: string, options?: { signal?: AbortSignal; manual?: boolean }) => {
+      const fetchId = activeFetchRef.current + 1
+      activeFetchRef.current = fetchId
+      const isManual = Boolean(options?.manual)
+      setLoadingReports(true)
+      setReportsError(null)
+      if (isManual) setRefreshing(true)
+
+      try {
+        const response = await fetch(`/api/studio/reports?${buildReportsQuery(requestedPeriod)}`, {
+          signal: options?.signal,
+          cache: "no-store",
+          headers: isManual ? { "x-force-refresh": String(Date.now()) } : undefined,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load reports (${response.status})`)
+        }
+
+        const data = await response.json()
+        if (activeFetchRef.current !== fetchId) return
+
+        // Calculate percentages and trends from real data
+        const totalRevenue = data.revenue?.total || 0
+        const previousRevenue = data.revenue?.previousTotal || 0
+        const revenuePercentChange =
+          previousRevenue > 0
+            ? Math.round((((totalRevenue - previousRevenue) / previousRevenue) * 100) * 10) / 10
+            : 0
+        const revenueTrend = totalRevenue > previousRevenue ? "up" : totalRevenue < previousRevenue ? "down" : "neutral"
+        const revenueBySource = data.revenue?.byClassType?.map((item: { name: string; amount: number }) => ({
+          name: item.name,
+          amount: item.amount,
+          percent: totalRevenue > 0 ? Math.round((item.amount / totalRevenue) * 100) : 0,
+          trend: "stable",
+          change: 0,
+        })) || []
+
+        // Calculate utilisation from classes data
+        const totalClasses = data.classes?.total || 0
+        const classCapacity = data.classes?.totalCapacity || 0
+
+        // Map booking status
+        const bookingsByStatus = data.bookings?.byStatus || []
+        const confirmedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === "CONFIRMED")?.count || 0
+        const cancelledBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === "CANCELLED")?.count || 0
+        const serverAttendance = data.classes?.totalAttendance ?? 0
+        const fallbackAttendance =
+          confirmedBookings +
+          (bookingsByStatus.find((b: { status: string; count: number }) => b.status === "COMPLETED")?.count || 0)
+        const totalAttendance = serverAttendance > 0 ? serverAttendance : fallbackAttendance
+        const avgFill =
+          typeof data.classes?.averageFill === "number"
+            ? data.classes.averageFill
+            : classCapacity > 0
+              ? Math.round((totalAttendance / classCapacity) * 100)
+              : 0
+
+        // Calculate churn rate
+        const totalClients = data.clients?.total || 0
+        const activeClients = data.clients?.active || 0
+        const churnedClients = data.clients?.churned || 0
+        const churnRate = totalClients > 0 ? Math.round((churnedClients / totalClients) * 100 * 10) / 10 : 0
+        const marketing = data.marketing || {}
+        const social = data.social || {}
+        const retentionData = data.retention || {}
+
+        // Build real data object
+        setReportData({
+          revenue: {
+            total: totalRevenue,
+            previousPeriod: previousRevenue,
+            trend: revenueTrend,
+            percentChange: revenuePercentChange,
+            bySource: revenueBySource,
+            monthly: data.revenue?.monthly || [],
+            insights: totalRevenue > 0 ? [
+              { type: "positive", message: `Revenue is tracking at ${formatCurrency(totalRevenue, currency)} this period` },
+              { type: "info", message: `${confirmedBookings} bookings confirmed, ${cancelledBookings} cancelled` },
+            ] : [
+              { type: "warning", message: "No revenue recorded yet. Complete some bookings to see revenue data." },
+            ],
+          },
+          utilisation: {
+            averageFill: avgFill,
+            previousPeriod: 0,
+            totalClasses,
+            totalAttendance,
+            peakUtilisation: avgFill,
+            lowestUtilisation: avgFill,
+            byTimeSlot: data.classes?.byTimeSlot || [],
+            byDay: data.classes?.byDay || [],
+            topClasses: data.classes?.topClasses || [],
+            underperforming: data.classes?.underperforming || [],
+            insights: totalClasses > 0 ? [
+              { type: "positive", message: `${totalClasses} classes scheduled with ${totalAttendance} attended bookings` },
+            ] : [
+              { type: "warning", message: "No classes scheduled yet. Add classes to see utilisation data." },
+            ],
+          },
+          bookings: {
+            total: data.bookings?.total || 0,
+            uniqueClients: data.bookings?.uniqueClients || 0,
+            newClientBookings: data.bookings?.newClientBookings || 0,
+            averageBookingsPerClient: data.bookings?.averageBookingsPerClient || 0,
+            byStatus: data.bookings?.byStatus || [],
+          },
+          instructors: data.instructors || [],
+          retention: {
+            totalClients,
+            activeClients,
+            newClients: data.clients?.new || 0,
+            churnedClients,
+            churnRate,
+            previousChurnRate: churnRate > 0 ? churnRate + 0.4 : 0,
+            avgLifetimeValue: activeClients > 0 ? Math.round(totalRevenue / activeClients) : 0,
+            atRiskClients: retentionData.atRiskClients ?? Math.max(0, totalClients - activeClients),
+            membershipBreakdown: retentionData.membershipBreakdown || [],
+            churnReasons: retentionData.churnReasons || [],
+            atRiskList: retentionData.atRiskList || [],
+            cohortRetention: retentionData.cohortRetention || [],
+            insights: totalClients > 0 ? [
+              { type: "positive", message: `${activeClients} active clients out of ${totalClients} total` },
+              { type: churnRate > 5 ? "warning" : "info", message: `Current churn rate: ${churnRate}%` },
+            ] : [
+              { type: "info", message: "No clients yet. Add clients to see retention metrics." },
+            ],
+          },
+          marketing: {
+            emailsSent: marketing.emailsSent || 0,
+            emailOpenRate: marketing.emailOpenRate || 0,
+            emailClickRate: marketing.emailClickRate || 0,
+            previousEmailOpenRate: marketing.previousEmailOpenRate || 0,
+            previousEmailClickRate: marketing.previousEmailClickRate || 0,
+            bookingsFromEmail: marketing.bookingsFromEmail || 0,
+            remindersSent: marketing.remindersSent || 0,
+            noShowRate: marketing.noShowRate || 0,
+            previousNoShowRate: marketing.previousNoShowRate || 0,
+            winbackSuccess: marketing.winbackSuccess || 0,
+            campaigns: marketing.campaigns || [],
+            insights:
+              marketing.insights && marketing.insights.length > 0
+                ? marketing.insights
+                : [{ type: "info", message: "Set up campaigns and automations to track marketing performance." }],
+          },
+          social: {
+            activeFlows: social.activeFlows || 0,
+            totalTriggered: social.totalTriggered || 0,
+            totalResponded: social.totalResponded || 0,
+            totalBooked: social.totalBooked || 0,
+            conversionRate: social.conversionRate || 0,
+          },
+        })
+      } catch (error) {
+        if (options?.signal?.aborted) return
+        if (activeFetchRef.current !== fetchId) return
+        console.error("Failed to fetch report data:", error)
+        setReportsError(error instanceof Error ? error.message : "Failed to load reports")
+      } finally {
+        if (activeFetchRef.current !== fetchId) return
+        setLoadingReports(false)
+        if (isManual) setRefreshing(false)
+      }
+    },
+    [currency]
+  )
+
   // Fetch real reports data from API
   useEffect(() => {
     const controller = new AbortController()
-
-    const fetchReportData = async () => {
-      setLoadingReports(true)
-      try {
-        const response = await fetch(`/api/studio/reports?${buildReportsQuery(period)}`, {
-          signal: controller.signal
-        })
-        if (response.ok) {
-          const data = await response.json()
-          
-          // Calculate percentages and trends from real data
-          const totalRevenue = data.revenue?.total || 0
-          const previousRevenue = data.revenue?.previousTotal || 0
-          const revenuePercentChange =
-            previousRevenue > 0
-              ? Math.round((((totalRevenue - previousRevenue) / previousRevenue) * 100) * 10) / 10
-              : 0
-          const revenueTrend = totalRevenue > previousRevenue ? "up" : totalRevenue < previousRevenue ? "down" : "neutral"
-          const revenueBySource = data.revenue?.byClassType?.map((item: { name: string; amount: number }) => ({
-            name: item.name,
-            amount: item.amount,
-            percent: totalRevenue > 0 ? Math.round((item.amount / totalRevenue) * 100) : 0,
-            trend: "stable",
-            change: 0
-          })) || []
-          
-          // Calculate utilisation from classes data
-          const totalClasses = data.classes?.total || 0
-          const classCapacity = data.classes?.totalCapacity || 0
-          
-          // Map booking status
-          const bookingsByStatus = data.bookings?.byStatus || []
-          const confirmedBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CONFIRMED')?.count || 0
-          const cancelledBookings = bookingsByStatus.find((b: { status: string; count: number }) => b.status === 'CANCELLED')?.count || 0
-          const serverAttendance = data.classes?.totalAttendance ?? 0
-          const fallbackAttendance =
-            confirmedBookings +
-            (bookingsByStatus.find((b: { status: string; count: number }) => b.status === "COMPLETED")?.count || 0)
-          const totalAttendance = serverAttendance > 0 ? serverAttendance : fallbackAttendance
-          const avgFill =
-            typeof data.classes?.averageFill === "number"
-              ? data.classes.averageFill
-              : classCapacity > 0
-                ? Math.round((totalAttendance / classCapacity) * 100)
-                : 0
-          
-          // Calculate churn rate
-          const totalClients = data.clients?.total || 0
-          const activeClients = data.clients?.active || 0
-          const churnedClients = data.clients?.churned || 0
-          const churnRate = totalClients > 0 ? Math.round((churnedClients / totalClients) * 100 * 10) / 10 : 0
-          const marketing = data.marketing || {}
-          const social = data.social || {}
-          const retentionData = data.retention || {}
-          
-          // Build real data object
-          setReportData({
-            revenue: {
-              total: totalRevenue,
-              previousPeriod: previousRevenue,
-              trend: revenueTrend,
-              percentChange: revenuePercentChange,
-              bySource: revenueBySource,
-              monthly: data.revenue?.monthly || [],
-              insights: totalRevenue > 0 ? [
-                { type: 'positive', message: `Revenue is tracking at ${formatCurrency(totalRevenue, currency)} this period` },
-                { type: 'info', message: `${confirmedBookings} bookings confirmed, ${cancelledBookings} cancelled` }
-              ] : [
-                { type: 'warning', message: 'No revenue recorded yet. Complete some bookings to see revenue data.' }
-              ]
-            },
-            utilisation: {
-              averageFill: avgFill,
-              previousPeriod: 0,
-              totalClasses: totalClasses,
-              totalAttendance: totalAttendance,
-              peakUtilisation: avgFill,
-              lowestUtilisation: avgFill,
-              byTimeSlot: data.classes?.byTimeSlot || [],
-              byDay: data.classes?.byDay || [],
-              topClasses: data.classes?.topClasses || [],
-              underperforming: data.classes?.underperforming || [],
-              insights: totalClasses > 0 ? [
-                { type: 'positive', message: `${totalClasses} classes scheduled with ${totalAttendance} attended bookings` }
-              ] : [
-                { type: 'warning', message: 'No classes scheduled yet. Add classes to see utilisation data.' }
-              ]
-            },
-            bookings: {
-              total: data.bookings?.total || 0,
-              uniqueClients: data.bookings?.uniqueClients || 0,
-              newClientBookings: data.bookings?.newClientBookings || 0,
-              averageBookingsPerClient: data.bookings?.averageBookingsPerClient || 0,
-              byStatus: data.bookings?.byStatus || []
-            },
-            instructors: data.instructors || [],
-            retention: {
-              totalClients: totalClients,
-              activeClients: activeClients,
-              newClients: data.clients?.new || 0,
-              churnedClients: churnedClients,
-              churnRate: churnRate,
-              previousChurnRate: churnRate > 0 ? churnRate + 0.4 : 0,
-              avgLifetimeValue: activeClients > 0 ? Math.round(totalRevenue / activeClients) : 0,
-              atRiskClients: retentionData.atRiskClients ?? Math.max(0, totalClients - activeClients),
-              membershipBreakdown: retentionData.membershipBreakdown || [],
-              churnReasons: retentionData.churnReasons || [],
-              atRiskList: retentionData.atRiskList || [],
-              cohortRetention: retentionData.cohortRetention || [],
-              insights: totalClients > 0 ? [
-                { type: 'positive', message: `${activeClients} active clients out of ${totalClients} total` },
-                { type: churnRate > 5 ? 'warning' : 'info', message: `Current churn rate: ${churnRate}%` }
-              ] : [
-                { type: 'info', message: 'No clients yet. Add clients to see retention metrics.' }
-              ]
-            },
-            marketing: {
-              emailsSent: marketing.emailsSent || 0,
-              emailOpenRate: marketing.emailOpenRate || 0,
-              emailClickRate: marketing.emailClickRate || 0,
-              previousEmailOpenRate: marketing.previousEmailOpenRate || 0,
-              previousEmailClickRate: marketing.previousEmailClickRate || 0,
-              bookingsFromEmail: marketing.bookingsFromEmail || 0,
-              remindersSent: marketing.remindersSent || 0,
-              noShowRate: marketing.noShowRate || 0,
-              previousNoShowRate: marketing.previousNoShowRate || 0,
-              winbackSuccess: marketing.winbackSuccess || 0,
-              campaigns: marketing.campaigns || [],
-              insights:
-                marketing.insights && marketing.insights.length > 0
-                  ? marketing.insights
-                  : [{ type: "info", message: "Set up campaigns and automations to track marketing performance." }]
-            },
-            social: {
-              activeFlows: social.activeFlows || 0,
-              totalTriggered: social.totalTriggered || 0,
-              totalResponded: social.totalResponded || 0,
-              totalBooked: social.totalBooked || 0,
-              conversionRate: social.conversionRate || 0
-            }
-          })
-        }
-      } catch (error) {
-        if (controller.signal.aborted) return
-        console.error('Failed to fetch report data:', error)
-      } finally {
-        setLoadingReports(false)
-        setRefreshing(false)
-      }
-    }
-    
-    fetchReportData()
+    void fetchReportData(period, { signal: controller.signal })
     return () => controller.abort()
-  }, [period, refreshNonce])
+  }, [period, fetchReportData])
 
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -361,8 +379,7 @@ export default function ReportsPage() {
   }, [])
   
   const handleRefresh = async () => {
-    setRefreshing(true)
-    setRefreshNonce((value) => value + 1)
+    void fetchReportData(period, { manual: true })
   }
 
   const handlePeriodChange = (value: string) => {
@@ -579,6 +596,14 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {reportsError && (
+        <Card className="mb-4 border border-red-200 bg-red-50">
+          <CardContent className="p-3 text-sm text-red-700">
+            {reportsError}. Try `Refresh` once more. If this persists, reduce the date range and retry.
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Insights Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
@@ -777,6 +802,7 @@ export default function ReportsPage() {
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{reportData.retention.churnRate}%</p>
                 <p className="text-sm text-gray-500">Churn Rate</p>
+                <p className="text-xs text-gray-400 mt-1">Churned clients / total clients in this period</p>
           </CardContent>
         </Card>
       </div>

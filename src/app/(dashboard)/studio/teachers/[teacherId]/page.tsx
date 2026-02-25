@@ -147,6 +147,7 @@ export default function TeacherDetailPage({
   const [payRate, setPayRate] = useState<PayRate>({ type: "PER_CLASS", rate: 0, currency: "USD" })
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [savingPayRate, setSavingPayRate] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
 
   useEffect(() => {
     async function fetchTeacher() {
@@ -1207,7 +1208,8 @@ export default function TeacherDetailPage({
                   {invoices.map((invoice) => (
                     <div
                       key={invoice.id}
-                      className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex cursor-pointer flex-col gap-3 rounded-lg bg-gray-50 p-4 transition-colors hover:bg-gray-100 lg:flex-row lg:items-center lg:justify-between"
+                      onClick={() => setSelectedInvoice(invoice)}
                     >
                       <div className="flex items-center gap-4 min-w-0">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -1257,7 +1259,10 @@ export default function TeacherDetailPage({
                           {(invoice.status === "SENT" || invoice.status === "PENDING") && (
                             <Button
                               size="sm"
-                              onClick={() => markInvoicePaid(invoice.id)}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                void markInvoicePaid(invoice.id)
+                              }}
                               className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
@@ -1269,7 +1274,15 @@ export default function TeacherDetailPage({
                               Paid {new Date(invoice.paidAt).toLocaleDateString()}
                             </span>
                           )}
-                          <Button size="sm" variant="ghost" className="w-full sm:w-auto">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full sm:w-auto"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedInvoice(invoice)
+                            }}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1282,6 +1295,81 @@ export default function TeacherDetailPage({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {selectedInvoice && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4" onClick={() => setSelectedInvoice(null)}>
+          <div
+            className="mx-auto max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedInvoice.invoiceNumber}</h3>
+                <p className="text-sm text-gray-500">
+                  {new Date(selectedInvoice.periodStart).toLocaleDateString()} -{" "}
+                  {new Date(selectedInvoice.periodEnd).toLocaleDateString()}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedInvoice(null)}>
+                Close
+              </Button>
+            </div>
+
+            <div className="space-y-5 px-6 py-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Status</p>
+                  <p className="mt-1 font-semibold text-gray-900">{selectedInvoice.status}</p>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Subtotal</p>
+                  <p className="mt-1 font-semibold text-gray-900">${selectedInvoice.subtotal.toFixed(2)}</p>
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>
+                  <p className="mt-1 font-semibold text-gray-900">${selectedInvoice.total.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-gray-900">Line Items</h4>
+                {selectedInvoice.lineItems.length === 0 ? (
+                  <p className="rounded-lg border border-dashed p-4 text-sm text-gray-500">No line items found.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 text-gray-600">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">Description</th>
+                          <th className="px-3 py-2 text-right font-medium">Qty</th>
+                          <th className="px-3 py-2 text-right font-medium">Rate</th>
+                          <th className="px-3 py-2 text-right font-medium">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInvoice.lineItems.map((item, index) => (
+                          <tr key={`${selectedInvoice.id}-item-${index}`} className="border-t">
+                            <td className="px-3 py-2 text-gray-900">{item.description}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">{item.quantity}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">${item.rate.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-right font-medium text-gray-900">${item.amount.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

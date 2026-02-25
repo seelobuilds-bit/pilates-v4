@@ -24,11 +24,18 @@ export async function GET(request: NextRequest) {
       : null
 
   try {
-    try {
-      await runLeaderboardAutoCycle()
-    } catch (cycleError) {
-      console.error("Leaderboard auto-cycle skipped due to error:", cycleError)
+    if (process.env.LEADERBOARD_AUTO_CYCLE_ON_READ === "1") {
+      try {
+        await runLeaderboardAutoCycle()
+      } catch (cycleError) {
+        console.error("Leaderboard auto-cycle skipped due to error:", cycleError)
+      }
     }
+
+    const expectedParticipantCount =
+      participantType === "STUDIO"
+        ? await db.studio.count()
+        : await db.teacher.count()
 
     // Get active leaderboards
     const leaderboards = await db.leaderboard.findMany({
@@ -132,14 +139,13 @@ export async function GET(request: NextRequest) {
         return { ...entry, participant }
       })
       const entries = mappedEntries.filter((entry) => Boolean(entry.participant))
-      const validEntryCount = entries.length
 
       return {
         ...lb,
         currentPeriod: {
           ...currentPeriod,
           entries,
-          totalEntries: validEntryCount
+          totalEntries: Math.max(currentPeriod._count.entries, expectedParticipantCount)
         }
       }
     })
@@ -267,9 +273,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
-
-
 
 
 

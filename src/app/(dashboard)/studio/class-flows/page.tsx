@@ -75,6 +75,11 @@ interface TrainingRequest {
   }
 }
 
+interface TeacherOption {
+  id: string
+  name: string
+}
+
 export default function ClassFlowsPage() {
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
@@ -84,6 +89,9 @@ export default function ClassFlowsPage() {
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingContentId, setEditingContentId] = useState<string | null>(null)
+  const [teachers, setTeachers] = useState<TeacherOption[]>([])
+  const [showTrainingRequest, setShowTrainingRequest] = useState(false)
+  const [submittingTrainingRequest, setSubmittingTrainingRequest] = useState(false)
 
   // Form state
   const [newContent, setNewContent] = useState({
@@ -106,6 +114,23 @@ export default function ClassFlowsPage() {
     description: "",
     icon: "📚",
     color: "#7c3aed"
+  })
+
+  const [trainingForm, setTrainingForm] = useState({
+    title: "",
+    description: "",
+    trainingType: "",
+    preferredDate1: "",
+    preferredDate2: "",
+    preferredDate3: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
+    location: "",
+    address: "",
+    attendeeCount: 1,
+    notes: "",
+    requestedById: ""
   })
 
   // Upload state
@@ -194,6 +219,7 @@ export default function ClassFlowsPage() {
         setCategories(data.categories || [])
         setTrainingRequests(data.trainingRequests || [])
         setStats(data.stats || { totalViews: 0, completedCount: 0, pendingTrainingRequests: 0 })
+        setTeachers(data.teachers || [])
       }
     } catch (error) {
       console.error("Failed to fetch data:", error)
@@ -307,6 +333,41 @@ export default function ClassFlowsPage() {
       void fetchData()
     } catch (error) {
       console.error("Failed to delete content:", error)
+    }
+  }
+
+  async function submitTrainingRequest() {
+    setSubmittingTrainingRequest(true)
+    try {
+      const res = await fetch("/api/class-flows/training-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trainingForm)
+      })
+      if (res.ok) {
+        setShowTrainingRequest(false)
+        setTrainingForm({
+          title: "",
+          description: "",
+          trainingType: "",
+          preferredDate1: "",
+          preferredDate2: "",
+          preferredDate3: "",
+          contactName: "",
+          contactEmail: "",
+          contactPhone: "",
+          location: "",
+          address: "",
+          attendeeCount: 1,
+          notes: "",
+          requestedById: ""
+        })
+        void fetchData()
+      }
+    } catch (error) {
+      console.error("Failed to submit training request:", error)
+    } finally {
+      setSubmittingTrainingRequest(false)
     }
   }
 
@@ -573,16 +634,26 @@ export default function ClassFlowsPage() {
         <TabsContent value="training" className="space-y-6">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <GraduationCap className="h-5 w-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900">Expert Training Requests</h3>
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-gray-400" />
+                  <h3 className="font-semibold text-gray-900">Expert Training Requests</h3>
+                </div>
+                <Button
+                  className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
+                  onClick={() => setShowTrainingRequest(true)}
+                  disabled={teachers.length === 0}
+                >
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Request Training
+                </Button>
               </div>
 
               {trainingRequests.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <Award className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-900 mb-2">No training requests</h3>
-                  <p className="text-gray-500">Teachers can request on-site expert training from here</p>
+                  <p className="text-gray-500">Create the first on-site expert training request for your team.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -630,6 +701,209 @@ export default function ClassFlowsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Training Request Modal */}
+      {showTrainingRequest && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowTrainingRequest(false)} />
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-6">
+                <div className="mb-6 flex items-start justify-between gap-3 sm:items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                      <GraduationCap className="h-5 w-5 text-violet-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Request Expert Training</h3>
+                      <p className="text-sm text-gray-500">Create a request for your studio team</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setShowTrainingRequest(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Requested For Teacher</Label>
+                    <Select
+                      value={trainingForm.requestedById}
+                      onValueChange={(value) => setTrainingForm({ ...trainingForm, requestedById: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select teacher" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map((teacher) => (
+                          <SelectItem key={teacher.id} value={teacher.id}>
+                            {teacher.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Training Title</Label>
+                    <Input
+                      value={trainingForm.title}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, title: e.target.value })}
+                      placeholder="e.g., Advanced Reformer Certification"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Training Type</Label>
+                    <Select
+                      value={trainingForm.trainingType}
+                      onValueChange={(value) => setTrainingForm({ ...trainingForm, trainingType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select training type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="reformer-basics">Reformer Basics</SelectItem>
+                        <SelectItem value="reformer-advanced">Reformer Advanced</SelectItem>
+                        <SelectItem value="mat-certification">Mat Certification</SelectItem>
+                        <SelectItem value="tower-training">Tower Training</SelectItem>
+                        <SelectItem value="prenatal">Prenatal Pilates</SelectItem>
+                        <SelectItem value="rehabilitation">Rehabilitation Focus</SelectItem>
+                        <SelectItem value="custom">Custom Training</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={trainingForm.description}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, description: e.target.value })}
+                      placeholder="Describe what you'd like to cover..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label>Preferred Date 1</Label>
+                      <Input
+                        type="date"
+                        value={trainingForm.preferredDate1}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate1: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Preferred Date 2</Label>
+                      <Input
+                        type="date"
+                        value={trainingForm.preferredDate2}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate2: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Preferred Date 3</Label>
+                      <Input
+                        type="date"
+                        value={trainingForm.preferredDate3}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate3: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Contact Name</Label>
+                      <Input
+                        value={trainingForm.contactName}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, contactName: e.target.value })}
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Number of Attendees</Label>
+                      <Input
+                        type="number"
+                        value={trainingForm.attendeeCount}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, attendeeCount: parseInt(e.target.value, 10) || 1 })}
+                        min={1}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        value={trainingForm.contactEmail}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, contactEmail: e.target.value })}
+                        placeholder="owner@studio.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone (optional)</Label>
+                      <Input
+                        value={trainingForm.contactPhone}
+                        onChange={(e) => setTrainingForm({ ...trainingForm, contactPhone: e.target.value })}
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Training Location</Label>
+                    <Input
+                      value={trainingForm.location}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, location: e.target.value })}
+                      placeholder="Studio name or location"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Full Address</Label>
+                    <Textarea
+                      value={trainingForm.address}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, address: e.target.value })}
+                      placeholder="Street address, city, state, zip"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Additional Notes (optional)</Label>
+                    <Textarea
+                      value={trainingForm.notes}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, notes: e.target.value })}
+                      placeholder="Anything else the expert should know..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" onClick={() => setShowTrainingRequest(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={submitTrainingRequest}
+                    disabled={
+                      submittingTrainingRequest ||
+                      !trainingForm.requestedById ||
+                      !trainingForm.title ||
+                      !trainingForm.description ||
+                      !trainingForm.contactEmail
+                    }
+                    className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
+                  >
+                    {submittingTrainingRequest ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* Add Category Modal */}
       {showAddCategory && (
@@ -1082,11 +1356,6 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
-
-
-
-
-
 
 
 

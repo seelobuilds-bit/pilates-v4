@@ -24,35 +24,54 @@ export async function GET() {
     })
 
     // Get teacher progress stats for this studio
-    const progressStats = await db.classFlowProgress.groupBy({
-      by: ["contentId"],
-      where: { studioId: session.user.studioId },
-      _count: { id: true },
-      _sum: { progressPercent: true }
-    })
-
-    const completedCount = await db.classFlowProgress.count({
-      where: {
-        studioId: session.user.studioId,
-        isCompleted: true
-      }
-    })
-
-    // Get training requests
-    const trainingRequests = await db.trainingRequest.findMany({
-      where: { studioId: session.user.studioId },
-      include: {
-        requestedBy: {
-          include: {
-            user: {
-              select: { firstName: true, lastName: true }
+    const [progressStats, completedCount, trainingRequests, studioTeachers] = await Promise.all([
+      db.classFlowProgress.groupBy({
+        by: ["contentId"],
+        where: { studioId: session.user.studioId },
+        _count: { id: true },
+        _sum: { progressPercent: true }
+      }),
+      db.classFlowProgress.count({
+        where: {
+          studioId: session.user.studioId,
+          isCompleted: true
+        }
+      }),
+      db.trainingRequest.findMany({
+        where: { studioId: session.user.studioId },
+        include: {
+          requestedBy: {
+            include: {
+              user: {
+                select: { firstName: true, lastName: true }
+              }
             }
           }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      }),
+      db.teacher.findMany({
+        where: {
+          studioId: session.user.studioId,
+          isActive: true
+        },
+        select: {
+          id: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          }
+        },
+        orderBy: {
+          user: {
+            firstName: "asc"
+          }
         }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10
-    })
+      })
+    ])
 
     return NextResponse.json({
       categories,
@@ -61,7 +80,11 @@ export async function GET() {
         completedCount,
         pendingTrainingRequests: trainingRequests.filter(r => r.status === "PENDING").length
       },
-      trainingRequests
+      trainingRequests,
+      teachers: studioTeachers.map((teacher) => ({
+        id: teacher.id,
+        name: `${teacher.user.firstName} ${teacher.user.lastName}`
+      }))
     })
   } catch (error) {
     console.error("Failed to fetch admin data:", error)
@@ -96,7 +119,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
   }
 }
-
 
 
 

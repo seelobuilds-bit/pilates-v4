@@ -307,7 +307,9 @@ export default function StudioLeaderboardsPage() {
                     <div>
                       <h3 className="font-semibold text-gray-900">{lb.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {lb.currentPeriod?.name || `Cycle: ${lb.timeframe.toLowerCase()}`}
+                        {lb.currentPeriod
+                          ? `${lb.currentPeriod.name} (${new Date(lb.currentPeriod.startDate).toLocaleDateString()} - ${new Date(lb.currentPeriod.endDate).toLocaleDateString()})`
+                          : `Cycle: ${lb.timeframe.toLowerCase()}`}
                       </p>
                     </div>
                     <Badge className="bg-amber-100 text-amber-700">
@@ -403,7 +405,10 @@ export default function StudioLeaderboardsPage() {
                         <div>
                           <h3 className="font-semibold text-gray-900">{lb.name}</h3>
                           <p className="text-xs text-gray-500">
-                            {lb.currentPeriod?.totalEntries || 0} participants • cycle {lb.timeframe.toLowerCase()}
+                            {lb.currentPeriod?.totalEntries || 0} participants •{" "}
+                            {lb.currentPeriod
+                              ? `active period ${new Date(lb.currentPeriod.startDate).toLocaleDateString()} - ${new Date(lb.currentPeriod.endDate).toLocaleDateString()}`
+                              : `cycle ${lb.timeframe.toLowerCase()}`}
                           </p>
                         </div>
                       </div>
@@ -660,7 +665,6 @@ export default function StudioLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

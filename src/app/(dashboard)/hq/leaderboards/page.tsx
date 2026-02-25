@@ -302,6 +302,27 @@ export default function HQLeaderboardsPage() {
     setCycling(false)
   }
 
+  async function endPeriodEarly(periodId: string) {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/hq/leaderboards", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "finalizePeriod",
+          periodId,
+        }),
+      })
+
+      if (res.ok) {
+        await fetchLeaderboards()
+      }
+    } catch (err) {
+      console.error("Failed to finalize period:", err)
+    }
+    setSaving(false)
+  }
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       ACTIVE: "bg-green-100 text-green-700",
@@ -461,7 +482,11 @@ export default function HQLeaderboardsPage() {
                         <div className="flex items-center gap-4 text-xs text-gray-400">
                           <span>{CATEGORIES.find(c => c.value === lb.category)?.label}</span>
                           <span>•</span>
-                          <span>{lb.timeframe.toLowerCase()}</span>
+                          <span>
+                            {lb.periods[0]
+                              ? `active period ${new Date(lb.periods[0].startDate).toLocaleDateString()} - ${new Date(lb.periods[0].endDate).toLocaleDateString()}`
+                              : `cycle ${lb.timeframe.toLowerCase()}`}
+                          </span>
                           <span>•</span>
                           <span>{lb._count.prizes} prizes</span>
                           <span>•</span>
@@ -530,9 +555,29 @@ export default function HQLeaderboardsPage() {
                           <div key={period.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
                             {getStatusBadge(period.status)}
                             <span className="text-sm">{period.name}</span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
+                            </span>
                             <span className="text-xs text-gray-400">
                               ({period._count.entries} entries)
                             </span>
+                            {period.status === "ACTIVE" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs"
+                                disabled={saving}
+                                onClick={() => {
+                                  const shouldEnd = window.confirm(
+                                    `End "${period.name}" now? This finalizes the period immediately.`
+                                  )
+                                  if (!shouldEnd) return
+                                  void endPeriodEarly(period.id)
+                                }}
+                              >
+                                End now
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -881,8 +926,6 @@ export default function HQLeaderboardsPage() {
     </div>
   )
 }
-
-
 
 
 

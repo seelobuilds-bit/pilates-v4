@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+function toSafeNumber(value: unknown) {
+  if (typeof value === "bigint") return Number(value)
+  if (typeof value === "number") return value
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
 // GET - Fetch website analytics config and data
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -201,6 +211,18 @@ export async function GET(request: NextRequest) {
       ? (totalPageViews / uniqueVisitors).toFixed(1)
       : "0"
 
+    const normalizedVisitorTrend = Array.isArray(visitorTrend)
+      ? visitorTrend.map((point: unknown) => {
+          const row = (point || {}) as { period?: unknown; visitors?: unknown; pageviews?: unknown }
+          const periodValue = row.period instanceof Date ? row.period.toISOString() : String(row.period || "")
+          return {
+            period: periodValue,
+            visitors: toSafeNumber(row.visitors),
+            pageviews: toSafeNumber(row.pageviews),
+          }
+        })
+      : []
+
     return NextResponse.json({
       config,
       range: {
@@ -229,7 +251,7 @@ export async function GET(request: NextRequest) {
           count: d._count.id
         })),
         recentEvents,
-        visitorTrend
+        visitorTrend: normalizedVisitorTrend
       }
     })
   } catch (error) {
@@ -286,7 +308,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
 
 
 

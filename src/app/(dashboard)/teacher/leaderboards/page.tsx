@@ -299,7 +299,11 @@ export default function TeacherLeaderboardsPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-gray-900">{lb.name}</h3>
-                      <p className="text-sm text-gray-500">{lb.currentPeriod?.name || lb.timeframe}</p>
+                      <p className="text-sm text-gray-500">
+                        {lb.currentPeriod
+                          ? `${lb.currentPeriod.name} (${new Date(lb.currentPeriod.startDate).toLocaleDateString()} - ${new Date(lb.currentPeriod.endDate).toLocaleDateString()})`
+                          : lb.timeframe}
+                      </p>
                     </div>
                     <Badge className="bg-amber-100 text-amber-700">
                       <Star className="h-3 w-3 mr-1" />
@@ -391,7 +395,10 @@ export default function TeacherLeaderboardsPage() {
                         <div>
                           <h3 className="font-semibold text-gray-900">{lb.name}</h3>
                           <p className="text-xs text-gray-500">
-                            {lb.currentPeriod?.totalEntries || 0} participants • {lb.timeframe.toLowerCase()}
+                            {lb.currentPeriod?.totalEntries || 0} participants •{" "}
+                            {lb.currentPeriod
+                              ? `active period ${new Date(lb.currentPeriod.startDate).toLocaleDateString()} - ${new Date(lb.currentPeriod.endDate).toLocaleDateString()}`
+                              : lb.timeframe.toLowerCase()}
                           </p>
                         </div>
                       </div>
@@ -630,7 +637,6 @@ export default function TeacherLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

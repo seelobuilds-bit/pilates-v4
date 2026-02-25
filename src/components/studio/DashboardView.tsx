@@ -211,7 +211,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       params.delete("startDate")
       params.delete("endDate")
     }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    router.refresh()
   }
 
   const handlePeriodChange = (value: string) => {
@@ -844,6 +845,27 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         </div>
 
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+            <Link href={`${linkPrefix}/clients/new`} className="min-w-0">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Client
+              </Button>
+            </Link>
+            <Link href={`${linkPrefix}/schedule/new`} className="min-w-0">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                Add Class
+              </Button>
+            </Link>
+            <Link href={`${linkPrefix}/schedule`} className="min-w-0">
+              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                View Schedule
+              </Button>
+            </Link>
+          </div>
+
           {supportsRangeFiltering && (
             <div className="w-full sm:w-auto">
               <div className="app-scrollbar flex w-full gap-2 overflow-x-auto pb-1 sm:hidden">
@@ -940,27 +962,6 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
               )}
             </div>
           )}
-
-          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
-            <Link href={`${linkPrefix}/clients/new`} className="min-w-0">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Client
-              </Button>
-            </Link>
-            <Link href={`${linkPrefix}/schedule/new`} className="min-w-0">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <CalendarPlus className="h-4 w-4 mr-2" />
-                Add Class
-              </Button>
-            </Link>
-            <Link href={`${linkPrefix}/schedule`} className="min-w-0">
-              <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                View Schedule
-              </Button>
-            </Link>
-          </div>
 
           <Button
             variant="outline"

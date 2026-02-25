@@ -40,8 +40,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user?.teacherId || !session?.user?.studioId) {
-    return NextResponse.json({ error: "Unauthorized - Teachers only" }, { status: 401 })
+  if (!session?.user?.studioId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
@@ -59,8 +59,31 @@ export async function POST(request: NextRequest) {
       location,
       address,
       attendeeCount,
-      notes
+      notes,
+      requestedById: requestedByIdFromBody
     } = body
+
+    let requestedById = session.user.teacherId
+    if (!requestedById && session.user.role === "OWNER") {
+      if (typeof requestedByIdFromBody !== "string" || !requestedByIdFromBody.trim()) {
+        return NextResponse.json({ error: "Select a teacher for this request" }, { status: 400 })
+      }
+      const ownerSelectedTeacher = await db.teacher.findFirst({
+        where: {
+          id: requestedByIdFromBody,
+          studioId: session.user.studioId
+        },
+        select: { id: true }
+      })
+      if (!ownerSelectedTeacher) {
+        return NextResponse.json({ error: "Invalid teacher selected" }, { status: 400 })
+      }
+      requestedById = ownerSelectedTeacher.id
+    }
+
+    if (!requestedById) {
+      return NextResponse.json({ error: "Unable to resolve request owner" }, { status: 400 })
+    }
 
     const trainingRequest = await db.trainingRequest.create({
       data: {
@@ -78,7 +101,7 @@ export async function POST(request: NextRequest) {
         attendeeCount: attendeeCount || 1,
         notes,
         studioId: session.user.studioId,
-        requestedById: session.user.teacherId
+        requestedById
       }
     })
 
@@ -88,7 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create training request" }, { status: 500 })
   }
 }
-
 
 
 

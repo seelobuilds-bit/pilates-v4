@@ -95,7 +95,6 @@ export async function populateLeaderboardPeriodEntries(params: {
           orderBy: { createdAt: "asc" },
         })
       : await db.teacher.findMany({
-          where: { isActive: true },
           select: { id: true, createdAt: true },
           orderBy: { createdAt: "asc" },
         })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { BookingStatus } from "@prisma/client"
+import { BookingStatus, Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
@@ -78,30 +78,7 @@ export async function GET(request: NextRequest) {
   monthWindowStart.setDate(1)
   monthWindowStart.setHours(0, 0, 0, 0)
 
-  const [
-    bookings,
-    previousBookings,
-    monthlyBookings,
-    totalClients,
-    newClients,
-    activeClients,
-    churnedClients,
-    classSessions,
-    periodMessages,
-    previousPeriodMessages,
-    reportCampaigns,
-    reminderAutomations,
-    winbackAutomations,
-    activeSocialFlows,
-    totalSocialTriggered,
-    totalSocialResponded,
-    totalSocialBooked,
-    previousClassCounts,
-    studioTeachers,
-    studioClients,
-    cancelledBookingsInPeriod,
-    activeClientVisitRows
-  ] = await Promise.all([
+  const [bookings, previousBookings, monthlyBookings, classSessions] = await Promise.all([
     db.booking.findMany({
       where: {
         studioId,
@@ -112,16 +89,25 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      include: {
-        client: {
-          select: {
-            createdAt: true
-          }
-        },
+      select: {
+        status: true,
+        clientId: true,
+        paidAmount: true,
         classSession: {
-          include: {
-            classType: true,
-            location: true
+          select: {
+            startTime: true,
+            teacherId: true,
+            classType: {
+              select: {
+                name: true,
+                price: true
+              }
+            },
+            location: {
+              select: {
+                name: true
+              }
+            }
           }
         }
       }
@@ -136,10 +122,17 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      include: {
+      select: {
+        status: true,
+        paidAmount: true,
         classSession: {
-          include: {
-            classType: true
+          select: {
+            teacherId: true,
+            classType: {
+              select: {
+                price: true
+              }
+            }
           }
         }
       }
@@ -154,14 +147,81 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      include: {
+      select: {
+        status: true,
         classSession: {
-          include: {
-            classType: true
+          select: {
+            startTime: true,
+            classType: {
+              select: {
+                price: true
+              }
+            }
           }
-        }
+        },
+        paidAmount: true
       }
     }),
+    db.classSession.findMany({
+      where: {
+        studioId,
+        startTime: {
+          gte: startDate,
+          lt: reportEndDate
+        }
+      },
+      select: {
+        id: true,
+        studioId: true,
+        teacherId: true,
+        classTypeId: true,
+        capacity: true,
+        startTime: true,
+        classType: {
+          select: {
+            name: true,
+            price: true
+          }
+        },
+        location: {
+          select: {
+            name: true
+          }
+        },
+        teacher: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        bookings: {
+          select: {
+            status: true,
+            paidAmount: true,
+            clientId: true
+          }
+        },
+        _count: {
+          select: { waitlists: true }
+        }
+      }
+    })
+  ])
+
+  const [
+    totalClients,
+    newClients,
+    activeClients,
+    churnedClients,
+    previousClassCounts,
+    studioTeachers,
+    studioClients,
+    cancelledBookingsInPeriod
+  ] = await Promise.all([
     db.client.count({ where: { studioId } }),
     db.client.count({
       where: {
@@ -184,30 +244,67 @@ export async function GET(request: NextRequest) {
         isActive: false
       }
     }),
-    db.classSession.findMany({
+    db.classSession.groupBy({
+      by: ["teacherId"],
       where: {
         studioId,
         startTime: {
-          gte: startDate,
-          lt: reportEndDate
+          gte: previousStartDate,
+          lt: startDate
         }
       },
-      include: {
-        classType: true,
-        location: true,
-        teacher: { include: { user: true } },
-        bookings: {
+      _count: {
+        teacherId: true
+      }
+    }),
+    db.teacher.findMany({
+      where: {
+        studioId
+      },
+      select: {
+        id: true,
+        isActive: true,
+        specialties: true,
+        user: {
           select: {
-            status: true,
-            paidAmount: true,
-            clientId: true
+            firstName: true,
+            lastName: true
           }
-        },
-        _count: {
-          select: { waitlists: true }
         }
       }
     }),
+    db.client.findMany({
+      where: {
+        studioId
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        isActive: true,
+        credits: true,
+        createdAt: true
+      }
+    }),
+    db.booking.findMany({
+      where: {
+        studioId,
+        status: "CANCELLED",
+        classSession: {
+          startTime: {
+            gte: startDate,
+            lt: reportEndDate
+          }
+        }
+      },
+      select: {
+        cancellationReason: true
+      }
+    })
+  ])
+
+  const [periodMessages, previousPeriodMessages, reportCampaigns, reminderAutomations, winbackAutomations] = await Promise.all([
     db.message.findMany({
       where: {
         studioId,
@@ -298,7 +395,10 @@ export async function GET(request: NextRequest) {
       select: {
         id: true
       }
-    }),
+    })
+  ])
+
+  const [activeSocialFlows, totalSocialTriggered, totalSocialResponded, totalSocialBooked] = await Promise.all([
     db.socialMediaFlow.count({
       where: {
         isActive: true,
@@ -347,95 +447,29 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    }),
-    db.classSession.groupBy({
-      by: ["teacherId"],
-      where: {
-        studioId,
-        startTime: {
-          gte: previousStartDate,
-          lt: startDate
-        }
-      },
-      _count: {
-        teacherId: true
-      }
-    }),
-    db.teacher.findMany({
-      where: {
-        studioId
-      },
-      select: {
-        id: true,
-        isActive: true,
-        specialties: true,
-        user: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        }
-      }
-    }),
-    db.client.findMany({
-      where: {
-        studioId
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        isActive: true,
-        credits: true,
-        createdAt: true
-      }
-    }),
-    db.booking.findMany({
-      where: {
-        studioId,
-        status: "CANCELLED",
-        classSession: {
-          startTime: {
-            gte: startDate,
-            lt: reportEndDate
-          }
-        }
-      },
-      select: {
-        cancellationReason: true
-      }
-    }),
-    db.booking.findMany({
-      where: {
-        studioId,
-        status: {
-          in: ATTENDED_BOOKING_STATUS_LIST
-        },
-        client: {
-          isActive: true
-        },
-        classSession: {
-          startTime: {
-            lt: reportEndDate
-          }
-        }
-      },
-      select: {
-        clientId: true,
-        classSession: {
-          select: {
-            startTime: true
-          }
-        }
-      },
-      orderBy: {
-        classSession: {
-          startTime: "desc"
-        }
-      }
     })
   ])
+
+  const activeClientVisitRows = await db.$queryRaw<Array<{
+    clientId: string
+    visits: bigint | number
+    lastVisit: Date
+  }>>(
+    Prisma.sql`
+      SELECT
+        b."clientId" AS "clientId",
+        COUNT(*)::bigint AS "visits",
+        MAX(cs."startTime") AS "lastVisit"
+      FROM "Booking" b
+      INNER JOIN "ClassSession" cs ON cs."id" = b."classSessionId"
+      INNER JOIN "Client" c ON c."id" = b."clientId"
+      WHERE b."studioId" = ${studioId}
+        AND b."status" IN (${Prisma.join(ATTENDED_BOOKING_STATUS_LIST)})
+        AND cs."startTime" < ${reportEndDate}
+        AND c."isActive" = true
+      GROUP BY b."clientId"
+    `
+  )
 
   const revenueByLocation: Record<string, number> = {}
   const revenueByClassType: Record<string, number> = {}
@@ -562,9 +596,10 @@ export async function GET(request: NextRequest) {
   }
 
   const validBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
+  const clientCreatedAtById = new Map(studioClients.map((client) => [client.id, client.createdAt]))
   const uniqueBookedClients = new Set(validBookings.map((booking) => booking.clientId))
   const newClientBookings = validBookings.filter((booking) => {
-    const createdAt = booking.client?.createdAt
+    const createdAt = clientCreatedAtById.get(booking.clientId)
     return createdAt ? createdAt >= startDate && createdAt < reportEndDate : false
   }).length
   const averageBookingsPerClient = roundTo(
@@ -832,11 +867,14 @@ export async function GET(request: NextRequest) {
   const lastVisitByClientId = new Map<string, Date>()
   const recentlyActiveClientIds = new Set<string>()
   for (const visit of activeClientVisitRows) {
-    visitCountByClientId.set(visit.clientId, (visitCountByClientId.get(visit.clientId) || 0) + 1)
-    if (!lastVisitByClientId.has(visit.clientId)) {
-      lastVisitByClientId.set(visit.clientId, visit.classSession.startTime)
-    }
-    if (visit.classSession.startTime >= recentActivityCutoff) {
+    const visitsCount = typeof visit.visits === "bigint" ? Number(visit.visits) : visit.visits
+    visitCountByClientId.set(visit.clientId, visitsCount)
+
+    const parsedLastVisit = visit.lastVisit instanceof Date ? visit.lastVisit : new Date(visit.lastVisit)
+    if (Number.isNaN(parsedLastVisit.getTime())) continue
+
+    lastVisitByClientId.set(visit.clientId, parsedLastVisit)
+    if (parsedLastVisit >= recentActivityCutoff) {
       recentlyActiveClientIds.add(visit.clientId)
     }
   }
