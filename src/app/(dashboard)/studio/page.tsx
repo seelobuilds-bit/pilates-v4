@@ -7,7 +7,7 @@ import type { DashboardData } from "@/components/studio"
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const DEFAULT_DASHBOARD_PERIOD = "this_month"
 
-type DashboardPeriod = "this_month" | "7" | "30" | "90" | "365" | "custom"
+type DashboardPeriod = "today" | "this_month" | "7" | "30" | "90" | "365" | "custom"
 
 type ResolvedRange = {
   key: DashboardPeriod
@@ -37,7 +37,7 @@ function resolveDashboardRange(
 ): ResolvedRange {
   const periodRaw = rawSearchParams.period
   const period = (Array.isArray(periodRaw) ? periodRaw[0] : periodRaw) || DEFAULT_DASHBOARD_PERIOD
-  const periodKey: DashboardPeriod = ["this_month", "7", "30", "90", "365", "custom"].includes(period)
+  const periodKey: DashboardPeriod = ["today", "this_month", "7", "30", "90", "365", "custom"].includes(period)
     ? (period as DashboardPeriod)
     : DEFAULT_DASHBOARD_PERIOD
 
@@ -58,6 +58,19 @@ function resolveDashboardRange(
       endDate,
       startDateISO: dateOnlyISO(startDate),
       endDateISO: dateOnlyISO(customEndDate),
+    }
+  }
+
+  if (periodKey === "today") {
+    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return {
+      key: "today",
+      label: "Today",
+      compareLabel: "yesterday",
+      startDate,
+      endDate: now,
+      startDateISO: dateOnlyISO(startDate),
+      endDateISO: dateOnlyISO(now),
     }
   }
 

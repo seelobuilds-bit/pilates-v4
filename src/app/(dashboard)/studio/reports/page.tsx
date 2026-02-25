@@ -145,6 +145,11 @@ const defaultData = {
 const CUSTOM_PERIOD_SEPARATOR = " to "
 const DEFAULT_REPORT_PERIOD_DAYS = 30
 
+function toLocalDateInputValue(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
 function getCustomPeriodRange(period: string) {
   const [startDate, endDate] = period.split(CUSTOM_PERIOD_SEPARATOR)
   if (!startDate || !endDate) return null
@@ -155,6 +160,13 @@ function getCustomPeriodRange(period: string) {
 
 function buildReportsQuery(period: string) {
   const params = new URLSearchParams()
+  if (period === "today") {
+    const today = toLocalDateInputValue(new Date())
+    params.set("startDate", today)
+    params.set("endDate", today)
+    return params.toString()
+  }
+
   const customRange = getCustomPeriodRange(period)
   if (customRange) {
     params.set("startDate", customRange.startDate)
@@ -445,6 +457,7 @@ export default function ReportsPage() {
       return `${selectedCustomRange.startDate} - ${selectedCustomRange.endDate}`
     }
     switch (period) {
+      case 'today': return 'Today'
       case '7': return 'Last 7 days'
       case '30': return 'Last 30 days'
       case '90': return 'Last 90 days'
@@ -541,7 +554,8 @@ export default function ReportsPage() {
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="Select period" />
           </SelectTrigger>
-          <SelectContent>
+              <SelectContent>
+            <SelectItem value="today">Today</SelectItem>
             <SelectItem value="7">Last 7 days</SelectItem>
             <SelectItem value="30">Last 30 days</SelectItem>
             <SelectItem value="90">Last 90 days</SelectItem>
@@ -1586,9 +1600,9 @@ export default function ReportsPage() {
 
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
-                <p className="text-sm text-gray-500 mb-1">Bookings from Email</p>
+                <p className="text-sm text-gray-500 mb-1">Booked Email Recipients</p>
                 <p className="text-2xl font-bold text-emerald-600">{reportData.marketing.bookingsFromEmail}</p>
-                <p className="text-sm text-gray-500 mt-2">{reportData.marketing.emailClickRate}% click rate</p>
+                <p className="text-sm text-gray-500 mt-2">Unique booked recipients</p>
               </CardContent>
             </Card>
 
@@ -1617,7 +1631,7 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-900">Campaign Performance</h3>
-                  <p className="text-sm text-gray-500">Which campaigns are driving results?</p>
+                  <p className="text-sm text-gray-500">Email campaigns in selected period</p>
                 </div>
                 <Link href="/studio/marketing">
                   <Button variant="outline" size="sm">

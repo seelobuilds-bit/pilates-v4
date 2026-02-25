@@ -85,7 +85,7 @@ export interface DashboardData {
   currentDate: string
   currency: string
   selectedRange?: {
-    key: "this_month" | "7" | "30" | "90" | "365" | "custom"
+    key: "today" | "this_month" | "7" | "30" | "90" | "365" | "custom"
     label: string
     compareLabel: string
     startDate: string
@@ -401,6 +401,5 @@ export interface CommunityData {
     messages: ChatMessage[]
   } | null
 }
-
 
 

@@ -203,7 +203,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     setSelectedRangeUiKey(selectedRange.key)
   }, [supportsRangeFiltering, isCustomRange, selectedRange.key, selectedRange.startDate, selectedRange.endDate])
 
-  const updateDashboardRange = (period: "this_month" | "7" | "30" | "90" | "365" | "custom", startDate?: string, endDate?: string) => {
+  const updateDashboardRange = (period: "today" | "this_month" | "7" | "30" | "90" | "365" | "custom", startDate?: string, endDate?: string) => {
     if (!supportsRangeFiltering) return
     const params = new URLSearchParams(searchParams.toString())
     params.set("period", period)
@@ -231,7 +231,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     }
     setShowCustomDate(false)
     setSelectedRangeUiKey(value)
-    updateDashboardRange(value as "this_month" | "7" | "30" | "90" | "365")
+    updateDashboardRange(value as "today" | "this_month" | "7" | "30" | "90" | "365")
   }
 
   const applyCustomDateRange = () => {
@@ -241,7 +241,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     updateDashboardRange("custom", customStartDate, customEndDate)
   }
 
-  const quickRangeOptions: Array<{ key: "this_month" | "7" | "30" | "90" | "365"; label: string }> = [
+  const quickRangeOptions: Array<{ key: "today" | "this_month" | "7" | "30" | "90" | "365"; label: string }> = [
+    { key: "today", label: "Today" },
     { key: "this_month", label: "This month" },
     { key: "7", label: "7d" },
     { key: "30", label: "30d" },
@@ -272,10 +273,12 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   }
 
   const statCardMeta = useMemo<Record<StatCardId, { title: string; source: "dashboard" | "reports" }>>(() => {
+    const isToday = selectedRange.key === "today"
+    const isThisMonth = selectedRange.key === "this_month"
     const periodBookingTitle =
-      selectedRange.key === "this_month" ? "Bookings This Month" : "Bookings in Period"
+      isToday ? "Bookings Today" : isThisMonth ? "Bookings This Month" : "Bookings in Period"
     const periodRevenueTitle =
-      selectedRange.key === "this_month" ? "Revenue This Month" : "Revenue in Period"
+      isToday ? "Revenue Today" : isThisMonth ? "Revenue This Month" : "Revenue in Period"
     const baseMeta: Record<BaseStatCardId, { title: string; source: "dashboard" }> = {
       monthlyRevenue: { title: periodRevenueTitle, source: "dashboard" },
       activeClients: { title: "Active Clients", source: "dashboard" },
@@ -384,7 +387,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                               <UserPlus className="h-3.5 w-3.5 text-blue-500" />
                               <span className="text-blue-500 font-medium">+{data.stats.newClientsThisWeek}</span>
                               <span className="text-gray-400">
-                                {selectedRange.key === "this_month" ? "this month" : "in period"}
+                                {selectedRange.key === "today" ? "today" : selectedRange.key === "this_month" ? "this month" : "in period"}
                               </span>
                             </p>
                           </div>
@@ -908,6 +911,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <SelectValue placeholder="Select period" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="today">Today</SelectItem>
                     <SelectItem value="this_month">This month</SelectItem>
                     <SelectItem value="7">Last 7 days</SelectItem>
                     <SelectItem value="30">Last 30 days</SelectItem>

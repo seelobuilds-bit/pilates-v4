@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const [periodMessages, previousPeriodMessages, reportCampaigns, reminderAutomations, winbackAutomations] = await runQueries([
+  const [periodMessages, previousPeriodMessages, reminderAutomations, winbackAutomations] = await runQueries([
     () => db.message.findMany({
       where: {
         studioId,
@@ -370,39 +370,6 @@ export async function GET(request: NextRequest) {
         openedAt: true,
         clickedAt: true
       }
-    }),
-    () => db.campaign.findMany({
-      where: {
-        studioId,
-        OR: [
-          {
-            sentAt: {
-              gte: startDate,
-              lt: reportEndDate
-            }
-          },
-          {
-            updatedAt: {
-              gte: startDate,
-              lt: reportEndDate
-            },
-            sentCount: {
-              gt: 0
-            }
-          }
-        ]
-      },
-      select: {
-        id: true,
-        name: true,
-        sentCount: true,
-        openedCount: true,
-        clickedCount: true
-      },
-      orderBy: {
-        sentCount: "desc"
-      },
-      take: 10
     }),
     () => db.automation.findMany({
       where: {
@@ -705,26 +672,72 @@ export async function GET(request: NextRequest) {
     bookingsByClientId.set(row.clientId, row._count.clientId)
   }
 
-  const campaignClientMap = new Map<string, Set<string>>()
+  const campaignBuckets = new Map<
+    string,
+    {
+      sent: number
+      opened: number
+      clicked: number
+      clients: Set<string>
+    }
+  >()
   for (const message of periodEmailMessages) {
-    if (!message.campaignId || !message.clientId) continue
-    const clients = campaignClientMap.get(message.campaignId) || new Set<string>()
-    clients.add(message.clientId)
-    campaignClientMap.set(message.campaignId, clients)
+    if (!message.campaignId) continue
+    const existing = campaignBuckets.get(message.campaignId) || {
+      sent: 0,
+      opened: 0,
+      clicked: 0,
+      clients: new Set<string>()
+    }
+    existing.sent += 1
+    if (message.openedAt || message.status === "OPENED" || message.status === "CLICKED") {
+      existing.opened += 1
+    }
+    if (message.clickedAt || message.status === "CLICKED") {
+      existing.clicked += 1
+    }
+    if (message.clientId) {
+      existing.clients.add(message.clientId)
+    }
+    campaignBuckets.set(message.campaignId, existing)
   }
 
-  const campaignRows = reportCampaigns.map((campaign) => {
-    const campaignClients = campaignClientMap.get(campaign.id) || new Set<string>()
-    const attributedBookings = Array.from(campaignClients).filter((clientId) => (bookingsByClientId.get(clientId) || 0) > 0).length
-    return {
-      id: campaign.id,
-      name: campaign.name,
-      sent: campaign.sentCount,
-      opened: campaign.openedCount,
-      clicked: campaign.clickedCount,
-      bookings: attributedBookings
-    }
-  })
+  const campaignIds = Array.from(campaignBuckets.keys())
+  const campaignDefinitions = campaignIds.length
+    ? await db.campaign.findMany({
+        where: {
+          studioId,
+          id: {
+            in: campaignIds
+          }
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      })
+    : []
+  const campaignNameById = new Map(campaignDefinitions.map((campaign) => [campaign.id, campaign.name]))
+
+  const campaignRows = campaignIds
+    .map((campaignId) => {
+      const bucket = campaignBuckets.get(campaignId)
+      if (!bucket) return null
+      const attributedBookings = Array.from(bucket.clients).filter(
+        (clientId) => (bookingsByClientId.get(clientId) || 0) > 0
+      ).length
+      return {
+        id: campaignId,
+        name: campaignNameById.get(campaignId) || "Campaign",
+        sent: bucket.sent,
+        opened: bucket.opened,
+        clicked: bucket.clicked,
+        bookings: attributedBookings
+      }
+    })
+    .filter((campaign): campaign is NonNullable<typeof campaign> => campaign !== null)
+    .sort((a, b) => b.sent - a.sent || a.name.localeCompare(b.name))
+    .slice(0, 10)
 
   const bookingsFromEmail = bookingsByEmailRecipient.length
 
@@ -1017,8 +1030,8 @@ export async function GET(request: NextRequest) {
             type: bookingsFromEmail > 0 ? "positive" : "info",
             message:
               bookingsFromEmail > 0
-                ? `${bookingsFromEmail} bookings were attributed to recipients reached by email this period.`
-                : "Email recipients have not converted into bookings yet this period."
+                ? `${bookingsFromEmail} email recipients booked at least once in this period.`
+                : "No email recipients have booked in this period yet."
           },
           {
             type: noShowRate <= previousNoShowRate ? "positive" : "warning",
