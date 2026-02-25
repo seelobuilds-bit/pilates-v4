@@ -154,6 +154,8 @@ Ship high-impact improvements in parallel without conflicts.
 | T-251 Mobile locations local search responsiveness | codex-main | codex/t-251-mobile-locations-local-search | Move locations search to local filtering over fetched locations so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/168 |
 | T-252 Mobile store local search responsiveness | codex-main | codex/t-252-mobile-store-local-search | Move store search to local filtering over fetched products so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/169 |
 | T-253 Web class-flows edit content action | codex-main | codex/t-253-web-classflows-edit-content | Fix non-functional Edit button in studio Class Flows content cards and support PATCH save flow from existing modal | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/170 |
+| T-254 Web reports revenue-by-source badge truthfulness | codex-main | codex/t-254-web-reports-revenue-source-share | Replace misleading per-source `0%` trend badge with actual contribution share label in Revenue by Source | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/172 |
+| T-255 HQ studio save-changes reliability | codex-main | codex/t-255-hq-studio-save-changes | Make HQ Studio Communications top Save Changes persist email+domain and SMS settings together with inline success/error feedback | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/173 |
 
 ## Merge Order
 1. All queued mobile slices merged through T-245
