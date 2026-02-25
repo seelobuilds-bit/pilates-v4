@@ -51,6 +51,7 @@ export default function LocationsScreen() {
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadLocations = useCallback(
     async (isRefresh = false) => {
@@ -69,7 +70,6 @@ export default function LocationsScreen() {
       setError(null)
       try {
         const response = await mobileApi.locations(token, {
-          search: trimmedSearch || undefined,
           status: "all",
         })
         setLocations(response.locations || [])
@@ -81,7 +81,7 @@ export default function LocationsScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -89,20 +89,28 @@ export default function LocationsScreen() {
       void loadLocations()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadLocations, trimmedSearch])
+  }, [loadLocations])
+
+  const searchScopedLocations = useMemo(() => {
+    if (!searchNormalized) return locations
+    return locations.filter((location) => {
+      const haystack = `${location.name} ${location.address || ""} ${location.city || ""} ${location.state || ""} ${location.zipCode || ""} ${location.phone || ""}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [locations, searchNormalized])
 
   const statusCounts = useMemo(() => {
-    const active = locations.filter((location) => location.isActive).length
+    const active = searchScopedLocations.filter((location) => location.isActive).length
     return {
       active,
-      all: locations.length,
+      all: searchScopedLocations.length,
     } as const
-  }, [locations])
+  }, [searchScopedLocations])
 
   const filteredLocations = useMemo(() => {
-    if (statusFilter === "all") return locations
-    return locations.filter((location) => location.isActive)
-  }, [locations, statusFilter])
+    if (statusFilter === "all") return searchScopedLocations
+    return searchScopedLocations.filter((location) => location.isActive)
+  }, [searchScopedLocations, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Locations view is available for studio owner and teacher accounts."
