@@ -133,6 +133,7 @@ export default function SocialScreen() {
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadSocial = useCallback(
     async (isRefresh = false) => {
@@ -147,9 +148,7 @@ export default function SocialScreen() {
 
       setError(null)
       try {
-        const response = await mobileApi.social(token, {
-          search: trimmedSearch || undefined,
-        })
+        const response = await mobileApi.social(token, {})
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load social overview"
@@ -159,7 +158,7 @@ export default function SocialScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -203,8 +202,35 @@ export default function SocialScreen() {
     [loadSocial, token]
   )
 
-  const flowStatusCounts = useMemo(() => {
+  const searchScopedAccounts = useMemo(() => {
+    const accounts = data?.accounts || []
+    if (!searchNormalized) return accounts
+    return accounts.filter((account) => {
+      const haystack = `${account.username} ${account.displayName || ""} ${account.platform}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [data?.accounts, searchNormalized])
+
+  const searchScopedFlows = useMemo(() => {
     const flows = data?.flows || []
+    if (!searchNormalized) return flows
+    return flows.filter((flow) => {
+      const haystack = `${flow.name} ${flow.triggerType} ${flow.account.username} ${flow.account.platform}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [data?.flows, searchNormalized])
+
+  const searchScopedTrackingLinks = useMemo(() => {
+    const links = data?.trackingLinks || []
+    if (!searchNormalized) return links
+    return links.filter((link) => {
+      const haystack = `${link.code} ${link.campaign || ""} ${link.source} ${link.medium}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [data?.trackingLinks, searchNormalized])
+
+  const flowStatusCounts = useMemo(() => {
+    const flows = searchScopedFlows
     const active = flows.filter((flow) => flow.isActive).length
     const paused = flows.length - active
     return {
@@ -212,14 +238,16 @@ export default function SocialScreen() {
       ACTIVE: active,
       PAUSED: paused,
     } as const
-  }, [data?.flows])
+  }, [searchScopedFlows])
 
   const filteredFlows = useMemo(() => {
-    const flows = data?.flows || []
+    const flows = searchScopedFlows
     if (flowStatusFilter === "ALL") return flows
     if (flowStatusFilter === "ACTIVE") return flows.filter((flow) => flow.isActive)
     return flows.filter((flow) => !flow.isActive)
-  }, [data?.flows, flowStatusFilter])
+  }, [flowStatusFilter, searchScopedFlows])
+
+  const hasVisibleSocialRecords = searchScopedAccounts.length > 0 || searchScopedFlows.length > 0 || searchScopedTrackingLinks.length > 0
 
   return (
     <View style={styles.container}>
@@ -254,11 +282,15 @@ export default function SocialScreen() {
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadSocial(true)} />}
         >
-          {loading ? null : data && (data.accounts.length > 0 || data.flows.length > 0 || data.trackingLinks.length > 0) ? (
+          {loading ? null : data && hasVisibleSocialRecords ? (
             <>
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Connected Accounts</Text>
-                {data.accounts.length > 0 ? data.accounts.slice(0, 6).map((account) => <AccountCard key={account.id} item={account} />) : <Text style={styles.metaText}>No accounts connected yet.</Text>}
+                {searchScopedAccounts.length > 0 ? (
+                  searchScopedAccounts.slice(0, 6).map((account) => <AccountCard key={account.id} item={account} />)
+                ) : (
+                  <Text style={styles.metaText}>No accounts matched your search.</Text>
+                )}
               </View>
 
               <View style={styles.sectionWrap}>
@@ -325,7 +357,11 @@ export default function SocialScreen() {
 
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Tracking Links</Text>
-                {data.trackingLinks.length > 0 ? data.trackingLinks.slice(0, 8).map((link) => <TrackingCard key={link.id} item={link} currency={currency} />) : <Text style={styles.metaText}>No tracking links yet.</Text>}
+                {searchScopedTrackingLinks.length > 0 ? (
+                  searchScopedTrackingLinks.slice(0, 8).map((link) => <TrackingCard key={link.id} item={link} currency={currency} />)
+                ) : (
+                  <Text style={styles.metaText}>No tracking links matched your search.</Text>
+                )}
               </View>
 
               <View style={styles.sectionWrap}>
