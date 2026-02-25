@@ -234,6 +234,14 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     updateDashboardRange("custom", customStartDate, customEndDate)
   }
 
+  const quickRangeOptions: Array<{ key: "this_month" | "7" | "30" | "90" | "365"; label: string }> = [
+    { key: "this_month", label: "This month" },
+    { key: "7", label: "7d" },
+    { key: "30", label: "30d" },
+    { key: "90", label: "90d" },
+    { key: "365", label: "1y" },
+  ]
+
   const visibleWidgets = useMemo(
     () => widgetOrder.filter((widget) => !hiddenWidgets.includes(widget)),
     [widgetOrder, hiddenWidgets]
@@ -837,21 +845,45 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
           {supportsRangeFiltering && (
-            <div className="relative w-full sm:w-auto">
-              <Select value={isCustomRange ? "custom" : selectedRange.key} onValueChange={handlePeriodChange}>
-                <SelectTrigger className="w-full bg-white sm:w-[220px]">
-                  <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="this_month">This month</SelectItem>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="365">Last 365 days</SelectItem>
-                  <SelectItem value="custom">Custom Range...</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="w-full sm:w-auto">
+              <div className="app-scrollbar flex w-full gap-2 overflow-x-auto pb-1 sm:hidden">
+                {quickRangeOptions.map((option) => (
+                  <Button
+                    key={option.key}
+                    size="sm"
+                    variant={selectedRange.key === option.key ? "default" : "outline"}
+                    className={selectedRange.key === option.key ? "bg-violet-600 hover:bg-violet-700" : ""}
+                    onClick={() => handlePeriodChange(option.key)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+                <Button
+                  size="sm"
+                  variant={isCustomRange || showCustomDate ? "default" : "outline"}
+                  className={isCustomRange || showCustomDate ? "bg-violet-600 hover:bg-violet-700" : ""}
+                  onClick={() => handlePeriodChange("custom")}
+                >
+                  Custom
+                </Button>
+              </div>
+
+              <div className="relative hidden sm:block">
+                <Select value={isCustomRange ? "custom" : selectedRange.key} onValueChange={handlePeriodChange}>
+                  <SelectTrigger className="w-full bg-white sm:w-[220px]">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="this_month">This month</SelectItem>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                    <SelectItem value="365">Last 365 days</SelectItem>
+                    <SelectItem value="custom">Custom Range...</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {showCustomDate && (
                 <>
