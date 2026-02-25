@@ -86,6 +86,7 @@ export default function StoreScreen() {
 
   const isAllowedRole = user?.role === "OWNER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadStore = useCallback(
     async (isRefresh = false) => {
@@ -101,7 +102,6 @@ export default function StoreScreen() {
       setError(null)
       try {
         const response = await mobileApi.store(token, {
-          search: trimmedSearch || undefined,
           status: "all",
         })
         setData(response)
@@ -113,7 +113,7 @@ export default function StoreScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -121,23 +121,31 @@ export default function StoreScreen() {
       void loadStore()
     }, 220)
     return () => clearTimeout(timeout)
-  }, [loadStore, trimmedSearch])
+  }, [loadStore])
 
   const currency = data?.studio.currency || "USD"
   const products = useMemo(() => data?.store.products || [], [data?.store.products])
+  const searchScopedProducts = useMemo(() => {
+    if (!searchNormalized) return products
+    return products.filter((product) => {
+      const title = product.customTitle || product.product.name
+      const haystack = `${title} ${product.product.name} ${product.product.category}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [products, searchNormalized])
 
   const statusCounts = useMemo(() => {
-    const active = products.filter((product) => product.isActive).length
+    const active = searchScopedProducts.filter((product) => product.isActive).length
     return {
       active,
-      all: products.length,
+      all: searchScopedProducts.length,
     } as const
-  }, [products])
+  }, [searchScopedProducts])
 
   const filteredProducts = useMemo(() => {
-    if (statusFilter === "all") return products
-    return products.filter((product) => product.isActive)
-  }, [products, statusFilter])
+    if (statusFilter === "all") return searchScopedProducts
+    return searchScopedProducts.filter((product) => product.isActive)
+  }, [searchScopedProducts, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Store is available for studio owner accounts only."
