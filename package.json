@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm demo:sync && next dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:security:rls:all": "bash scripts/security/apply-rls-public-all.sh",
@@ -19,7 +19,8 @@
     "seed:synthetic:studios": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-synthetic-studios.ts",
     "seed:synthetic:cleanup": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/cleanup-synthetic-studios.ts",
     "test:integration": "pnpm test:authz && pnpm test:booking && pnpm test:smoke && pnpm test:smoke:reporting",
-    "build": "prisma generate && next build",
+    "build": "pnpm demo:sync && prisma generate && next build",
+    "demo:sync": "node scripts/sync-demo-mirrors.mjs",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint"

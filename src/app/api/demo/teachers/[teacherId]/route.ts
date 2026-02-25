@@ -203,3 +203,11 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch teacher" }, { status: 500 })
   }
 }
+
+export async function PATCH() {
+  return NextResponse.json({ error: "Demo is read-only" }, { status: 403 })
+}
+
+export async function DELETE() {
+  return NextResponse.json({ error: "Demo is read-only" }, { status: 403 })
+}

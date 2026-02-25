@@ -32,3 +32,7 @@ export async function GET(
     }
   )
 }
+
+export async function PUT() {
+  return NextResponse.json({ error: "Demo is read-only" }, { status: 403 })
+}
