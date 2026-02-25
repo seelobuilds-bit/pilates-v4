@@ -49,6 +49,7 @@ export default function PeopleScreen() {
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadClients = useCallback(
     async (isRefresh = false) => {
@@ -66,7 +67,7 @@ export default function PeopleScreen() {
 
       setError(null)
       try {
-        const response = await mobileApi.clients(token, { search: trimmedSearch || undefined })
+        const response = await mobileApi.clients(token, {})
         setClients(response.clients || [])
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load clients"
@@ -76,7 +77,7 @@ export default function PeopleScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -84,22 +85,30 @@ export default function PeopleScreen() {
       void loadClients()
     }, 220)
     return () => clearTimeout(timeout)
-  }, [loadClients, trimmedSearch])
+  }, [loadClients])
+
+  const searchScopedClients = useMemo(() => {
+    if (!searchNormalized) return clients
+    return clients.filter((client) => {
+      const haystack = `${client.firstName} ${client.lastName} ${client.email} ${client.phone || ""}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [clients, searchNormalized])
 
   const statusCounts = useMemo(() => {
-    const active = clients.filter((client) => client.isActive).length
+    const active = searchScopedClients.filter((client) => client.isActive).length
     return {
-      ALL: clients.length,
+      ALL: searchScopedClients.length,
       ACTIVE: active,
-      INACTIVE: clients.length - active,
+      INACTIVE: searchScopedClients.length - active,
     } as const
-  }, [clients])
+  }, [searchScopedClients])
 
   const filteredClients = useMemo(() => {
-    if (statusFilter === "ALL") return clients
-    if (statusFilter === "ACTIVE") return clients.filter((client) => client.isActive)
-    return clients.filter((client) => !client.isActive)
-  }, [clients, statusFilter])
+    if (statusFilter === "ALL") return searchScopedClients
+    if (statusFilter === "ACTIVE") return searchScopedClients.filter((client) => client.isActive)
+    return searchScopedClients.filter((client) => !client.isActive)
+  }, [searchScopedClients, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "People view is available for studio owner and teacher accounts."
