@@ -150,7 +150,8 @@ Ship high-impact improvements in parallel without conflicts.
 | T-247 Mobile social local search responsiveness | codex-main | codex/t-247-mobile-social-local-search | Move social search to local filtering over fetched content so typing/search refinement is instant and status/filter counts remain search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/164 |
 | T-248 Mobile classes local search responsiveness | codex-main | codex/t-248-mobile-classes-local-search | Move classes search to local filtering over fetched class types so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/165 |
 | T-249 Mobile people local search responsiveness | codex-main | codex/t-249-mobile-people-local-search | Move people search to local filtering over fetched clients so typing/search refinement is instant and status counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/166 |
-| T-250 Mobile teachers local search responsiveness | codex-main | codex/t-250-mobile-teachers-local-search | Move teachers search to local filtering over fetched roster so typing/search refinement is instant and Active/All counts stay search-scoped | In Progress | TBD |
+| T-250 Mobile teachers local search responsiveness | codex-main | codex/t-250-mobile-teachers-local-search | Move teachers search to local filtering over fetched roster so typing/search refinement is instant and Active/All counts stay search-scoped | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/167 |
+| T-251 Mobile locations local search responsiveness | codex-main | codex/t-251-mobile-locations-local-search | Move locations search to local filtering over fetched locations so typing/search refinement is instant and Active/All counts stay search-scoped | In Progress | TBD |
 
 ## Merge Order
 1. All queued mobile slices merged through T-245
