@@ -1926,6 +1926,7 @@ model VaultModule {
   title       String
   description String?  @db.Text
   order       Int      @default(0)
+  subscriptionAudience VaultAudience @default(ALL)
   
   // Drip settings
   dripDelay   Int?     // Days after enrollment to unlock (null = immediately)

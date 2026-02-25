@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { BookingStatus, Prisma } from "@prisma/client"
+import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
@@ -9,6 +9,31 @@ const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED",
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
 const DAY_IN_MS = 1000 * 60 * 60 * 24
+
+const LOW_POOL_MODE = (() => {
+  const raw = process.env.DATABASE_URL
+  if (!raw) return false
+  try {
+    const parsed = new URL(raw)
+    const limit = Number(parsed.searchParams.get("connection_limit"))
+    return Number.isFinite(limit) && limit > 0 && limit <= 1
+  } catch {
+    return false
+  }
+})()
+
+async function runQueries<T extends unknown[]>(
+  queries: { [K in keyof T]: () => Promise<T[K]> }
+): Promise<T> {
+  if (!LOW_POOL_MODE) {
+    return Promise.all(queries.map((query) => query())) as Promise<T>
+  }
+  const results: unknown[] = []
+  for (const query of queries) {
+    results.push(await query())
+  }
+  return results as T
+}
 
 type ReportRange = {
   days: number
@@ -73,13 +98,14 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(searchParams)
 
-  const monthWindowStart = new Date(reportEndDate)
-  monthWindowStart.setMonth(monthWindowStart.getMonth() - 5)
-  monthWindowStart.setDate(1)
-  monthWindowStart.setHours(0, 0, 0, 0)
+  try {
+    const monthWindowStart = new Date(reportEndDate)
+    monthWindowStart.setMonth(monthWindowStart.getMonth() - 5)
+    monthWindowStart.setDate(1)
+    monthWindowStart.setHours(0, 0, 0, 0)
 
-  const [bookings, previousBookings, monthlyBookings, classSessions] = await Promise.all([
-    db.booking.findMany({
+  const [bookings, previousBookings, monthlyBookings, classSessions] = await runQueries([
+    () => db.booking.findMany({
       where: {
         studioId,
         classSession: {
@@ -112,7 +138,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.booking.findMany({
+    () => db.booking.findMany({
       where: {
         studioId,
         classSession: {
@@ -137,7 +163,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.booking.findMany({
+    () => db.booking.findMany({
       where: {
         studioId,
         classSession: {
@@ -162,7 +188,7 @@ export async function GET(request: NextRequest) {
         paidAmount: true
       }
     }),
-    db.classSession.findMany({
+    () => db.classSession.findMany({
       where: {
         studioId,
         startTime: {
@@ -304,8 +330,8 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const [periodMessages, previousPeriodMessages, reportCampaigns, reminderAutomations, winbackAutomations] = await Promise.all([
-    db.message.findMany({
+  const [periodMessages, previousPeriodMessages, reportCampaigns, reminderAutomations, winbackAutomations] = await runQueries([
+    () => db.message.findMany({
       where: {
         studioId,
         direction: "OUTBOUND",
@@ -325,7 +351,7 @@ export async function GET(request: NextRequest) {
         clickedAt: true
       }
     }),
-    db.message.findMany({
+    () => db.message.findMany({
       where: {
         studioId,
         direction: "OUTBOUND",
@@ -345,7 +371,7 @@ export async function GET(request: NextRequest) {
         clickedAt: true
       }
     }),
-    db.campaign.findMany({
+    () => db.campaign.findMany({
       where: {
         studioId,
         OR: [
@@ -378,7 +404,7 @@ export async function GET(request: NextRequest) {
       },
       take: 10
     }),
-    db.automation.findMany({
+    () => db.automation.findMany({
       where: {
         studioId,
         trigger: "CLASS_REMINDER"
@@ -387,7 +413,7 @@ export async function GET(request: NextRequest) {
         id: true
       }
     }),
-    db.automation.findMany({
+    () => db.automation.findMany({
       where: {
         studioId,
         trigger: "CLIENT_INACTIVE"
@@ -398,8 +424,8 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const [activeSocialFlows, totalSocialTriggered, totalSocialResponded, totalSocialBooked] = await Promise.all([
-    db.socialMediaFlow.count({
+  const [activeSocialFlows, totalSocialTriggered, totalSocialResponded, totalSocialBooked] = await runQueries([
+    () => db.socialMediaFlow.count({
       where: {
         isActive: true,
         account: {
@@ -407,7 +433,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.socialMediaFlowEvent.count({
+    () => db.socialMediaFlowEvent.count({
       where: {
         createdAt: {
           gte: startDate,
@@ -420,7 +446,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.socialMediaFlowEvent.count({
+    () => db.socialMediaFlowEvent.count({
       where: {
         createdAt: {
           gte: startDate,
@@ -434,7 +460,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.socialMediaFlowEvent.count({
+    () => db.socialMediaFlowEvent.count({
       where: {
         createdAt: {
           gte: startDate,
@@ -450,26 +476,39 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const activeClientVisitRows = await db.$queryRaw<Array<{
-    clientId: string
-    visits: bigint | number
-    lastVisit: Date
-  }>>(
-    Prisma.sql`
-      SELECT
-        b."clientId" AS "clientId",
-        COUNT(*)::bigint AS "visits",
-        MAX(cs."startTime") AS "lastVisit"
-      FROM "Booking" b
-      INNER JOIN "ClassSession" cs ON cs."id" = b."classSessionId"
-      INNER JOIN "Client" c ON c."id" = b."clientId"
-      WHERE b."studioId" = ${studioId}
-        AND b."status" IN (${Prisma.join(ATTENDED_BOOKING_STATUS_LIST)})
-        AND cs."startTime" < ${reportEndDate}
-        AND c."isActive" = true
-      GROUP BY b."clientId"
-    `
-  )
+  const activityLookbackStart = new Date(reportEndDate)
+  activityLookbackStart.setDate(activityLookbackStart.getDate() - 365)
+
+  const activeClientVisitRows = await db.booking.findMany({
+    where: {
+      studioId,
+      status: {
+        in: ATTENDED_BOOKING_STATUS_LIST
+      },
+      client: {
+        isActive: true
+      },
+      classSession: {
+        startTime: {
+          gte: activityLookbackStart,
+          lt: reportEndDate
+        }
+      }
+    },
+    select: {
+      clientId: true,
+      classSession: {
+        select: {
+          startTime: true
+        }
+      }
+    },
+    orderBy: {
+      classSession: {
+        startTime: "desc"
+      }
+    }
+  })
 
   const revenueByLocation: Record<string, number> = {}
   const revenueByClassType: Record<string, number> = {}
@@ -867,14 +906,11 @@ export async function GET(request: NextRequest) {
   const lastVisitByClientId = new Map<string, Date>()
   const recentlyActiveClientIds = new Set<string>()
   for (const visit of activeClientVisitRows) {
-    const visitsCount = typeof visit.visits === "bigint" ? Number(visit.visits) : visit.visits
-    visitCountByClientId.set(visit.clientId, visitsCount)
-
-    const parsedLastVisit = visit.lastVisit instanceof Date ? visit.lastVisit : new Date(visit.lastVisit)
-    if (Number.isNaN(parsedLastVisit.getTime())) continue
-
-    lastVisitByClientId.set(visit.clientId, parsedLastVisit)
-    if (parsedLastVisit >= recentActivityCutoff) {
+    visitCountByClientId.set(visit.clientId, (visitCountByClientId.get(visit.clientId) || 0) + 1)
+    if (!lastVisitByClientId.has(visit.clientId)) {
+      lastVisitByClientId.set(visit.clientId, visit.classSession.startTime)
+    }
+    if (visit.classSession.startTime >= recentActivityCutoff) {
       recentlyActiveClientIds.add(visit.clientId)
     }
   }
@@ -1030,7 +1066,7 @@ export async function GET(request: NextRequest) {
       avgFill: overallAverageFill
     }))
 
-  return NextResponse.json({
+    return NextResponse.json({
     revenue: {
       total: totalRevenue,
       previousTotal: previousTotalRevenue,
@@ -1050,7 +1086,9 @@ export async function GET(request: NextRequest) {
       atRiskList,
       membershipBreakdown,
       churnReasons,
-      cohortRetention
+      cohortRetention,
+      churnRate: ratioPercentage(churnedClients, totalClients, 1),
+      churnDefinition: "inactive clients / total clients"
     },
     classes: {
       total: classSessions.length,
@@ -1097,5 +1135,168 @@ export async function GET(request: NextRequest) {
       startDate: startDate.toISOString(),
       endDate: reportEndDate.toISOString()
     }
-  })
+    })
+  } catch (error) {
+    console.error("Failed to load full reports payload:", error)
+
+    try {
+      const [totalClients, activeClients, churnedClients, newClients] = await runQueries([
+        () => db.client.count({ where: { studioId } }),
+        () => db.client.count({ where: { studioId, isActive: true } }),
+        () => db.client.count({ where: { studioId, isActive: false } }),
+        () => db.client.count({
+          where: {
+            studioId,
+            createdAt: {
+              gte: startDate,
+              lt: reportEndDate
+            }
+          }
+        })
+      ])
+
+      return NextResponse.json({
+        revenue: {
+          total: 0,
+          previousTotal: 0,
+          byLocation: [],
+          byClassType: [],
+          monthly: []
+        },
+        clients: {
+          total: totalClients,
+          new: newClients,
+          active: activeClients,
+          churned: churnedClients
+        },
+        instructors: [],
+        retention: {
+          atRiskClients: 0,
+          atRiskList: [],
+          membershipBreakdown: [],
+          churnReasons: [],
+          cohortRetention: []
+        },
+        classes: {
+          total: 0,
+          totalCapacity: 0,
+          totalAttendance: 0,
+          averageFill: 0,
+          byLocation: [],
+          byTeacher: [],
+          byTimeSlot: [],
+          byDay: [],
+          topClasses: [],
+          underperforming: []
+        },
+        bookings: {
+          total: 0,
+          uniqueClients: 0,
+          newClientBookings: 0,
+          averageBookingsPerClient: 0,
+          byStatus: []
+        },
+        marketing: {
+          emailsSent: 0,
+          emailOpenRate: 0,
+          emailClickRate: 0,
+          previousEmailOpenRate: 0,
+          previousEmailClickRate: 0,
+          bookingsFromEmail: 0,
+          remindersSent: 0,
+          noShowRate: 0,
+          previousNoShowRate: 0,
+          winbackSuccess: 0,
+          campaigns: [],
+          insights: [{ type: "warning", message: "Partial reports payload returned due to data timeout. Retry shortly." }]
+        },
+        social: {
+          activeFlows: 0,
+          totalTriggered: 0,
+          totalResponded: 0,
+          totalBooked: 0,
+          conversionRate: 0
+        },
+        range: {
+          days,
+          startDate: startDate.toISOString(),
+          endDate: reportEndDate.toISOString()
+        },
+        partial: true
+      })
+    } catch (fallbackError) {
+      console.error("Failed to build fallback reports payload:", fallbackError)
+      return NextResponse.json({
+        revenue: {
+          total: 0,
+          previousTotal: 0,
+          byLocation: [],
+          byClassType: [],
+          monthly: []
+        },
+        clients: {
+          total: 0,
+          new: 0,
+          active: 0,
+          churned: 0
+        },
+        instructors: [],
+        retention: {
+          atRiskClients: 0,
+          atRiskList: [],
+          membershipBreakdown: [],
+          churnReasons: [],
+          cohortRetention: [],
+          churnRate: 0,
+          churnDefinition: "inactive clients / total clients"
+        },
+        classes: {
+          total: 0,
+          totalCapacity: 0,
+          totalAttendance: 0,
+          averageFill: 0,
+          byLocation: [],
+          byTeacher: [],
+          byTimeSlot: [],
+          byDay: [],
+          topClasses: [],
+          underperforming: []
+        },
+        bookings: {
+          total: 0,
+          uniqueClients: 0,
+          newClientBookings: 0,
+          averageBookingsPerClient: 0,
+          byStatus: []
+        },
+        marketing: {
+          emailsSent: 0,
+          emailOpenRate: 0,
+          emailClickRate: 0,
+          previousEmailOpenRate: 0,
+          previousEmailClickRate: 0,
+          bookingsFromEmail: 0,
+          remindersSent: 0,
+          noShowRate: 0,
+          previousNoShowRate: 0,
+          winbackSuccess: 0,
+          campaigns: [],
+          insights: [{ type: "warning", message: "Reports are temporarily degraded. Retry in a moment." }]
+        },
+        social: {
+          activeFlows: 0,
+          totalTriggered: 0,
+          totalResponded: 0,
+          totalBooked: 0,
+          conversionRate: 0
+        },
+        range: {
+          days,
+          startDate: startDate.toISOString(),
+          endDate: reportEndDate.toISOString()
+        },
+        partial: true
+      })
+    }
+  }
 }

@@ -116,25 +116,21 @@ export default async function StudioDashboardPage({
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
   const [
-    clientCount, 
-    totalClients, 
-    bookingCount, 
-    periodBookings, 
+    clientCount,
+    totalClients,
+    bookingCount,
+    periodBookings,
     todayBookings,
-    upcomingClasses,
-    todayClasses,
-    recentBookings,
     newClientsInPeriod,
-    locations,
-    teachers,
-    classTypes,
-    classesInPeriod
+    locationsCount,
+    teachersCount,
+    classTypesCount
   ] = await Promise.all([
     db.client.count({ where: { studioId, isActive: true } }),
     db.client.count({ where: { studioId } }),
     db.booking.count({ where: { studioId } }),
-    db.booking.count({ 
-      where: { 
+    db.booking.count({
+      where: {
         studioId,
         status: { not: "CANCELLED" },
         classSession: {
@@ -143,49 +139,13 @@ export default async function StudioDashboardPage({
             lt: selectedRange.endDate,
           },
         },
-      } 
+      }
     }),
     db.booking.count({
       where: {
         studioId,
         createdAt: { gte: startOfToday, lte: endOfToday }
       }
-    }),
-    db.classSession.findMany({
-      where: { 
-        studioId,
-        startTime: { gte: now }
-      },
-      include: {
-        classType: true,
-        teacher: { include: { user: true } },
-        location: true,
-        _count: { select: { bookings: true } }
-      },
-      orderBy: { startTime: "asc" },
-      take: 5
-    }),
-    db.classSession.findMany({
-      where: {
-        studioId,
-        startTime: { gte: startOfToday, lte: endOfToday }
-      },
-      include: {
-        classType: true,
-        teacher: { include: { user: true } },
-        location: true,
-        _count: { select: { bookings: true } }
-      },
-      orderBy: { startTime: "asc" }
-    }),
-    db.booking.findMany({
-      where: { studioId },
-      include: {
-        client: true,
-        classSession: { include: { classType: true, location: true } }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 8
     }),
     db.client.count({
       where: {
@@ -196,12 +156,115 @@ export default async function StudioDashboardPage({
         }
       }
     }),
-    db.location.findMany({ where: { studioId, isActive: true } }),
-    db.teacher.findMany({ 
-      where: { studioId, isActive: true },
-      include: { user: true }
+    db.location.count({ where: { studioId, isActive: true } }),
+    db.teacher.count({ where: { studioId, isActive: true } }),
+    db.classType.count({ where: { studioId } })
+  ])
+
+  const [upcomingClasses, todayClasses, recentBookings, classesInPeriod] = await Promise.all([
+    db.classSession.findMany({
+      where: { 
+        studioId,
+        startTime: { gte: now }
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        capacity: true,
+        classType: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        teacher: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        location: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "asc" },
+      take: 5
     }),
-    db.classType.findMany({ where: { studioId } }),
+    db.classSession.findMany({
+      where: {
+        studioId,
+        startTime: { gte: startOfToday, lte: endOfToday }
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        capacity: true,
+        classType: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        teacher: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        location: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: { select: { bookings: true } }
+      },
+      orderBy: { startTime: "asc" }
+    }),
+    db.booking.findMany({
+      where: { studioId },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        client: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        },
+        classSession: {
+          select: {
+            classType: {
+              select: {
+                name: true
+              }
+            },
+            location: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8
+    }),
     db.classSession.findMany({
       where: {
         studioId,
@@ -392,9 +455,9 @@ export default async function StudioDashboardPage({
       createdAt: c.createdAt
     })),
     studioStats: {
-      locations: locations.length,
-      teachers: teachers.length,
-      classTypes: classTypes.length,
+      locations: locationsCount,
+      teachers: teachersCount,
+      classTypes: classTypesCount,
       totalClients: totalClients,
       totalBookings: bookingCount
     },
@@ -432,7 +495,7 @@ export default async function StudioDashboardPage({
       {
         id: "activeTeachers",
         title: "Active Teachers",
-        value: teachers.length,
+        value: teachersCount,
         description: "Report datapoint"
       }
     ]

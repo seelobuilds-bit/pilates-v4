@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const VALID_SUBSCRIPTION_AUDIENCES = new Set(["STUDIO_OWNERS", "TEACHERS", "CLIENTS", "ALL"])
+
 // PATCH - Update a module
 export async function PATCH(
   request: NextRequest,
@@ -16,7 +18,10 @@ export async function PATCH(
 
   try {
     const body = await request.json()
-    const { title, description, dripDelay, isPublished } = body
+    const { title, description, dripDelay, isPublished, subscriptionAudience } = body
+    const resolvedSubscriptionAudience = VALID_SUBSCRIPTION_AUDIENCES.has(subscriptionAudience)
+      ? subscriptionAudience
+      : undefined
 
     const updatedModule = await db.vaultModule.update({
       where: { id: moduleId },
@@ -24,7 +29,8 @@ export async function PATCH(
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
         ...(dripDelay !== undefined && { dripDelay }),
-        ...(isPublished !== undefined && { isPublished })
+        ...(isPublished !== undefined && { isPublished }),
+        ...(resolvedSubscriptionAudience !== undefined && { subscriptionAudience: resolvedSubscriptionAudience })
       },
       include: {
         lessons: {
@@ -63,7 +69,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete module" }, { status: 500 })
   }
 }
-
 
 
 

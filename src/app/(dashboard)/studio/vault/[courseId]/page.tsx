@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,7 @@ interface Module {
   title: string
   description: string | null
   order: number
+  subscriptionAudience: "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
   isPublished: boolean
   lessons: Lesson[]
 }
@@ -137,7 +139,8 @@ interface Enrollment {
 
 const defaultModuleForm = {
   title: "",
-  description: ""
+  description: "",
+  subscriptionAudience: "ALL" as "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
 }
 
 const defaultLessonForm = {
@@ -417,7 +420,8 @@ export default function StudioVaultCoursePage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: moduleForm.title.trim(),
-          description: moduleForm.description.trim() || null
+          description: moduleForm.description.trim() || null,
+          subscriptionAudience: moduleForm.subscriptionAudience
         })
       })
 
@@ -852,6 +856,15 @@ export default function StudioVaultCoursePage({
                           <Badge variant={module.isPublished ? "default" : "secondary"}>
                             {module.isPublished ? "Published" : "Draft"}
                           </Badge>
+                          <Badge variant="outline">
+                            {module.subscriptionAudience === "ALL"
+                              ? "All subscriptions"
+                              : module.subscriptionAudience === "STUDIO_OWNERS"
+                                ? "Studio subscription"
+                                : module.subscriptionAudience === "TEACHERS"
+                                  ? "Teachers subscription"
+                                  : "At-home subscription"}
+                          </Badge>
                           <Button variant="ghost" size="sm" onClick={() => openCreateLesson(module.id)}>
                             <Plus className="h-4 w-4 mr-1" />
                             Add Lesson
@@ -1047,6 +1060,25 @@ export default function StudioVaultCoursePage({
                 onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
                 placeholder="Optional"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="module-subscription-audience">Subscription Attribution</Label>
+              <Select
+                value={moduleForm.subscriptionAudience}
+                onValueChange={(value: "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL") =>
+                  setModuleForm({ ...moduleForm, subscriptionAudience: value })
+                }
+              >
+                <SelectTrigger id="module-subscription-audience">
+                  <SelectValue placeholder="Select attribution" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CLIENTS">At-home</SelectItem>
+                  <SelectItem value="TEACHERS">Teachers</SelectItem>
+                  <SelectItem value="STUDIO_OWNERS">Studio owners</SelectItem>
+                  <SelectItem value="ALL">All of them</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

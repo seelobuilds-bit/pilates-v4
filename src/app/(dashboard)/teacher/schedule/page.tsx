@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,9 @@ import {
   Loader2,
   X,
   AlertTriangle,
-  Send
+  Send,
+  List,
+  Search
 } from "lucide-react"
 
 interface ClassSession {
@@ -45,6 +47,8 @@ export default function TeacherSchedulePage() {
   const [classes, setClasses] = useState<ClassSession[]>([])
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
+  const [searchQuery, setSearchQuery] = useState("")
   
   // Block time modal state
   const [showBlockModal, setShowBlockModal] = useState(false)
@@ -65,7 +69,7 @@ export default function TeacherSchedulePage() {
       setLoading(true)
       try {
         // Fetch classes
-        const res = await fetch(`/api/teacher/schedule?weekOffset=${weekOffset}`)
+        const res = await fetch(`/api/teacher/schedule?weekOffset=${weekOffset}`, { cache: "no-store" })
         if (res.ok) {
           const data = await res.json()
           setClasses(data)
@@ -77,7 +81,9 @@ export default function TeacherSchedulePage() {
         const end = new Date(weekDates[6])
         end.setHours(23, 59, 59, 999)
         
-        const blockedRes = await fetch(`/api/teacher/blocked-times?start=${start}&end=${end.toISOString()}`)
+        const blockedRes = await fetch(`/api/teacher/blocked-times?start=${start}&end=${end.toISOString()}`, {
+          cache: "no-store"
+        })
         if (blockedRes.ok) {
           const blockedData = await blockedRes.json()
           setBlockedTimes(blockedData)
@@ -110,16 +116,42 @@ export default function TeacherSchedulePage() {
   const weekDates = getWeekDates(weekOffset)
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
+  const filteredClasses = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    if (!normalizedQuery) return classes
+
+    return classes.filter((cls) => {
+      const dateText = new Date(cls.startTime).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      }).toLowerCase()
+      return (
+        cls.classType.name.toLowerCase().includes(normalizedQuery) ||
+        cls.location.name.toLowerCase().includes(normalizedQuery) ||
+        dateText.includes(normalizedQuery)
+      )
+    })
+  }, [classes, searchQuery])
+
+  const listFilteredClasses = useMemo(
+    () =>
+      [...filteredClasses].sort(
+        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      ),
+    [filteredClasses]
+  )
+
   // Group classes by day
   const classesByDay: Record<number, ClassSession[]> = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }
-  classes.forEach(cls => {
+  filteredClasses.forEach((cls) => {
     const day = new Date(cls.startTime).getDay()
     classesByDay[day].push(cls)
   })
 
   // Group blocked times by day
   const blockedByDay: Record<number, BlockedTime[]> = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }
-  blockedTimes.forEach(bt => {
+  blockedTimes.forEach((bt) => {
     const day = new Date(bt.startTime).getDay()
     blockedByDay[day].push(bt)
   })
@@ -279,6 +311,48 @@ export default function TeacherSchedulePage() {
         </CardContent>
       </Card>
 
+      <Card className="border-0 shadow-sm mb-6">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex items-center rounded-lg border bg-white p-1">
+              <Button
+                variant={viewMode === "calendar" ? "default" : "ghost"}
+                size="sm"
+                className={viewMode === "calendar" ? "bg-violet-600 hover:bg-violet-700" : ""}
+                onClick={() => setViewMode("calendar")}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Calendar
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className={viewMode === "list" ? "bg-violet-600 hover:bg-violet-700" : ""}
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4 mr-2" />
+                List
+              </Button>
+            </div>
+
+            <div className="relative w-full sm:w-[320px]">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search class or location"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          {searchQuery && (
+            <p className="text-xs text-gray-500">
+              Showing {listFilteredClasses.length} result{listFilteredClasses.length === 1 ? "" : "s"} this week.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
@@ -324,7 +398,45 @@ export default function TeacherSchedulePage() {
             </div>
           ) : (
             <>
-              <div className="space-y-3 md:hidden">
+              {viewMode === "list" ? (
+                <div className="space-y-3">
+                  {listFilteredClasses.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+                      No classes match your filters this week.
+                    </div>
+                  ) : (
+                    listFilteredClasses.map((cls) => (
+                      <Link key={cls.id} href={`/teacher/schedule/${cls.id}`}>
+                        <div className="grid gap-2 rounded-lg border bg-white p-4 hover:bg-gray-50 sm:grid-cols-[1.8fr_1.2fr_auto] sm:items-center">
+                          <div>
+                            <p className="font-medium text-gray-900">{cls.classType.name}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(cls.startTime).toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric"
+                              })}{" "}
+                              •{" "}
+                              {new Date(cls.startTime).toLocaleTimeString([], {
+                                hour: "numeric",
+                                minute: "2-digit"
+                              })}
+                            </p>
+                          </div>
+                          <p className="text-sm text-gray-600 flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                            {cls.location.name}
+                          </p>
+                          <Badge variant="secondary" className="justify-self-start sm:justify-self-end">
+                            {cls._count.bookings}/{cls.capacity}
+                          </Badge>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 md:hidden">
                 {weekDates.map((date, i) => {
                   const dayClasses = classesByDay[i]
                   const dayBlocked = blockedByDay[i]
@@ -397,9 +509,11 @@ export default function TeacherSchedulePage() {
                     </div>
                   )
                 })}
-              </div>
+                </div>
+              )}
 
-              <div className="hidden md:grid grid-cols-7 gap-3">
+              {viewMode === "calendar" && (
+                <div className="hidden md:grid grid-cols-7 gap-3">
               {/* Day Headers */}
               {weekDates.map((date, i) => {
                 const isToday = new Date().toDateString() === date.toDateString()
@@ -491,7 +605,8 @@ export default function TeacherSchedulePage() {
                   ) : null}
                 </div>
               ))}
-              </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
@@ -681,8 +796,6 @@ export default function TeacherSchedulePage() {
     </div>
   )
 }
-
-
 
 
 

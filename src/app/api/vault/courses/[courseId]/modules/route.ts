@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const VALID_SUBSCRIPTION_AUDIENCES = new Set(["STUDIO_OWNERS", "TEACHERS", "CLIENTS", "ALL"])
+
 // GET - Fetch modules for a course
 export async function GET(
   request: NextRequest,
@@ -56,7 +58,10 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { title, description, dripDelay } = body
+    const { title, description, dripDelay, subscriptionAudience } = body
+    const resolvedSubscriptionAudience = VALID_SUBSCRIPTION_AUDIENCES.has(subscriptionAudience)
+      ? subscriptionAudience
+      : "ALL"
 
     // Get the highest order
     const lastModule = await db.vaultModule.findFirst({
@@ -69,6 +74,7 @@ export async function POST(
         title,
         description,
         dripDelay,
+        subscriptionAudience: resolvedSubscriptionAudience,
         order: (lastModule?.order ?? -1) + 1,
         courseId
       },
@@ -116,7 +122,6 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to reorder modules" }, { status: 500 })
   }
 }
-
 
 
 

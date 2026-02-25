@@ -105,6 +105,7 @@ const defaultData = {
     newClients: 0,
     churnedClients: 0,
     churnRate: 0,
+    churnDefinition: "inactive clients / total clients",
     previousChurnRate: 0,
     avgLifetimeValue: 0,
     atRiskClients: 0,
@@ -198,7 +199,8 @@ export default function ReportsPage() {
       if (isManual) setRefreshing(true)
 
       try {
-        const response = await fetch(`/api/studio/reports?${buildReportsQuery(requestedPeriod)}`, {
+        const query = buildReportsQuery(requestedPeriod)
+        const response = await fetch(`/api/studio/reports?${query}${query ? "&" : ""}rid=${fetchId}`, {
           signal: options?.signal,
           cache: "no-store",
           headers: isManual ? { "x-force-refresh": String(Date.now()) } : undefined,
@@ -251,10 +253,19 @@ export default function ReportsPage() {
         const totalClients = data.clients?.total || 0
         const activeClients = data.clients?.active || 0
         const churnedClients = data.clients?.churned || 0
-        const churnRate = totalClients > 0 ? Math.round((churnedClients / totalClients) * 100 * 10) / 10 : 0
         const marketing = data.marketing || {}
         const social = data.social || {}
         const retentionData = data.retention || {}
+        const churnRate =
+          typeof retentionData.churnRate === "number"
+            ? retentionData.churnRate
+            : totalClients > 0
+              ? Math.round((churnedClients / totalClients) * 100 * 10) / 10
+              : 0
+        const churnDefinition =
+          typeof retentionData.churnDefinition === "string" && retentionData.churnDefinition.trim().length > 0
+            ? retentionData.churnDefinition
+            : "inactive clients / total clients"
 
         // Build real data object
         setReportData({
@@ -303,7 +314,8 @@ export default function ReportsPage() {
             newClients: data.clients?.new || 0,
             churnedClients,
             churnRate,
-            previousChurnRate: churnRate > 0 ? churnRate + 0.4 : 0,
+            churnDefinition,
+            previousChurnRate: churnRate,
             avgLifetimeValue: activeClients > 0 ? Math.round(totalRevenue / activeClients) : 0,
             atRiskClients: retentionData.atRiskClients ?? Math.max(0, totalClients - activeClients),
             membershipBreakdown: retentionData.membershipBreakdown || [],
@@ -312,7 +324,7 @@ export default function ReportsPage() {
             cohortRetention: retentionData.cohortRetention || [],
             insights: totalClients > 0 ? [
               { type: "positive", message: `${activeClients} active clients out of ${totalClients} total` },
-              { type: churnRate > 5 ? "warning" : "info", message: `Current churn rate: ${churnRate}%` },
+              { type: churnRate > 5 ? "warning" : "info", message: `Current churn rate: ${churnRate}% (${churnDefinition})` },
             ] : [
               { type: "info", message: "No clients yet. Add clients to see retention metrics." },
             ],
@@ -513,14 +525,18 @@ export default function ReportsPage() {
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
-            disabled={refreshing}
+            disabled={refreshing || loadingReports}
             className="w-full sm:w-auto"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing || loadingReports ? 'animate-spin' : ''}`} />
+            {refreshing || loadingReports ? 'Refreshing...' : 'Refresh'}
           </Button>
           <div className="relative w-full sm:w-auto">
-            <Select value={selectedCustomRange ? 'custom' : period} onValueChange={handlePeriodChange}>
+            <Select
+              value={selectedCustomRange ? 'custom' : period}
+              onValueChange={handlePeriodChange}
+              disabled={loadingReports}
+            >
               <SelectTrigger className="w-full bg-white sm:w-[180px]">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                 <SelectValue placeholder="Select period" />
@@ -802,7 +818,7 @@ export default function ReportsPage() {
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{reportData.retention.churnRate}%</p>
                 <p className="text-sm text-gray-500">Churn Rate</p>
-                <p className="text-xs text-gray-400 mt-1">Churned clients / total clients in this period</p>
+                <p className="text-xs text-gray-400 mt-1">{reportData.retention.churnDefinition}</p>
           </CardContent>
         </Card>
       </div>

@@ -134,6 +134,7 @@ export async function GET(
             description: true,
             order: true,
             dripDelay: true,
+            subscriptionAudience: true,
             isPublished: true,
             _count: {
               select: {
@@ -304,6 +305,7 @@ export async function GET(
         description: module.description,
         order: module.order,
         dripDelay: module.dripDelay,
+        subscriptionAudience: module.subscriptionAudience,
         isPublished: module.isPublished,
         lessonCount: module._count.lessons,
         publishedLessons: module.lessons.filter((lesson) => lesson.isPublished).length,

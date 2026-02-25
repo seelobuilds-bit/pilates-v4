@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
@@ -125,6 +125,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   const [showCustomDate, setShowCustomDate] = useState(false)
   const [customStartDate, setCustomStartDate] = useState(selectedRange.startDate)
   const [customEndDate, setCustomEndDate] = useState(selectedRange.endDate)
+  const [selectedRangeUiKey, setSelectedRangeUiKey] = useState<string>(selectedRange.key)
+  const [isRangeUpdating, startRangeTransition] = useTransition()
 
   const isCustomRangeValid = Boolean(
     customStartDate &&
@@ -198,7 +200,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       setCustomStartDate(selectedRange.startDate)
       setCustomEndDate(selectedRange.endDate)
     }
-  }, [supportsRangeFiltering, isCustomRange, selectedRange.startDate, selectedRange.endDate])
+    setSelectedRangeUiKey(selectedRange.key)
+  }, [supportsRangeFiltering, isCustomRange, selectedRange.key, selectedRange.startDate, selectedRange.endDate])
 
   const updateDashboardRange = (period: "this_month" | "7" | "30" | "90" | "365" | "custom", startDate?: string, endDate?: string) => {
     if (!supportsRangeFiltering) return
@@ -211,8 +214,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       params.delete("startDate")
       params.delete("endDate")
     }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    router.refresh()
+    startRangeTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
   const handlePeriodChange = (value: string) => {
@@ -226,12 +230,14 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       return
     }
     setShowCustomDate(false)
+    setSelectedRangeUiKey(value)
     updateDashboardRange(value as "this_month" | "7" | "30" | "90" | "365")
   }
 
   const applyCustomDateRange = () => {
     if (!supportsRangeFiltering || !isCustomRangeValid) return
     setShowCustomDate(false)
+    setSelectedRangeUiKey("custom")
     updateDashboardRange("custom", customStartDate, customEndDate)
   }
 
@@ -842,6 +848,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
               Showing metric cards for <span className="font-medium text-gray-700">{selectedRange.label}</span>
             </p>
           )}
+          {supportsRangeFiltering && isRangeUpdating && (
+            <p className="text-xs text-violet-600 mt-1">Updating dashboard range...</p>
+          )}
         </div>
 
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
@@ -873,8 +882,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                   <Button
                     key={option.key}
                     size="sm"
-                    variant={selectedRange.key === option.key ? "default" : "outline"}
-                    className={selectedRange.key === option.key ? "bg-violet-600 hover:bg-violet-700" : ""}
+                    variant={selectedRangeUiKey === option.key ? "default" : "outline"}
+                    className={selectedRangeUiKey === option.key ? "bg-violet-600 hover:bg-violet-700" : ""}
+                    disabled={isRangeUpdating}
                     onClick={() => handlePeriodChange(option.key)}
                   >
                     {option.label}
@@ -882,8 +892,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                 ))}
                 <Button
                   size="sm"
-                  variant={isCustomRange || showCustomDate ? "default" : "outline"}
-                  className={isCustomRange || showCustomDate ? "bg-violet-600 hover:bg-violet-700" : ""}
+                  variant={selectedRangeUiKey === "custom" || showCustomDate ? "default" : "outline"}
+                  className={selectedRangeUiKey === "custom" || showCustomDate ? "bg-violet-600 hover:bg-violet-700" : ""}
+                  disabled={isRangeUpdating}
                   onClick={() => handlePeriodChange("custom")}
                 >
                   Custom
@@ -891,7 +902,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
               </div>
 
               <div className="relative hidden sm:block">
-                <Select value={isCustomRange ? "custom" : selectedRange.key} onValueChange={handlePeriodChange}>
+                <Select value={selectedRangeUiKey === "custom" ? "custom" : selectedRangeUiKey} onValueChange={handlePeriodChange}>
                   <SelectTrigger className="w-full bg-white sm:w-[220px]">
                     <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                     <SelectValue placeholder="Select period" />
