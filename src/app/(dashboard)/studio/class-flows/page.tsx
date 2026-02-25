@@ -83,12 +83,13 @@ export default function ClassFlowsPage() {
   const [showAddContent, setShowAddContent] = useState(false)
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingContentId, setEditingContentId] = useState<string | null>(null)
 
   // Form state
   const [newContent, setNewContent] = useState({
     title: "",
     description: "",
-    type: "VIDEO" as "VIDEO" | "PDF" | "ARTICLE",
+    type: "VIDEO" as "VIDEO" | "PDF" | "ARTICLE" | "QUIZ",
     difficulty: "BEGINNER" as "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT",
     categoryId: "",
     videoUrl: "",
@@ -226,36 +227,76 @@ export default function ClassFlowsPage() {
   async function createContent() {
     setSaving(true)
     try {
+      const isEditing = Boolean(editingContentId)
       const res = await fetch("/api/studio/class-flows/content", {
-        method: "POST",
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(isEditing ? { id: editingContentId } : {}),
           ...newContent,
           tags: newContent.tags.split(",").map(t => t.trim()).filter(Boolean)
         })
       })
       if (res.ok) {
-        setShowAddContent(false)
-        setNewContent({
-          title: "",
-          description: "",
-          type: "VIDEO",
-          difficulty: "BEGINNER",
-          categoryId: "",
-          videoUrl: "",
-          pdfUrl: "",
-          thumbnailUrl: "",
-          duration: 0,
-          tags: "",
-          isPublished: true,
-          isFeatured: false
-        })
+        closeContentModal()
         void fetchData()
       }
     } catch (error) {
       console.error("Failed to create content:", error)
     }
     setSaving(false)
+  }
+
+  function resetNewContent() {
+    setNewContent({
+      title: "",
+      description: "",
+      type: "VIDEO",
+      difficulty: "BEGINNER",
+      categoryId: "",
+      videoUrl: "",
+      pdfUrl: "",
+      thumbnailUrl: "",
+      duration: 0,
+      tags: "",
+      isPublished: true,
+      isFeatured: false
+    })
+    setEditingContentId(null)
+    setUploadMode("upload")
+  }
+
+  function closeContentModal() {
+    setShowAddContent(false)
+    resetNewContent()
+  }
+
+  function startAddContent(categoryId?: string) {
+    resetNewContent()
+    if (categoryId) {
+      setNewContent((previous) => ({ ...previous, categoryId }))
+    }
+    setShowAddContent(true)
+  }
+
+  function startEditContent(content: Content, categoryId: string) {
+    setEditingContentId(content.id)
+    setUploadMode("upload")
+    setNewContent({
+      title: content.title,
+      description: content.description || "",
+      type: content.type,
+      difficulty: content.difficulty,
+      categoryId,
+      videoUrl: content.videoUrl || "",
+      pdfUrl: content.pdfUrl || "",
+      thumbnailUrl: content.thumbnailUrl || "",
+      duration: content.duration || 0,
+      tags: content.tags.join(", "),
+      isPublished: content.isPublished,
+      isFeatured: content.isFeatured
+    })
+    setShowAddContent(true)
   }
 
   async function deleteContent(id: string) {
@@ -320,7 +361,7 @@ export default function ClassFlowsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
-          <Button onClick={() => setShowAddContent(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
+          <Button onClick={() => startAddContent()} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Content
           </Button>
@@ -429,8 +470,7 @@ export default function ClassFlowsPage() {
                       variant="outline"
                       className="w-full sm:w-auto"
                       onClick={() => {
-                        setNewContent({ ...newContent, categoryId: category.id })
-                        setShowAddContent(true)
+                        startAddContent(category.id)
                       }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -494,7 +534,12 @@ export default function ClassFlowsPage() {
                                 <span className="text-xs text-gray-500 capitalize">{content.type.toLowerCase()}</span>
                               </div>
                               <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => startEditContent(content, category.id)}
+                                >
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button 
@@ -656,13 +701,13 @@ export default function ClassFlowsPage() {
       {/* Add Content Modal */}
       {showAddContent && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowAddContent(false)} />
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={closeContentModal} />
           <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-gray-900">Add Content</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setShowAddContent(false)}>
+                  <h3 className="font-semibold text-gray-900">{editingContentId ? "Edit Content" : "Add Content"}</h3>
+                  <Button variant="ghost" size="sm" onClick={closeContentModal}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -691,7 +736,7 @@ export default function ClassFlowsPage() {
                       <Label>Content Type</Label>
                       <Select
                         value={newContent.type}
-                        onValueChange={(value) => setNewContent({ ...newContent, type: value as "VIDEO" | "PDF" | "ARTICLE" })}
+                        onValueChange={(value) => setNewContent({ ...newContent, type: value as "VIDEO" | "PDF" | "ARTICLE" | "QUIZ" })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -700,6 +745,7 @@ export default function ClassFlowsPage() {
                           <SelectItem value="VIDEO">Video</SelectItem>
                           <SelectItem value="PDF">PDF Document</SelectItem>
                           <SelectItem value="ARTICLE">Article</SelectItem>
+                          <SelectItem value="QUIZ">Quiz</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1019,13 +1065,13 @@ export default function ClassFlowsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <Button variant="outline" onClick={() => setShowAddContent(false)} className="w-full sm:w-auto">Cancel</Button>
+                  <Button variant="outline" onClick={closeContentModal} className="w-full sm:w-auto">Cancel</Button>
                   <Button 
                     onClick={createContent} 
                     disabled={saving || !newContent.title || !newContent.categoryId}
                     className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Content"}
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingContentId ? "Save Changes" : "Add Content"}
                   </Button>
                 </div>
               </CardContent>
@@ -1036,7 +1082,6 @@ export default function ClassFlowsPage() {
     </div>
   )
 }
-
 
 
 
