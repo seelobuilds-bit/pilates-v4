@@ -287,24 +287,51 @@ export default function StudioDetailPage({
   }
 
   const saveCommunicationSettings = async () => {
+    if (!emailConfig.replyToEmail) {
+      setEmailMessage({ type: "error", text: "Reply-To email is required" })
+      return
+    }
+
     setSaving(true)
+    setEmailMessage(null)
     try {
+      const emailRes = await fetch(`/api/hq/studios/${studioId}/email-config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromName: emailConfig.fromName,
+          fromEmail: emailConfig.fromEmail || null,
+          replyToEmail: emailConfig.replyToEmail,
+          domain: emailConfig.domain || null
+        }),
+      })
+
+      const emailData = await emailRes.json()
+      if (!emailRes.ok) {
+        throw new Error(emailData.error || "Failed to save email settings")
+      }
+      if (emailData.config) {
+        setEmailConfig(emailData.config)
+      }
+
       const res = await fetch(`/api/hq/studios/${studioId}/communications`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emailConfig, smsConfig }),
+        body: JSON.stringify({ smsConfig }),
       })
       
       if (res.ok) {
         // Refetch to get updated masked values
         await fetchCommunicationSettings()
-        alert("Communication settings saved successfully!")
+        setEmailMessage({ type: "success", text: "Communication settings saved successfully!" })
       } else {
-        alert("Failed to save settings")
+        const data = await res.json()
+        throw new Error(data.error || "Failed to save settings")
       }
     } catch (error) {
       console.error("Error saving settings:", error)
-      alert("Failed to save settings")
+      const message = error instanceof Error ? error.message : "Failed to save settings"
+      setEmailMessage({ type: "error", text: message })
     } finally {
       setSaving(false)
     }
