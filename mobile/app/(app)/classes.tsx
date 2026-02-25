@@ -56,6 +56,7 @@ export default function ClassesScreen() {
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const trimmedSearch = search.trim()
+  const searchNormalized = trimmedSearch.toLowerCase()
 
   const loadClassTypes = useCallback(
     async (isRefresh = false) => {
@@ -74,7 +75,6 @@ export default function ClassesScreen() {
       setError(null)
       try {
         const response = await mobileApi.classTypes(token, {
-          search: trimmedSearch || undefined,
           status: "all",
         })
         setClassTypes(response.classTypes || [])
@@ -87,7 +87,7 @@ export default function ClassesScreen() {
         setRefreshing(false)
       }
     },
-    [isAllowedRole, token, trimmedSearch]
+    [isAllowedRole, token]
   )
 
   useEffect(() => {
@@ -95,20 +95,28 @@ export default function ClassesScreen() {
       void loadClassTypes()
     }, 200)
     return () => clearTimeout(timeout)
-  }, [loadClassTypes, trimmedSearch])
+  }, [loadClassTypes])
+
+  const searchScopedClassTypes = useMemo(() => {
+    if (!searchNormalized) return classTypes
+    return classTypes.filter((classType) => {
+      const haystack = `${classType.name} ${classType.description || ""}`.toLowerCase()
+      return haystack.includes(searchNormalized)
+    })
+  }, [classTypes, searchNormalized])
 
   const statusCounts = useMemo(() => {
-    const active = classTypes.filter((classType) => classType.isActive).length
+    const active = searchScopedClassTypes.filter((classType) => classType.isActive).length
     return {
       active,
-      all: classTypes.length,
+      all: searchScopedClassTypes.length,
     } as const
-  }, [classTypes])
+  }, [searchScopedClassTypes])
 
   const filteredClassTypes = useMemo(() => {
-    if (statusFilter === "all") return classTypes
-    return classTypes.filter((classType) => classType.isActive)
-  }, [classTypes, statusFilter])
+    if (statusFilter === "all") return searchScopedClassTypes
+    return searchScopedClassTypes.filter((classType) => classType.isActive)
+  }, [searchScopedClassTypes, statusFilter])
 
   const emptyText = useMemo(() => {
     if (!isAllowedRole) return "Classes view is available for studio owner and teacher accounts."
