@@ -1,13 +1,13 @@
-// Demo Client Detail Page - Mirrors /studio/clients/[clientId]/page.tsx
-// Keep in sync with the real client detail page
-
 "use client"
 
-import { use } from "react"
+import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
@@ -15,7 +15,8 @@ import {
   Phone, 
   Calendar, 
   CreditCard, 
-  Clock,
+  Clock, 
+  Loader2,
   DollarSign,
   TrendingUp,
   MapPin,
@@ -27,91 +28,203 @@ import {
   Activity,
   MessageSquare,
   Send,
-  Check
+  Check,
+  Ban,
+  Trash2
 } from "lucide-react"
-import { demoClients, demoRecentBookings } from "../../_data/demo-data"
+import { useRouter } from "next/navigation"
+import { formatCurrency } from "@/lib/utils"
 
-// Mock stats for client
-const mockClientStats = {
-  totalSpent: 1245,
-  totalBookings: 42,
-  completedClasses: 38,
-  cancelRate: 9.5,
-  avgBookingsPerMonth: 7,
-  membershipType: "Class Pack (10)",
-  favoriteClass: "Reformer Pilates",
-  favoriteTeacher: "Sarah Johnson",
-  favoriteLocation: "Downtown Studio",
-  classBreakdown: [
-    { name: "Reformer Pilates", count: 18 },
-    { name: "Mat Pilates", count: 12 },
-    { name: "Tower Class", count: 8 },
-    { name: "Beginner Flow", count: 4 }
-  ],
-  teacherBreakdown: [
-    { name: "Sarah Johnson", count: 22 },
-    { name: "Mike Chen", count: 12 },
-    { name: "Emily Davis", count: 8 }
-  ],
-  locationBreakdown: [
-    { name: "Downtown Studio", count: 30 },
-    { name: "Westside Location", count: 12 }
-  ],
-  monthlyBookings: [
-    { month: "Jul", count: 5 },
-    { month: "Aug", count: 7 },
-    { month: "Sep", count: 6 },
-    { month: "Oct", count: 8 },
-    { month: "Nov", count: 9 },
-    { month: "Dec", count: 7 }
-  ],
-  activityTimeline: [
-    { date: "Today", action: "Booked", details: "Reformer Pilates - Dec 18, 9:00 AM" },
-    { date: "Yesterday", action: "Completed", details: "Mat Pilates with Sarah J." },
-    { date: "Dec 15", action: "Purchased", details: "10-Class Pack ($250)" },
-    { date: "Dec 14", action: "Completed", details: "Tower Class with Mike C." },
-    { date: "Dec 12", action: "Cancelled", details: "Beginner Flow (24h notice)" }
-  ]
+interface Client {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string | null
+  credits: number
+  isActive: boolean
+  createdAt: string
 }
 
-// Mock communications
-const mockCommunications = [
-  {
-    id: "comm-1",
-    type: "email" as const,
-    direction: "outbound" as const,
-    subject: "Class Reminder",
-    content: "Hi! Just a reminder about your Reformer Pilates class tomorrow at 9:00 AM.",
-    timestamp: "Yesterday at 3:00 PM"
-  },
-  {
-    id: "comm-2",
-    type: "email" as const,
-    direction: "inbound" as const,
-    subject: "Re: Class Reminder",
-    content: "Thanks for the reminder! I'll be there.",
-    timestamp: "Yesterday at 4:30 PM"
-  },
-  {
-    id: "comm-3",
-    type: "sms" as const,
-    direction: "outbound" as const,
-    content: "Your booking is confirmed! See you tomorrow at 9 AM.",
-    timestamp: "2 days ago"
-  },
-  {
-    id: "comm-4",
-    type: "email" as const,
-    direction: "outbound" as const,
-    subject: "Welcome to Our Studio!",
-    content: "Welcome to our pilates studio! We're excited to have you join us. Your first class is scheduled for...",
-    timestamp: "2 weeks ago"
+interface Booking {
+  id: string
+  status: string
+  createdAt: string
+  classSession: {
+    startTime: string
+    classType: { name: string }
+    teacher: { user: { firstName: string; lastName: string } }
+    location: { name: string }
   }
-]
+}
 
-export default function DemoClientDetailPage({ params }: { params: Promise<{ clientId: string }> }) {
-  const { clientId } = use(params)
-  const client = demoClients.find(c => c.id === clientId) || demoClients[0]
+interface ClientStats {
+  totalSpent: number
+  totalBookings: number
+  completedClasses: number
+  cancelRate: number
+  avgBookingsPerMonth: number
+  membershipType: string
+  favoriteClass: string
+  favoriteTeacher: string
+  favoriteLocation: string
+  classBreakdown: { name: string; count: number }[]
+  teacherBreakdown: { name: string; count: number }[]
+  locationBreakdown: { name: string; count: number }[]
+  monthlyBookings: { month: string; count: number }[]
+  activityTimeline: { date: string; action: string; details: string }[]
+}
+
+interface Communication {
+  id: string
+  type: "email" | "sms"
+  direction: "inbound" | "outbound"
+  subject?: string
+  content: string
+  timestamp: string
+}
+
+const DEFAULT_REPORT_PERIOD = "30"
+const CUSTOM_PERIOD_VALUE = "custom"
+
+const emptyClientStats: ClientStats = {
+  totalSpent: 0,
+  totalBookings: 0,
+  completedClasses: 0,
+  cancelRate: 0,
+  avgBookingsPerMonth: 0,
+  membershipType: "No active package",
+  favoriteClass: "No data yet",
+  favoriteTeacher: "No data yet",
+  favoriteLocation: "No data yet",
+  classBreakdown: [],
+  teacherBreakdown: [],
+  locationBreakdown: [],
+  monthlyBookings: [],
+  activityTimeline: []
+}
+
+export default function ClientDetailPage({
+  params,
+}: {
+  params: Promise<{ clientId: string }>
+}) {
+  const resolvedParams = use(params)
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [client, setClient] = useState<Client | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [stats, setStats] = useState<ClientStats | null>(null)
+  const [communications, setCommunications] = useState<Communication[]>([])
+  const [currency, setCurrency] = useState("usd")
+  const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
+
+  useEffect(() => {
+    async function fetchClient() {
+      try {
+        const params = new URLSearchParams()
+        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+          params.set("startDate", customStartDate)
+          params.set("endDate", customEndDate)
+        } else {
+          params.set("days", reportPeriod === CUSTOM_PERIOD_VALUE ? DEFAULT_REPORT_PERIOD : reportPeriod)
+        }
+
+        const res = await fetch(`/api/demo/clients/${resolvedParams.clientId}?${params.toString()}`)
+        if (!res.ok) {
+          setError("We couldn't load this client right now.")
+          return
+        }
+
+        const data = await res.json()
+        setClient(data.client)
+        setBookings(data.bookings || [])
+        setStats(data.stats || emptyClientStats)
+        setCommunications(data.communications || [])
+      } catch (error) {
+        console.error("Error fetching client:", error)
+        setError("We couldn't load this client right now.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchClient()
+
+    const fetchCurrency = async () => {
+      try {
+        const res = await fetch("/api/demo/settings")
+        if (!res.ok) return
+        const data = await res.json()
+        setCurrency((data.stripeCurrency || "usd").toLowerCase())
+      } catch (error) {
+        console.error("Failed to fetch studio currency:", error)
+      }
+    }
+
+    fetchCurrency()
+  }, [resolvedParams.clientId, reportPeriod, customStartDate, customEndDate])
+
+  if (loading) {
+    return (
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50/50 min-h-screen">
+        <div className="max-w-md mx-auto mt-12 text-center">
+          <p className="text-gray-900 font-semibold mb-2">Unable to load client</p>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+            <Link href="/demo/clients">
+              <Button variant="outline">Back to Clients</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!client) {
+    return (
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+        <div className="text-center py-12">
+          <p className="text-gray-500 mb-4">Client not found</p>
+          <Link href="/demo/clients">
+            <Button variant="outline">Back to Clients</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const safeStats = stats || emptyClientStats
+  const hasClientReportData =
+    safeStats.totalBookings > 0 ||
+    safeStats.totalSpent > 0 ||
+    safeStats.classBreakdown.length > 0 ||
+    safeStats.teacherBreakdown.length > 0 ||
+    safeStats.monthlyBookings.some((month) => month.count > 0)
+
+  const formatMessageTimestamp = (value: string) => {
+    const parsedDate = new Date(value)
+    if (Number.isNaN(parsedDate.getTime())) {
+      return value
+    }
+    return parsedDate.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    })
+  }
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -121,90 +234,145 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
           <ArrowLeft className="h-4 w-4" />
           Back to Clients
         </Link>
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center text-xl font-semibold text-violet-700">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-violet-100 rounded-full flex items-center justify-center text-lg sm:text-xl font-semibold text-violet-700">
               {client.firstName[0]}{client.lastName[0]}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {client.firstName} {client.lastName}
               </h1>
               <p className="text-gray-500">Client since {new Date(client.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-            <Badge className={client.isActive ? "bg-emerald-100 text-emerald-700 border-0" : "bg-gray-100 text-gray-700 border-0"}>
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
+            <Badge variant={client.isActive ? "success" : "secondary"} className="text-sm shrink-0">
               {client.isActive ? "Active" : "Inactive"}
             </Badge>
-            <Link href="/demo/inbox">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <Mail className="h-4 w-4 mr-2" />
-                Send Message
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => router.push(`/demo/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Send Message
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`w-full sm:w-auto ${client.isActive ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}
+              onClick={async () => {
+                if (!confirm(client.isActive 
+                  ? "Remove access? This client won't be able to log in or book classes." 
+                  : "Restore access? This client will be able to log in and book again.")) return
+                try {
+                  const res = await fetch(`/api/demo/clients/${resolvedParams.clientId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: !client.isActive })
+                  })
+                  if (res.ok) {
+                    setClient({ ...client, isActive: !client.isActive })
+                  }
+                } catch (error) {
+                  console.error("Failed to update client:", error)
+                }
+              }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              {client.isActive ? "Remove Access" : "Restore Access"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50"
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete this client? This will also delete their booking history. This action cannot be undone.")) return
+                try {
+                  const res = await fetch(`/api/demo/clients/${resolvedParams.clientId}`, {
+                    method: "DELETE"
+                  })
+                  if (res.ok) {
+                    router.push("/demo/clients")
+                  } else {
+                    const data = await res.json()
+                    alert(data.error || "Failed to delete client")
+                  }
+                } catch (error) {
+                  console.error("Failed to delete client:", error)
+                  alert("Failed to delete client")
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-emerald-600" />
+      {stats && hasClientReportData && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(safeStats.totalSpent, currency)}</p>
+                  <p className="text-sm text-gray-500">Total Spent</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">${mockClientStats.totalSpent.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">Total Spent</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-violet-600" />
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.totalBookings}</p>
+                  <p className="text-sm text-gray-500">Total Bookings</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{mockClientStats.totalBookings}</p>
-                <p className="text-sm text-gray-500">Total Bookings</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{safeStats.avgBookingsPerMonth}</p>
+                  <p className="text-sm text-gray-500">Bookings/Month</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{mockClientStats.avgBookingsPerMonth}</p>
-                <p className="text-sm text-gray-500">Bookings/Month</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-amber-600" />
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{client.credits}</p>
+                  <p className="text-sm text-gray-500">Credits</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{client.credits}</p>
-                <p className="text-sm text-gray-500">Credits</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
@@ -233,166 +401,235 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Preferences */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Star className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Preferences</h3>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Report period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                      <SelectItem value={CUSTOM_PERIOD_VALUE}>Custom range</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-violet-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <BookOpen className="h-5 w-5 text-violet-500" />
-                      <span className="text-sm text-gray-600">Favorite Class</span>
+                {reportPeriod === CUSTOM_PERIOD_VALUE && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-custom-start">Start date</Label>
+                      <Input
+                        id="client-custom-start"
+                        type="date"
+                        value={customStartDate}
+                        onChange={(event) => setCustomStartDate(event.target.value)}
+                      />
                     </div>
-                    <span className="font-medium text-violet-700">{mockClientStats.favoriteClass}</span>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Users className="h-5 w-5 text-blue-500" />
-                      <span className="text-sm text-gray-600">Favorite Teacher</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-custom-end">End date</Label>
+                      <Input
+                        id="client-custom-end"
+                        type="date"
+                        value={customEndDate}
+                        onChange={(event) => setCustomEndDate(event.target.value)}
+                      />
                     </div>
-                    <span className="font-medium text-blue-700">{mockClientStats.favoriteTeacher}</span>
+                  </>
+                )}
+              </div>
+              {reportPeriod === CUSTOM_PERIOD_VALUE && (!customStartDate || !customEndDate) && (
+                <p className="text-sm text-gray-500">Choose both start and end dates to load custom report data.</p>
+              )}
+            </CardContent>
+          </Card>
+          {stats && hasClientReportData && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Preferences */}
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star className="h-5 w-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900">Preferences</h3>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-emerald-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <MapPin className="h-5 w-5 text-emerald-500" />
-                      <span className="text-sm text-gray-600">Favorite Location</span>
-                    </div>
-                    <span className="font-medium text-emerald-700">{mockClientStats.favoriteLocation}</span>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-amber-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Gift className="h-5 w-5 text-amber-500" />
-                      <span className="text-sm text-gray-600">Membership</span>
-                    </div>
-                    <span className="font-medium text-amber-700">{mockClientStats.membershipType}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Performance */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Performance</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-emerald-50 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-emerald-600">{mockClientStats.completedClasses}</p>
-                    <p className="text-sm text-emerald-700">Classes Completed</p>
-                  </div>
-                  <div className="p-4 bg-red-50 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-red-600">{mockClientStats.cancelRate}%</p>
-                    <p className="text-sm text-red-700">Cancel Rate</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Class Breakdown */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <BookOpen className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Classes Attended</h3>
-                </div>
-                <div className="space-y-3">
-                  {mockClientStats.classBreakdown.map((cls, i) => {
-                    const total = mockClientStats.classBreakdown.reduce((a, c) => a + c.count, 0)
-                    const pct = Math.round((cls.count / total) * 100)
-                    return (
-                      <div key={i}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">{cls.name}</span>
-                          <span className="text-sm text-gray-500">{cls.count} ({pct}%)</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
-                          <div className="bg-violet-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Teacher Breakdown */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Users className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Teachers Booked</h3>
-                </div>
-                <div className="space-y-3">
-                  {mockClientStats.teacherBreakdown.map((teacher, i) => (
-                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-violet-50 rounded-lg">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
-                          {teacher.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <span className="font-medium text-gray-900 truncate">{teacher.name}</span>
+                        <BookOpen className="h-5 w-5 text-violet-500" />
+                        <span className="text-sm text-gray-600">Favorite Class</span>
                       </div>
-                      <span className="text-gray-500">{teacher.count} classes</span>
+                      <span className="font-medium text-violet-700 truncate">{safeStats.favoriteClass}</span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Monthly Bookings Chart */}
-            <Card className="border-0 shadow-sm lg:col-span-2">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Booking History</h3>
-                </div>
-                <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
-                  {mockClientStats.monthlyBookings.map((month, i) => {
-                    const maxCount = Math.max(...mockClientStats.monthlyBookings.map(m => m.count))
-                    const height = (month.count / maxCount) * 100
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{month.count}</span>
-                        <div className="w-full bg-violet-500 rounded-t" style={{ height: `${height}%` }} />
-                        <span className="text-xs text-gray-500">{month.month}</span>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Users className="h-5 w-5 text-blue-500" />
+                        <span className="text-sm text-gray-600">Favorite Teacher</span>
                       </div>
-                    )
-                  })}
-                </div>
+                      <span className="font-medium text-blue-700 truncate">{safeStats.favoriteTeacher}</span>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-emerald-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <MapPin className="h-5 w-5 text-emerald-500" />
+                        <span className="text-sm text-gray-600">Favorite Location</span>
+                      </div>
+                      <span className="font-medium text-emerald-700 truncate">{safeStats.favoriteLocation}</span>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-amber-50 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Gift className="h-5 w-5 text-amber-500" />
+                        <span className="text-sm text-gray-600">Membership</span>
+                      </div>
+                      <span className="font-medium text-amber-700 truncate">{safeStats.membershipType}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance */}
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="h-5 w-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900">Performance</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-emerald-50 rounded-xl text-center">
+                      <p className="text-2xl font-bold text-emerald-600">{safeStats.completedClasses}</p>
+                      <p className="text-sm text-emerald-700">Classes Completed</p>
+                    </div>
+                    <div className="p-4 bg-red-50 rounded-xl text-center">
+                      <p className="text-2xl font-bold text-red-600">{safeStats.cancelRate}%</p>
+                      <p className="text-sm text-red-700">Cancel Rate</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Class Breakdown */}
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BookOpen className="h-5 w-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900">Classes Attended</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {safeStats.classBreakdown.map((cls, i) => {
+                      const total = safeStats.classBreakdown.reduce((a, c) => a + c.count, 0)
+                      const pct = Math.round((cls.count / total) * 100)
+                      return (
+                        <div key={i}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700">{cls.name}</span>
+                            <span className="text-sm text-gray-500">{cls.count} ({pct}%)</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div 
+                              className="bg-violet-500 h-2 rounded-full" 
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Teacher Breakdown */}
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="h-5 w-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900">Teachers Booked</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {safeStats.teacherBreakdown.map((teacher, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+                            {teacher.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <span className="font-medium text-gray-900">{teacher.name}</span>
+                        </div>
+                        <span className="text-gray-500">{teacher.count} classes</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Monthly Bookings Chart */}
+              <Card className="border-0 shadow-sm lg:col-span-2">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900">Booking History</h3>
+                  </div>
+                  <div className="flex items-end justify-between h-32 gap-4">
+                    {safeStats.monthlyBookings.map((month, i) => {
+                      const maxCount = Math.max(...safeStats.monthlyBookings.map(m => m.count))
+                      const height = maxCount > 0 ? (month.count / maxCount) * 100 : 0
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{month.count}</span>
+                          <div 
+                            className="w-full bg-violet-500 rounded-t"
+                            style={{ height: `${height}%` }}
+                          />
+                          <span className="text-xs text-gray-500">{month.month}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          {(!stats || !hasClientReportData) && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-10 text-center">
+                <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No data in selected period</h3>
+                <p className="text-gray-500">
+                  Try changing your date range or check back once more activity is recorded.
+                </p>
               </CardContent>
             </Card>
-          </div>
+          )}
         </TabsContent>
 
         {/* Communications Tab */}
         <TabsContent value="communications">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Message History</h3>
-                <Link href="/demo/inbox">
-                  <Button className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Message
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
+                  onClick={() => router.push(`/demo/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Message
+                </Button>
               </div>
               
-              <div className="space-y-4">
-                {mockCommunications.map((comm) => (
-                  <Link key={comm.id} href="/demo/inbox">
-                    <div className={`p-4 rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                      comm.direction === "outbound" 
-                        ? "bg-violet-50 sm:ml-8 hover:bg-violet-100" 
-                        : "bg-gray-50 sm:mr-8 hover:bg-gray-100"
-                    }`}>
-                      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex flex-wrap items-center gap-2">
+              {communications.length > 0 ? (
+                <div className="space-y-4">
+                  {communications.map((comm) => (
+                    <div 
+                      key={comm.id} 
+                      onClick={() => router.push(`/demo/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
+                      className={`p-4 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        comm.direction === "outbound" 
+                          ? "bg-violet-50 ml-2 sm:ml-8 hover:bg-violet-100" 
+                          : "bg-gray-50 mr-2 sm:mr-8 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
                           {comm.type === "email" ? (
                             <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                               <Mail className="h-3 w-3 mr-1" />
@@ -410,7 +647,7 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-400">
                           <Clock className="h-3 w-3" />
-                          {comm.timestamp}
+                          {formatMessageTimestamp(comm.timestamp)}
                           {comm.direction === "outbound" && <Check className="h-3 w-3 ml-1 text-green-500" />}
                         </div>
                       </div>
@@ -420,9 +657,21 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                       <p className="text-sm text-gray-700">{comm.content}</p>
                       <p className="text-xs text-violet-600 mt-2 font-medium">Click to view conversation →</p>
                     </div>
-                  </Link>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <MessageSquare className="h-12 w-12 text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-500">No messages yet</p>
+                  <Button 
+                    className="mt-4 bg-violet-600 hover:bg-violet-700"
+                    onClick={() => router.push(`/demo/inbox?clientId=${client.id}&clientName=${encodeURIComponent(client.firstName + ' ' + client.lastName)}&clientEmail=${encodeURIComponent(client.email)}&clientPhone=${encodeURIComponent(client.phone || '')}`)}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send First Message
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -432,39 +681,48 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Recent Bookings</h3>
-              <div className="space-y-3">
-                {demoRecentBookings.map((booking) => (
-                  <div key={booking.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{booking.classSession.classType.name}</p>
-                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(booking.classSession.startTime).toLocaleDateString()} at{" "}
-                        {new Date(booking.classSession.startTime).toLocaleTimeString([], { 
-                          hour: "2-digit", 
-                          minute: "2-digit" 
-                        })}
-                      </p>
-                      <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
-                        <span>{booking.classSession.teacher.user.firstName} {booking.classSession.teacher.user.lastName}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {booking.classSession.location.name}
-                        </span>
-                      </p>
+              {bookings.length > 0 ? (
+                <div className="space-y-3">
+                  {bookings.map((booking) => (
+                    <div key={booking.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900">{booking.classSession.classType.name}</p>
+                        <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(booking.classSession.startTime).toLocaleDateString()} at{" "}
+                          {new Date(booking.classSession.startTime).toLocaleTimeString([], { 
+                            hour: "2-digit", 
+                            minute: "2-digit" 
+                          })}
+                        </p>
+                        <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                          <span>{booking.classSession.teacher.user.firstName} {booking.classSession.teacher.user.lastName}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {booking.classSession.location.name}
+                          </span>
+                        </p>
+                      </div>
+                      <Badge 
+                        variant={
+                          booking.status === "CONFIRMED" ? "success" : 
+                          booking.status === "CANCELLED" ? "destructive" : 
+                          booking.status === "COMPLETED" ? "outline" :
+                          "secondary"
+                        }
+                      >
+                        {booking.status}
+                      </Badge>
                     </div>
-                    <Badge className={`w-fit ${
-                      booking.status === "CONFIRMED" ? "bg-emerald-100 text-emerald-700" : 
-                      booking.status === "CANCELLED" ? "bg-red-100 text-red-700" : 
-                      booking.status === "COMPLETED" ? "bg-blue-100 text-blue-700" :
-                      "bg-gray-100 text-gray-700"
-                    } border-0`}>
-                      {booking.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Calendar className="h-12 w-12 text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-500">No bookings yet</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -474,31 +732,39 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Activity Timeline</h3>
-              <div className="space-y-4">
-                {mockClientStats.activityTimeline.map((activity, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${
-                        activity.action === "Booked" ? "bg-violet-500" :
-                        activity.action === "Completed" ? "bg-emerald-500" :
-                        activity.action === "Purchased" ? "bg-blue-500" :
-                        activity.action === "Cancelled" ? "bg-red-500" :
-                        "bg-gray-300"
-                      }`} />
-                      {i < mockClientStats.activityTimeline.length - 1 && (
-                        <div className="w-0.5 h-full bg-gray-200 my-1" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="font-medium text-gray-900">{activity.action}</p>
-                        <span className="text-sm text-gray-500">{activity.date}</span>
+              {stats && safeStats.activityTimeline.length > 0 && (
+                <div className="space-y-4">
+                  {safeStats.activityTimeline.map((activity, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-3 h-3 rounded-full ${
+                          activity.action === "Booked" ? "bg-violet-500" :
+                          activity.action === "Completed" ? "bg-emerald-500" :
+                          activity.action === "Purchased" ? "bg-blue-500" :
+                          activity.action === "Cancelled" ? "bg-red-500" :
+                          "bg-gray-300"
+                        }`} />
+                        {i < safeStats.activityTimeline.length - 1 && (
+                          <div className="w-0.5 h-full bg-gray-200 my-1" />
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{activity.details}</p>
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">{activity.action}</p>
+                          <span className="text-sm text-gray-500">{activity.date}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{activity.details}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+              {(!stats || safeStats.activityTimeline.length === 0) && (
+                <div className="text-center py-10">
+                  <Activity className="h-10 w-10 text-gray-200 mx-auto mb-3" />
+                  <p className="text-gray-500">No activity tracked yet</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -540,31 +806,29 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
                 <h3 className="font-semibold text-gray-900 mb-4">Account Details</h3>
                 <div className="space-y-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Credits Balance</span>
                     </div>
                     <span className="font-bold text-gray-900">{client.credits}</span>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3">
                       <Activity className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-600">Status</span>
                     </div>
-                    <Badge className={client.isActive ? "bg-emerald-100 text-emerald-700 border-0" : "bg-gray-100 text-gray-700 border-0"}>
+                    <Badge variant={client.isActive ? "success" : "secondary"}>
                       {client.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                  <Button variant="outline" className="w-full sm:flex-1">
+                  <Button variant="outline" className="flex-1 w-full">
                     Add Credits
                   </Button>
-                  <Link href="/demo/inbox" className="w-full sm:flex-1">
-                    <Button className="w-full bg-violet-600 hover:bg-violet-700">
-                      Send Message
-                    </Button>
-                  </Link>
+                  <Button className="flex-1 w-full bg-violet-600 hover:bg-violet-700">
+                    Send Message
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -574,29 +838,3 @@ export default function DemoClientDetailPage({ params }: { params: Promise<{ cli
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
