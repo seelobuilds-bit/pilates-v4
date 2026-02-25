@@ -14,6 +14,7 @@
     "test:booking": "TEST_BOOKING_SUBDOMAIN=${TEST_BOOKING_SUBDOMAIN:-zenith} node scripts/tests/booking-payment-subscription.mjs",
     "test:smoke": "node scripts/tests/smoke-routes.mjs",
     "test:smoke:owner": "node scripts/tests/owner-flow-smoke.mjs",
+    "test:smoke:studio-content": "node scripts/tests/studio-content-surface-smoke.mjs",
     "test:smoke:reporting": "node scripts/tests/reporting-regression-smoke.mjs",
     "seed:synthetic:studios": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-synthetic-studios.ts",
     "seed:synthetic:cleanup": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/cleanup-synthetic-studios.ts",
