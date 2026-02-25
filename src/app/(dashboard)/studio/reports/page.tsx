@@ -971,10 +971,8 @@ export default function ReportsPage() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-gray-900">{source.name}</span>
-                        <Badge variant="secondary" className={`${
-                          source.trend === 'up' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                        }`}>
-                          {source.trend === 'up' ? '+' : ''}{source.change}%
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                          {source.percent}% share
                         </Badge>
                 </div>
                       <span className="font-bold text-gray-900">{formatCurrency(source.amount, currency)}</span>
