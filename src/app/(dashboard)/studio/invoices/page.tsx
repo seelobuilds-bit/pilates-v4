@@ -21,7 +21,8 @@ import {
   User,
   Calendar,
   CreditCard,
-  Banknote
+  Banknote,
+  Download
 } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
@@ -162,6 +163,42 @@ export default function StudioInvoicesPage() {
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
+  }
+
+  const csvEscape = (value: string | number | null | undefined) =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`
+
+  const downloadInvoice = (invoice: Invoice) => {
+    const teacherName = `${invoice.teacher.user.firstName} ${invoice.teacher.user.lastName}`
+    const lines = [
+      ["Invoice Number", invoice.invoiceNumber],
+      ["Status", invoice.status],
+      ["Teacher", teacherName],
+      ["Teacher Email", invoice.teacher.user.email],
+      ["Period Start", new Date(invoice.periodStart).toISOString()],
+      ["Period End", new Date(invoice.periodEnd).toISOString()],
+      ["Currency", currency.toUpperCase()],
+      ["Subtotal", invoice.subtotal],
+      ["Tax", invoice.tax],
+      ["Tax Rate", invoice.taxRate],
+      ["Total", invoice.total],
+      [],
+      ["Description", "Quantity", "Rate", "Amount"],
+      ...invoice.lineItems.map((item) => [item.description, item.quantity, item.rate, item.amount])
+    ]
+
+    const csv = lines
+      .map((line) => line.map((cell) => csvEscape(cell)).join(","))
+      .join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${invoice.invoiceNumber}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   // Filter invoices
@@ -579,8 +616,12 @@ export default function StudioInvoicesPage() {
               )}
 
               {/* Actions */}
-              {(detailInvoice.status === "PENDING" || detailInvoice.status === "SENT") && (
-                <div className="flex justify-end">
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={() => downloadInvoice(detailInvoice)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download CSV
+                </Button>
+                {(detailInvoice.status === "PENDING" || detailInvoice.status === "SENT") && (
                   <Button 
                     onClick={() => {
                       setShowDetailModal(false)
@@ -592,8 +633,8 @@ export default function StudioInvoicesPage() {
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Mark as Paid
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
@@ -700,7 +741,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

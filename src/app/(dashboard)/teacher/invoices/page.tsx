@@ -17,7 +17,8 @@ import {
   Clock,
   Send,
   CheckCircle,
-  XCircle
+  XCircle,
+  Download
 } from "lucide-react"
 
 interface PayRate {
@@ -211,6 +212,39 @@ export default function TeacherInvoicesPage() {
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
+  }
+
+  const csvEscape = (value: string | number | null | undefined) =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`
+
+  const downloadInvoice = (invoice: Invoice) => {
+    const lines = [
+      ["Invoice Number", invoice.invoiceNumber],
+      ["Status", invoice.status],
+      ["Studio", invoice.studio.name],
+      ["Period Start", new Date(invoice.periodStart).toISOString()],
+      ["Period End", new Date(invoice.periodEnd).toISOString()],
+      ["Subtotal", invoice.subtotal],
+      ["Tax", invoice.tax],
+      ["Tax Rate", invoice.taxRate],
+      ["Total", invoice.total],
+      [],
+      ["Description", "Quantity", "Rate", "Amount"],
+      ...invoice.lineItems.map((item) => [item.description, item.quantity, item.rate, item.amount])
+    ]
+
+    const csv = lines
+      .map((line) => line.map((cell) => csvEscape(cell)).join(","))
+      .join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${invoice.invoiceNumber}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   // Group invoices by status
@@ -480,6 +514,7 @@ export default function TeacherInvoicesPage() {
           <InvoiceList 
             invoices={invoices} 
             getStatusBadge={getStatusBadge}
+            onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
@@ -491,6 +526,7 @@ export default function TeacherInvoicesPage() {
           <InvoiceList 
             invoices={draftInvoices} 
             getStatusBadge={getStatusBadge}
+            onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
@@ -502,6 +538,7 @@ export default function TeacherInvoicesPage() {
           <InvoiceList 
             invoices={pendingInvoices} 
             getStatusBadge={getStatusBadge}
+            onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
@@ -513,6 +550,7 @@ export default function TeacherInvoicesPage() {
           <InvoiceList 
             invoices={paidInvoices} 
             getStatusBadge={getStatusBadge}
+            onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
@@ -527,12 +565,14 @@ export default function TeacherInvoicesPage() {
 function InvoiceList({ 
   invoices, 
   getStatusBadge,
+  onDownload,
   onSubmit,
   onDelete,
   submitting
 }: { 
   invoices: Invoice[]
   getStatusBadge: (status: string) => React.ReactNode
+  onDownload: (invoice: Invoice) => void
   onSubmit: (id: string) => void
   onDelete: (id: string) => void
   submitting: string | null
@@ -590,6 +630,15 @@ function InvoiceList({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onDownload(invoice)}
+                    className="w-full sm:w-auto"
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
                   {invoice.status === "DRAFT" && (
                     <>
                       <Button
@@ -631,7 +680,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

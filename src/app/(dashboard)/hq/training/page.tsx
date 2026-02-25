@@ -570,7 +570,7 @@ export default function HQTrainingPage() {
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Social Media Training Hub</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Growth Academy Hub</h1>
           <p className="text-gray-500 mt-1">Create courses, upload content, and track teacher progress</p>
         </div>
       </div>
@@ -579,7 +579,7 @@ export default function HQTrainingPage() {
         <TabsList className="mb-6 h-auto w-full justify-start gap-1 overflow-x-auto p-1">
           <TabsTrigger value="courses" className="shrink-0 flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
-            Training Courses
+            Growth Academy Courses
           </TabsTrigger>
           <TabsTrigger value="ideas" className="shrink-0 flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />

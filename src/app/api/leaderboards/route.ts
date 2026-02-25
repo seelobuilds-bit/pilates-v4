@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
         return { ...lb, currentPeriod: null }
       }
 
-      const entries = currentPeriod.entries.map((entry) => {
+      const mappedEntries = currentPeriod.entries.map((entry) => {
         const participant = entry.studioId
           ? (studioParticipantById.get(entry.studioId) ?? null)
           : entry.teacherId
@@ -131,13 +131,15 @@ export async function GET(request: NextRequest) {
             : null
         return { ...entry, participant }
       })
+      const entries = mappedEntries.filter((entry) => Boolean(entry.participant))
+      const validEntryCount = entries.length
 
       return {
         ...lb,
         currentPeriod: {
           ...currentPeriod,
           entries,
-          totalEntries: currentPeriod._count.entries
+          totalEntries: validEntryCount
         }
       }
     })
@@ -265,8 +267,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
-
 
 
 
