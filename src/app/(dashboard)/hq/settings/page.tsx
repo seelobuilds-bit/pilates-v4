@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,11 +8,63 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Settings, Shield, Bell, Database } from "lucide-react"
 
+const STORAGE_KEY = "hq-platform-settings-v1"
+
 export default function HQSettingsPage() {
   const [platformName, setPlatformName] = useState("Cadence")
   const [supportEmail, setSupportEmail] = useState("support@cadence.com")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
+  const [require2fa, setRequire2fa] = useState(false)
+  const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useState(true)
+  const [weeklyReports, setWeeklyReports] = useState(true)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as {
+        platformName?: string
+        supportEmail?: string
+        maintenanceMode?: boolean
+        emailNotifications?: boolean
+        require2fa?: boolean
+        sessionTimeoutEnabled?: boolean
+        weeklyReports?: boolean
+      }
+
+      if (parsed.platformName) setPlatformName(parsed.platformName)
+      if (parsed.supportEmail) setSupportEmail(parsed.supportEmail)
+      if (typeof parsed.maintenanceMode === "boolean") setMaintenanceMode(parsed.maintenanceMode)
+      if (typeof parsed.emailNotifications === "boolean") setEmailNotifications(parsed.emailNotifications)
+      if (typeof parsed.require2fa === "boolean") setRequire2fa(parsed.require2fa)
+      if (typeof parsed.sessionTimeoutEnabled === "boolean") setSessionTimeoutEnabled(parsed.sessionTimeoutEnabled)
+      if (typeof parsed.weeklyReports === "boolean") setWeeklyReports(parsed.weeklyReports)
+    } catch {
+      // Ignore invalid stored settings and keep defaults.
+    }
+  }, [])
+
+  function saveChanges() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          platformName,
+          supportEmail,
+          maintenanceMode,
+          emailNotifications,
+          require2fa,
+          sessionTimeoutEnabled,
+          weeklyReports
+        })
+      )
+      setSaveMessage("Changes saved.")
+    } catch {
+      setSaveMessage("Could not save settings on this device.")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
@@ -68,14 +120,14 @@ export default function HQSettingsPage() {
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Require 2FA for all admin users</p>
               </div>
-              <Switch />
+              <Switch checked={require2fa} onCheckedChange={setRequire2fa} />
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-gray-900">Session Timeout</p>
                 <p className="text-sm text-gray-500">Auto logout after 30 minutes of inactivity</p>
               </div>
-              <Switch defaultChecked />
+              <Switch checked={sessionTimeoutEnabled} onCheckedChange={setSessionTimeoutEnabled} />
             </div>
           </CardContent>
         </Card>
@@ -104,7 +156,7 @@ export default function HQSettingsPage() {
                 <p className="font-medium text-gray-900">Weekly Reports</p>
                 <p className="text-sm text-gray-500">Get weekly platform summary emails</p>
               </div>
-              <Switch defaultChecked />
+              <Switch checked={weeklyReports} onCheckedChange={setWeeklyReports} />
             </div>
           </CardContent>
         </Card>
@@ -139,8 +191,9 @@ export default function HQSettingsPage() {
         </Card>
 
         {/* Save Button */}
-        <div className="flex justify-end">
-          <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+          {saveMessage && <p className="text-sm text-gray-500">{saveMessage}</p>}
+          <Button onClick={saveChanges} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
             Save Changes
           </Button>
         </div>
