@@ -250,7 +250,7 @@ export default function SettingsPage() {
   }
 
   const bookingEmbedCode = studio?.subdomain
-    ? `<iframe id="sf-booking-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="display:block;width:100%;height:980px;min-height:980px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:auto;" frameborder="0" scrolling="yes" loading="lazy" allowtransparency="true"></iframe>
+    ? `<iframe id="sf-booking-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="display:block;width:100%;height:1200px;min-height:1200px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
 <script>
 (function () {
   var iframe = document.getElementById("sf-booking-embed-${studio.subdomain}");
@@ -272,11 +272,12 @@ export default function SettingsPage() {
     iframe.style.setProperty("height", height + "px", "important");
     iframe.style.setProperty("min-height", height + "px", "important");
   }
+  setFrameHeight(1200);
   clearFrameChrome();
   window.addEventListener("message", function (event) {
     var data = event.data;
     if (!data || data.type !== "sf-booking-embed-resize") return;
-    var height = Math.max(700, Number(data.height) || 0);
+    var height = Math.max(900, Number(data.height) || 0);
     setFrameHeight(height);
     clearFrameChrome();
   });
@@ -285,7 +286,7 @@ export default function SettingsPage() {
     : (loading ? "Loading..." : "Please log out and log back in to refresh your session")
 
   const authEmbedCode = studio?.subdomain
-    ? `<iframe id="sf-account-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed/account" width="100%" style="display:block;width:100%;height:760px;min-height:760px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:auto;" frameborder="0" scrolling="yes" loading="lazy" allowtransparency="true"></iframe>
+    ? `<iframe id="sf-account-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed/account" width="100%" style="display:block;width:100%;height:980px;min-height:980px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
 <script>
 (function () {
   var iframe = document.getElementById("sf-account-embed-${studio.subdomain}");
@@ -307,11 +308,12 @@ export default function SettingsPage() {
     iframe.style.setProperty("height", height + "px", "important");
     iframe.style.setProperty("min-height", height + "px", "important");
   }
+  setFrameHeight(980);
   clearFrameChrome();
   window.addEventListener("message", function (event) {
     var data = event.data;
     if (!data || data.type !== "sf-booking-embed-resize") return;
-    var height = Math.max(560, Number(data.height) || 0);
+    var height = Math.max(760, Number(data.height) || 0);
     setFrameHeight(height);
     clearFrameChrome();
   });
