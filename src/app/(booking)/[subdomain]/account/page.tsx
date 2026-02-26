@@ -598,6 +598,7 @@ export default function AccountPage() {
   const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null)
   const [cancelling, setCancelling] = useState(false)
   const [renewingSubscriptionId, setRenewingSubscriptionId] = useState<string | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -1218,7 +1219,7 @@ export default function AccountPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border shadow-sm p-1 flex w-full overflow-x-auto whitespace-nowrap">
+          <TabsList className="bg-white border shadow-sm p-1 flex w-full flex-wrap gap-1">
             <TabsTrigger value="bookings" className="gap-2 shrink-0">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Bookings</span>
@@ -1271,12 +1272,13 @@ export default function AccountPage() {
                             <Calendar className="h-6 w-6" style={{ color: primaryColor }} />
                           </div>
                           <div>
-                            <Link
-                              href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBooking(booking)}
                               className="font-semibold text-gray-900 hover:underline"
                             >
                               {booking.classSession.classType.name}
-                            </Link>
+                            </button>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
@@ -1333,12 +1335,13 @@ export default function AccountPage() {
                     {pastBookings.slice(0, 5).map((booking) => (
                       <div key={booking.id} className="flex flex-col gap-2 p-3 rounded-lg opacity-70 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <Link
-                            href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBooking(booking)}
                             className="font-medium text-gray-700 hover:underline"
                           >
                             {booking.classSession.classType.name}
-                          </Link>
+                          </button>
                           <p className="text-sm text-gray-500">
                             {new Date(booking.classSession.startTime).toLocaleDateString()} • {booking.classSession.location.name}
                           </p>
@@ -1371,7 +1374,7 @@ export default function AccountPage() {
                         Access your courses and exclusive content
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {enrolledCourses.slice(0, 4).map(course => (
+                        {enrolledCourses.map(course => (
                           <Link key={course.id} href={`/${subdomain}/vault/${course.slug}`}>
                             <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                               <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
@@ -1402,14 +1405,6 @@ export default function AccountPage() {
                             </div>
                           </Link>
                         ))}
-                      </div>
-                      <div className="pt-4">
-                        <Link href={`/${subdomain}/vault`}>
-                          <Button className="w-full" style={{ backgroundColor: primaryColor }}>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            The Vault
-                          </Button>
-                        </Link>
                       </div>
                     </div>
                   ) : (
@@ -1875,6 +1870,54 @@ export default function AccountPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Booking Details Modal */}
+      <Dialog open={Boolean(selectedBooking)} onOpenChange={(open) => { if (!open) setSelectedBooking(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Class Details</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="font-semibold text-gray-900">{selectedBooking.classSession.classType.name}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {new Date(selectedBooking.classSession.startTime).toLocaleDateString()} at{" "}
+                  {new Date(selectedBooking.classSession.startTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedBooking.classSession.location.name} • {selectedBooking.classSession.teacher.user.firstName} {selectedBooking.classSession.teacher.user.lastName}
+                </p>
+                <div className="mt-3">
+                  <Badge variant="secondary">{selectedBooking.status}</Badge>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                {selectedBooking.status !== "CANCELLED" && new Date(selectedBooking.classSession.startTime) > new Date() && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={async () => {
+                      await handleCancelBooking(selectedBooking.id)
+                      setSelectedBooking(null)
+                    }}
+                  >
+                    Cancel Booking
+                  </Button>
+                )}
+                <Link href={`/${subdomain}/book?classSessionId=${selectedBooking.classSession.id}`} className="flex-1">
+                  <Button className="w-full" style={{ backgroundColor: primaryColor }}>
+                    Book Similar Class
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Subscription Payment Modal */}
       <Dialog open={showSubscriptionModal} onOpenChange={(open) => {
