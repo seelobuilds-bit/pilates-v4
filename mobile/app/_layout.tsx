@@ -3,62 +3,8 @@ import * as Notifications from "expo-notifications"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, View } from "react-native"
 import { AuthProvider, useAuth } from "@/src/context/auth-context"
+import { isAllowedAppRoute, parseRequestedAppRoute, resolvePostLoginRoute, type AppRoute } from "@/src/lib/auth-routing"
 import { configurePushPresentation, routeFromPushPayload } from "@/src/lib/push"
-
-type AppRoute =
-  | "/(app)"
-  | "/(app)/schedule"
-  | "/(app)/inbox"
-  | "/(app)/workspace"
-  | "/(app)/profile"
-  | "/(app)/reports"
-  | "/(app)/people"
-  | "/(app)/classes"
-  | "/(app)/class-flows"
-  | "/(app)/teachers"
-  | "/(app)/locations"
-  | "/(app)/invoices"
-  | "/(app)/payments"
-  | "/(app)/store"
-  | "/(app)/vault"
-  | "/(app)/community"
-  | "/(app)/marketing"
-  | "/(app)/social"
-  | "/(app)/leaderboards"
-
-const APP_ROUTE_ALLOWLIST = new Set<AppRoute>([
-  "/(app)",
-  "/(app)/schedule",
-  "/(app)/inbox",
-  "/(app)/workspace",
-  "/(app)/profile",
-  "/(app)/reports",
-  "/(app)/people",
-  "/(app)/classes",
-  "/(app)/class-flows",
-  "/(app)/teachers",
-  "/(app)/locations",
-  "/(app)/invoices",
-  "/(app)/payments",
-  "/(app)/store",
-  "/(app)/vault",
-  "/(app)/community",
-  "/(app)/marketing",
-  "/(app)/social",
-  "/(app)/leaderboards",
-])
-
-function parseRequestedAppRoute(segments: string[]): AppRoute {
-  const section = segments[1]
-  if (!section || section === "index") return "/(app)"
-
-  const candidate = `/(app)/${section}` as AppRoute
-  if (APP_ROUTE_ALLOWLIST.has(candidate)) {
-    return candidate
-  }
-
-  return "/(app)"
-}
 
 function RootNavigator() {
   const router = useRouter()
@@ -85,7 +31,7 @@ function RootNavigator() {
     }
 
     if (user && inAuthGroup) {
-      const target = pendingPushRoute || (postLoginRoute && APP_ROUTE_ALLOWLIST.has(postLoginRoute) ? postLoginRoute : "/(app)")
+      const target = resolvePostLoginRoute({ pendingPushRoute, postLoginRoute })
       setPostLoginRoute(null)
       setPendingPushRoute(null)
       router.replace(target as never)
@@ -114,7 +60,7 @@ function RootNavigator() {
       if (handledNotificationIdRef.current === notificationId) return
 
       const route = routeFromPushPayload(response.notification.request.content.data)
-      if (!route || !APP_ROUTE_ALLOWLIST.has(route)) return
+      if (!route || !isAllowedAppRoute(route)) return
 
       handledNotificationIdRef.current = notificationId
       setPendingPushRoute(route)

@@ -9,6 +9,9 @@ The app supports login for:
 - Teacher
 - Client
 
+Studio owner can update mobile brand accent color directly in the Profile screen.
+That updates `studio.primaryColor` and the app applies it at runtime across screens.
+
 Auth is handled via:
 - `POST /api/mobile/auth/login`
 - `GET /api/mobile/auth/me`
@@ -31,6 +34,10 @@ This generates:
 - `.env.studio.zenith`
 - `releases/zenith/release-checklist.md`
 
+Optional for Expo/testing builds only:
+- set `EXPO_PUBLIC_ALLOW_SUBDOMAIN_OVERRIDE=1` to show editable studio subdomain on login.
+- keep it `0` for production white-label binaries.
+
 Use `--dry-run` to preview outputs without writing files:
 
 ```bash
@@ -41,6 +48,36 @@ pnpm prepare:studio --slug zenith --name "Zenith Pilates" --dry-run
 
 ```bash
 pnpm start
+```
+
+## Mobile Smoke Check (API)
+
+From repo root:
+
+```bash
+TEST_BASE_URL=https://your-preview-or-staging-url \
+TEST_MOBILE_STUDIO_SUBDOMAIN=your-studio \
+TEST_MOBILE_OWNER_EMAIL=owner@example.com \
+TEST_MOBILE_OWNER_PASSWORD='***' \
+pnpm test:smoke:mobile
+```
+
+If you want the smoke run to fail hard when env/base URL is missing or unreachable, set:
+
+```bash
+TEST_REQUIRE_MOBILE_SMOKE=1
+```
+
+Pure push-route mapping smoke (no API/env needed):
+
+```bash
+pnpm test:smoke:mobile:routing
+```
+
+Pure auth-route mapping smoke (no API/env needed):
+
+```bash
+pnpm test:smoke:mobile:auth-routing
 ```
 
 ## Per-Studio Build

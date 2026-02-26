@@ -8,22 +8,24 @@ export default function LoginScreen() {
   const { signIn } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [studioSubdomain, setStudioSubdomain] = useState(mobileConfig.studioSubdomain)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting
+  const canSubmit = email.trim().length > 0 && password.length > 0 && studioSubdomain.trim().length > 0 && !submitting
+  const showSubdomainInput = mobileConfig.allowSubdomainOverride || !mobileConfig.studioSubdomain
 
   const studioLabel = useMemo(() => {
-    if (mobileConfig.studioName && mobileConfig.studioSubdomain) {
-      return `${mobileConfig.studioName} (${mobileConfig.studioSubdomain})`
+    if (mobileConfig.studioName && studioSubdomain) {
+      return `${mobileConfig.studioName} (${studioSubdomain})`
     }
     return mobileConfig.studioName
-  }, [])
+  }, [studioSubdomain])
 
   async function handleLogin() {
     setSubmitting(true)
     setError(null)
     try {
-      await signIn(email.trim(), password)
+      await signIn(email.trim(), password, studioSubdomain.trim().toLowerCase())
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed"
       setError(message)
@@ -42,6 +44,20 @@ export default function LoginScreen() {
         </View>
         {!mobileConfig.studioSubdomain ? (
           <Text style={styles.warning}>Studio subdomain is missing in mobile env config.</Text>
+        ) : null}
+        {mobileConfig.allowSubdomainOverride ? (
+          <Text style={styles.warning}>Subdomain override is enabled for this build.</Text>
+        ) : null}
+
+        {showSubdomainInput ? (
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="Studio subdomain"
+            value={studioSubdomain}
+            onChangeText={setStudioSubdomain}
+            style={styles.input}
+          />
         ) : null}
 
         <TextInput

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
@@ -79,6 +79,14 @@ const DEFAULT_BASE_STAT_CARD_ORDER: BaseStatCardId[] = [
 ]
 
 const DEFAULT_VISIBLE_STAT_CARDS: BaseStatCardId[] = DEFAULT_BASE_STAT_CARD_ORDER
+const DASHBOARD_RANGE_LABELS: Record<string, string> = {
+  today: "Today",
+  this_month: "This month",
+  "7": "Last 7 days",
+  "30": "Last 30 days",
+  "90": "Last 90 days",
+  "365": "Last 365 days",
+}
 
 function reorderWidgets(order: WidgetId[], draggedId: WidgetId, targetId: WidgetId) {
   if (draggedId === targetId) return order
@@ -126,6 +134,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
   const [customStartDate, setCustomStartDate] = useState(selectedRange.startDate)
   const [customEndDate, setCustomEndDate] = useState(selectedRange.endDate)
   const [selectedRangeUiKey, setSelectedRangeUiKey] = useState<string>(selectedRange.key)
+  const [pendingRangeLabel, setPendingRangeLabel] = useState<string | null>(null)
+  const refreshNonceRef = useRef(0)
   const [isRangeUpdating, startRangeTransition] = useTransition()
 
   const isCustomRangeValid = Boolean(
@@ -201,10 +211,13 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
       setCustomEndDate(selectedRange.endDate)
     }
     setSelectedRangeUiKey(selectedRange.key)
+    setPendingRangeLabel(null)
   }, [supportsRangeFiltering, isCustomRange, selectedRange.key, selectedRange.startDate, selectedRange.endDate])
 
   const updateDashboardRange = (period: "today" | "this_month" | "7" | "30" | "90" | "365" | "custom", startDate?: string, endDate?: string) => {
     if (!supportsRangeFiltering) return
+    const currentComparable = new URLSearchParams(searchParams.toString())
+    currentComparable.delete("rid")
     const params = new URLSearchParams(searchParams.toString())
     params.set("period", period)
     if (period === "custom" && startDate && endDate) {
@@ -213,6 +226,14 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     } else {
       params.delete("startDate")
       params.delete("endDate")
+    }
+    const nextComparable = new URLSearchParams(params.toString())
+    nextComparable.delete("rid")
+    if (nextComparable.toString() === currentComparable.toString()) {
+      refreshNonceRef.current += 1
+      params.set("rid", String(refreshNonceRef.current))
+    } else {
+      params.delete("rid")
     }
     startRangeTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -231,6 +252,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     }
     setShowCustomDate(false)
     setSelectedRangeUiKey(value)
+    setPendingRangeLabel(DASHBOARD_RANGE_LABELS[value] ?? selectedRange.label)
     updateDashboardRange(value as "today" | "this_month" | "7" | "30" | "90" | "365")
   }
 
@@ -238,6 +260,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
     if (!supportsRangeFiltering || !isCustomRangeValid) return
     setShowCustomDate(false)
     setSelectedRangeUiKey("custom")
+    setPendingRangeLabel(`${customStartDate} - ${customEndDate}`)
     updateDashboardRange("custom", customStartDate, customEndDate)
   }
 
@@ -848,7 +871,8 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
           <p className="text-gray-500 mt-1">{data.currentDate}</p>
           {supportsRangeFiltering && (
             <p className="text-sm text-gray-500 mt-1">
-              Showing metric cards for <span className="font-medium text-gray-700">{selectedRange.label}</span>
+              Showing metric cards for{" "}
+              <span className="font-medium text-gray-700">{pendingRangeLabel ?? selectedRange.label}</span>
             </p>
           )}
           {supportsRangeFiltering && isRangeUpdating && (

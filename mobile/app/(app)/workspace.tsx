@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons"
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { getWorkspaceFeatures, toWorkspaceUrl, type WorkspaceFeature } from "@/src/lib/workspace-links"
+import { getWorkspaceFeatures, type WorkspaceFeature } from "@/src/lib/workspace-links"
 
 const GROUP_ORDER: WorkspaceFeature["group"][] = [
   "Overview",
@@ -50,7 +50,7 @@ export default function WorkspaceScreen() {
         router.push(feature.nativeRoute as never)
         return
       }
-      await Linking.openURL(toWorkspaceUrl(feature.href))
+      router.push("/(app)" as never)
     } finally {
       setOpeningFeatureId(null)
     }

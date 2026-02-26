@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileVaultAudience, MobileVaultCourseSummary, MobileVaultResponse } from "@/src/types/mobile"
 
 function formatCurrency(value: number, currencyCode: string) {
@@ -206,7 +205,6 @@ export default function VaultScreen() {
     return "No courses found."
   }, [audienceFilter, isAllowedRole, statusFilter, trimmedSearch])
 
-  const vaultWebHref = user?.role === "TEACHER" ? "/teacher/vault" : "/studio/vault"
   const canManagePublishing = user?.role === "OWNER"
   const handleViewDetails = useCallback(
     (courseId: string) => {
@@ -310,15 +308,7 @@ export default function VaultScreen() {
           ListEmptyComponent={!loading ? <View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyText}</Text></View> : null}
           ListFooterComponent={
             <View style={styles.footerSection}>
-              <Text style={styles.metaText}>Need full editing controls? Open the complete web vault.</Text>
-              <Pressable
-                style={[styles.actionButton, { backgroundColor: primaryColor }]}
-                onPress={() => {
-                  void Linking.openURL(toWorkspaceUrl(vaultWebHref))
-                }}
-              >
-                <Text style={styles.actionButtonText}>Open Web Vault</Text>
-              </Pressable>
+              <Text style={styles.metaText}>Vault browsing, course publishing, and detail insights are available in mobile.</Text>
             </View>
           }
         />

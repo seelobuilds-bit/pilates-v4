@@ -31,6 +31,16 @@ export interface MobileBootstrapResponse {
   metrics: Record<string, number>
 }
 
+export interface MobileStudioBrandingResponse {
+  role: MobileRole
+  studio: StudioSummary
+}
+
+export interface MobileStudioBrandingUpdateResponse {
+  success: boolean
+  studio: StudioSummary
+}
+
 export type MobileReportMetricFormat = "number" | "currency" | "percent"
 
 export interface MobileReportMetric {
@@ -687,6 +697,15 @@ export interface MobileCommunityResponse {
 export type MobileMarketingCampaignStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "PAUSED" | "CANCELLED"
 export type MobileMarketingAutomationStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED"
 export type MobileMarketingChannel = "EMAIL" | "SMS"
+export type MobileMarketingTrigger =
+  | "WELCOME"
+  | "CLASS_REMINDER"
+  | "CLASS_FOLLOWUP"
+  | "BOOKING_CONFIRMED"
+  | "BOOKING_CANCELLED"
+  | "CLIENT_INACTIVE"
+  | "BIRTHDAY"
+  | "MEMBERSHIP_EXPIRING"
 export type MobileMarketingCampaignStatusAction = "cancel"
 export type MobileMarketingAutomationStatusAction = "activate" | "pause"
 
@@ -805,6 +824,19 @@ export interface MobileMarketingCampaignStatusActionResponse {
   }
 }
 
+export interface MobileMarketingCreateCampaignInput {
+  name: string
+  channel: MobileMarketingChannel
+  subject?: string | null
+  body: string
+  scheduledAt?: string | null
+}
+
+export interface MobileMarketingCreateCampaignResponse {
+  success: boolean
+  campaign: MobileMarketingCampaignSummary
+}
+
 export interface MobileMarketingAutomationDetailResponse {
   role: "OWNER"
   studio: StudioSummary
@@ -878,6 +910,21 @@ export interface MobileMarketingAutomationStatusActionResponse {
     status: MobileMarketingAutomationStatus
     updatedAt: string
   }
+}
+
+export interface MobileMarketingCreateAutomationInput {
+  name: string
+  trigger: MobileMarketingTrigger
+  channel: MobileMarketingChannel
+  subject?: string | null
+  body: string
+  delayMinutes?: number
+  stopOnBooking?: boolean
+}
+
+export interface MobileMarketingCreateAutomationResponse {
+  success: boolean
+  automation: MobileMarketingAutomationSummary
 }
 
 export type MobileSocialPlatform = "INSTAGRAM" | "TIKTOK"

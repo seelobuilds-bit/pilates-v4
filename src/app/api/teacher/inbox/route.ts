@@ -104,45 +104,73 @@ export async function GET(request: Request) {
     }
     const clients = Array.from(clientMap.values())
 
-    // For each client, get their message stats
-    const conversations = await Promise.all(
-      clients.map(async (client) => {
-        const messages = await db.message.findMany({
+    const clientIds = clients.map((client) => client.id)
+    const messageRows = clientIds.length
+      ? await db.message.findMany({
           where: {
-            clientId: client.id,
-            studioId: client.studioId
+            clientId: { in: clientIds },
+            studioId: teacher.studioId,
           },
           orderBy: {
-            createdAt: "desc"
+            createdAt: "desc",
           },
-          take: 1
+          select: {
+            clientId: true,
+            channel: true,
+            body: true,
+            createdAt: true,
+            direction: true,
+          },
         })
+      : []
 
-        const totalMessages = await db.message.count({
-          where: {
-            clientId: client.id,
-            studioId: client.studioId
-          }
+    const messageSummary = new Map<
+      string,
+      {
+        totalMessages: number
+        lastMessage: {
+          channel: "EMAIL" | "SMS"
+          body: string
+          createdAt: string
+          direction: "INBOUND" | "OUTBOUND"
+        } | null
+      }
+    >()
+
+    for (const row of messageRows) {
+      const messageClientId = row.clientId
+      if (!messageClientId) {
+        continue
+      }
+
+      const existing = messageSummary.get(messageClientId)
+      if (!existing) {
+        messageSummary.set(messageClientId, {
+          totalMessages: 1,
+          lastMessage: {
+            channel: row.channel,
+            body: row.body,
+            createdAt: row.createdAt.toISOString(),
+            direction: row.direction,
+          },
         })
+        continue
+      }
+      existing.totalMessages += 1
+    }
 
-        const lastMessage = messages[0]
-
-        return {
-          clientId: client.id,
-          clientName: `${client.firstName} ${client.lastName}`,
-          clientEmail: client.email,
-          clientPhone: client.phone,
-          lastMessage: lastMessage ? {
-            channel: lastMessage.channel,
-            body: lastMessage.body,
-            createdAt: lastMessage.createdAt.toISOString(),
-            direction: lastMessage.direction
-          } : null,
-          unreadCount: 0, // Could implement read tracking later
-          totalMessages
-        }
-      })
-    )
+    const conversations = clients.map((client) => {
+      const summary = messageSummary.get(client.id)
+      return {
+        clientId: client.id,
+        clientName: `${client.firstName} ${client.lastName}`,
+        clientEmail: client.email,
+        clientPhone: client.phone,
+        lastMessage: summary?.lastMessage || null,
+        unreadCount: 0, // Could implement read tracking later
+        totalMessages: summary?.totalMessages || 0,
+      }
+    })
 
     // Sort by last message date (most recent first), then by those with messages
     conversations.sort((a, b) => {
@@ -160,8 +188,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 })
   }
 }
-
-
 
 
 

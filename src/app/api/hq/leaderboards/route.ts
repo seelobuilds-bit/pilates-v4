@@ -101,30 +101,50 @@ export async function GET() {
       }
     })
 
-    // Enrich winners with participant info
-    const enrichedWinners = await Promise.all(
-      recentWinners.map(async (winner) => {
-        let participant = null
-        if (winner.studioId) {
-          participant = await db.studio.findUnique({
-            where: { id: winner.studioId },
-            select: { id: true, name: true }
+    // Enrich winners with participant info in batch to avoid N+1 queries.
+    const studioIds = Array.from(new Set(recentWinners.map((winner) => winner.studioId).filter((id): id is string => Boolean(id))))
+    const teacherIds = Array.from(new Set(recentWinners.map((winner) => winner.teacherId).filter((id): id is string => Boolean(id))))
+    const [winnerStudios, winnerTeachers] = await Promise.all([
+      studioIds.length
+        ? db.studio.findMany({
+            where: { id: { in: studioIds } },
+            select: { id: true, name: true },
           })
-        } else if (winner.teacherId) {
-          const teacher = await db.teacher.findUnique({
-            where: { id: winner.teacherId },
-            include: { user: { select: { firstName: true, lastName: true } } }
+        : Promise.resolve([]),
+      teacherIds.length
+        ? db.teacher.findMany({
+            where: { id: { in: teacherIds } },
+            select: {
+              id: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
           })
-          if (teacher) {
-            participant = {
-              id: teacher.id,
-              name: `${teacher.user.firstName} ${teacher.user.lastName}`
-            }
-          }
-        }
-        return { ...winner, participant }
-      })
+        : Promise.resolve([]),
+    ])
+    const studioParticipantById = new Map(winnerStudios.map((studio) => [studio.id, studio]))
+    const teacherParticipantById = new Map(
+      winnerTeachers.map((teacher) => [
+        teacher.id,
+        {
+          id: teacher.id,
+          name: `${teacher.user.firstName} ${teacher.user.lastName}`,
+        },
+      ])
     )
+
+    const enrichedWinners = recentWinners.map((winner) => ({
+      ...winner,
+      participant: winner.studioId
+        ? (studioParticipantById.get(winner.studioId) ?? null)
+        : winner.teacherId
+          ? (teacherParticipantById.get(winner.teacherId) ?? null)
+          : null,
+    }))
 
     return NextResponse.json({
       leaderboards,
@@ -370,6 +390,28 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, ...finalized })
     }
 
+    if (action === "finalizeAndPause") {
+      const period = await db.leaderboardPeriod.findUnique({
+        where: { id: periodId },
+        select: { id: true, leaderboardId: true },
+      })
+      if (!period) {
+        return NextResponse.json({ error: "Period not found" }, { status: 404 })
+      }
+
+      const finalized = await finalizeLeaderboardPeriod({
+        periodId: period.id,
+        finalizedBy: actorId,
+      })
+
+      await db.leaderboard.update({
+        where: { id: period.leaderboardId },
+        data: { autoCalculate: false },
+      })
+
+      return NextResponse.json({ success: true, pausedAutoReset: true, ...finalized })
+    }
+
     if (action === "runAutoCycle") {
       const result = await runLeaderboardAutoCycle({
         leaderboardId: typeof leaderboardId === "string" ? leaderboardId : undefined,
@@ -397,8 +439,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update leaderboard" }, { status: 500 })
   }
 }
-
-
 
 
 

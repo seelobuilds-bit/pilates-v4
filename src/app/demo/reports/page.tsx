@@ -182,6 +182,10 @@ function buildReportsQuery(period: string) {
   return params.toString()
 }
 
+function waitFor(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export default function ReportsPage() {
   const router = useRouter()
   const [period, setPeriod] = useState("30")
@@ -214,11 +218,22 @@ export default function ReportsPage() {
 
       try {
         const query = buildReportsQuery(requestedPeriod)
-        const response = await fetch(`/api/demo/reports?${query}${query ? "&" : ""}rid=${fetchId}`, {
-          signal: options?.signal,
-          cache: "no-store",
-          headers: isManual ? { "x-force-refresh": String(Date.now()) } : undefined,
-        })
+        const fetchOnce = async (attempt: number): Promise<Response> => {
+          const response = await fetch(`/api/demo/reports?${query}${query ? "&" : ""}rid=${fetchId}&attempt=${attempt}`, {
+            signal: options?.signal,
+            cache: "no-store",
+            headers: isManual ? { "x-force-refresh": String(Date.now()) } : undefined,
+          })
+
+          if (response.status >= 500 && response.status < 600 && attempt < 1 && !options?.signal?.aborted) {
+            await waitFor(200)
+            return fetchOnce(attempt + 1)
+          }
+
+          return response
+        }
+
+        const response = await fetchOnce(0)
 
         if (!response.ok) {
           throw new Error(`Failed to load reports (${response.status})`)
@@ -226,6 +241,7 @@ export default function ReportsPage() {
 
         const data = await response.json()
         if (activeFetchRef.current !== fetchId) return
+        const isPartialResponse = Boolean(data?.partial)
 
         // Calculate percentages and trends from real data
         const totalRevenue = data.revenue?.total || 0
@@ -368,6 +384,9 @@ export default function ReportsPage() {
             conversionRate: social.conversionRate || 0,
           },
         })
+        if (isPartialResponse) {
+          setReportsError("Reports are temporarily degraded. Showing fallback data.")
+        }
       } catch (error) {
         if (options?.signal?.aborted) return
         if (activeFetchRef.current !== fetchId) return
@@ -416,6 +435,11 @@ export default function ReportsPage() {
       }
       setShowCustomDate(true)
     } else {
+      if (!selectedCustomRange && value === period) {
+        void fetchReportData(value, { manual: true })
+        setShowCustomDate(false)
+        return
+      }
       setPeriod(value)
       setShowCustomDate(false)
     }
@@ -423,7 +447,12 @@ export default function ReportsPage() {
 
   const applyCustomDateRange = () => {
     if (isCustomRangeValid) {
-      setPeriod(`${customStartDate}${CUSTOM_PERIOD_SEPARATOR}${customEndDate}`)
+      const nextPeriod = `${customStartDate}${CUSTOM_PERIOD_SEPARATOR}${customEndDate}`
+      if (nextPeriod === period) {
+        void fetchReportData(nextPeriod, { manual: true })
+      } else {
+        setPeriod(nextPeriod)
+      }
       setShowCustomDate(false)
     }
   }
@@ -1450,6 +1479,33 @@ export default function ReportsPage() {
               </Card>
             </Link>
           </div>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-gray-900">How We Calculate Churn</h3>
+              <p className="mt-1 text-sm text-gray-600">
+                Churn Rate = Churned Clients ÷ Total Clients in your studio for the selected period.
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Formula</p>
+                  <p className="font-medium">
+                    {reportData.retention.churnedClients} / {reportData.retention.totalClients} = {reportData.retention.churnRate}%
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">{reportData.retention.churnDefinition}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">At Risk Rule</p>
+                  <p className="font-medium">
+                    Active clients with no attended booking in the last 14 days.
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    High risk is 30+ days without an attended booking.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Churn & Retention Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

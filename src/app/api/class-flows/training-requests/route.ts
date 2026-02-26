@@ -43,6 +43,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  if (session.user.role !== "OWNER") {
+    return NextResponse.json({ error: "Only studio admins can create training requests" }, { status: 403 })
+  }
 
   try {
     const body = await request.json()
@@ -111,7 +114,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create training request" }, { status: 500 })
   }
 }
-
 
 
 

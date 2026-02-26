@@ -74,45 +74,73 @@ export async function GET(request: NextRequest) {
         orderBy: { name: "asc" }
       })
 
-      // Get latest message and counts for each studio
-      const conversations = await Promise.all(
-        studios.map(async (studio) => {
-          const messages = await db.hQMessage.findMany({
-            where: { studioId: studio.id },
+      const studioIds = studios.map((studio) => studio.id)
+      const studioMessages = studioIds.length
+        ? await db.hQMessage.findMany({
+            where: { studioId: { in: studioIds } },
+            select: {
+              studioId: true,
+              direction: true,
+              subject: true,
+              body: true,
+              createdAt: true,
+              openedAt: true,
+            },
             orderBy: { createdAt: "desc" },
-            take: 1
           })
+        : []
 
-          const totalMessages = await db.hQMessage.count({
-            where: { studioId: studio.id }
+      const studioSummaryById = new Map<
+        string,
+        {
+          totalMessages: number
+          unreadCount: number
+          lastMessage: {
+            direction: "INBOUND" | "OUTBOUND"
+            subject: string | null
+            body: string
+            createdAt: string
+          } | null
+        }
+      >()
+
+      for (const message of studioMessages) {
+        const studioIdValue = message.studioId
+        if (!studioIdValue) continue
+
+        const existing = studioSummaryById.get(studioIdValue)
+        if (!existing) {
+          studioSummaryById.set(studioIdValue, {
+            totalMessages: 1,
+            unreadCount: message.direction === "INBOUND" && !message.openedAt ? 1 : 0,
+            lastMessage: {
+              direction: message.direction,
+              subject: message.subject,
+              body: message.body.substring(0, 100) + (message.body.length > 100 ? "..." : ""),
+              createdAt: message.createdAt.toISOString(),
+            },
           })
+          continue
+        }
 
-          const unreadCount = await db.hQMessage.count({
-            where: {
-              studioId: studio.id,
-              direction: "INBOUND",
-              openedAt: null
-            }
-          })
+        existing.totalMessages += 1
+        if (message.direction === "INBOUND" && !message.openedAt) {
+          existing.unreadCount += 1
+        }
+      }
 
-          const lastMessage = messages[0]
-
-          return {
-            id: studio.id,
-            name: studio.name,
-            contactName: `${studio.owner.firstName} ${studio.owner.lastName}`,
-            contactEmail: studio.owner.email,
-            lastMessage: lastMessage ? {
-              direction: lastMessage.direction,
-              subject: lastMessage.subject,
-              body: lastMessage.body.substring(0, 100) + (lastMessage.body.length > 100 ? "..." : ""),
-              createdAt: lastMessage.createdAt.toISOString()
-            } : null,
-            totalMessages,
-            unreadCount
-          }
-        })
-      )
+      const conversations = studios.map((studio) => {
+        const summary = studioSummaryById.get(studio.id)
+        return {
+          id: studio.id,
+          name: studio.name,
+          contactName: `${studio.owner.firstName} ${studio.owner.lastName}`,
+          contactEmail: studio.owner.email,
+          lastMessage: summary?.lastMessage || null,
+          totalMessages: summary?.totalMessages || 0,
+          unreadCount: summary?.unreadCount || 0,
+        }
+      })
 
       // Sort by last message date (most recent first)
       conversations.sort((a, b) => {
@@ -169,31 +197,65 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: "desc" }
       })
 
-      // Get latest message and counts for each lead
-      const conversations = await Promise.all(
-        leads.map(async (lead) => {
-          const messages = await db.hQMessage.findMany({
-            where: { leadId: lead.id },
+      const leadIds = leads.map((lead) => lead.id)
+      const leadMessages = leadIds.length
+        ? await db.hQMessage.findMany({
+            where: { leadId: { in: leadIds } },
+            select: {
+              leadId: true,
+              direction: true,
+              subject: true,
+              body: true,
+              createdAt: true,
+              openedAt: true,
+            },
             orderBy: { createdAt: "desc" },
-            take: 1
           })
+        : []
 
-          const totalMessages = await db.hQMessage.count({
-            where: { leadId: lead.id }
+      const leadSummaryById = new Map<
+        string,
+        {
+          totalMessages: number
+          unreadCount: number
+          lastMessage: {
+            direction: "INBOUND" | "OUTBOUND"
+            subject: string | null
+            body: string
+            createdAt: string
+          } | null
+        }
+      >()
+
+      for (const message of leadMessages) {
+        const leadIdValue = message.leadId
+        if (!leadIdValue) continue
+
+        const existing = leadSummaryById.get(leadIdValue)
+        if (!existing) {
+          leadSummaryById.set(leadIdValue, {
+            totalMessages: 1,
+            unreadCount: message.direction === "INBOUND" && !message.openedAt ? 1 : 0,
+            lastMessage: {
+              direction: message.direction,
+              subject: message.subject,
+              body: message.body.substring(0, 100) + (message.body.length > 100 ? "..." : ""),
+              createdAt: message.createdAt.toISOString(),
+            },
           })
+          continue
+        }
 
-          const unreadCount = await db.hQMessage.count({
-            where: {
-              leadId: lead.id,
-              direction: "INBOUND",
-              openedAt: null
-            }
-          })
+        existing.totalMessages += 1
+        if (message.direction === "INBOUND" && !message.openedAt) {
+          existing.unreadCount += 1
+        }
+      }
 
-          const lastMessage = messages[0]
-
-          // Only include leads that have messages
-          if (totalMessages === 0) return null
+      const filteredConversations = leads
+        .map((lead) => {
+          const summary = leadSummaryById.get(lead.id)
+          if (!summary) return null
 
           return {
             id: lead.id,
@@ -201,27 +263,21 @@ export async function GET(request: NextRequest) {
             contactName: lead.contactName,
             contactEmail: lead.contactEmail,
             status: lead.status,
-            lastMessage: lastMessage ? {
-              direction: lastMessage.direction,
-              subject: lastMessage.subject,
-              body: lastMessage.body.substring(0, 100) + (lastMessage.body.length > 100 ? "..." : ""),
-              createdAt: lastMessage.createdAt.toISOString()
-            } : null,
-            totalMessages,
-            unreadCount
+            lastMessage: summary.lastMessage,
+            totalMessages: summary.totalMessages,
+            unreadCount: summary.unreadCount,
           }
         })
-      )
+        .filter((conversation): conversation is NonNullable<typeof conversation> => Boolean(conversation))
 
-      // Filter out nulls (leads without messages) and sort by last message
-      const filteredConversations = conversations.filter(c => c !== null)
+      // Sort by last message
       filteredConversations.sort((a, b) => {
-        if (a!.lastMessage && b!.lastMessage) {
-          return new Date(b!.lastMessage.createdAt).getTime() - new Date(a!.lastMessage.createdAt).getTime()
+        if (a.lastMessage && b.lastMessage) {
+          return new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
         }
-        if (a!.lastMessage) return -1
-        if (b!.lastMessage) return 1
-        return a!.name.localeCompare(b!.name)
+        if (a.lastMessage) return -1
+        if (b.lastMessage) return 1
+        return a.name.localeCompare(b.name)
       })
 
       return NextResponse.json({ conversations: filteredConversations })
@@ -349,4 +405,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-

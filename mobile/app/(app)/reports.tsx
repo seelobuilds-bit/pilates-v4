@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
 
 const PERIOD_OPTIONS = [7, 30, 90] as const
@@ -128,7 +127,6 @@ export default function ReportsScreen() {
   }, [user?.role])
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
-  const canOpenWeb = user?.role === "OWNER" || user?.role === "TEACHER"
   const metricFilterCounts = useMemo(() => {
     const metrics = data?.metrics ?? []
     return {
@@ -148,11 +146,6 @@ export default function ReportsScreen() {
     return [...filtered].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
   }, [data?.metrics, metricOrder, metricTrendFilter])
   const hasCustomView = metricOrder !== "default" || metricTrendFilter !== "all"
-
-  const openWebReports = useCallback(async () => {
-    const target = user?.role === "TEACHER" ? "/teacher/reports" : "/studio/reports"
-    await Linking.openURL(toWorkspaceUrl(target))
-  }, [user?.role])
 
   return (
     <View style={styles.screen}>
@@ -313,11 +306,9 @@ export default function ReportsScreen() {
               )}
             </View>
 
-            {canOpenWeb ? (
-              <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => void openWebReports()}>
-                <Text style={styles.actionButtonText}>Open full web reports</Text>
-              </Pressable>
-            ) : null}
+            <View style={styles.sectionCard}>
+              <Text style={styles.emptyText}>Mobile reports are fully available in-app for these key metrics.</Text>
+            </View>
           </>
         ) : (
           <View style={styles.emptyCard}>

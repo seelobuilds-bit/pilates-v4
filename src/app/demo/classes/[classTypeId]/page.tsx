@@ -113,7 +113,11 @@ export default function EditClassTypePage({
     async function fetchData() {
       try {
         const params = new URLSearchParams()
-        if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
+        if (reportPeriod === "today") {
+          const today = new Date().toISOString().slice(0, 10)
+          params.set("startDate", today)
+          params.set("endDate", today)
+        } else if (reportPeriod === CUSTOM_PERIOD_VALUE && customStartDate && customEndDate) {
           params.set("startDate", customStartDate)
           params.set("endDate", customEndDate)
         } else {
@@ -657,6 +661,7 @@ export default function EditClassTypePage({
                       <SelectValue placeholder="Select period" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
                       <SelectItem value="7">Last 7 days</SelectItem>
                       <SelectItem value="30">Last 30 days</SelectItem>
                       <SelectItem value="90">Last 90 days</SelectItem>

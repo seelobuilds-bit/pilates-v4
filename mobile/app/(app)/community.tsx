@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileCommunityMessage, MobileCommunityPlanSummary, MobileCommunityResponse } from "@/src/types/mobile"
 
 function audienceLabel(audience: MobileCommunityPlanSummary["audience"]) {
@@ -161,8 +160,6 @@ export default function CommunityScreen() {
     return emptyText
   }, [data?.messages?.length, emptyText, messageFilter, searchNormalized])
 
-  const webCommunityHref = user?.role === "TEACHER" ? "/teacher/community" : "/studio/community"
-
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -249,15 +246,7 @@ export default function CommunityScreen() {
             ListEmptyComponent={<View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyFilteredText}</Text></View>}
             ListFooterComponent={
               <View style={styles.footerSection}>
-                <Text style={styles.metaText}>Need moderation tools? Use the full web community view.</Text>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: primaryColor }]}
-                  onPress={() => {
-                    void Linking.openURL(toWorkspaceUrl(webCommunityHref))
-                  }}
-                >
-                  <Text style={styles.actionButtonText}>Open Web Community</Text>
-                </Pressable>
+                <Text style={styles.metaText}>Community messaging and plan segmentation are available natively in mobile.</Text>
               </View>
             }
           />

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { getWorkspaceFeatures, toWorkspaceUrl, type WorkspaceFeature } from "@/src/lib/workspace-links"
+import { getWorkspaceFeatures, type WorkspaceFeature } from "@/src/lib/workspace-links"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
 
 const METRIC_LABELS: Record<string, string> = {
@@ -152,7 +152,7 @@ export default function HomeScreen() {
           router.push(action.nativeRoute as never)
           return
         }
-        await Linking.openURL(toWorkspaceUrl(action.href))
+        router.push("/(app)/workspace" as never)
       } finally {
         setOpeningActionId(null)
       }

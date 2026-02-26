@@ -82,6 +82,12 @@ jobs:
       - name: Mobile lint
         run: pnpm --dir mobile lint
 
+      - name: Mobile auth-routing smoke
+        run: pnpm test:smoke:mobile:auth-routing
+
+      - name: Mobile push-routing smoke
+        run: pnpm test:smoke:mobile:routing
+
       - name: Build
         env:
           # Use direct DB for SSR/prerender during CI build to avoid pooler timeouts.

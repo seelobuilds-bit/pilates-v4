@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   FileText,
   Plus,
@@ -18,7 +19,8 @@ import {
   Send,
   CheckCircle,
   XCircle,
-  Download
+  Download,
+  Eye,
 } from "lucide-react"
 
 interface PayRate {
@@ -72,6 +74,7 @@ export default function TeacherInvoicesPage() {
   const [loadingClasses, setLoadingClasses] = useState(false)
   const [creating, setCreating] = useState(false)
   const [submitting, setSubmitting] = useState<string | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
 
   useEffect(() => {
     fetchInvoices()
@@ -213,6 +216,14 @@ export default function TeacherInvoicesPage() {
         return <Badge variant="secondary">{status}</Badge>
     }
   }
+
+  const currency = payRate?.currency || "USD"
+  const formatCurrency = (amount: number, currencyCode: string) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+    }).format(amount || 0)
 
   const csvEscape = (value: string | number | null | undefined) =>
     `"${String(value ?? "").replace(/"/g, '""')}"`
@@ -513,11 +524,13 @@ export default function TeacherInvoicesPage() {
         <TabsContent value="all">
           <InvoiceList 
             invoices={invoices} 
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
+            onViewDetail={setSelectedInvoice}
           />
         </TabsContent>
 
@@ -525,11 +538,13 @@ export default function TeacherInvoicesPage() {
         <TabsContent value="drafts">
           <InvoiceList 
             invoices={draftInvoices} 
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
+            onViewDetail={setSelectedInvoice}
           />
         </TabsContent>
 
@@ -537,11 +552,13 @@ export default function TeacherInvoicesPage() {
         <TabsContent value="pending">
           <InvoiceList 
             invoices={pendingInvoices} 
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
+            onViewDetail={setSelectedInvoice}
           />
         </TabsContent>
 
@@ -549,14 +566,112 @@ export default function TeacherInvoicesPage() {
         <TabsContent value="paid">
           <InvoiceList 
             invoices={paidInvoices} 
+            currency={currency}
             getStatusBadge={getStatusBadge}
             onDownload={downloadInvoice}
             onSubmit={submitInvoice}
             onDelete={deleteInvoice}
             submitting={submitting}
+            onViewDetail={setSelectedInvoice}
           />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={Boolean(selectedInvoice)} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Invoice Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedInvoice && (
+            <div className="space-y-5">
+              <div className="rounded-lg bg-gradient-to-r from-violet-600 to-violet-500 p-5 text-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedInvoice.invoiceNumber}</h3>
+                    <p className="mt-1 text-sm text-violet-100">
+                      {new Date(selectedInvoice.periodStart).toLocaleDateString()} - {new Date(selectedInvoice.periodEnd).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>{getStatusBadge(selectedInvoice.status)}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+                <div>
+                  <p className="text-gray-500">Studio</p>
+                  <p className="font-medium text-gray-900">{selectedInvoice.studio.name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Created</p>
+                  <p className="font-medium text-gray-900">{new Date(selectedInvoice.createdAt).toLocaleDateString()}</p>
+                </div>
+                {selectedInvoice.sentAt && (
+                  <div>
+                    <p className="text-gray-500">Sent</p>
+                    <p className="font-medium text-gray-900">{new Date(selectedInvoice.sentAt).toLocaleDateString()}</p>
+                  </div>
+                )}
+                {selectedInvoice.paidAt && (
+                  <div>
+                    <p className="text-gray-500">Paid</p>
+                    <p className="font-medium text-gray-900">{new Date(selectedInvoice.paidAt).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-gray-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Description</th>
+                      <th className="px-3 py-2 text-center">Qty</th>
+                      <th className="px-3 py-2 text-right">Rate</th>
+                      <th className="px-3 py-2 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoice.lineItems.map((item, index) => (
+                      <tr key={`${item.description}-${index}`} className="border-t border-gray-100">
+                        <td className="px-3 py-2 text-gray-900">{item.description}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{item.quantity}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{formatCurrency(item.rate, currency)}</td>
+                        <td className="px-3 py-2 text-right font-medium text-gray-900">{formatCurrency(item.amount, currency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-gray-100 p-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Subtotal</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(selectedInvoice.subtotal, currency)}</span>
+                </div>
+                {selectedInvoice.tax > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Tax ({selectedInvoice.taxRate}%)</span>
+                    <span className="font-medium text-gray-900">{formatCurrency(selectedInvoice.tax, currency)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold">
+                  <span>Total</span>
+                  <span className="text-violet-600">{formatCurrency(selectedInvoice.total, currency)}</span>
+                </div>
+              </div>
+
+              {selectedInvoice.lineItems.length > 0 && (
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => downloadInvoice(selectedInvoice)}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download CSV
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -564,18 +679,22 @@ export default function TeacherInvoicesPage() {
 // Invoice List Component
 function InvoiceList({ 
   invoices, 
+  currency,
   getStatusBadge,
   onDownload,
   onSubmit,
   onDelete,
-  submitting
+  submitting,
+  onViewDetail
 }: { 
   invoices: Invoice[]
+  currency: string
   getStatusBadge: (status: string) => React.ReactNode
   onDownload: (invoice: Invoice) => void
   onSubmit: (id: string) => void
   onDelete: (id: string) => void
   submitting: string | null
+  onViewDetail: (invoice: Invoice) => void
 }) {
   if (invoices.length === 0) {
     return (
@@ -623,13 +742,28 @@ function InvoiceList({
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-4">
                 <div className="text-left sm:text-right">
-                  <p className="font-bold text-lg text-gray-900">${invoice.total.toFixed(2)}</p>
+                  <p className="font-bold text-lg text-gray-900">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency,
+                      minimumFractionDigits: 2,
+                    }).format(invoice.total || 0)}
+                  </p>
                   <p className="text-xs text-gray-500">
                     {invoice.lineItems.length} classes
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onViewDetail(invoice)}
+                    className="w-full sm:w-auto"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -680,7 +814,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
+import { runDbQueries } from "@/lib/db-query-mode"
 import { getSession } from "@/lib/session"
 import { DashboardView } from "@/components/studio"
 import type { DashboardData } from "@/components/studio"
@@ -138,11 +139,11 @@ export default async function StudioDashboardPage({
     locationsCount,
     teachersCount,
     classTypesCount
-  ] = await Promise.all([
-    db.client.count({ where: { studioId, isActive: true } }),
-    db.client.count({ where: { studioId } }),
-    db.booking.count({ where: { studioId } }),
-    db.booking.count({
+  ] = await runDbQueries([
+    () => db.client.count({ where: { studioId, isActive: true } }),
+    () => db.client.count({ where: { studioId } }),
+    () => db.booking.count({ where: { studioId } }),
+    () => db.booking.count({
       where: {
         studioId,
         status: { not: "CANCELLED" },
@@ -154,13 +155,13 @@ export default async function StudioDashboardPage({
         },
       }
     }),
-    db.booking.count({
+    () => db.booking.count({
       where: {
         studioId,
         createdAt: { gte: startOfToday, lte: endOfToday }
       }
     }),
-    db.client.count({
+    () => db.client.count({
       where: {
         studioId,
         createdAt: {
@@ -169,13 +170,13 @@ export default async function StudioDashboardPage({
         }
       }
     }),
-    db.location.count({ where: { studioId, isActive: true } }),
-    db.teacher.count({ where: { studioId, isActive: true } }),
-    db.classType.count({ where: { studioId } })
+    () => db.location.count({ where: { studioId, isActive: true } }),
+    () => db.teacher.count({ where: { studioId, isActive: true } }),
+    () => db.classType.count({ where: { studioId } })
   ])
 
-  const [upcomingClasses, todayClasses, recentBookings, classesInPeriod] = await Promise.all([
-    db.classSession.findMany({
+  const [upcomingClasses, todayClasses, recentBookings, classesInPeriod] = await runDbQueries([
+    () => db.classSession.findMany({
       where: { 
         studioId,
         startTime: { gte: now }
@@ -212,7 +213,7 @@ export default async function StudioDashboardPage({
       orderBy: { startTime: "asc" },
       take: 5
     }),
-    db.classSession.findMany({
+    () => db.classSession.findMany({
       where: {
         studioId,
         startTime: { gte: startOfToday, lte: endOfToday }
@@ -248,7 +249,7 @@ export default async function StudioDashboardPage({
       },
       orderBy: { startTime: "asc" }
     }),
-    db.booking.findMany({
+    () => db.booking.findMany({
       where: { studioId },
       select: {
         id: true,
@@ -278,7 +279,7 @@ export default async function StudioDashboardPage({
       orderBy: { createdAt: "desc" },
       take: 8
     }),
-    db.classSession.findMany({
+    () => db.classSession.findMany({
       where: {
         studioId,
         startTime: {
@@ -346,8 +347,8 @@ export default async function StudioDashboardPage({
   const previousPeriodStart = new Date(selectedRange.startDate.getTime() - periodDuration)
   const previousPeriodEnd = selectedRange.startDate
 
-  const [thisPeriodRevenueBookings, previousPeriodRevenueBookings] = await Promise.all([
-    db.booking.findMany({
+  const [thisPeriodRevenueBookings, previousPeriodRevenueBookings] = await runDbQueries([
+    () => db.booking.findMany({
       where: {
         studioId,
         status: { not: "CANCELLED" },
@@ -364,7 +365,7 @@ export default async function StudioDashboardPage({
         }
       }
     }),
-    db.booking.findMany({
+    () => db.booking.findMany({
       where: {
         studioId,
         status: { not: "CANCELLED" },

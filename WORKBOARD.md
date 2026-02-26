@@ -3,6 +3,28 @@
 ## Objective
 Ship high-impact improvements in parallel without conflicts.
 
+## Finish Readiness Checklist (Autonomous Run)
+| ID | Area | Requirement | Acceptance Criteria | Status |
+|---|---|---|---|---|
+| F-001 | Web Dashboard | Date-range controls feel responsive and obvious | Range changes show immediate pending state and complete in one interaction | Completed (Batch 1) |
+| F-002 | Web Reports | Date-range changes and refresh are reliable | Changing period/custom range always triggers refetch; refresh never appears no-op | Completed (Batch 1) |
+| F-003 | Web Reports API | Prevent intermittent 500s under load/timeouts | API returns bounded payload/fallback safely; client gets stable non-crashing response | Completed (Batch 1) |
+| F-004 | Web Reports UX | Clarify churn calculation in product UI | Retention panel explicitly states formula/source; no ambiguity | Completed (Batch 1) |
+| F-005 | Web Reports UX | Add/verify `Today` range option across reporting | `Today` available and functional on main reports + relevant entity reports | Completed (Batch 1) |
+| F-006 | Web Performance | Reduce perceived slowness for HQ + Studio analytics/reporting | Queries trimmed or parallelized; client loading states and error recovery hardened | Completed (Batch 4) |
+| F-007 | Leaderboards | Participant totals are globally coherent (all teachers/studios) | Totals reflect active, eligible participants platform-wide with consistent counts | Completed (Batch 4) |
+| F-008 | Leaderboards | Period lifecycle controls complete | Admin can start, finalize early, and override periods without stale cycle copy | Completed (Batch 4) |
+| F-009 | Demo Parity | `/demo` mirrors current studio behavior | Shared components/routes eliminate drift for core surfaces | In Progress |
+| F-010 | Teacher/Admin Parity | Congruent shared surfaces between teacher and owner | Schedule/inbox/reports patterns align where feature scope overlaps | Todo |
+| F-011 | Class Flows | Admin training request ownership boundaries | Request training action available in admin where intended, hidden on teacher where not intended | Completed (Batch 4) |
+| F-012 | Billing UX | Teacher invoice detail parity with studio billing UX | Teacher can open invoice details, view breakdown, and export where allowed | Completed (Batch 4) |
+| F-013 | Content/Vault | Subscription attribution choice fully explicit | Module content can target at-home/teachers/studio/all with visible tags | Completed (Batch 4) |
+| F-014 | Mobile App UX | Mobile screens align with product branding/system | Shared tokens/components used consistently; no clipped or broken nav controls | Completed (Batch 2) |
+| F-015 | Mobile App Coverage | Critical owner/teacher/client flows are native-first | Core flows avoid unnecessary web handoff when native route exists | Completed (Batch 2) |
+| F-016 | Mobile Reliability | Session, deep-link, notification flows remain stable | Auth expiry, route restore, and push tap routing pass regression checks | Completed (Batch 3) |
+| F-017 | Data Integrity | Reporting/tracking consistency remains enforced | Smoke tests cover revenue/bookings/marketing/social/leaderboards invariants | Todo |
+| F-018 | Release Gates | Repeatable pre-release quality gate | `typecheck`, `lint`, `build`, and smoke checks pass from clean main | Completed (Batch 1) |
+
 ## Active Tasks
 | Task | Owner | Branch | Scope | Status | PR |
 |---|---|---|---|---|---|
@@ -160,10 +182,18 @@ Ship high-impact improvements in parallel without conflicts.
 | T-257 Marketing sent-to-booked attribution parity | codex-main | codex/t-257-report-email-booking-attribution | Align “booked from email” metrics to unique converted clients (not repeated bookings) for report truthfulness and campaign table parity | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/176 |
 | T-258 Studio content surface smoke checks | codex-main | codex/t-258-studio-content-surface-smoke | Add smoke test coverage for class-flows, social marketing training, and vault owner pages/APIs with authenticated checks and explicit anonymous guard assertions | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/177 |
 | T-259 HQ settings save persistence | codex-main | codex/t-259-hq-settings-save-persistence | Make HQ settings Save Changes functional by persisting platform/security/notification toggles client-side with load-on-open and save feedback | Merged | https://github.com/seelobuilds-bit/pilates-v4/pull/178 |
-| T-260 Dashboard mobile date-filter fallback controls | codex-main | codex/t-260-dashboard-mobile-date-filter-fallback | Add mobile-friendly quick range controls (with custom-range entry) on studio dashboard so date filtering remains usable even if select popover behavior is unreliable on phones | In Progress | N/A |
+| T-260 Dashboard mobile date-filter fallback controls | codex-main | codex/t-260-dashboard-mobile-date-filter-fallback | Add mobile-friendly quick range controls (with custom-range entry) on studio dashboard so date filtering remains usable even if select popover behavior is unreliable on phones | Merged | N/A (direct main push) |
+| T-261 Mobile marketing native-create + web-handoff removal | codex-main | codex/t-261-mobile-native-marketing-create | Add owner-native campaign/automation creation in mobile marketing and remove non-essential web handoff CTAs from mobile reports/community/social/vault for native-first flow completion | Merged | N/A (direct main push) |
+| T-262 Mobile API smoke suite (owner/teacher/client) | codex-main | codex/t-262-mobile-api-smoke-suite | Add repeatable mobile API smoke script and npm command with role-based coverage + auth boundary checks, gated by env credentials | Merged | N/A (direct main push) |
+| T-263 Inbox query performance batch optimization | codex-main | codex/t-263-inbox-query-batch-optimization | Remove teacher/HQ inbox N+1 query patterns by batching message aggregation and latest message resolution per entity | Merged | N/A (direct main push) |
+| T-264 Leaderboards participant-count consistency pass | codex-main | codex/t-264-leaderboard-participant-consistency | Align leaderboard participant totals to eligible participant scope and remove misleading fallback cycle copy when no active period exists | Merged | N/A (direct main push) |
+| T-265 Mobile auth + native navigation reliability polish | codex-main | codex/t-265-mobile-auth-navigation-polish | Add optional login subdomain override for test builds, remove non-essential core-tab web fallbacks, and refresh profile screen styling for production polish | Merged | N/A (direct main push) |
+| T-266 Mobile push route regression smoke | codex-main | codex/t-266-mobile-push-routing-smoke | Extract push payload route mapping into a pure module and add deterministic smoke checks so notification deep-link routing is validated without Expo runtime | Merged | N/A (direct main push) |
+| T-267 Mobile auth-route regression smoke + CI gate | codex-main | codex/t-267-mobile-auth-routing-smoke | Extract auth/deep-link route parsing to pure module and add deterministic smoke checks + CI gate for post-login navigation safety | Merged | N/A (direct main push) |
+| T-268 Mobile studio branding color selector | codex-main | codex/t-268-mobile-branding-color-selector | Add owner-adjustable studio accent color in mobile profile, persist via owner-only mobile API, and apply runtime brand color/title across app surfaces | Merged | N/A (direct main push) |
 
 ## Merge Order
-1. All queued mobile slices merged through T-245
+1. All queued mobile slices merged through T-268
 
 ## Rules (Mandatory)
 1. One task = one branch = one PR.

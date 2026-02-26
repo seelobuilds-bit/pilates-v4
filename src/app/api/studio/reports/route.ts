@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { runDbQueries } from "@/lib/db-query-mode"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
@@ -9,31 +10,6 @@ const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED",
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
 const DAY_IN_MS = 1000 * 60 * 60 * 24
-
-const LOW_POOL_MODE = (() => {
-  const raw = process.env.DATABASE_URL
-  if (!raw) return false
-  try {
-    const parsed = new URL(raw)
-    const limit = Number(parsed.searchParams.get("connection_limit"))
-    return Number.isFinite(limit) && limit > 0 && limit <= 1
-  } catch {
-    return false
-  }
-})()
-
-async function runQueries<T extends unknown[]>(
-  queries: { [K in keyof T]: () => Promise<T[K]> }
-): Promise<T> {
-  if (!LOW_POOL_MODE) {
-    return Promise.all(queries.map((query) => query())) as Promise<T>
-  }
-  const results: unknown[] = []
-  for (const query of queries) {
-    results.push(await query())
-  }
-  return results as T
-}
 
 type ReportRange = {
   days: number
@@ -88,7 +64,13 @@ function resolveReportRange(searchParams: URLSearchParams): ReportRange {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getSession()
+  let session: Awaited<ReturnType<typeof getSession>>
+  try {
+    session = await getSession()
+  } catch (error) {
+    console.error("Failed to resolve session for reports:", error)
+    return NextResponse.json({ error: "Session unavailable" }, { status: 503 })
+  }
 
   if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -104,7 +86,7 @@ export async function GET(request: NextRequest) {
     monthWindowStart.setDate(1)
     monthWindowStart.setHours(0, 0, 0, 0)
 
-  const [bookings, previousBookings, monthlyBookings, classSessions] = await runQueries([
+  const [bookings, previousBookings, monthlyBookings, classSessions] = await runDbQueries([
     () => db.booking.findMany({
       where: {
         studioId,
@@ -247,9 +229,9 @@ export async function GET(request: NextRequest) {
     studioTeachers,
     studioClients,
     cancelledBookingsInPeriod
-  ] = await Promise.all([
-    db.client.count({ where: { studioId } }),
-    db.client.count({
+  ] = await runDbQueries([
+    () => db.client.count({ where: { studioId } }),
+    () => db.client.count({
       where: {
         studioId,
         createdAt: {
@@ -258,20 +240,20 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.client.count({
+    () => db.client.count({
       where: {
         studioId,
         isActive: true
       }
     }),
-    db.client.count({
+    () => db.client.count({
       where: {
         studioId,
         isActive: false
       }
     }),
-    db.classSession.groupBy({
-      by: ["teacherId"],
+    () => db.classSession.groupBy({
+      by: ["teacherId"] as const,
       where: {
         studioId,
         startTime: {
@@ -281,9 +263,12 @@ export async function GET(request: NextRequest) {
       },
       _count: {
         teacherId: true
+      },
+      orderBy: {
+        teacherId: "asc"
       }
     }),
-    db.teacher.findMany({
+    () => db.teacher.findMany({
       where: {
         studioId
       },
@@ -299,7 +284,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    db.client.findMany({
+    () => db.client.findMany({
       where: {
         studioId
       },
@@ -313,7 +298,7 @@ export async function GET(request: NextRequest) {
         createdAt: true
       }
     }),
-    db.booking.findMany({
+    () => db.booking.findMany({
       where: {
         studioId,
         status: "CANCELLED",
@@ -330,7 +315,7 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const [periodMessages, previousPeriodMessages, reminderAutomations, winbackAutomations] = await runQueries([
+  const [periodMessages, previousPeriodMessages, reminderAutomations, winbackAutomations] = await runDbQueries([
     () => db.message.findMany({
       where: {
         studioId,
@@ -391,7 +376,7 @@ export async function GET(request: NextRequest) {
     })
   ])
 
-  const [activeSocialFlows, totalSocialTriggered, totalSocialResponded, totalSocialBooked] = await runQueries([
+  const [activeSocialFlows, totalSocialTriggered, totalSocialResponded, totalSocialBooked] = await runDbQueries([
     () => db.socialMediaFlow.count({
       where: {
         isActive: true,
@@ -802,7 +787,16 @@ export async function GET(request: NextRequest) {
   const socialConversionRate = ratioPercentage(totalSocialBooked, totalSocialTriggered, 1)
 
   const previousClassCountByTeacherId = new Map(
-    previousClassCounts.map((row) => [row.teacherId, row._count.teacherId])
+    previousClassCounts.map((row) => {
+      const count =
+        typeof row._count === "object" &&
+        row._count !== null &&
+        "teacherId" in row._count &&
+        typeof row._count.teacherId === "number"
+          ? row._count.teacherId
+          : 0
+      return [row.teacherId, count] as const
+    })
   )
   const teacherMetaById = new Map(
     studioTeachers.map((teacher) => [
@@ -1153,7 +1147,7 @@ export async function GET(request: NextRequest) {
     console.error("Failed to load full reports payload:", error)
 
     try {
-      const [totalClients, activeClients, churnedClients, newClients] = await runQueries([
+      const [totalClients, activeClients, churnedClients, newClients] = await runDbQueries([
         () => db.client.count({ where: { studioId } }),
         () => db.client.count({ where: { studioId, isActive: true } }),
         () => db.client.count({ where: { studioId, isActive: false } }),

@@ -16,8 +16,6 @@ import {
   CheckCircle,
   Clock,
   Star,
-  GraduationCap,
-  Award,
   Download,
   ArrowLeft,
 } from "lucide-react"
@@ -51,19 +49,11 @@ interface Progress {
   [key: string]: { isCompleted: boolean; progressPercent: number }
 }
 
-interface TrainingRequest {
-  id: string
-  title: string
-  status: string
-  createdAt: string
-}
-
 export default function TeacherClassFlowsPage() {
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
   const [featured, setFeatured] = useState<Content[]>([])
   const [progress, setProgress] = useState<Progress>({})
-  const [myRequests, setMyRequests] = useState<TrainingRequest[]>([])
   const [selectedContent, setSelectedContent] = useState<Content | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
@@ -83,22 +73,9 @@ export default function TeacherClassFlowsPage() {
     setLoading(false)
   }, [])
 
-  const fetchMyRequests = useCallback(async () => {
-    try {
-      const res = await fetch("/api/class-flows/training-requests")
-      if (res.ok) {
-        const data = await res.json()
-        setMyRequests(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch requests:", error)
-    }
-  }, [])
-
   useEffect(() => {
     void fetchData()
-    void fetchMyRequests()
-  }, [fetchData, fetchMyRequests])
+  }, [fetchData])
 
   async function markComplete(contentId: string) {
     try {
@@ -340,10 +317,6 @@ export default function TeacherClassFlowsPage() {
             <BookOpen className="h-4 w-4 mr-2" />
             Content Library
           </TabsTrigger>
-          <TabsTrigger value="training" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
-            <GraduationCap className="h-4 w-4 mr-2" />
-            Expert Training
-          </TabsTrigger>
         </TabsList>
 
         {/* Content Library */}
@@ -499,69 +472,10 @@ export default function TeacherClassFlowsPage() {
           )}
         </TabsContent>
 
-        {/* Expert Training Tab */}
-        <TabsContent value="training" className="space-y-6">
-          {/* Info Card */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <Award className="h-6 w-6 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Expert On-Site Training</h3>
-                  <p className="text-gray-600 mb-4">
-                    Take your skills to the next level with personalized training from our expert instructors. 
-                    They&apos;ll come to your studio and provide hands-on guidance for you and your team.
-                  </p>
-                  <Badge className="bg-violet-100 text-violet-700">
-                    Requests are managed by studio admins
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* My Requests */}
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">My Training Requests</h3>
-              {myRequests.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <GraduationCap className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">You haven&apos;t requested any training sessions yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {myRequests.map(request => (
-                    <div key={request.id} className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{request.title}</h4>
-                        <p className="text-sm text-gray-500">
-                          Requested {new Date(request.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge className={`w-fit ${
-                        request.status === "PENDING" ? "bg-amber-100 text-amber-700" :
-                        request.status === "APPROVED" ? "bg-blue-100 text-blue-700" :
-                        request.status === "SCHEDULED" ? "bg-violet-100 text-violet-700" :
-                        request.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
-                        "bg-gray-100 text-gray-700"
-                      }`}>
-                        {request.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )
 }
-
 
 
 

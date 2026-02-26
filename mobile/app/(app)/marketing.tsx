@@ -1,14 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { toWorkspaceUrl } from "@/src/lib/workspace-links"
-import type { MobileMarketingAutomationSummary, MobileMarketingCampaignSummary, MobileMarketingResponse } from "@/src/types/mobile"
+import type {
+  MobileMarketingAutomationSummary,
+  MobileMarketingCampaignSummary,
+  MobileMarketingChannel,
+  MobileMarketingResponse,
+  MobileMarketingTrigger,
+} from "@/src/types/mobile"
 
 const CAMPAIGN_STATUS_OPTIONS = ["DRAFT", "SCHEDULED", "SENDING", "SENT", "PAUSED", "CANCELLED"] as const
 const AUTOMATION_STATUS_OPTIONS = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"] as const
+const CHANNEL_OPTIONS: MobileMarketingChannel[] = ["EMAIL", "SMS"]
+const TRIGGER_OPTIONS: { value: MobileMarketingTrigger; label: string }[] = [
+  { value: "WELCOME", label: "Welcome" },
+  { value: "CLASS_REMINDER", label: "Class Reminder" },
+  { value: "CLASS_FOLLOWUP", label: "Class Follow-up" },
+  { value: "BOOKING_CONFIRMED", label: "Booking Confirmed" },
+  { value: "BOOKING_CANCELLED", label: "Booking Cancelled" },
+  { value: "CLIENT_INACTIVE", label: "Client Inactive" },
+  { value: "BIRTHDAY", label: "Birthday" },
+  { value: "MEMBERSHIP_EXPIRING", label: "Membership Expiring" },
+]
 
 function formatDate(value: string | null) {
   if (!value) return "-"
@@ -133,6 +149,23 @@ export default function MarketingScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [createMode, setCreateMode] = useState<"none" | "campaign" | "automation">("none")
+  const [campaignDraft, setCampaignDraft] = useState({
+    name: "",
+    channel: "EMAIL" as MobileMarketingChannel,
+    subject: "",
+    body: "",
+  })
+  const [automationDraft, setAutomationDraft] = useState({
+    name: "",
+    trigger: "WELCOME" as MobileMarketingTrigger,
+    channel: "EMAIL" as MobileMarketingChannel,
+    subject: "",
+    body: "",
+    delayMinutes: "0",
+    stopOnBooking: true,
+  })
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER"
@@ -229,6 +262,102 @@ export default function MarketingScreen() {
     },
     [loadMarketing, token]
   )
+
+  const handleCreateCampaign = useCallback(async () => {
+    if (!token) return
+    const name = campaignDraft.name.trim()
+    const body = campaignDraft.body.trim()
+    const subject = campaignDraft.subject.trim()
+    if (!name || !body) {
+      setError("Campaign name and body are required.")
+      return
+    }
+    if (campaignDraft.channel === "EMAIL" && !subject) {
+      setError("Email campaigns require a subject.")
+      return
+    }
+
+    setCreating(true)
+    setError(null)
+    try {
+      await mobileApi.marketingCreateCampaign(token, {
+        name,
+        channel: campaignDraft.channel,
+        subject: subject || null,
+        body,
+      })
+      setCampaignDraft({
+        name: "",
+        channel: "EMAIL",
+        subject: "",
+        body: "",
+      })
+      setCreateMode("none")
+      await loadMarketing(true)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create campaign"
+      setError(message)
+    } finally {
+      setCreating(false)
+    }
+  }, [campaignDraft.body, campaignDraft.channel, campaignDraft.name, campaignDraft.subject, loadMarketing, token])
+
+  const handleCreateAutomation = useCallback(async () => {
+    if (!token) return
+    const name = automationDraft.name.trim()
+    const body = automationDraft.body.trim()
+    const subject = automationDraft.subject.trim()
+    const parsedDelay = Number(automationDraft.delayMinutes)
+    const delayMinutes = Number.isFinite(parsedDelay) ? Math.max(0, Math.round(parsedDelay)) : 0
+    if (!name || !body) {
+      setError("Automation name and message are required.")
+      return
+    }
+    if (automationDraft.channel === "EMAIL" && !subject) {
+      setError("Email automations require a subject.")
+      return
+    }
+
+    setCreating(true)
+    setError(null)
+    try {
+      await mobileApi.marketingCreateAutomation(token, {
+        name,
+        trigger: automationDraft.trigger,
+        channel: automationDraft.channel,
+        subject: subject || null,
+        body,
+        delayMinutes,
+        stopOnBooking: automationDraft.stopOnBooking,
+      })
+      setAutomationDraft({
+        name: "",
+        trigger: "WELCOME",
+        channel: "EMAIL",
+        subject: "",
+        body: "",
+        delayMinutes: "0",
+        stopOnBooking: true,
+      })
+      setCreateMode("none")
+      await loadMarketing(true)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create automation"
+      setError(message)
+    } finally {
+      setCreating(false)
+    }
+  }, [
+    automationDraft.body,
+    automationDraft.channel,
+    automationDraft.delayMinutes,
+    automationDraft.name,
+    automationDraft.stopOnBooking,
+    automationDraft.subject,
+    automationDraft.trigger,
+    loadMarketing,
+    token,
+  ])
 
   const campaignStatusCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: data?.campaigns.length ?? 0 }
@@ -387,6 +516,224 @@ export default function MarketingScreen() {
                 </View>
               </View>
 
+              <View style={styles.footerSection}>
+                <Text style={styles.sectionTitle}>Create In App</Text>
+                <View style={styles.filterRow}>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      createMode === "campaign" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setCreateMode((prev) => (prev === "campaign" ? "none" : "campaign"))}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        createMode === "campaign" && { color: primaryColor, fontWeight: "700" },
+                      ]}
+                    >
+                      New Campaign
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.filterChip,
+                      createMode === "automation" && {
+                        borderColor: primaryColor,
+                        backgroundColor: withOpacity(primaryColor, 0.14),
+                      },
+                    ]}
+                    onPress={() => setCreateMode((prev) => (prev === "automation" ? "none" : "automation"))}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        createMode === "automation" && { color: primaryColor, fontWeight: "700" },
+                      ]}
+                    >
+                      New Automation
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {createMode === "campaign" ? (
+                  <View style={styles.formWrap}>
+                    <TextInput
+                      value={campaignDraft.name}
+                      onChangeText={(value) => setCampaignDraft((prev) => ({ ...prev, name: value }))}
+                      placeholder="Campaign name"
+                      style={styles.searchInput}
+                    />
+                    <View style={styles.filterRow}>
+                      {CHANNEL_OPTIONS.map((option) => (
+                        <Pressable
+                          key={`campaign-${option}`}
+                          style={[
+                            styles.filterChip,
+                            campaignDraft.channel === option && {
+                              borderColor: primaryColor,
+                              backgroundColor: withOpacity(primaryColor, 0.14),
+                            },
+                          ]}
+                          onPress={() => setCampaignDraft((prev) => ({ ...prev, channel: option }))}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              campaignDraft.channel === option && { color: primaryColor, fontWeight: "700" },
+                            ]}
+                          >
+                            {option}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    {campaignDraft.channel === "EMAIL" ? (
+                      <TextInput
+                        value={campaignDraft.subject}
+                        onChangeText={(value) => setCampaignDraft((prev) => ({ ...prev, subject: value }))}
+                        placeholder="Email subject"
+                        style={styles.searchInput}
+                      />
+                    ) : null}
+                    <TextInput
+                      value={campaignDraft.body}
+                      onChangeText={(value) => setCampaignDraft((prev) => ({ ...prev, body: value }))}
+                      placeholder="Message body"
+                      style={[styles.searchInput, styles.multilineInput]}
+                      multiline
+                    />
+                    <View style={styles.buttonRow}>
+                      <Pressable style={styles.detailsButton} onPress={() => setCreateMode("none")} disabled={creating}>
+                        <Text style={styles.detailsButtonText}>Cancel</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.actionButton, { backgroundColor: primaryColor }, creating && styles.actionButtonDisabled]}
+                        onPress={() => void handleCreateCampaign()}
+                        disabled={creating}
+                      >
+                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save Campaign Draft"}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
+
+                {createMode === "automation" ? (
+                  <View style={styles.formWrap}>
+                    <TextInput
+                      value={automationDraft.name}
+                      onChangeText={(value) => setAutomationDraft((prev) => ({ ...prev, name: value }))}
+                      placeholder="Automation name"
+                      style={styles.searchInput}
+                    />
+                    <View style={styles.filterRow}>
+                      {TRIGGER_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option.value}
+                          style={[
+                            styles.filterChip,
+                            automationDraft.trigger === option.value && {
+                              borderColor: primaryColor,
+                              backgroundColor: withOpacity(primaryColor, 0.14),
+                            },
+                          ]}
+                          onPress={() => setAutomationDraft((prev) => ({ ...prev, trigger: option.value }))}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              automationDraft.trigger === option.value && { color: primaryColor, fontWeight: "700" },
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <View style={styles.filterRow}>
+                      {CHANNEL_OPTIONS.map((option) => (
+                        <Pressable
+                          key={`automation-${option}`}
+                          style={[
+                            styles.filterChip,
+                            automationDraft.channel === option && {
+                              borderColor: primaryColor,
+                              backgroundColor: withOpacity(primaryColor, 0.14),
+                            },
+                          ]}
+                          onPress={() => setAutomationDraft((prev) => ({ ...prev, channel: option }))}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              automationDraft.channel === option && { color: primaryColor, fontWeight: "700" },
+                            ]}
+                          >
+                            {option}
+                          </Text>
+                        </Pressable>
+                      ))}
+                      <Pressable
+                        style={[
+                          styles.filterChip,
+                          automationDraft.stopOnBooking && {
+                            borderColor: primaryColor,
+                            backgroundColor: withOpacity(primaryColor, 0.14),
+                          },
+                        ]}
+                        onPress={() => setAutomationDraft((prev) => ({ ...prev, stopOnBooking: !prev.stopOnBooking }))}
+                      >
+                        <Text
+                          style={[
+                            styles.filterChipText,
+                            automationDraft.stopOnBooking && { color: primaryColor, fontWeight: "700" },
+                          ]}
+                        >
+                          Stop On Booking
+                        </Text>
+                      </Pressable>
+                    </View>
+                    {automationDraft.channel === "EMAIL" ? (
+                      <TextInput
+                        value={automationDraft.subject}
+                        onChangeText={(value) => setAutomationDraft((prev) => ({ ...prev, subject: value }))}
+                        placeholder="Email subject"
+                        style={styles.searchInput}
+                      />
+                    ) : null}
+                    <TextInput
+                      value={automationDraft.body}
+                      onChangeText={(value) => setAutomationDraft((prev) => ({ ...prev, body: value }))}
+                      placeholder="First step message"
+                      style={[styles.searchInput, styles.multilineInput]}
+                      multiline
+                    />
+                    <TextInput
+                      value={automationDraft.delayMinutes}
+                      onChangeText={(value) => setAutomationDraft((prev) => ({ ...prev, delayMinutes: value }))}
+                      placeholder="Delay minutes (0+)"
+                      style={styles.searchInput}
+                      keyboardType="numeric"
+                    />
+                    <View style={styles.buttonRow}>
+                      <Pressable style={styles.detailsButton} onPress={() => setCreateMode("none")} disabled={creating}>
+                        <Text style={styles.detailsButtonText}>Cancel</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.actionButton, { backgroundColor: primaryColor }, creating && styles.actionButtonDisabled]}
+                        onPress={() => void handleCreateAutomation()}
+                        disabled={creating}
+                      >
+                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save Automation Draft"}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+
               <View style={styles.sectionWrap}>
                 <Text style={styles.sectionTitle}>Recent Campaigns</Text>
                 {filteredCampaigns.length > 0 ? (
@@ -430,15 +777,7 @@ export default function MarketingScreen() {
           )}
 
           <View style={styles.footerSection}>
-            <Text style={styles.metaText}>Need full editing and campaign builder controls? Open Marketing on web.</Text>
-            <Pressable
-              style={[styles.actionButton, { backgroundColor: primaryColor }]}
-              onPress={() => {
-                void Linking.openURL(toWorkspaceUrl("/studio/marketing"))
-              }}
-            >
-              <Text style={styles.actionButtonText}>Open Web Marketing</Text>
-            </Pressable>
+            <Text style={styles.metaText}>Campaign and automation drafts can now be created directly from mobile.</Text>
           </View>
         </ScrollView>
       )}
@@ -575,6 +914,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   detailsButton: {
+    flex: 1,
     marginTop: 2,
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
@@ -613,6 +953,17 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
+  formWrap: {
+    gap: 8,
+  },
+  multilineInput: {
+    minHeight: 92,
+    textAlignVertical: "top",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
   errorText: {
     color: mobileTheme.colors.danger,
   },
@@ -628,10 +979,14 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textSubtle,
   },
   actionButton: {
+    flex: 1,
     borderRadius: mobileTheme.radius.lg,
     paddingVertical: 11,
     alignItems: "center",
     justifyContent: "center",
+  },
+  actionButtonDisabled: {
+    opacity: 0.65,
   },
   actionButtonText: {
     color: "#fff",

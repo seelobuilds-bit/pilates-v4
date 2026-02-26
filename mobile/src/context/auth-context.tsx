@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { mobileApi, setMobileApiUnauthorizedHandler } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 import { registerForPushNotificationsAsync } from "@/src/lib/push"
+import { setStudioRuntimePrimaryColor } from "@/src/lib/theme"
 import type { MobileBootstrapResponse, MobilePushCategory, MobileSessionUser } from "@/src/types/mobile"
 
 const SESSION_TOKEN_KEY = "current_mobile_session_token"
@@ -17,7 +18,7 @@ interface AuthContextValue {
   bootstrap: MobileBootstrapResponse | null
   pushEnabled: boolean
   pushCategories: MobilePushCategory[]
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string, studioSubdomainOverride?: string) => Promise<void>
   signOut: () => Promise<void>
   refreshBootstrap: () => Promise<void>
   updatePushEnabled: (next: boolean) => Promise<void>
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null)
     setUser(null)
     setBootstrap(null)
+    setStudioRuntimePrimaryColor(null)
     registeredPushTokenRef.current = null
     registeredPushSignatureRef.current = null
     await persistToken(null)
@@ -88,15 +90,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshBootstrap = useCallback(async () => {
     if (!token) {
       setBootstrap(null)
+      setStudioRuntimePrimaryColor(user?.studio?.primaryColor || null)
       return
     }
     try {
       const nextBootstrap = await mobileApi.bootstrap(token)
       setBootstrap(nextBootstrap)
+      setStudioRuntimePrimaryColor(nextBootstrap.studio.primaryColor || user?.studio?.primaryColor || null)
     } catch {
       // Keep the last known bootstrap; auth handler will clear session on 401.
     }
-  }, [token])
+  }, [token, user?.studio?.primaryColor])
 
   const signOut = useCallback(async () => {
     const currentToken = token
@@ -200,16 +204,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const profile = await mobileApi.me(sessionToken)
     setToken(sessionToken)
     setUser(profile)
+    setStudioRuntimePrimaryColor(profile.studio.primaryColor || null)
     try {
       const nextBootstrap = await mobileApi.bootstrap(sessionToken)
       setBootstrap(nextBootstrap)
+      setStudioRuntimePrimaryColor(nextBootstrap.studio.primaryColor || profile.studio.primaryColor || null)
     } catch {
       setBootstrap(null)
     }
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const studioSubdomain = mobileConfig.studioSubdomain
+  const signIn = useCallback(async (email: string, password: string, studioSubdomainOverride?: string) => {
+    const studioSubdomain = String(studioSubdomainOverride || mobileConfig.studioSubdomain)
+      .trim()
+      .toLowerCase()
     if (!studioSubdomain) {
       throw new Error("Studio subdomain is not configured for this app")
     }
@@ -222,15 +230,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setToken(response.token)
     setUser(response.user)
+    setStudioRuntimePrimaryColor(response.user.studio.primaryColor || null)
     await persistToken(response.token)
 
     try {
       const nextBootstrap = await mobileApi.bootstrap(response.token)
       setBootstrap(nextBootstrap)
+      setStudioRuntimePrimaryColor(nextBootstrap.studio.primaryColor || response.user.studio.primaryColor || null)
     } catch {
       setBootstrap(null)
     }
   }, [])
+
+  useEffect(() => {
+    setStudioRuntimePrimaryColor(bootstrap?.studio?.primaryColor || user?.studio?.primaryColor || null)
+  }, [bootstrap?.studio?.primaryColor, user?.studio?.primaryColor])
 
   useEffect(() => {
     async function boot() {

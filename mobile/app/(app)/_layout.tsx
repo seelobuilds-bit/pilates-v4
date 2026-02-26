@@ -1,11 +1,14 @@
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useAuth } from "@/src/context/auth-context"
 import { mobileConfig } from "@/src/lib/config"
 import { getStudioPrimaryColor, mobileTheme } from "@/src/lib/theme"
 
 export default function AppLayout() {
+  const { user, bootstrap } = useAuth()
   const primaryColor = getStudioPrimaryColor()
+  const studioName = bootstrap?.studio?.name || user?.studio?.name || mobileConfig.studioName
   const insets = useSafeAreaInsets()
   const tabBarBottomPadding = Math.max(8, insets.bottom)
 
@@ -45,7 +48,7 @@ export default function AppLayout() {
         name="index"
         options={{
           title: "Home",
-          headerTitle: mobileConfig.studioName,
+          headerTitle: studioName,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
       />

@@ -56,6 +56,10 @@ export async function GET(request: NextRequest) {
         : decoded.role === "TEACHER"
           ? "TEACHER"
           : "STUDIO"
+    const expectedParticipantCount =
+      participantType === "STUDIO"
+        ? await db.studio.count()
+        : await db.teacher.count({ where: { isActive: true } })
 
     const leaderboards = await db.leaderboard.findMany({
       where: {
@@ -157,15 +161,17 @@ export async function GET(request: NextRequest) {
           name: currentPeriod.name,
           startDate: currentPeriod.startDate,
           endDate: currentPeriod.endDate,
-          totalEntries: currentPeriod._count.entries,
-          entries: currentPeriod.entries.map((entry) => ({
-            ...entry,
-            participant: entry.studioId
-              ? (studioById.get(entry.studioId) ?? null)
-              : entry.teacherId
-                ? (teacherById.get(entry.teacherId) ?? null)
-                : null,
-          })),
+          totalEntries: expectedParticipantCount,
+          entries: currentPeriod.entries
+            .map((entry) => ({
+              ...entry,
+              participant: entry.studioId
+                ? (studioById.get(entry.studioId) ?? null)
+                : entry.teacherId
+                  ? (teacherById.get(entry.teacherId) ?? null)
+                  : null,
+            }))
+            .filter((entry) => Boolean(entry.participant)),
         },
       }
     })

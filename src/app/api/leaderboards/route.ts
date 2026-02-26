@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const expectedParticipantCount =
       participantType === "STUDIO"
         ? await db.studio.count()
-        : await db.teacher.count()
+        : await db.teacher.count({ where: { isActive: true } })
 
     // Get active leaderboards
     const leaderboards = await db.leaderboard.findMany({
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
         currentPeriod: {
           ...currentPeriod,
           entries,
-          totalEntries: Math.max(currentPeriod._count.entries, expectedParticipantCount)
+          totalEntries: expectedParticipantCount
         }
       }
     })
@@ -273,8 +273,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
-
-
 
 

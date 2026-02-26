@@ -398,7 +398,7 @@ export default function TeacherLeaderboardsPage() {
                             {lb.currentPeriod?.totalEntries || 0} participants •{" "}
                             {lb.currentPeriod
                               ? `active period ${new Date(lb.currentPeriod.startDate).toLocaleDateString()} - ${new Date(lb.currentPeriod.endDate).toLocaleDateString()}`
-                              : lb.timeframe.toLowerCase()}
+                              : "no active period"}
                           </p>
                         </div>
                       </div>
@@ -637,7 +637,6 @@ export default function TeacherLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 

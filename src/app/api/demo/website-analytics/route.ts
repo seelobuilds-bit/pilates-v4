@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { runDbQueries } from "@/lib/db-query-mode"
 import { getDemoStudioId } from "@/lib/demo-studio"
 
 function toSafeNumber(value: unknown) {
@@ -9,6 +10,14 @@ function toSafeNumber(value: unknown) {
     const parsed = Number(value)
     return Number.isFinite(parsed) ? parsed : 0
   }
+  return 0
+}
+
+function extractGroupCount(value: unknown) {
+  if (!value || typeof value !== "object") return 0
+  const record = value as Record<string, unknown>
+  if (typeof record.id === "number") return record.id
+  if (typeof record._all === "number") return record._all
   return 0
 }
 
@@ -23,6 +32,24 @@ export async function GET(request: NextRequest) {
   const requestedPeriod = searchParams.get("period") || "7d"
   const period = ["24h", "7d", "30d", "90d"].includes(requestedPeriod) ? requestedPeriod : "7d"
   const dataType = searchParams.get("type") || "overview"
+  const endDate = new Date()
+  const startDate = new Date(endDate)
+  switch (period) {
+    case "24h":
+      startDate.setHours(startDate.getHours() - 24)
+      break
+    case "7d":
+      startDate.setDate(startDate.getDate() - 7)
+      break
+    case "30d":
+      startDate.setDate(startDate.getDate() - 30)
+      break
+    case "90d":
+      startDate.setDate(startDate.getDate() - 90)
+      break
+    default:
+      startDate.setDate(startDate.getDate() - 7)
+  }
 
   try {
     // Get or create config
@@ -36,26 +63,6 @@ export async function GET(request: NextRequest) {
           studioId,
         }
       })
-    }
-
-    // Calculate date range
-    const endDate = new Date()
-    const startDate = new Date(endDate)
-    switch (period) {
-      case "24h":
-        startDate.setHours(startDate.getHours() - 24)
-        break
-      case "7d":
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case "30d":
-        startDate.setDate(startDate.getDate() - 30)
-        break
-      case "90d":
-        startDate.setDate(startDate.getDate() - 90)
-        break
-      default:
-        startDate.setDate(startDate.getDate() - 7)
     }
 
     if (dataType === "config") {
@@ -72,9 +79,9 @@ export async function GET(request: NextRequest) {
       deviceBreakdown,
       recentEvents,
       visitorTrend
-    ] = await Promise.all([
+    ] = await runDbQueries([
       // Total page views
-      db.websiteEvent.count({
+      () => db.websiteEvent.count({
         where: {
           studioId,
           type: "PAGE_VIEW",
@@ -86,7 +93,7 @@ export async function GET(request: NextRequest) {
       }),
       
       // Unique visitors
-      db.websiteVisitor.count({
+      () => db.websiteVisitor.count({
         where: {
           studioId,
           lastVisit: {
@@ -97,7 +104,7 @@ export async function GET(request: NextRequest) {
       }),
       
       // Conversions
-      db.websiteVisitor.count({
+      () => db.websiteVisitor.count({
         where: {
           studioId,
           hasConverted: true,
@@ -109,8 +116,8 @@ export async function GET(request: NextRequest) {
       }),
       
       // Top pages
-      db.websiteEvent.groupBy({
-        by: ["pagePath"],
+      () => db.websiteEvent.groupBy({
+        by: ["pagePath"] as const,
         where: {
           studioId,
           type: "PAGE_VIEW",
@@ -125,8 +132,8 @@ export async function GET(request: NextRequest) {
       }),
       
       // Top traffic sources
-      db.websiteVisitor.groupBy({
-        by: ["firstSource"],
+      () => db.websiteVisitor.groupBy({
+        by: ["firstSource"] as const,
         where: {
           studioId,
           lastVisit: {
@@ -140,8 +147,8 @@ export async function GET(request: NextRequest) {
       }),
       
       // Device breakdown
-      db.websiteVisitor.groupBy({
-        by: ["device"],
+      () => db.websiteVisitor.groupBy({
+        by: ["device"] as const,
         where: {
           studioId,
           lastVisit: {
@@ -149,11 +156,12 @@ export async function GET(request: NextRequest) {
             lt: endDate
           }
         },
-        _count: { id: true }
+        _count: { id: true },
+        orderBy: { device: "asc" }
       }),
       
       // Recent events
-      db.websiteEvent.findMany({
+      () => db.websiteEvent.findMany({
         where: {
           studioId,
           createdAt: {
@@ -171,7 +179,7 @@ export async function GET(request: NextRequest) {
       }),
       
       // Visitor trend (daily for 7d, or hourly for 24h)
-      period === "24h"
+      () => (period === "24h"
         ? db.$queryRaw`
             SELECT 
               DATE_TRUNC('hour', "createdAt") as period,
@@ -198,6 +206,7 @@ export async function GET(request: NextRequest) {
             GROUP BY DATE_TRUNC('day', "createdAt")
             ORDER BY period
           `
+      )
     ])
 
     // Calculate conversion rate
@@ -221,6 +230,9 @@ export async function GET(request: NextRequest) {
           }
         })
       : []
+    const normalizedRecentEvents = JSON.parse(
+      JSON.stringify(recentEvents, (_key, value) => (typeof value === "bigint" ? Number(value) : value))
+    )
 
     return NextResponse.json({
       config,
@@ -239,23 +251,46 @@ export async function GET(request: NextRequest) {
         },
         topPages: topPages.map(p => ({
           path: p.pagePath || "/",
-          views: p._count.id
+          views: extractGroupCount(p._count)
         })),
         topSources: topSources.map(s => ({
           source: s.firstSource || "Direct",
-          visitors: s._count.id
+          visitors: extractGroupCount(s._count)
         })),
         deviceBreakdown: deviceBreakdown.map(d => ({
           device: d.device || "Unknown",
-          count: d._count.id
+          count: extractGroupCount(d._count)
         })),
-        recentEvents,
+        recentEvents: normalizedRecentEvents,
         visitorTrend: normalizedVisitorTrend
       }
     })
   } catch (error) {
     console.error("Failed to fetch website analytics:", error)
-    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 })
+    return NextResponse.json({
+      config: null,
+      range: {
+        period,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      },
+      analytics: {
+        overview: {
+          totalPageViews: 0,
+          uniqueVisitors: 0,
+          totalConversions: 0,
+          conversionRate: "0",
+          avgPagesPerVisit: "0",
+        },
+        topPages: [],
+        topSources: [],
+        deviceBreakdown: [],
+        recentEvents: [],
+        visitorTrend: [],
+      },
+      partial: true,
+      warning: "Website analytics are temporarily unavailable. Retry in a moment.",
+    })
   }
 }
 
@@ -306,11 +341,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
-
-
-
-
 
 
 

@@ -2,6 +2,7 @@ import Constants from "expo-constants"
 import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
+import { routeFromPushPayload, type MobilePushRoute } from "@/src/lib/push-routing"
 import type { MobilePushPlatform, MobilePushRegisterParams } from "@/src/types/mobile"
 
 export interface MobilePushRegistrationResult {
@@ -9,8 +10,6 @@ export interface MobilePushRegistrationResult {
   params?: MobilePushRegisterParams
   reason?: "not_device" | "permission_denied" | "missing_project_id" | "token_unavailable"
 }
-
-export type MobilePushRoute = "/(app)" | "/(app)/schedule" | "/(app)/inbox" | "/(app)/workspace" | "/(app)/profile"
 
 let pushPresentationConfigured = false
 
@@ -104,21 +103,4 @@ export function configurePushPresentation() {
   pushPresentationConfigured = true
 }
 
-export function routeFromPushPayload(data: unknown): MobilePushRoute | null {
-  if (!data || typeof data !== "object") return null
-  const type = String((data as { type?: unknown }).type || "").trim().toLowerCase()
-
-  if (type === "mobile_inbox_message") {
-    return "/(app)/inbox"
-  }
-
-  if (type === "mobile_booking_created" || type === "mobile_booking_reactivated" || type === "mobile_booking_cancelled") {
-    return "/(app)/schedule"
-  }
-
-  if (type === "mobile_push_test") {
-    return "/(app)/profile"
-  }
-
-  return null
-}
+export { routeFromPushPayload, type MobilePushRoute }

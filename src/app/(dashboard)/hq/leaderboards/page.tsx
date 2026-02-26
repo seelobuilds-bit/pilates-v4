@@ -302,14 +302,14 @@ export default function HQLeaderboardsPage() {
     setCycling(false)
   }
 
-  async function endPeriodEarly(periodId: string) {
+  async function endPeriodEarly(periodId: string, pauseAutoReset = false) {
     setSaving(true)
     try {
       const res = await fetch("/api/hq/leaderboards", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "finalizePeriod",
+          action: pauseAutoReset ? "finalizeAndPause" : "finalizePeriod",
           periodId,
         }),
       })
@@ -484,8 +484,8 @@ export default function HQLeaderboardsPage() {
                           <span>•</span>
                           <span>
                             {lb.periods[0]
-                              ? `active period ${new Date(lb.periods[0].startDate).toLocaleDateString()} - ${new Date(lb.periods[0].endDate).toLocaleDateString()}`
-                              : `cycle ${lb.timeframe.toLowerCase()}`}
+                              ? `${lb.periods[0].status.toLowerCase()} period ${new Date(lb.periods[0].startDate).toLocaleDateString()} - ${new Date(lb.periods[0].endDate).toLocaleDateString()}`
+                              : "no active period"}
                           </span>
                           <span>•</span>
                           <span>{lb._count.prizes} prizes</span>
@@ -562,21 +562,38 @@ export default function HQLeaderboardsPage() {
                               ({period._count.entries} entries)
                             </span>
                             {period.status === "ACTIVE" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 px-2 text-xs"
-                                disabled={saving}
-                                onClick={() => {
-                                  const shouldEnd = window.confirm(
-                                    `End "${period.name}" now? This finalizes the period immediately.`
-                                  )
-                                  if (!shouldEnd) return
-                                  void endPeriodEarly(period.id)
-                                }}
-                              >
-                                End now
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  disabled={saving}
+                                  onClick={() => {
+                                    const shouldEnd = window.confirm(
+                                      `End "${period.name}" now? This finalizes the period immediately.`
+                                    )
+                                    if (!shouldEnd) return
+                                    void endPeriodEarly(period.id, false)
+                                  }}
+                                >
+                                  End now
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  disabled={saving}
+                                  onClick={() => {
+                                    const shouldEnd = window.confirm(
+                                      `End "${period.name}" now and pause auto reset for this leaderboard?`
+                                    )
+                                    if (!shouldEnd) return
+                                    void endPeriodEarly(period.id, true)
+                                  }}
+                                >
+                                  End + Pause
+                                </Button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -926,9 +943,6 @@ export default function HQLeaderboardsPage() {
     </div>
   )
 }
-
-
-
 
 
 

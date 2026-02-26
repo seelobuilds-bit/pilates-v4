@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
-import { toWorkspaceUrl } from "@/src/lib/workspace-links"
 import type { MobileSocialAccountSummary, MobileSocialFlowSummary, MobileSocialResponse, MobileSocialTrackingLinkSummary } from "@/src/types/mobile"
 
 function formatNumber(value: number) {
@@ -175,7 +174,6 @@ export default function SocialScreen() {
     return "No social data available yet."
   }, [isAllowedRole, trimmedSearch])
 
-  const webSocialHref = user?.role === "TEACHER" ? "/teacher/social" : "/studio/marketing/social"
   const currency = data?.studio.currency || "USD"
   const handleViewFlowDetails = useCallback(
     (flowId: string) => {
@@ -394,15 +392,7 @@ export default function SocialScreen() {
           )}
 
           <View style={styles.footerSection}>
-            <Text style={styles.metaText}>Need full social training/tools management? Open the full web social workspace.</Text>
-            <Pressable
-              style={[styles.actionButton, { backgroundColor: primaryColor }]}
-              onPress={() => {
-                void Linking.openURL(toWorkspaceUrl(webSocialHref))
-              }}
-            >
-              <Text style={styles.actionButtonText}>Open Web Social</Text>
-            </Pressable>
+            <Text style={styles.metaText}>Social flow controls, tracking, and homework progress are available in mobile.</Text>
           </View>
         </ScrollView>
       )}

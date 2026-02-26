@@ -1,4 +1,3 @@
-import { mobileConfig } from "@/src/lib/config"
 import type { MobileRole } from "@/src/types/mobile"
 
 export type NativeAppRoute =
@@ -31,10 +30,6 @@ export type WorkspaceFeature = {
   nativeRoute?: NativeAppRoute
   href?: string
   group: "Overview" | "Operations" | "People" | "Growth" | "Commerce" | "Content" | "Settings"
-}
-
-function webBaseUrl() {
-  return mobileConfig.apiBaseUrl.replace(/\/$/, "")
 }
 
 function ownerFeatures(): WorkspaceFeature[] {
@@ -103,12 +98,4 @@ export function getWorkspaceFeatures(role: MobileRole | undefined, _studioSubdom
   if (role === "OWNER") return ownerFeatures()
   if (role === "TEACHER") return teacherFeatures()
   return clientFeatures()
-}
-
-export function toWorkspaceUrl(href: string | undefined) {
-  if (!href) {
-    return webBaseUrl()
-  }
-  const base = webBaseUrl()
-  return `${base}${href}`
 }

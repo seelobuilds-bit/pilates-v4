@@ -23,6 +23,10 @@ import type {
   MobileMarketingCampaignStatusAction,
   MobileMarketingCampaignStatusActionResponse,
   MobileMarketingAutomationDetailResponse,
+  MobileMarketingCreateAutomationInput,
+  MobileMarketingCreateAutomationResponse,
+  MobileMarketingCreateCampaignInput,
+  MobileMarketingCreateCampaignResponse,
   MobileMarketingAutomationStatusAction,
   MobileMarketingAutomationStatusActionResponse,
   MobilePaymentsResponse,
@@ -39,6 +43,8 @@ import type {
   MobileSocialFlowDetailResponse,
   MobileStoreOverviewResponse,
   MobileStoreProductDetailResponse,
+  MobileStudioBrandingResponse,
+  MobileStudioBrandingUpdateResponse,
   MobileTeachersResponse,
   MobileTeacherDetailResponse,
   MobileVaultAudience,
@@ -128,6 +134,21 @@ export const mobileApi = {
     return request<MobileBootstrapResponse>("/api/mobile/bootstrap", {
       method: "GET",
       token,
+    })
+  },
+
+  studioBranding(token: string) {
+    return request<MobileStudioBrandingResponse>("/api/mobile/studio/branding", {
+      method: "GET",
+      token,
+    })
+  },
+
+  updateStudioBranding(token: string, primaryColor: string) {
+    return request<MobileStudioBrandingUpdateResponse>("/api/mobile/studio/branding", {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ primaryColor }),
     })
   },
 
@@ -238,6 +259,17 @@ export const mobileApi = {
     })
   },
 
+  marketingCreateCampaign(token: string, payload: MobileMarketingCreateCampaignInput) {
+    return request<MobileMarketingCreateCampaignResponse>("/api/mobile/marketing", {
+      method: "POST",
+      token,
+      body: JSON.stringify({
+        action: "createCampaign",
+        campaign: payload,
+      }),
+    })
+  },
+
   marketingAutomationDetail(token: string, automationId: string) {
     return request<MobileMarketingAutomationDetailResponse>(`/api/mobile/marketing/automations/${automationId}`, {
       method: "GET",
@@ -254,6 +286,17 @@ export const mobileApi = {
       method: "POST",
       token,
       body: JSON.stringify({ action }),
+    })
+  },
+
+  marketingCreateAutomation(token: string, payload: MobileMarketingCreateAutomationInput) {
+    return request<MobileMarketingCreateAutomationResponse>("/api/mobile/marketing", {
+      method: "POST",
+      token,
+      body: JSON.stringify({
+        action: "createAutomation",
+        automation: payload,
+      }),
     })
   },
 
