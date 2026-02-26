@@ -786,7 +786,7 @@ export default function BookingPage() {
 
             {/* Booking Details */}
             {bookingDetails ? (
-              <div className="bg-white/35 rounded-xl p-4 mb-6 text-left">
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
@@ -809,7 +809,7 @@ export default function BookingPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white/35 rounded-xl p-4 mb-6">
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
                 <p className="text-gray-600">Your booking details have been sent to your email.</p>
               </div>
             )}
@@ -908,7 +908,7 @@ export default function BookingPage() {
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
         <div className="max-w-2xl mx-auto px-4 pb-4">
-          <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-gray-200/70 bg-transparent px-4 py-2.5 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm">
             {selectedLocation && (
               <span className="flex items-center gap-1.5 text-gray-500">
                 <MapPin className="w-4 h-4" />
@@ -940,7 +940,7 @@ export default function BookingPage() {
 
         {/* Location Step */}
         {step === "location" && (
-          <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+          <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-violet-600" />
@@ -967,7 +967,7 @@ export default function BookingPage() {
 
         {/* Class Step */}
         {step === "class" && (
-          <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+          <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Link2 className="w-5 h-5 text-violet-600" />
@@ -1003,7 +1003,7 @@ export default function BookingPage() {
 
         {/* Teacher Step */}
         {step === "teacher" && (
-          <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+          <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-violet-600" />
@@ -1045,7 +1045,7 @@ export default function BookingPage() {
 
         {/* Time Step */}
         {step === "time" && (
-          <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+          <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calendar className="w-5 h-5 text-violet-600" />
@@ -1133,7 +1133,7 @@ export default function BookingPage() {
         {/* Checkout Step */}
         {step === "checkout" && (
           <div className="space-y-4">
-            <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+            <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="w-5 h-5 text-violet-600" />
@@ -1227,7 +1227,7 @@ export default function BookingPage() {
 
                 {/* Weekly Details */}
                 {bookingType === "recurring" && (
-                  <div className="mb-6 p-4 bg-white/35 rounded-xl">
+                  <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <RefreshCw className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Weekly Subscription</p>
@@ -1251,7 +1251,7 @@ export default function BookingPage() {
 
                 {/* Pack Selection */}
                 {bookingType === "pack" && (
-                  <div className="mb-6 p-4 bg-white/35 rounded-xl">
+                  <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <Sparkles className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Choose Your Pack</p>
@@ -1348,7 +1348,7 @@ export default function BookingPage() {
 
             {/* Auth / Booking */}
             {!client ? (
-              <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+              <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
                   <p className="font-medium text-gray-900 mb-4">{authMode === "login" ? "Sign in to complete booking" : "Create an account"}</p>
                   <form onSubmit={handleAuth} className="space-y-4">
@@ -1394,7 +1394,7 @@ export default function BookingPage() {
             ) : (
               <>
                 {/* Booking As */}
-                <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+                <Card className="border-0 shadow-sm">
                   <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-medium text-gray-900">Booking as</p>
@@ -1411,7 +1411,7 @@ export default function BookingPage() {
                 </Card>
 
                 {bookingType === "single" && (client.credits || 0) > 0 && (
-                  <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+                  <Card className="border-0 shadow-sm">
                     <CardContent className="flex items-center justify-between gap-4 p-4">
                       <div>
                         <p className="text-sm font-medium text-gray-900">Use class credit</p>
@@ -1425,7 +1425,7 @@ export default function BookingPage() {
                 )}
 
                 {/* Payment */}
-                <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
+                <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CreditCard className="w-5 h-5 text-violet-600" />
