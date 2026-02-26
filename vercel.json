@@ -5,6 +5,10 @@
       "schedule": "0 0 * * *"
     },
     {
+      "path": "/api/cron/social-trending-ingest",
+      "schedule": "5 0 * * *"
+    },
+    {
       "path": "/api/cron/social-hooks",
       "schedule": "15 0 * * *"
     }

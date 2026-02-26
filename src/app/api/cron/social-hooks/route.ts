@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { ingestTrendingContent } from "@/lib/social/trending-ingest"
 import { getSession } from "@/lib/session"
 
 function isAuthorizedCronRequest(request: NextRequest) {
@@ -30,6 +31,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (process.env.SOCIAL_HOOKS_INGEST_FIRST === "1") {
+      try {
+        await ingestTrendingContent({ limit: 120 })
+      } catch (ingestError) {
+        console.error("Social hook cron ingest-before step failed:", ingestError)
+      }
+    }
+
     const start = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const rows = await db.trendingContent.findMany({
       where: {

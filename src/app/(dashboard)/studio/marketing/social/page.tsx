@@ -196,9 +196,20 @@ interface TrendingHook {
   trendingScore: number
 }
 
+interface SocialProviderStatusPayload {
+  mode: "SIMULATED_BETA" | "LIVE"
+  liveEnabled: boolean
+  providers: {
+    instagram: { ready: boolean; missingEnv: string[] }
+    tiktok: { ready: boolean; missingEnv: string[] }
+  }
+}
+
 export default function SocialMediaPage() {
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get("tab")
+  const oauthState = searchParams.get("oauth")
+  const oauthMessage = searchParams.get("oauthMessage")
   
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState(tabFromUrl || "training")
@@ -245,6 +256,7 @@ export default function SocialMediaPage() {
   const [hookList, setHookList] = useState<TrendingHook[]>([])
   const [loadingHooks, setLoadingHooks] = useState(false)
   const [loadingTrending, setLoadingTrending] = useState(false)
+  const [providerStatus, setProviderStatus] = useState<SocialProviderStatusPayload | null>(null)
   const [showConnectAccount, setShowConnectAccount] = useState(false)
   const [showCreateFlow, setShowCreateFlow] = useState(false)
   const [newAccountPlatform, setNewAccountPlatform] = useState<"INSTAGRAM" | "TIKTOK">("INSTAGRAM")
@@ -446,10 +458,11 @@ export default function SocialMediaPage() {
 
   const fetchToolsData = useCallback(async () => {
     try {
-      const [accountsRes, flowsRes, linksRes] = await Promise.all([
+      const [accountsRes, flowsRes, linksRes, providerStatusRes] = await Promise.all([
         fetch("/api/social-media/accounts"),
         fetch("/api/social-media/flows"),
-        fetch("/api/social-media/tracking")
+        fetch("/api/social-media/tracking"),
+        fetch("/api/social-media/providers/status"),
       ])
 
       if (accountsRes.ok) {
@@ -461,6 +474,9 @@ export default function SocialMediaPage() {
       }
       if (linksRes.ok) {
         setTrackingLinks(await linksRes.json())
+      }
+      if (providerStatusRes.ok) {
+        setProviderStatus(await providerStatusRes.json())
       }
     } catch (error) {
       console.error("Failed to fetch tools data:", error)
@@ -484,6 +500,35 @@ export default function SocialMediaPage() {
 
   async function connectAccount() {
     setSaving(true)
+    if (!isSimulatedSocialMode) {
+      try {
+        const params = new URLSearchParams({
+          platform: newAccountPlatform,
+          ownerType: "STUDIO",
+          returnPath: "/studio/marketing/social",
+        })
+        const res = await fetch(`/api/social-media/oauth/start?${params.toString()}`)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          alert(data.error || "Failed to start OAuth flow")
+          setSaving(false)
+          return
+        }
+        if (!data.authorizeUrl) {
+          alert("OAuth provider URL was not returned")
+          setSaving(false)
+          return
+        }
+        window.location.href = data.authorizeUrl
+        return
+      } catch (error) {
+        console.error("Failed to start social OAuth flow:", error)
+        alert("Failed to start OAuth flow")
+        setSaving(false)
+        return
+      }
+    }
+
     try {
       const res = await fetch("/api/social-media/accounts", {
         method: "POST",
@@ -595,6 +640,17 @@ export default function SocialMediaPage() {
           <p className="mt-1 text-sm text-amber-800">
             Account connection and outbound DM actions are stored internally and do not call Instagram or TikTok APIs.
           </p>
+        </div>
+      )}
+
+      {oauthState === "connected" && (
+        <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          Social account connected successfully.
+        </div>
+      )}
+      {oauthState === "error" && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          Social connection failed{oauthMessage ? `: ${oauthMessage}` : "."}
         </div>
       )}
 
@@ -1364,31 +1420,62 @@ export default function SocialMediaPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    <Input
-                      value={newAccountUsername}
-                      onChange={(e) => setNewAccountUsername(e.target.value)}
-                      placeholder="@yourusername"
-                    />
-                  </div>
+                  {isSimulatedSocialMode ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Username</Label>
+                        <Input
+                          value={newAccountUsername}
+                          onChange={(e) => setNewAccountUsername(e.target.value)}
+                          placeholder="@yourusername"
+                        />
+                      </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> This environment uses simulated beta mode. Enter a username to create an internal test
-                      account connection.
-                    </p>
-                  </div>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Note:</strong> This environment uses simulated beta mode. Enter a username to create an internal test
+                          account connection.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-4 bg-blue-50 rounded-lg space-y-2">
+                      <p className="text-sm text-blue-900">
+                        You will be redirected to {newAccountPlatform === "INSTAGRAM" ? "Instagram" : "TikTok"} to authorize this studio account.
+                      </p>
+                      {providerStatus && (
+                        <p className="text-xs text-blue-800">
+                          {newAccountPlatform === "INSTAGRAM"
+                            ? providerStatus.providers.instagram.ready
+                              ? "Instagram provider is configured."
+                              : `Missing config: ${providerStatus.providers.instagram.missingEnv.join(", ")}`
+                            : providerStatus.providers.tiktok.ready
+                              ? "TikTok provider is configured."
+                              : `Missing config: ${providerStatus.providers.tiktok.missingEnv.join(", ")}`}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
                   <Button variant="outline" onClick={() => setShowConnectAccount(false)}>Cancel</Button>
                   <Button 
                     onClick={connectAccount}
-                    disabled={saving || !newAccountUsername}
+                    disabled={
+                      saving ||
+                      (isSimulatedSocialMode ? !newAccountUsername : false) ||
+                      (!isSimulatedSocialMode &&
+                        ((newAccountPlatform === "INSTAGRAM" && !!providerStatus && !providerStatus.providers.instagram.ready) ||
+                          (newAccountPlatform === "TIKTOK" && !!providerStatus && !providerStatus.providers.tiktok.ready)))
+                    }
                     className="bg-violet-600 hover:bg-violet-700"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Connect"}
+                    {saving
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : isSimulatedSocialMode
+                        ? "Connect"
+                        : "Continue to OAuth"}
                   </Button>
                 </div>
               </CardContent>
@@ -1974,6 +2061,4 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-
-
 
