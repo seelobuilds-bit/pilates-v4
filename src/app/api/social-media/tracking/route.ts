@@ -20,6 +20,25 @@ function buildTrackingScope(user: { studioId: string; teacherId?: string | null 
   }
 }
 
+const publicAccountSelect = {
+  id: true,
+  platform: true,
+  username: true,
+  displayName: true,
+  profilePicture: true,
+  followerCount: true,
+  isActive: true,
+  studioId: true,
+  teacherId: true,
+} as const
+
+function serializeAccountOwnerType<T extends { teacherId: string | null }>(account: T) {
+  return {
+    ...account,
+    ownerType: account.teacherId ? "TEACHER" : "STUDIO",
+  }
+}
+
 // GET - Fetch tracking links
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -62,7 +81,9 @@ export async function GET(request: NextRequest) {
         ...(teacherIdFilter ? { teacherId: teacherIdFilter } : {}),
       },
       include: {
-        account: true,
+        account: {
+          select: publicAccountSelect,
+        },
         flow: true,
         teacher: {
           include: {
@@ -73,7 +94,12 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(links)
+    return NextResponse.json(
+      links.map((link) => ({
+        ...link,
+        account: link.account ? serializeAccountOwnerType(link.account) : null,
+      }))
+    )
   } catch (error) {
     console.error("Failed to fetch tracking links:", error)
     return NextResponse.json({ error: "Failed to fetch tracking links" }, { status: 500 })
@@ -136,7 +162,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create tracking link" }, { status: 500 })
   }
 }
-
 
 
 

@@ -95,6 +95,7 @@ interface SocialAccount {
   profilePicture: string | null
   followerCount: number
   isActive: boolean
+  ownerType?: "STUDIO" | "TEACHER"
   _count: { flows: number; messages: number }
 }
 
@@ -147,6 +148,16 @@ interface TrendingContent {
   postedAt: string
   trendingScore: number
   isFeatured: boolean
+}
+
+interface TrendingHook {
+  id: string
+  hook: string
+  platform: "INSTAGRAM" | "TIKTOK"
+  creatorUsername: string
+  postUrl: string
+  postedAt: string
+  trendingScore: number
 }
 
 interface HomeworkSubmission {
@@ -221,10 +232,16 @@ export default function TeacherSocialPage() {
     contentStyle: "",
     timeframe: "7d",
     sortBy: "trendingScore",
+    country: "",
+    tags: "",
     search: ""
   })
   const [availableCategories, setAvailableCategories] = useState<string[]>([])
   const [availableStyles, setAvailableStyles] = useState<string[]>([])
+  const [availableCountries, setAvailableCountries] = useState<string[]>([])
+  const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [hookList, setHookList] = useState<TrendingHook[]>([])
+  const [loadingHooks, setLoadingHooks] = useState(false)
   const [loadingTrending, setLoadingTrending] = useState(false)
   const [newAccountPlatform, setNewAccountPlatform] = useState<"INSTAGRAM" | "TIKTOK">("INSTAGRAM")
   const [newAccountUsername, setNewAccountUsername] = useState("")
@@ -268,6 +285,8 @@ export default function TeacherSocialPage() {
       if (trendingFilters.contentStyle) params.set("contentStyle", trendingFilters.contentStyle)
       if (trendingFilters.timeframe) params.set("timeframe", trendingFilters.timeframe)
       if (trendingFilters.sortBy) params.set("sortBy", trendingFilters.sortBy)
+      if (trendingFilters.country) params.set("country", trendingFilters.country)
+      if (trendingFilters.tags) params.set("tags", trendingFilters.tags)
       if (trendingFilters.search) params.set("search", trendingFilters.search)
       
       const res = await fetch(`/api/social-media/trending?${params.toString()}`)
@@ -277,12 +296,39 @@ export default function TeacherSocialPage() {
         setFeaturedContent(data.featured || [])
         setAvailableCategories(data.filters?.categories || [])
         setAvailableStyles(data.filters?.contentStyles || [])
+        setAvailableCountries(data.filters?.countries || [])
+        setAvailableTags(data.filters?.tags || [])
       }
     } catch (error) {
       console.error("Failed to fetch trending content:", error)
     }
     setLoadingTrending(false)
   }, [trendingFilters])
+
+  const fetchHookList = useCallback(async () => {
+    setLoadingHooks(true)
+    try {
+      const params = new URLSearchParams({
+        timeframe: trendingFilters.timeframe || "24h",
+        limit: "20",
+      })
+      if (trendingFilters.platform) params.set("platform", trendingFilters.platform)
+      if (trendingFilters.country) params.set("country", trendingFilters.country)
+      if (trendingFilters.tags) params.set("tags", trendingFilters.tags)
+
+      const res = await fetch(`/api/social-media/hooks?${params.toString()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setHookList(data.hooks || [])
+      } else {
+        setHookList([])
+      }
+    } catch (error) {
+      console.error("Failed to fetch daily hooks:", error)
+      setHookList([])
+    }
+    setLoadingHooks(false)
+  }, [trendingFilters.country, trendingFilters.platform, trendingFilters.tags, trendingFilters.timeframe])
 
   const fetchMyHomework = useCallback(async () => {
     try {
@@ -428,6 +474,10 @@ export default function TeacherSocialPage() {
     void fetchTrendingContent()
   }, [fetchTrendingContent])
 
+  useEffect(() => {
+    void fetchHookList()
+  }, [fetchHookList])
+
   async function connectAccount() {
     setSaving(true)
     try {
@@ -436,13 +486,17 @@ export default function TeacherSocialPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           platform: newAccountPlatform,
-          username: newAccountUsername
+          username: newAccountUsername,
+          ownerType: "TEACHER",
         })
       })
       if (res.ok) {
         setShowConnectAccount(false)
         setNewAccountUsername("")
         void fetchToolsData()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Failed to connect account")
       }
     } catch (error) {
       console.error("Failed to connect account:", error)
@@ -742,6 +796,58 @@ export default function TeacherSocialPage() {
             </Card>
           )}
 
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Daily Top Hooks</h3>
+                  <p className="text-sm text-gray-500">Top-performing Pilates hook lines from recent trending content</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => void fetchHookList()} disabled={loadingHooks}>
+                  {loadingHooks ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh hooks"}
+                </Button>
+              </div>
+              {loadingHooks ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-violet-600" />
+                </div>
+              ) : hookList.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
+                  No hook data for this filter range yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {hookList.map((item, index) => (
+                    <div key={item.id} className="rounded-lg border bg-white p-3">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <Badge variant="secondary">#{index + 1}</Badge>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{item.platform}</span>
+                          <span>@{item.creatorUsername}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 mb-2">&ldquo;{item.hook}&rdquo;</p>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => copyToClipboard(item.hook)}>
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                        <a
+                          href={item.postUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-violet-700 hover:underline"
+                        >
+                          View source
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Filters */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
@@ -804,6 +910,24 @@ export default function TeacherSocialPage() {
                   </SelectContent>
                 </Select>
 
+                {/* Country Filter */}
+                <Select
+                  value={trendingFilters.country || "all"}
+                  onValueChange={(value) => setTrendingFilters({ ...trendingFilters, country: value === "all" ? "" : value })}
+                >
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Countries</SelectItem>
+                    {availableCountries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {/* Timeframe Filter */}
                 <Select
                   value={trendingFilters.timeframe}
@@ -820,6 +944,20 @@ export default function TeacherSocialPage() {
                     <SelectItem value="all">All time</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <div className="w-full sm:w-[210px]">
+                  <Input
+                    placeholder="Tags (pilates, reformer)"
+                    value={trendingFilters.tags}
+                    onChange={(e) => setTrendingFilters({ ...trendingFilters, tags: e.target.value })}
+                    list="teacher-social-trending-tags"
+                  />
+                  <datalist id="teacher-social-trending-tags">
+                    {availableTags.slice(0, 40).map((tag) => (
+                      <option key={tag} value={tag} />
+                    ))}
+                  </datalist>
+                </div>
 
                 {/* Sort By */}
                 <Select
@@ -1212,7 +1350,12 @@ export default function TeacherSocialPage() {
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">@{account.username}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">@{account.username}</p>
+                          <Badge variant="secondary" className="text-xs">
+                            {account.ownerType === "TEACHER" ? "Teacher" : "Studio"}
+                          </Badge>
+                        </div>
                         <p className="text-sm text-gray-500">{account._count.flows} flows active</p>
                       </div>
                     </div>
@@ -1940,14 +2083,6 @@ export default function TeacherSocialPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
-
 
 
 

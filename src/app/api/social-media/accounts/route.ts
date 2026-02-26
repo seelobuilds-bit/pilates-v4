@@ -3,6 +3,8 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { getSocialMediaMode } from "@/lib/social-media-mode"
 
+type AccountOwnerType = "STUDIO" | "TEACHER"
+
 function buildAccountScope(user: { studioId: string; teacherId?: string | null }) {
   if (user.teacherId) {
     return {
@@ -22,6 +24,52 @@ function buildAccountScope(user: { studioId: string; teacherId?: string | null }
   }
 }
 
+const publicAccountSelect = {
+  id: true,
+  platform: true,
+  platformUserId: true,
+  username: true,
+  displayName: true,
+  profilePicture: true,
+  followerCount: true,
+  followingCount: true,
+  postsCount: true,
+  isActive: true,
+  lastSyncedAt: true,
+  createdAt: true,
+  studioId: true,
+  teacherId: true,
+  _count: {
+    select: {
+      flows: true,
+      messages: true,
+    },
+  },
+} as const
+
+function serializeAccount(account: {
+  id: string
+  platform: "INSTAGRAM" | "TIKTOK"
+  platformUserId: string
+  username: string
+  displayName: string | null
+  profilePicture: string | null
+  followerCount: number
+  followingCount: number
+  postsCount: number
+  isActive: boolean
+  lastSyncedAt: Date | null
+  createdAt: Date
+  studioId: string | null
+  teacherId: string | null
+  _count: { flows: number; messages: number }
+}) {
+  return {
+    ...account,
+    ownerType: account.teacherId ? "TEACHER" : "STUDIO",
+  }
+}
+
 // GET - Fetch connected social accounts
 export async function GET() {
   const session = await getSession()
@@ -38,18 +86,11 @@ export async function GET() {
           teacherId: session.user.teacherId,
         }),
       },
-      include: {
-        _count: {
-          select: {
-            flows: true,
-            messages: true
-          }
-        }
-      },
+      select: publicAccountSelect,
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(accounts)
+    return NextResponse.json(accounts.map(serializeAccount))
   } catch (error) {
     console.error("Failed to fetch accounts:", error)
     return NextResponse.json({ error: "Failed to fetch accounts" }, { status: 500 })
@@ -74,25 +115,55 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { platform, username, accessToken } = body
+    const { platform, username, accessToken, ownerType } = body
+    const normalizedPlatform = String(platform || "").toUpperCase()
+    if (normalizedPlatform !== "INSTAGRAM" && normalizedPlatform !== "TIKTOK") {
+      return NextResponse.json({ error: "Platform must be INSTAGRAM or TIKTOK" }, { status: 400 })
+    }
+
+    const normalizedUsername = String(username || "").trim().replace(/^@/, "")
+    if (!normalizedUsername) {
+      return NextResponse.json({ error: "Username is required" }, { status: 400 })
+    }
+
+    const requestedOwnerType: AccountOwnerType =
+      ownerType === "TEACHER" || ownerType === "STUDIO"
+        ? ownerType
+        : session.user.teacherId
+          ? "TEACHER"
+          : "STUDIO"
+
+    if (requestedOwnerType === "TEACHER" && !session.user.teacherId) {
+      return NextResponse.json(
+        { error: "Only teacher accounts can connect teacher-owned social accounts" },
+        { status: 403 }
+      )
+    }
+    if (requestedOwnerType === "STUDIO" && session.user.teacherId) {
+      return NextResponse.json(
+        { error: "Teacher users can only connect teacher-owned social accounts" },
+        { status: 403 }
+      )
+    }
 
     // In production, this would handle OAuth flow
     // For now, we'll create a mock connection
-    const platformUserId = `${platform.toLowerCase()}_${username}_${Date.now()}`
+    const platformUserId = `${normalizedPlatform.toLowerCase()}_${normalizedUsername}_${Date.now()}`
 
     const account = await db.socialMediaAccount.create({
       data: {
-        platform,
+        platform: normalizedPlatform,
         platformUserId,
-        username,
-        displayName: username,
+        username: normalizedUsername,
+        displayName: normalizedUsername,
         accessToken: accessToken || "mock_token",
-        studioId: session.user.studioId,
-        teacherId: session.user.teacherId
-      }
+        studioId: requestedOwnerType === "STUDIO" ? session.user.studioId : null,
+        teacherId: requestedOwnerType === "TEACHER" ? session.user.teacherId : null,
+      },
+      select: publicAccountSelect,
     })
 
-    return NextResponse.json(account)
+    return NextResponse.json(serializeAccount(account))
   } catch (error) {
     console.error("Failed to connect account:", error)
     return NextResponse.json({ error: "Failed to connect account" }, { status: 500 })
@@ -140,8 +211,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to disconnect account" }, { status: 500 })
   }
 }
-
-
 
 
 

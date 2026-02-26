@@ -21,6 +21,33 @@ function buildAccountScope(user: { studioId: string; teacherId?: string | null }
   }
 }
 
+const publicAccountSelect = {
+  id: true,
+  platform: true,
+  platformUserId: true,
+  username: true,
+  displayName: true,
+  profilePicture: true,
+  followerCount: true,
+  isActive: true,
+  lastSyncedAt: true,
+  studioId: true,
+  teacherId: true,
+  _count: {
+    select: {
+      flows: true,
+      messages: true,
+    },
+  },
+} as const
+
+function serializeAccountOwnerType<T extends { teacherId: string | null }>(account: T) {
+  return {
+    ...account,
+    ownerType: account.teacherId ? "TEACHER" : "STUDIO",
+  }
+}
+
 // GET - Fetch social media conversations/messages
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -42,7 +69,8 @@ export async function GET(request: NextRequest) {
           teacherId: session.user.teacherId,
         }),
         isActive: true
-      }
+      },
+      select: publicAccountSelect,
     })
 
     const accessibleAccountIds = new Set(accounts.map((account) => account.id))
@@ -101,9 +129,9 @@ export async function GET(request: NextRequest) {
 
     const conversations = Array.from(conversationsMap.values())
 
-    return NextResponse.json({ 
-      accounts,
-      conversations 
+    return NextResponse.json({
+      accounts: accounts.map(serializeAccountOwnerType),
+      conversations
     })
   } catch (error) {
     console.error("Failed to fetch messages:", error)
@@ -139,7 +167,11 @@ export async function POST(request: NextRequest) {
           studioId: session.user.studioId,
           teacherId: session.user.teacherId,
         }),
-      }
+      },
+      select: {
+        id: true,
+        platform: true,
+      },
     })
 
     if (!account) {
@@ -212,7 +244,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to mark as read" }, { status: 500 })
   }
 }
-
 
 
 

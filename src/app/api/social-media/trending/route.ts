@@ -2,6 +2,93 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
+const COUNTRY_TOKEN_MAP: Record<string, string[]> = {
+  "United Kingdom": ["uk", "unitedkingdom", "britain", "england", "london", "scotland", "wales"],
+  Ireland: ["ireland", "irish", "dublin"],
+  Australia: ["australia", "australian", "aus", "sydney", "melbourne", "brisbane", "perth"],
+  "United States": ["usa", "us", "america", "newyork", "losangeles", "miami", "chicago", "california", "texas"],
+  Canada: ["canada", "canadian", "toronto", "vancouver"],
+  "New Zealand": ["newzealand", "nz", "auckland", "wellington"],
+}
+
+function normalizeToken(value: string) {
+  return value.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, "")
+}
+
+function splitTokenInput(value: string | null) {
+  if (!value) return []
+  return value
+    .split(",")
+    .map((entry) => normalizeToken(entry))
+    .filter(Boolean)
+}
+
+function mapCountryTokens(country: string | null) {
+  if (!country) return []
+  const normalized = normalizeToken(country)
+  const matchingEntry = Object.entries(COUNTRY_TOKEN_MAP).find(([label]) => normalizeToken(label) === normalized)
+  if (matchingEntry) return matchingEntry[1]
+  return [normalized]
+}
+
+function resolveTimeframeStart(timeframe: string | null) {
+  if (!timeframe || timeframe === "all") return null
+
+  const now = Date.now()
+  switch (timeframe) {
+    case "24h":
+    case "daily":
+      return new Date(now - 24 * 60 * 60 * 1000)
+    case "7d":
+    case "weekly":
+      return new Date(now - 7 * 24 * 60 * 60 * 1000)
+    case "30d":
+    case "monthly":
+      return new Date(now - 30 * 24 * 60 * 60 * 1000)
+    case "90d":
+      return new Date(now - 90 * 24 * 60 * 60 * 1000)
+    default:
+      return null
+  }
+}
+
+function buildTokenFilter(tokens: string[]) {
+  if (tokens.length === 0) return null
+
+  return {
+    OR: tokens.flatMap((token) => [
+      { hashtags: { has: token } },
+      { caption: { contains: token, mode: "insensitive" as const } },
+      { creatorUsername: { contains: token, mode: "insensitive" as const } },
+      { creatorDisplayName: { contains: token, mode: "insensitive" as const } },
+      { category: { contains: token, mode: "insensitive" as const } },
+      { contentStyle: { contains: token, mode: "insensitive" as const } },
+    ]),
+  }
+}
+
+function inferCountriesFromContent(items: Array<{ hashtags: string[]; caption: string | null }>) {
+  const found = new Set<string>()
+  const allTokens = items.flatMap((item) => {
+    const hashtagTokens = item.hashtags.map(normalizeToken)
+    const captionTokens = (item.caption || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9#\s]/g, " ")
+      .split(/\s+/)
+      .map(normalizeToken)
+      .filter(Boolean)
+    return [...hashtagTokens, ...captionTokens]
+  })
+
+  for (const [country, tokens] of Object.entries(COUNTRY_TOKEN_MAP)) {
+    if (tokens.some((token) => allTokens.includes(token))) {
+      found.add(country)
+    }
+  }
+
+  return [...found].sort()
+}
+
 // GET - Fetch trending content with filters
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -18,16 +105,17 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") // Reformer, Mat, etc.
     const contentStyle = searchParams.get("contentStyle") // Tutorial, Tips, etc.
     const timeframe = searchParams.get("timeframe") // 24h, 7d, 30d, all
+    const country = searchParams.get("country")
+    const tags = splitTokenInput(searchParams.get("tags"))
     const sortBy = searchParams.get("sortBy") || "trendingScore" // trendingScore, viewCount, likeCount, engagementRate, postedAt
-    const sortOrder = searchParams.get("sortOrder") || "desc"
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc"
     const search = searchParams.get("search")
-    const limit = parseInt(searchParams.get("limit") || "50")
-    const offset = parseInt(searchParams.get("offset") || "0")
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "50", 10)))
+    const offset = Math.max(0, Number.parseInt(searchParams.get("offset") || "0", 10))
 
     // Build where clause
-    const where: Record<string, unknown> = {
-      isHidden: false
-    }
+    const where: Record<string, unknown> = { isHidden: false }
+    const andClauses: Record<string, unknown>[] = []
 
     if (platform) {
       where.platform = platform
@@ -42,53 +130,54 @@ export async function GET(request: NextRequest) {
     }
 
     // Timeframe filter
-    if (timeframe && timeframe !== "all") {
-      const now = new Date()
-      let startDate: Date
-
-      switch (timeframe) {
-        case "24h":
-          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-          break
-        case "7d":
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          break
-        case "30d":
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-          break
-        case "90d":
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-          break
-        default:
-          startDate = new Date(0)
-      }
-
+    const startDate = resolveTimeframeStart(timeframe)
+    if (startDate) {
       where.postedAt = { gte: startDate }
     }
 
-    // Search in caption or hashtags
-    if (search) {
-      where.OR = [
-        { caption: { contains: search, mode: "insensitive" } },
-        { creatorUsername: { contains: search, mode: "insensitive" } },
-        { hashtags: { has: search.toLowerCase() } }
-      ]
+    // Search in caption/creator/hashtags
+    const normalizedSearch = normalizeToken(search || "")
+    if (search?.trim()) {
+      andClauses.push({
+        OR: [
+          { caption: { contains: search.trim(), mode: "insensitive" } },
+          { creatorUsername: { contains: search.trim(), mode: "insensitive" } },
+          { creatorDisplayName: { contains: search.trim(), mode: "insensitive" } },
+          ...(normalizedSearch ? [{ hashtags: { has: normalizedSearch } }] : []),
+        ],
+      })
+    }
+
+    // Country filter from hashtag/caption lexical matches
+    const countryTokens = mapCountryTokens(country)
+    if (countryTokens.length > 0) {
+      const filter = buildTokenFilter(countryTokens)
+      if (filter) andClauses.push(filter)
+    }
+
+    // Generic tag filter
+    if (tags.length > 0) {
+      const filter = buildTokenFilter(tags)
+      if (filter) andClauses.push(filter)
+    }
+
+    if (andClauses.length > 0) {
+      where.AND = andClauses
     }
 
     // Determine sort field
     const orderBy: Record<string, string> = {}
-    if (sortBy === "trendingScore") {
-      orderBy.trendingScore = sortOrder
-    } else if (sortBy === "viewCount") {
-      orderBy.viewCount = sortOrder
-    } else if (sortBy === "likeCount") {
-      orderBy.likeCount = sortOrder
-    } else if (sortBy === "engagementRate") {
-      orderBy.engagementRate = sortOrder
-    } else if (sortBy === "postedAt") {
-      orderBy.postedAt = sortOrder
-    } else if (sortBy === "commentCount") {
-      orderBy.commentCount = sortOrder
+    if (
+      sortBy === "trendingScore" ||
+      sortBy === "viewCount" ||
+      sortBy === "likeCount" ||
+      sortBy === "engagementRate" ||
+      sortBy === "postedAt" ||
+      sortBy === "commentCount"
+    ) {
+      orderBy[sortBy] = sortOrder
+    } else {
+      orderBy.trendingScore = "desc"
     }
 
     // Get content
@@ -105,11 +194,13 @@ export async function GET(request: NextRequest) {
     // Get unique categories and content styles for filters
     const allContent = await db.trendingContent.findMany({
       where: { isHidden: false },
-      select: { category: true, contentStyle: true }
+      select: { category: true, contentStyle: true, hashtags: true, caption: true }
     })
 
     const categories = [...new Set(allContent.map(c => c.category).filter(Boolean))]
     const contentStyles = [...new Set(allContent.map(c => c.contentStyle).filter(Boolean))]
+    const availableTags = [...new Set(allContent.flatMap((item) => item.hashtags.map(normalizeToken)).filter(Boolean))].slice(0, 100)
+    const countries = inferCountriesFromContent(allContent)
 
     // Get featured content
     const featured = await db.trendingContent.findMany({
@@ -124,7 +215,9 @@ export async function GET(request: NextRequest) {
       featured,
       filters: {
         categories,
-        contentStyles
+        contentStyles,
+        countries,
+        tags: availableTags,
       },
       pagination: {
         limit,
@@ -233,9 +326,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to add trending content" }, { status: 500 })
   }
 }
-
-
-
 
 
 
