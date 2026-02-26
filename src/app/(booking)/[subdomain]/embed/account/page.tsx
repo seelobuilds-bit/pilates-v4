@@ -204,7 +204,7 @@ export default function EmbedAccountPage() {
               {authMode === "login" ? "Sign In" : "Create Account"}
             </h1>
           </div>
-          <Card className="border-0 shadow-sm">
+          <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
             <CardContent className="p-5">
               <form onSubmit={handleAuth} className="space-y-3">
                 {authError && (
@@ -309,7 +309,7 @@ export default function EmbedAccountPage() {
           </button>
         </div>
 
-        <Card className="border-0 shadow-sm">
+        <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Signed in as</p>
             <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
@@ -320,7 +320,7 @@ export default function EmbedAccountPage() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Upcoming Classes</h2>
           {upcomingBookings.length === 0 ? (
-            <Card className="border-0 shadow-sm">
+            <Card className="border border-gray-200/70 bg-transparent shadow-none backdrop-blur-[1px]">
               <CardContent className="p-6 text-center">
                 <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">No upcoming bookings</p>
@@ -427,7 +427,7 @@ export default function EmbedAccountPage() {
                         variant="outline"
                         className={booking.status === "CANCELLED"
                           ? "bg-red-50 text-red-700 border-red-200"
-                          : "bg-gray-50 text-gray-600 border-gray-200"}
+                          : "bg-white/35 text-gray-600 border-gray-200/70"}
                       >
                         {booking.status === "CANCELLED" ? "Cancelled" : "Completed"}
                       </Badge>

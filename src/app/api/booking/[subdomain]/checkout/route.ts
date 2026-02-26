@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getStripe, calculatePlatformFee } from "@/lib/stripe"
 import { normalizeSocialTrackingCode } from "@/lib/social-tracking"
+import { ensureStripeCustomerForConnectedAccount } from "@/lib/stripe-customers"
 
 // POST - Create a checkout session for booking
 export async function POST(
@@ -99,28 +100,18 @@ export async function POST(
       return NextResponse.json({ error: "You have already booked this class" }, { status: 400 })
     }
 
-    // Create or get Stripe customer
-    let stripeCustomerId = client.stripeCustomerId
-
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: clientEmail,
-        name: `${clientFirstName} ${clientLastName}`,
-        metadata: {
-          clientId: client.id,
-          studioId: studio.id,
-        },
-      }, {
-        stripeAccount: studio.stripeAccountId,
-      })
-
-      stripeCustomerId = customer.id
-
-      await db.client.update({
-        where: { id: client.id },
-        data: { stripeCustomerId },
-      })
-    }
+    const stripeCustomerId = await ensureStripeCustomerForConnectedAccount({
+      stripe,
+      stripeAccountId: studio.stripeAccountId,
+      client: {
+        id: client.id,
+        email: client.email,
+        firstName: client.firstName,
+        lastName: client.lastName,
+        studioId: studio.id,
+        stripeCustomerId: client.stripeCustomerId,
+      },
+    })
 
     // Calculate amounts (price is stored in dollars, Stripe needs cents)
     const amountInCents = Math.round(classSession.classType.price * 100)

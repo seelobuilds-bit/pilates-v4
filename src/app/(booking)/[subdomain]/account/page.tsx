@@ -41,7 +41,8 @@ import {
   Lock,
   AlertCircle,
   Video,
-  Users
+  Users,
+  Wallet
 } from "lucide-react"
 
 // Stripe Payment Wrapper for subscriptions
@@ -1131,18 +1132,6 @@ export default function AccountPage() {
                     Book a Class
                   </Button>
                 </Link>
-                {studio.hasVault && (
-                  <Link href={`/${subdomain}/vault`} className="group w-full sm:w-auto">
-                    <Button 
-                      className="w-full bg-transparent text-white border border-white/50 group-hover:bg-white group-hover:border-transparent transition-all sm:w-auto"
-                    >
-                      <span className="flex items-center" style={{ transition: "color 0.2s" }}>
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        The Vault
-                      </span>
-                    </Button>
-                  </Link>
-                )}
                 {activeSubscriptions.some((sub) => sub.plan.communityChat?.isEnabled) && (
                   <Button
                     className="w-full bg-transparent text-white border border-white/50 hover:bg-white hover:border-transparent sm:w-auto"
@@ -1158,7 +1147,7 @@ export default function AccountPage() {
         </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -1182,6 +1171,20 @@ export default function AccountPage() {
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{pastBookings.filter(b => b.status === "COMPLETED").length}</p>
                   <p className="text-xs text-gray-500">Completed</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-indigo-100">
+                  <Wallet className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{client.credits || 0}</p>
+                  <p className="text-xs text-gray-500">Class Credits</p>
                 </div>
               </div>
             </CardContent>

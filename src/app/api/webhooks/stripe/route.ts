@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
-        await handleInvoicePaymentSucceeded(invoice)
+        await handleInvoicePaymentSucceeded(invoice, event.account || null)
         break
       }
 
@@ -353,6 +353,213 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription): { start: Date
   }
 }
 
+function extractInvoicePaymentIntentId(invoice: Stripe.Invoice): string | null {
+  const paymentIntentRef = (
+    invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent | null }
+  ).payment_intent
+  if (!paymentIntentRef) return null
+  if (typeof paymentIntentRef === "string") return paymentIntentRef
+  return paymentIntentRef.id
+}
+
+function parseIntMetadata(value: string | undefined) {
+  if (!value) return null
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function matchesAnchorDayAndTime(
+  startTime: Date,
+  anchorWeekdayUtc: number,
+  anchorMinutesUtc: number
+) {
+  const weekday = startTime.getUTCDay()
+  const minutes = startTime.getUTCHours() * 60 + startTime.getUTCMinutes()
+  return weekday === anchorWeekdayUtc && minutes === anchorMinutesUtc
+}
+
+async function handleWeeklyClassInvoicePayment(
+  invoice: Stripe.Invoice,
+  subscription: Stripe.Subscription
+) {
+  if (subscription.metadata?.type !== "weekly_class_booking") return false
+
+  const studioId = subscription.metadata.studioId
+  const clientId = subscription.metadata.clientId
+  const classTypeId = subscription.metadata.classTypeId
+  const teacherId = subscription.metadata.teacherId
+  const locationId = subscription.metadata.locationId
+
+  if (!studioId || !clientId || !classTypeId || !teacherId || !locationId) {
+    console.error("[WEBHOOK] Missing weekly booking metadata on subscription:", subscription.id)
+    return true
+  }
+
+  const paymentIntentId = extractInvoicePaymentIntentId(invoice)
+  const paidAmount = (invoice.amount_paid || invoice.amount_due || 0) / 100
+  const currency = invoice.currency || "usd"
+
+  let paymentId: string | undefined
+  if (paymentIntentId) {
+    const existingPayment = await db.payment.findFirst({
+      where: { stripePaymentIntentId: paymentIntentId },
+      select: { id: true },
+    })
+
+    if (existingPayment) {
+      paymentId = existingPayment.id
+      await db.payment.update({
+        where: { id: existingPayment.id },
+        data: {
+          status: "SUCCEEDED",
+          amount: invoice.amount_paid || invoice.amount_due || 0,
+          currency,
+          description: "Weekly class subscription renewal",
+        },
+      })
+    } else {
+      const createdPayment = await db.payment.create({
+        data: {
+          amount: invoice.amount_paid || invoice.amount_due || 0,
+          currency,
+          status: "SUCCEEDED",
+          stripePaymentIntentId: paymentIntentId,
+          description: "Weekly class subscription renewal",
+          studioId,
+          clientId,
+        },
+      })
+      paymentId = createdPayment.id
+    }
+  }
+
+  const anchorWeekdayUtc = parseIntMetadata(subscription.metadata.anchorWeekdayUtc)
+  const anchorMinutesUtc = parseIntMetadata(subscription.metadata.anchorMinutesUtc)
+  const now = new Date()
+
+  const upcomingSessions = await db.classSession.findMany({
+    where: {
+      studioId,
+      classTypeId,
+      teacherId,
+      locationId,
+      startTime: { gte: now },
+    },
+    orderBy: { startTime: "asc" },
+    take: 24,
+    include: {
+      classType: true,
+      teacher: { include: { user: true } },
+      location: true,
+    },
+  })
+
+  let targetSession =
+    anchorWeekdayUtc !== null && anchorMinutesUtc !== null
+      ? upcomingSessions.find((session) =>
+          matchesAnchorDayAndTime(session.startTime, anchorWeekdayUtc, anchorMinutesUtc)
+        )
+      : undefined
+
+  if (!targetSession) {
+    targetSession = upcomingSessions[0]
+  }
+
+  if (!targetSession) {
+    await db.client.update({
+      where: { id: clientId },
+      data: { credits: { increment: 1 } },
+    })
+    return true
+  }
+
+  const bookingResult = await db.$transaction(async (tx) => {
+    await lockClassSession(tx, targetSession.id)
+
+    const duplicate = await tx.booking.findFirst({
+      where: {
+        clientId,
+        classSessionId: targetSession.id,
+        status: { in: ["CONFIRMED", "PENDING"] },
+      },
+      select: { id: true },
+    })
+    if (duplicate) return { kind: "DUPLICATE" as const }
+
+    const activeBookingsCount = await tx.booking.count({
+      where: {
+        classSessionId: targetSession.id,
+        status: { in: ["CONFIRMED", "PENDING"] },
+      },
+    })
+
+    if (activeBookingsCount >= targetSession.capacity) {
+      return { kind: "FULL" as const }
+    }
+
+    const booking = await tx.booking.create({
+      data: {
+        studioId,
+        clientId,
+        classSessionId: targetSession.id,
+        status: "CONFIRMED",
+        paymentId,
+        paidAmount,
+      },
+      include: {
+        client: true,
+      },
+    })
+
+    return { kind: "BOOKED" as const, booking }
+  })
+
+  if (bookingResult.kind === "FULL") {
+    await db.client.update({
+      where: { id: clientId },
+      data: { credits: { increment: 1 } },
+    })
+    return true
+  }
+
+  if (bookingResult.kind === "DUPLICATE") {
+    return true
+  }
+
+  const studio = await db.studio.findUnique({
+    where: { id: studioId },
+    select: { name: true, subdomain: true },
+  })
+
+  const baseUrl = (process.env.NEXTAUTH_URL || "https://thecurrent.app").replace(/\/$/, "")
+  const manageBookingUrl = studio?.subdomain
+    ? `${baseUrl}/${studio.subdomain}/account`
+    : `${baseUrl}/account`
+
+  void sendBookingConfirmationEmail({
+    studioId,
+    studioName: studio?.name || "Studio",
+    clientEmail: bookingResult.booking.client.email,
+    clientName: bookingResult.booking.client.firstName,
+    booking: {
+      bookingId: bookingResult.booking.id,
+      className: targetSession.classType.name,
+      teacherName: `${targetSession.teacher.user.firstName} ${targetSession.teacher.user.lastName}`,
+      locationName: targetSession.location.name,
+      locationAddress: targetSession.location.address || undefined,
+      startTime: targetSession.startTime,
+      endTime: targetSession.endTime,
+      amount: paidAmount,
+      status: bookingResult.booking.status,
+    },
+    manageBookingUrl,
+  }).catch((error) => {
+    console.error("[WEBHOOK] Failed sending weekly booking email:", error)
+  })
+
+  return true
+}
+
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const status = normalizeSubscriptionStatus(subscription.status)
   const shouldSetCancelledAt =
@@ -408,9 +615,25 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   })
 }
 
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice,
+  connectedAccountId: string | null
+) {
   const subscriptionId = getSubscriptionIdFromInvoice(invoice)
   if (!subscriptionId) return
+
+  if (connectedAccountId) {
+    try {
+      const stripe = getStripe()
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+        stripeAccount: connectedAccountId,
+      })
+      const handled = await handleWeeklyClassInvoicePayment(invoice, subscription)
+      if (handled) return
+    } catch (error) {
+      console.error("[WEBHOOK] Failed weekly subscription handling:", error)
+    }
+  }
 
   const updateData: {
     status: string

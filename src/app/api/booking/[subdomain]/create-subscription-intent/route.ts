@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getStripe, calculatePlatformFee } from "@/lib/stripe"
 import { verifyClientToken } from "@/lib/client-auth"
+import { ensureStripeCustomerForConnectedAccount } from "@/lib/stripe-customers"
 
 // POST - Create a PaymentIntent for subscription payment
 export async function POST(
@@ -86,28 +87,18 @@ export async function POST(
 
     const stripe = getStripe()
 
-    // Create or get Stripe customer on the connected account
-    let stripeCustomerId = client.stripeCustomerId
-
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
+    const stripeCustomerId = await ensureStripeCustomerForConnectedAccount({
+      stripe,
+      stripeAccountId: studio.stripeAccountId,
+      client: {
+        id: client.id,
         email: client.email,
-        name: `${client.firstName} ${client.lastName}`,
-        metadata: {
-          clientId: client.id,
-          studioId: studio.id,
-        },
-      }, {
-        stripeAccount: studio.stripeAccountId,
-      })
-
-      stripeCustomerId = customer.id
-
-      await db.client.update({
-        where: { id: client.id },
-        data: { stripeCustomerId },
-      })
-    }
+        firstName: client.firstName,
+        lastName: client.lastName,
+        studioId: studio.id,
+        stripeCustomerId: client.stripeCustomerId,
+      },
+    })
 
     // Calculate amount based on interval
     const price = interval === "yearly" ? plan.yearlyPrice : plan.monthlyPrice
@@ -164,7 +155,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
 
 
 
