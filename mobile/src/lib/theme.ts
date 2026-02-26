@@ -21,9 +21,22 @@ export const mobileTheme = {
   },
 }
 
+let runtimeStudioPrimaryColor: string | null = null
+
+function normalizeHexColor(value: string | null | undefined) {
+  const candidate = String(value || "").trim().toLowerCase()
+  if (!/^#[0-9a-f]{6}$/.test(candidate)) {
+    return null
+  }
+  return candidate
+}
+
+export function setStudioRuntimePrimaryColor(value: string | null | undefined) {
+  runtimeStudioPrimaryColor = normalizeHexColor(value)
+}
+
 export function getStudioPrimaryColor() {
-  const candidate = String(mobileConfig.primaryColor || "").trim()
-  return candidate || "#7c3aed"
+  return runtimeStudioPrimaryColor || normalizeHexColor(mobileConfig.primaryColor) || "#7c3aed"
 }
 
 export function withOpacity(hexColor: string, opacity: number) {

@@ -75,11 +75,11 @@ function buildChecklistContent({ studioName, slug, iosBundle, androidPackage, ap
 const dryRun = hasFlag("dry-run")
 const slugInput = getArg("slug")
 const nameInput = getArg("name")
-const primaryColor = getArg("primaryColor") || process.env.EXPO_PUBLIC_BRAND_PRIMARY || "#2563eb"
+const primaryColor = getArg("primaryColor") || process.env.EXPO_PUBLIC_BRAND_PRIMARY || "#7c3aed"
 const apiBaseUrl = getArg("apiBaseUrl") || process.env.EXPO_PUBLIC_API_BASE_URL || "https://www.thecurrent.app"
 
 if (!slugInput || !nameInput) {
-  console.error("Usage: pnpm prepare:studio --slug <studio-subdomain> --name \"Studio Name\" [--primaryColor #2563eb] [--apiBaseUrl https://www.thecurrent.app] [--iosBundleIdentifier app.current.studio.slug] [--androidPackage app.current.studio.slug] [--dry-run]")
+  console.error("Usage: pnpm prepare:studio --slug <studio-subdomain> --name \"Studio Name\" [--primaryColor #7c3aed] [--apiBaseUrl https://www.thecurrent.app] [--iosBundleIdentifier app.current.studio.slug] [--androidPackage app.current.studio.slug] [--dry-run]")
   process.exit(1)
 }
 
@@ -95,7 +95,7 @@ const androidPackage = getArg("androidPackage") || `app.current.studio.${slug.re
 const validationErrors = []
 if (!ensureNonEmpty(nameInput)) validationErrors.push("Studio name is required")
 if (!ensureNonEmpty(slug)) validationErrors.push("Studio slug is required")
-if (!isHexColor(primaryColor)) validationErrors.push("primaryColor must be a hex color like #2563eb")
+if (!isHexColor(primaryColor)) validationErrors.push("primaryColor must be a hex color like #7c3aed")
 if (!isHttpUrl(apiBaseUrl)) validationErrors.push("apiBaseUrl must be a valid http/https URL")
 if (!ensureNonEmpty(iosBundle)) validationErrors.push("iosBundleIdentifier is required")
 if (!ensureNonEmpty(androidPackage)) validationErrors.push("androidPackage is required")
@@ -114,6 +114,7 @@ const envContent = [
   `EXPO_PUBLIC_STUDIO_NAME=${nameInput}`,
   `EXPO_PUBLIC_BRAND_PRIMARY=${primaryColor}`,
   `EXPO_PUBLIC_API_BASE_URL=${apiBaseUrl}`,
+  "EXPO_PUBLIC_ALLOW_SUBDOMAIN_OVERRIDE=0",
   `IOS_BUNDLE_IDENTIFIER=${iosBundle}`,
   `ANDROID_PACKAGE=${androidPackage}`,
   ""

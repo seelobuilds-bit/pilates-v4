@@ -11,7 +11,7 @@ function sanitizeSegment(value: string, fallback: string) {
 
 const studioSubdomain = sanitizeSegment(process.env.EXPO_PUBLIC_STUDIO_SUBDOMAIN || "template", "template")
 const studioName = process.env.EXPO_PUBLIC_STUDIO_NAME || "Current Studio"
-const primaryColor = process.env.EXPO_PUBLIC_BRAND_PRIMARY || "#2563eb"
+const primaryColor = process.env.EXPO_PUBLIC_BRAND_PRIMARY || "#7c3aed"
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "https://www.thecurrent.app"
 
 const iosBundleIdentifier =

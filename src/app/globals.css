@@ -114,3 +114,192 @@
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.6);
 }
+
+/* Studio branding: remap legacy violet/purple utility tokens to studio-selected color */
+.studio-brand-scope {
+  --studio-50: #f5f3ff;
+  --studio-100: #ede9fe;
+  --studio-200: #ddd6fe;
+  --studio-300: #c4b5fd;
+  --studio-400: #a78bfa;
+  --studio-500: #8b5cf6;
+  --studio-600: #7c3aed;
+  --studio-700: #6d28d9;
+  --studio-800: #5b21b6;
+  --studio-900: #4c1d95;
+  --studio-950: #2e1065;
+}
+
+.studio-brand-scope .bg-violet-50,
+.studio-brand-scope .bg-purple-50 {
+  background-color: var(--studio-50) !important;
+}
+.studio-brand-scope .bg-violet-100,
+.studio-brand-scope .bg-purple-100 {
+  background-color: var(--studio-100) !important;
+}
+.studio-brand-scope .bg-violet-200,
+.studio-brand-scope .bg-purple-200 {
+  background-color: var(--studio-200) !important;
+}
+.studio-brand-scope .bg-violet-500,
+.studio-brand-scope .bg-purple-500 {
+  background-color: var(--studio-500) !important;
+}
+.studio-brand-scope .bg-violet-600,
+.studio-brand-scope .bg-purple-600 {
+  background-color: var(--studio-600) !important;
+}
+.studio-brand-scope .bg-violet-700,
+.studio-brand-scope .bg-purple-700 {
+  background-color: var(--studio-700) !important;
+}
+
+.studio-brand-scope .text-violet-200,
+.studio-brand-scope .text-purple-200 {
+  color: var(--studio-200) !important;
+}
+.studio-brand-scope .text-violet-300,
+.studio-brand-scope .text-purple-300 {
+  color: var(--studio-300) !important;
+}
+.studio-brand-scope .text-violet-400,
+.studio-brand-scope .text-purple-400 {
+  color: var(--studio-400) !important;
+}
+.studio-brand-scope .text-violet-500,
+.studio-brand-scope .text-purple-500 {
+  color: var(--studio-500) !important;
+}
+.studio-brand-scope .text-violet-600,
+.studio-brand-scope .text-purple-600 {
+  color: var(--studio-600) !important;
+}
+.studio-brand-scope .text-violet-700,
+.studio-brand-scope .text-purple-700 {
+  color: var(--studio-700) !important;
+}
+.studio-brand-scope .text-violet-800,
+.studio-brand-scope .text-purple-800 {
+  color: var(--studio-800) !important;
+}
+.studio-brand-scope .text-violet-900,
+.studio-brand-scope .text-purple-900 {
+  color: var(--studio-900) !important;
+}
+
+.studio-brand-scope .border-violet-100,
+.studio-brand-scope .border-purple-100 {
+  border-color: var(--studio-100) !important;
+}
+.studio-brand-scope .border-violet-200,
+.studio-brand-scope .border-purple-200 {
+  border-color: var(--studio-200) !important;
+}
+.studio-brand-scope .border-violet-300,
+.studio-brand-scope .border-purple-300 {
+  border-color: var(--studio-300) !important;
+}
+.studio-brand-scope .border-violet-500,
+.studio-brand-scope .border-purple-500 {
+  border-color: var(--studio-500) !important;
+}
+.studio-brand-scope .border-violet-600,
+.studio-brand-scope .border-purple-600 {
+  border-color: var(--studio-600) !important;
+}
+
+.studio-brand-scope .ring-violet-400,
+.studio-brand-scope .ring-purple-400 {
+  --tw-ring-color: var(--studio-400) !important;
+}
+.studio-brand-scope .ring-violet-500,
+.studio-brand-scope .ring-purple-500 {
+  --tw-ring-color: var(--studio-500) !important;
+}
+
+.studio-brand-scope .from-violet-50,
+.studio-brand-scope .from-purple-50 {
+  --tw-gradient-from: var(--studio-50) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.studio-brand-scope .from-violet-500,
+.studio-brand-scope .from-purple-500 {
+  --tw-gradient-from: var(--studio-500) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.studio-brand-scope .from-violet-600,
+.studio-brand-scope .from-purple-600 {
+  --tw-gradient-from: var(--studio-600) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.studio-brand-scope .to-violet-50,
+.studio-brand-scope .to-purple-50 {
+  --tw-gradient-to: var(--studio-50) var(--tw-gradient-to-position) !important;
+}
+.studio-brand-scope .to-violet-100,
+.studio-brand-scope .to-purple-100 {
+  --tw-gradient-to: var(--studio-100) var(--tw-gradient-to-position) !important;
+}
+.studio-brand-scope .to-violet-500,
+.studio-brand-scope .to-purple-500 {
+  --tw-gradient-to: var(--studio-500) var(--tw-gradient-to-position) !important;
+}
+.studio-brand-scope .to-violet-600,
+.studio-brand-scope .to-purple-600 {
+  --tw-gradient-to: var(--studio-600) var(--tw-gradient-to-position) !important;
+}
+.studio-brand-scope .via-violet-50,
+.studio-brand-scope .via-purple-50 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--studio-50) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.studio-brand-scope .hover\:bg-violet-50:hover,
+.studio-brand-scope .hover\:bg-purple-50:hover {
+  background-color: var(--studio-50) !important;
+}
+.studio-brand-scope .hover\:bg-violet-100:hover,
+.studio-brand-scope .hover\:bg-purple-100:hover {
+  background-color: var(--studio-100) !important;
+}
+.studio-brand-scope .hover\:bg-violet-700:hover,
+.studio-brand-scope .hover\:bg-purple-700:hover {
+  background-color: var(--studio-700) !important;
+}
+.studio-brand-scope .hover\:text-violet-600:hover,
+.studio-brand-scope .hover\:text-purple-600:hover {
+  color: var(--studio-600) !important;
+}
+.studio-brand-scope .hover\:text-violet-700:hover,
+.studio-brand-scope .hover\:text-purple-700:hover {
+  color: var(--studio-700) !important;
+}
+.studio-brand-scope .hover\:border-violet-300:hover,
+.studio-brand-scope .hover\:border-purple-300:hover {
+  border-color: var(--studio-300) !important;
+}
+
+.studio-brand-scope [data-state="active"].data-\[state\=active\]\:bg-violet-50,
+.studio-brand-scope [data-state="active"].data-\[state\=active\]\:bg-purple-50 {
+  background-color: var(--studio-50) !important;
+}
+.studio-brand-scope [data-state="active"].data-\[state\=active\]\:text-violet-700,
+.studio-brand-scope [data-state="active"].data-\[state\=active\]\:text-purple-700 {
+  color: var(--studio-700) !important;
+}
+
+.studio-brand-scope .bg-violet-50\/40,
+.studio-brand-scope .bg-purple-50\/40 {
+  background-color: color-mix(in srgb, var(--studio-50) 40%, transparent) !important;
+}
+.studio-brand-scope .bg-violet-50\/50,
+.studio-brand-scope .bg-purple-50\/50 {
+  background-color: color-mix(in srgb, var(--studio-50) 50%, transparent) !important;
+}
+.studio-brand-scope .bg-violet-50\/60,
+.studio-brand-scope .bg-purple-50\/60 {
+  background-color: color-mix(in srgb, var(--studio-50) 60%, transparent) !important;
+}
