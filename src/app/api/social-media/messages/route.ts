@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { sendLiveSocialMessage } from "@/lib/social/live-messaging"
 import { getSession } from "@/lib/session"
 import { getSocialMediaMode } from "@/lib/social-media-mode"
 
@@ -139,20 +140,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Send a message (simulated)
+// POST - Send a message
 export async function POST(request: NextRequest) {
   const session = await getSession()
   const socialMode = getSocialMediaMode()
 
   if (!session?.user?.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  if (socialMode !== "SIMULATED_BETA") {
-    return NextResponse.json(
-      { error: "Live social DM sending is not enabled in this environment" },
-      { status: 503 }
-    )
   }
 
   try {
@@ -171,11 +165,33 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         platform: true,
+        platformUserId: true,
+        accessToken: true,
       },
     })
 
     if (!account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 })
+    }
+
+    let providerMessageId: string | null = null
+    if (socialMode === "LIVE") {
+      const sendResult = await sendLiveSocialMessage({
+        account: {
+          platform: account.platform,
+          platformUserId: account.platformUserId,
+          accessToken: account.accessToken,
+        },
+        recipientPlatformUserId: platformUserId,
+        content,
+      })
+      if (!sendResult.ok) {
+        return NextResponse.json(
+          { error: sendResult.error },
+          { status: sendResult.status || 503 }
+        )
+      }
+      providerMessageId = sendResult.providerMessageId
     }
 
     // Create message record
@@ -187,11 +203,10 @@ export async function POST(request: NextRequest) {
         platformUsername,
         direction: "OUTBOUND",
         content,
-        isRead: true
+        isRead: true,
+        platformMessageId: providerMessageId,
       }
     })
-
-    // In production, this would call the Instagram/TikTok API to send the message
 
     return NextResponse.json(message)
   } catch (error) {
@@ -244,7 +259,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to mark as read" }, { status: 500 })
   }
 }
-
 
 
 
