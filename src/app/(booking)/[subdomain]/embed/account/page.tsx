@@ -188,7 +188,7 @@ export default function EmbedAccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-transparent">
+      <div className="flex items-center justify-center p-4 bg-transparent py-10">
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     )
@@ -196,7 +196,7 @@ export default function EmbedAccountPage() {
 
   if (!client) {
     return (
-      <div className="min-h-screen p-4 bg-transparent">
+      <div className="p-4 bg-transparent">
         <div className="max-w-md mx-auto space-y-4">
           <div className="text-center pt-2">
             <p className="text-sm text-gray-500">{studio?.name || "Studio Account"}</p>
@@ -293,7 +293,7 @@ export default function EmbedAccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent p-4">
+    <div className="bg-transparent p-4">
       <div className="max-w-md mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link href={`/${subdomain}/embed`} className="flex items-center gap-1 text-gray-600 hover:text-gray-900">

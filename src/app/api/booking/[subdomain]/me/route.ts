@@ -39,7 +39,8 @@ export async function GET(
       id: client.id,
       firstName: client.firstName,
       lastName: client.lastName,
-      email: client.email
+      email: client.email,
+      credits: client.credits,
     })
   } catch {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

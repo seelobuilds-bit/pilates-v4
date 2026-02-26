@@ -347,6 +347,7 @@ interface ClientInfo {
   firstName: string
   lastName: string
   email: string
+  credits: number
 }
 
 type Step = "location" | "class" | "teacher" | "time" | "checkout"
@@ -400,6 +401,7 @@ export default function BookingPage() {
   const [bookingType, setBookingType] = useState<"single" | "recurring" | "pack">("single")
   const [packSize, setPackSize] = useState(5)
   const [autoRenew, setAutoRenew] = useState(false)
+  const [useCredit, setUseCredit] = useState(false)
 
   const [client, setClient] = useState<ClientInfo | null>(null)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
@@ -500,6 +502,12 @@ export default function BookingPage() {
       fetchSlots()
     }
   }, [step, selectedLocation, selectedClass, selectedTeacher, selectedDate])
+
+  useEffect(() => {
+    if (bookingType !== "single" && useCredit) {
+      setUseCredit(false)
+    }
+  }, [bookingType, useCredit])
 
   useEffect(() => {
     if (!classSessionIdFromUrl || !studioData || selectedSlot?.id === classSessionIdFromUrl) return
@@ -641,6 +649,7 @@ export default function BookingPage() {
   useEffect(() => {
     async function createPaymentIntent() {
       if (step !== "checkout" || !client || !selectedSlot || !studioData?.stripeEnabled || clientSecret) return
+      if (bookingType === "single" && useCredit) return
       
       setCreatingPaymentIntent(true)
       setPaymentError(null)
@@ -655,6 +664,9 @@ export default function BookingPage() {
             clientFirstName: client.firstName,
             clientLastName: client.lastName,
             trackingCode: activeTrackingCode,
+            bookingType,
+            packSize: bookingType === "pack" ? packSize : undefined,
+            autoRenew: bookingType === "pack" ? autoRenew : undefined,
           })
         })
 
@@ -674,7 +686,27 @@ export default function BookingPage() {
     }
 
     createPaymentIntent()
-  }, [step, client, selectedSlot, studioData?.stripeEnabled, subdomain, clientSecret, activeTrackingCode])
+  }, [
+    step,
+    client,
+    selectedSlot,
+    studioData?.stripeEnabled,
+    subdomain,
+    clientSecret,
+    activeTrackingCode,
+    bookingType,
+    packSize,
+    autoRenew,
+    useCredit,
+  ])
+
+  useEffect(() => {
+    if (step !== "checkout") return
+    setClientSecret(null)
+    setPaymentId(null)
+    setConnectedAccountId(null)
+    setPaymentError(null)
+  }, [step, bookingType, packSize, autoRenew, useCredit, selectedSlot?.id])
 
   // Handle successful payment completion
   function handlePaymentSuccess(bookingData: BookingDetails) {
@@ -696,6 +728,7 @@ export default function BookingPage() {
           bookingType,
           packSize: bookingType === "pack" ? packSize : undefined,
           autoRenew: bookingType === "pack" ? autoRenew : undefined,
+          useCredit: bookingType === "single" ? useCredit : false,
           trackingCode: activeTrackingCode
         })
       })
@@ -836,6 +869,7 @@ export default function BookingPage() {
 
   const currentStepIndex = STEPS.indexOf(step)
   const primaryColor = resolveStudioPrimaryColor(studioData.primaryColor)
+  const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1130,7 +1164,10 @@ export default function BookingPage() {
 
                     {/* Weekly Subscription */}
                     <button
-                      onClick={() => setBookingType("recurring")}
+                      onClick={() => {
+                        setBookingType("recurring")
+                        setUseCredit(false)
+                      }}
                       className={`w-full p-4 border rounded-xl transition-all ${
                         bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
@@ -1156,7 +1193,10 @@ export default function BookingPage() {
 
                     {/* Class Pack */}
                     <button
-                      onClick={() => setBookingType("pack")}
+                      onClick={() => {
+                        setBookingType("pack")
+                        setUseCredit(false)
+                      }}
                       className={`w-full p-4 border rounded-xl transition-all ${
                         bookingType === "pack" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
                       }`}
@@ -1292,9 +1332,12 @@ export default function BookingPage() {
                         {bookingType === "recurring" && (
                           <span className="text-gray-400 line-through">${selectedClass?.price.toFixed(2)}</span>
                         )}
-                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>${calculatePrice().toFixed(2)}</span>
+                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>${totalPrice.toFixed(2)}</span>
                       </span>
                     </div>
+                    {bookingType === "single" && useCredit && (
+                      <p className="text-xs text-emerald-600">Using 1 class credit for this booking.</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1353,6 +1396,9 @@ export default function BookingPage() {
                     <div>
                       <p className="font-medium text-gray-900">Booking as</p>
                       <p className="text-sm text-violet-600">{client.email}</p>
+                      {typeof client.credits === "number" && (
+                        <p className="text-xs text-gray-500 mt-1">{client.credits} credit{client.credits === 1 ? "" : "s"} available</p>
+                      )}
                     </div>
                     <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
                       <LogOut className="w-4 h-4" />
@@ -1361,6 +1407,20 @@ export default function BookingPage() {
                   </CardContent>
                 </Card>
 
+                {bookingType === "single" && (client.credits || 0) > 0 && (
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Use class credit</p>
+                        <p className="text-xs text-gray-500">
+                          Book this class using 1 credit instead of card payment.
+                        </p>
+                      </div>
+                      <Switch checked={useCredit} onCheckedChange={setUseCredit} />
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Payment */}
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -1368,7 +1428,7 @@ export default function BookingPage() {
                       <CreditCard className="w-5 h-5 text-violet-600" />
                       <p className="font-medium text-gray-900">Payment Details</p>
                     </div>
-                    {studioData?.stripeEnabled ? (
+                    {studioData?.stripeEnabled && !(bookingType === "single" && useCredit) ? (
                       creatingPaymentIntent ? (
                         <div className="text-center py-8">
                           <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto mb-3" />
@@ -1410,6 +1470,11 @@ export default function BookingPage() {
                           <p className="text-sm text-gray-400">Card form will appear here</p>
                         </div>
                       )
+                    ) : bookingType === "single" && useCredit ? (
+                      <div className="text-center py-4">
+                        <p className="text-emerald-700 font-medium mb-1">Credit booking selected</p>
+                        <p className="text-sm text-gray-500">No card payment required for this class.</p>
+                      </div>
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-gray-600 mb-2">Payments not enabled</p>
@@ -1419,14 +1484,14 @@ export default function BookingPage() {
                   </CardContent>
                 </Card>
 
-                {/* Only show confirm button if Stripe is NOT enabled (free booking) */}
-                {!studioData?.stripeEnabled && (
+                {/* Confirm button for free/credit booking paths */}
+                {(!studioData?.stripeEnabled || (bookingType === "single" && useCredit)) && (
                   <Button
                     onClick={handleConfirmBooking}
                     disabled={bookingLoading}
                     className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-lg"
                   >
-                    {bookingLoading ? "Processing..." : "Confirm Booking"}
+                    {bookingLoading ? "Processing..." : bookingType === "single" && useCredit ? "Use Credit & Confirm" : "Confirm Booking"}
                   </Button>
                 )}
               </>

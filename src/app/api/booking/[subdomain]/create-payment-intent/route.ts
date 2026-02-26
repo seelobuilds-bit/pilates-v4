@@ -11,7 +11,22 @@ export async function POST(
   try {
     const { subdomain } = await params
     const body = await request.json()
-    const { classSessionId, clientEmail, clientFirstName, clientLastName, trackingCode } = body
+    const {
+      classSessionId,
+      clientEmail,
+      clientFirstName,
+      clientLastName,
+      trackingCode,
+      bookingType: rawBookingType,
+      packSize: rawPackSize,
+      autoRenew: rawAutoRenew,
+    } = body
+
+    const bookingType: "single" | "recurring" | "pack" =
+      rawBookingType === "recurring" || rawBookingType === "pack" ? rawBookingType : "single"
+    const packSize = Number(rawPackSize)
+    const normalizedPackSize = [5, 10, 20].includes(packSize) ? packSize : 5
+    const autoRenew = rawAutoRenew === true
 
     // Get studio
     const studio = await db.studio.findUnique({
@@ -126,7 +141,17 @@ export async function POST(
     }
 
     // Calculate amounts (price is stored in dollars, Stripe needs cents)
-    const amountInCents = Math.round(classSession.classType.price * 100)
+    let creditsPurchased = 1
+    let discountRate = 0
+    if (bookingType === "recurring") {
+      creditsPurchased = 4
+      discountRate = 0.15
+    } else if (bookingType === "pack") {
+      creditsPurchased = normalizedPackSize
+      discountRate = normalizedPackSize === 5 ? 0.1 : normalizedPackSize === 10 ? 0.2 : 0.25
+    }
+    const totalDollars = classSession.classType.price * creditsPurchased * (1 - discountRate)
+    const amountInCents = Math.round(totalDollars * 100)
     const platformFee = calculatePlatformFee(amountInCents)
 
     const normalizedTrackingCode = normalizeSocialTrackingCode(trackingCode)
@@ -163,6 +188,11 @@ export async function POST(
         classDate: new Date(classSession.startTime).toISOString(),
         teacherName: `${classSession.teacher.user.firstName} ${classSession.teacher.user.lastName}`,
         locationName: classSession.location.name,
+        bookingType,
+        creditsPurchased: String(creditsPurchased),
+        packSize: bookingType === "pack" ? String(normalizedPackSize) : "",
+        autoRenew: bookingType === "pack" ? String(autoRenew) : "",
+        unitClassPriceCents: String(Math.round(classSession.classType.price * 100)),
         ...(attributedTrackingCode ? { trackingCode: attributedTrackingCode } : {}),
       },
     }, {
@@ -189,13 +219,15 @@ export async function POST(
       connectedAccountId: studio.stripeAccountId,
       amount: amountInCents,
       currency: studio.stripeCurrency || "usd",
+      bookingType,
+      creditsPurchased,
+      autoRenew: bookingType === "pack" ? autoRenew : false,
     })
   } catch (error) {
     console.error("Error creating payment intent:", error)
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }
-
 
 
 

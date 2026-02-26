@@ -31,8 +31,9 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { classSessionId, bookingType, recurringWeeks, packSize, trackingCode } = body
+    const { classSessionId, bookingType, recurringWeeks, packSize, trackingCode, useCredit } = body
     const normalizedTrackingCode = normalizeSocialTrackingCode(trackingCode)
+    const shouldUseCredit = useCredit === true
 
     // NOTE: This endpoint is intended for free bookings (no Stripe).
     // Paid bookings must go through the PaymentIntent flow.
@@ -66,6 +67,21 @@ export async function POST(
         amount = classSession.classType.price * (packSize || 5) * 0.85
       }
 
+      if (shouldUseCredit && bookingType !== "single") {
+        throw new Error("Credits can only be used for single class bookings")
+      }
+
+      if (shouldUseCredit) {
+        const client = await tx.client.findUnique({
+          where: { id: decoded.clientId },
+          select: { credits: true },
+        })
+        if (!client || client.credits <= 0) {
+          throw new Error("No class credits available")
+        }
+        amount = 0
+      }
+
       if (amount > 0) {
         throw new Error("Payment required")
       }
@@ -96,13 +112,24 @@ export async function POST(
         throw new Error("Class is full")
       }
 
+      if (shouldUseCredit) {
+        await tx.client.update({
+          where: { id: decoded.clientId },
+          data: {
+            credits: {
+              decrement: 1,
+            },
+          },
+        })
+      }
+
       return tx.booking.create({
         data: {
           studioId: studio.id,
           clientId: decoded.clientId,
           classSessionId,
           status: "CONFIRMED",
-          paidAmount: 0,
+          paidAmount: shouldUseCredit ? classSession.classType.price : 0,
         },
         include: {
           client: true,
@@ -190,6 +217,9 @@ export async function POST(
       )
     }
     if (message === "You have already booked this class") {
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+    if (message === "No class credits available" || message === "Credits can only be used for single class bookings") {
       return NextResponse.json({ error: message }, { status: 400 })
     }
 

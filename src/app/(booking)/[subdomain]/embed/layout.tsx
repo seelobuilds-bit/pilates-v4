@@ -9,9 +9,10 @@ export default function EmbedLayout({
         html,
         body {
           background: transparent !important;
+          overflow: hidden !important;
         }
       `}</style>
-      <div className="min-h-screen bg-transparent" style={{ minHeight: "100vh", overflow: "visible" }}>
+      <div className="bg-transparent" style={{ overflow: "visible" }}>
         {children}
       </div>
     </>

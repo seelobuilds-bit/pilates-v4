@@ -81,6 +81,11 @@ export async function POST(
     // Get class session ID from metadata
     const classSessionId = paymentIntent.metadata.classSessionId
     const clientId = paymentIntent.metadata.clientId
+    const metadataCreditsPurchased = Number.parseInt(paymentIntent.metadata?.creditsPurchased || "1", 10)
+    const creditsPurchased = Number.isFinite(metadataCreditsPurchased) && metadataCreditsPurchased > 0
+      ? metadataCreditsPurchased
+      : 1
+    const unitBookingAmount = (payment.amount / 100) / creditsPurchased
 
     if (!classSessionId || !clientId) {
       return NextResponse.json({ error: "Missing booking information" }, { status: 400 })
@@ -151,7 +156,7 @@ export async function POST(
           studioId: studio.id,
           status: "CONFIRMED",
           paymentId: payment.id,
-          paidAmount: payment.amount / 100,
+          paidAmount: unitBookingAmount,
         },
         include: {
           classSession: {
@@ -164,6 +169,17 @@ export async function POST(
           client: true,
         },
       })
+
+      if (creditsPurchased > 1) {
+        await tx.client.update({
+          where: { id: clientId },
+          data: {
+            credits: {
+              increment: creditsPurchased - 1,
+            },
+          },
+        })
+      }
 
       return { kind: "BOOKED" as const, booking }
     })
@@ -287,7 +303,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm payment" }, { status: 500 })
   }
 }
-
 
 
 

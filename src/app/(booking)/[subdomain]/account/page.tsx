@@ -27,7 +27,6 @@ import {
   ShoppingBag,
   Package,
   Crown,
-  Sparkles,
   Play,
   CheckCircle,
   Loader2,
@@ -1411,15 +1410,9 @@ export default function AccountPage() {
                     <div className="text-center py-8">
                       <Video className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                       <h3 className="font-medium text-gray-900 mb-2">Unlock The Vault</h3>
-                      <p className="text-gray-500 mb-4">
+                      <p className="text-gray-500">
                         Subscribe to access exclusive courses, tutorials, and content
                       </p>
-                      <Link href={`/${subdomain}/vault`}>
-                        <Button style={{ backgroundColor: primaryColor }}>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          The Vault
-                        </Button>
-                      </Link>
                     </div>
                   )}
                 </CardContent>
