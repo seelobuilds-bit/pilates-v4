@@ -9,22 +9,17 @@ export default function EmbedLayout({
         html,
         body {
           background: transparent !important;
-          overflow: hidden !important;
+          overflow-x: hidden !important;
+          overflow-y: auto !important;
           margin: 0 !important;
           padding: 0 !important;
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar {
-          display: none !important;
         }
         #__next,
         [data-nextjs-scroll-focus-boundary] {
           background: transparent !important;
         }
       `}</style>
-      <div className="bg-transparent" style={{ overflow: "hidden" }}>
+      <div className="bg-transparent" style={{ overflowX: "hidden", overflowY: "visible" }}>
         {children}
       </div>
     </>
