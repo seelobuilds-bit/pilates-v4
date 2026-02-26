@@ -4,7 +4,7 @@ export default function EmbedLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white min-h-screen" style={{ minHeight: '100vh', overflow: 'auto' }}>
+    <div className="min-h-screen bg-transparent" style={{ minHeight: "100vh", overflow: "visible" }}>
       {children}
     </div>
   )

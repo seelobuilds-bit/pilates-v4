@@ -51,7 +51,7 @@ export default async function StudioLandingPage({
   const bookingQuerySuffix = bookingQueryParams.toString()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-100">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4" style={{ color: studio.primaryColor || "#7c3aed" }}>
@@ -93,5 +93,4 @@ export default async function StudioLandingPage({
     </div>
   )
 }
-
 

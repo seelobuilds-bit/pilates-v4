@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { resolveStudioPrimaryColor } from "@/lib/brand-color"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
   Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
@@ -36,6 +37,7 @@ function StripePaymentWrapper({
   selectedSlot,
   selectedClass,
   selectedLocation,
+  primaryColor,
 }: {
   clientSecret: string
   connectedAccountId: string
@@ -47,6 +49,7 @@ function StripePaymentWrapper({
   selectedSlot: TimeSlot | null
   selectedClass: ClassType | null
   selectedLocation: Location | null
+  primaryColor: string
 }) {
   const stripePromise = useMemo(
     () =>
@@ -74,7 +77,7 @@ function StripePaymentWrapper({
         appearance: {
           theme: 'stripe',
           variables: {
-            colorPrimary: '#7c3aed',
+            colorPrimary: primaryColor,
             borderRadius: '8px',
           },
         },
@@ -574,16 +577,24 @@ export default function BookingPage() {
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)
+    setSelectedClass(null)
+    setSelectedTeacher(null)
+    setSelectedSlot(null)
+    setSelectedDate("")
     setStep("class")
   }
 
   function selectClassAndContinue(ct: ClassType) {
     setSelectedClass(ct)
+    setSelectedTeacher(null)
+    setSelectedSlot(null)
+    setSelectedDate("")
     setStep("teacher")
   }
 
   function selectTeacherAndContinue(t: Teacher | null) {
     setSelectedTeacher(t)
+    setSelectedSlot(null)
     setStep("time")
   }
 
@@ -824,6 +835,7 @@ export default function BookingPage() {
   }
 
   const currentStepIndex = STEPS.indexOf(step)
+  const primaryColor = resolveStudioPrimaryColor(studioData.primaryColor)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1387,6 +1399,7 @@ export default function BookingPage() {
                           selectedSlot={selectedSlot}
                           selectedClass={selectedClass}
                           selectedLocation={selectedLocation}
+                          primaryColor={primaryColor}
                         />
                       ) : (
                         <div className="text-center py-4">

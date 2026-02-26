@@ -249,6 +249,38 @@ export default function SettingsPage() {
     )
   }
 
+  const bookingEmbedCode = studio?.subdomain
+    ? `<iframe id="sf-booking-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="display:block;width:100%;min-height:760px;border:0;background:transparent;" frameborder="0" scrolling="no" loading="lazy"></iframe>
+<script>
+(function () {
+  var iframe = document.getElementById("sf-booking-embed-${studio.subdomain}");
+  if (!iframe) return;
+  window.addEventListener("message", function (event) {
+    var data = event.data;
+    if (!data || data.type !== "sf-booking-embed-resize") return;
+    var height = Math.max(760, Number(data.height) || 0);
+    iframe.style.height = height + "px";
+  });
+})();
+</script>`
+    : (loading ? "Loading..." : "Please log out and log back in to refresh your session")
+
+  const authEmbedCode = studio?.subdomain
+    ? `<iframe id="sf-account-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed/account" width="100%" style="display:block;width:100%;min-height:680px;border:0;background:transparent;" frameborder="0" scrolling="no" loading="lazy"></iframe>
+<script>
+(function () {
+  var iframe = document.getElementById("sf-account-embed-${studio.subdomain}");
+  if (!iframe) return;
+  window.addEventListener("message", function (event) {
+    var data = event.data;
+    if (!data || data.type !== "sf-booking-embed-resize") return;
+    var height = Math.max(680, Number(data.height) || 0);
+    iframe.style.height = height + "px";
+  });
+})();
+</script>`
+    : (loading ? "Loading..." : "Please log out and log back in to refresh your session")
+
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
@@ -547,14 +579,48 @@ export default function SettingsPage() {
               <textarea 
                 readOnly
                 className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"
-                value={studio?.subdomain ? `<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="min-height: 700px; height: 100%; border: none;" frameborder="0" scrolling="no"></iframe>` : (loading ? "Loading..." : "Please log out and log back in to refresh your session")}
+                value={bookingEmbedCode}
               />
               <Button 
                 variant="outline"
                 onClick={() => {
-                  if (studio?.subdomain) {
-                    navigator.clipboard.writeText(`<iframe src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="min-height: 700px; height: 100%; border: none;" frameborder="0" scrolling="no"></iframe>`)
-                  }
+                  if (studio?.subdomain) navigator.clipboard.writeText(bookingEmbedCode)
+                }}
+              >
+                Copy Code
+              </Button>
+            </div>
+            <div className="space-y-2 border-t border-gray-100 pt-4">
+              <Label>Account Sign-In Link</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={studio?.subdomain ? `${baseUrl}/${studio.subdomain}/embed/account` : (loading ? "Loading..." : "No studio found.")}
+                  className="bg-gray-50"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (studio?.subdomain) {
+                      navigator.clipboard.writeText(`${baseUrl}/${studio.subdomain}/embed/account`)
+                    }
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Account Sign-In Embed Code</Label>
+              <textarea
+                readOnly
+                className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"
+                value={authEmbedCode}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (studio?.subdomain) navigator.clipboard.writeText(authEmbedCode)
                 }}
               >
                 Copy Code

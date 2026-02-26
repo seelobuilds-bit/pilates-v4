@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { resolveStudioPrimaryColor } from "@/lib/brand-color"
 import { 
   Calendar, 
   MapPin, 
@@ -53,6 +54,7 @@ function SubscriptionPaymentWrapper({
   amount,
   planName,
   interval,
+  primaryColor,
   onSuccess,
   onCancel,
 }: {
@@ -63,6 +65,7 @@ function SubscriptionPaymentWrapper({
   amount: number
   planName: string
   interval: string
+  primaryColor: string
   onSuccess: () => void
   onCancel: () => void
 }) {
@@ -92,7 +95,7 @@ function SubscriptionPaymentWrapper({
         appearance: {
           theme: 'stripe',
           variables: {
-            colorPrimary: '#7c3aed',
+            colorPrimary: primaryColor,
             borderRadius: '8px',
           },
         },
@@ -482,6 +485,7 @@ interface Booking {
   status: string
   createdAt: string
   classSession: {
+    id: string
     startTime: string
     endTime: string
     classType: { name: string }
@@ -562,6 +566,7 @@ export default function AccountPage() {
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [activeTab, setActiveTab] = useState("bookings")
   const [loading, setLoading] = useState(true)
   
   // Auth state
@@ -902,7 +907,7 @@ export default function AccountPage() {
     )
   }
 
-  const primaryColor = studio.primaryColor || "#7c3aed"
+  const primaryColor = resolveStudioPrimaryColor(studio.primaryColor)
 
   // Not logged in - show login/register
   if (!client) {
@@ -1131,12 +1136,21 @@ export default function AccountPage() {
                     <Button 
                       className="w-full bg-transparent text-white border border-white/50 group-hover:bg-white group-hover:border-transparent transition-all sm:w-auto"
                     >
-                      <span className="flex items-center group-hover:text-violet-600" style={{ transition: 'color 0.2s' }}>
+                      <span className="flex items-center" style={{ transition: "color 0.2s" }}>
                         <BookOpen className="h-4 w-4 mr-2" />
                         The Vault
                       </span>
                     </Button>
                   </Link>
+                )}
+                {activeSubscriptions.some((sub) => sub.plan.communityChat?.isEnabled) && (
+                  <Button
+                    className="w-full bg-transparent text-white border border-white/50 hover:bg-white hover:border-transparent sm:w-auto"
+                    onClick={() => setActiveTab("community")}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Community
+                  </Button>
                 )}
               </div>
             </div>
@@ -1176,8 +1190,8 @@ export default function AccountPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-100">
-                  <BookOpen className="h-5 w-5 text-violet-600" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${primaryColor}15` }}>
+                  <BookOpen className="h-5 w-5" style={{ color: primaryColor }} />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{enrolledCourses.length}</p>
@@ -1203,7 +1217,7 @@ export default function AccountPage() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="bookings" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border shadow-sm p-1 flex w-full overflow-x-auto whitespace-nowrap">
             <TabsTrigger value="bookings" className="gap-2 shrink-0">
               <Calendar className="h-4 w-4" />
@@ -1224,10 +1238,6 @@ export default function AccountPage() {
             <TabsTrigger value="subscriptions" className="gap-2 shrink-0">
               <Crown className="h-4 w-4" />
               <span className="hidden sm:inline">Subscriptions</span>
-            </TabsTrigger>
-            <TabsTrigger value="courses" className="gap-2 shrink-0">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">My Courses</span>
             </TabsTrigger>
             {studio.hasStore && (
               <TabsTrigger value="orders" className="gap-2 shrink-0">
@@ -1261,7 +1271,12 @@ export default function AccountPage() {
                             <Calendar className="h-6 w-6" style={{ color: primaryColor }} />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{booking.classSession.classType.name}</p>
+                            <Link
+                              href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                              className="font-semibold text-gray-900 hover:underline"
+                            >
+                              {booking.classSession.classType.name}
+                            </Link>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
@@ -1318,7 +1333,12 @@ export default function AccountPage() {
                     {pastBookings.slice(0, 5).map((booking) => (
                       <div key={booking.id} className="flex flex-col gap-2 p-3 rounded-lg opacity-70 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="font-medium text-gray-700">{booking.classSession.classType.name}</p>
+                          <Link
+                            href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                            className="font-medium text-gray-700 hover:underline"
+                          >
+                            {booking.classSession.classType.name}
+                          </Link>
                           <p className="text-sm text-gray-500">
                             {new Date(booking.classSession.startTime).toLocaleDateString()} • {booking.classSession.location.name}
                           </p>
@@ -1387,7 +1407,7 @@ export default function AccountPage() {
                         <Link href={`/${subdomain}/vault`}>
                           <Button className="w-full" style={{ backgroundColor: primaryColor }}>
                             <Sparkles className="h-4 w-4 mr-2" />
-                            Browse All Content
+                            The Vault
                           </Button>
                         </Link>
                       </div>
@@ -1402,7 +1422,7 @@ export default function AccountPage() {
                       <Link href={`/${subdomain}/vault`}>
                         <Button style={{ backgroundColor: primaryColor }}>
                           <Sparkles className="h-4 w-4 mr-2" />
-                          Explore The Vault
+                          The Vault
                         </Button>
                       </Link>
                     </div>
@@ -1502,35 +1522,46 @@ export default function AccountPage() {
                             <span className="font-medium">Price:</span> ${sub.plan.monthlyPrice}/{sub.interval === "yearly" ? "year" : "month"}
                           </span>
                         </div>
-                        {sub.status === "cancelled" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={renewingSubscriptionId === sub.id}
-                            onClick={() => handleRenewSubscription(sub.id)}
-                          >
-                            {renewingSubscriptionId === sub.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Resuming
-                              </>
-                            ) : (
-                              "Resume Auto-Renew"
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                            onClick={() => {
-                              setSubscriptionToCancel(sub)
-                              setShowCancelModal(true)
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        )}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          {sub.plan.communityChat?.isEnabled && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setActiveTab("community")}
+                            >
+                              Open Community
+                            </Button>
+                          )}
+                          {sub.status === "cancelled" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={renewingSubscriptionId === sub.id}
+                              onClick={() => handleRenewSubscription(sub.id)}
+                            >
+                              {renewingSubscriptionId === sub.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Resuming
+                                </>
+                              ) : (
+                                "Resume Auto-Renew"
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                              onClick={() => {
+                                setSubscriptionToCancel(sub)
+                                setShowCancelModal(true)
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       {sub.plan.features && sub.plan.features.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -1701,77 +1732,6 @@ export default function AccountPage() {
                 </Card>
               )}
             </div>
-          </TabsContent>
-
-          {/* Courses Tab */}
-          <TabsContent value="courses">
-            {enrolledCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {enrolledCourses.map(course => (
-                  <Card key={course.id} className="border-0 shadow-sm hover:shadow-md transition-all">
-                    <CardContent className="p-0">
-                      <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 relative rounded-t-lg">
-                        {course.thumbnailUrl ? (
-                          <Image
-                            src={course.thumbnailUrl}
-                            alt={course.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="w-full h-full object-cover rounded-t-lg"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <BookOpen className="h-12 w-12 text-white/50" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-2">{course.title}</h3>
-                        <div className="flex flex-col gap-1 text-sm text-gray-500 mb-4 sm:flex-row sm:items-center sm:justify-between">
-                          <span className="flex items-center gap-1">
-                            <Play className="h-4 w-4" />
-                            {course._count.modules} modules
-                          </span>
-                          {course.progressPercent !== undefined && (
-                            <span>{course.progressPercent}% complete</span>
-                          )}
-                        </div>
-                        {course.progressPercent !== undefined && (
-                          <div className="h-2 bg-gray-200 rounded-full mb-4">
-                            <div 
-                              className="h-full bg-violet-600 rounded-full" 
-                              style={{ width: `${course.progressPercent}%` }}
-                            />
-                          </div>
-                        )}
-                        <Link href={`/${subdomain}/vault/${course.slug}`}>
-                          <Button className="w-full" style={{ backgroundColor: primaryColor }}>
-                            <Play className="h-4 w-4 mr-2" />
-                            Continue Learning
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-12 text-center">
-                  <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
-                  <p className="text-gray-500 mb-6">
-                    Subscribe to access exclusive courses and content
-                  </p>
-                  <Link href={`/${subdomain}/vault`}>
-                    <Button style={{ backgroundColor: primaryColor }}>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Browse The Vault
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
           {/* Orders Tab */}
@@ -1958,6 +1918,7 @@ export default function AccountPage() {
                   amount={paymentAmount}
                   planName={selectedPlan.name}
                   interval={selectedInterval}
+                  primaryColor={primaryColor}
                   onSuccess={handleSubscriptionSuccess}
                   onCancel={handleCancelPayment}
                 />

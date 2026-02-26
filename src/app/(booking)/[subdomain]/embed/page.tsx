@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { startEmbedAutoResize } from "@/lib/embed-resize"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
   Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
@@ -36,6 +38,7 @@ function StripePaymentWrapper({
   selectedSlot,
   selectedClass,
   selectedLocation,
+  primaryColor,
 }: {
   clientSecret: string
   connectedAccountId: string
@@ -47,6 +50,7 @@ function StripePaymentWrapper({
   selectedSlot: TimeSlot | null
   selectedClass: ClassType | null
   selectedLocation: Location | null
+  primaryColor: string
 }) {
   const stripePromise = useMemo(
     () =>
@@ -74,7 +78,7 @@ function StripePaymentWrapper({
         appearance: {
           theme: 'stripe',
           variables: {
-            colorPrimary: '#7c3aed',
+            colorPrimary: primaryColor,
             borderRadius: '8px',
           },
         },
@@ -412,6 +416,8 @@ export default function EmbedBookingPage() {
     fetchData()
   }, [subdomain])
 
+  useEffect(() => startEmbedAutoResize(), [])
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -492,16 +498,24 @@ export default function EmbedBookingPage() {
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)
+    setSelectedClass(null)
+    setSelectedTeacher(null)
+    setSelectedSlot(null)
+    setSelectedDate("")
     setStep("class")
   }
 
   function selectClassAndContinue(ct: ClassType) {
     setSelectedClass(ct)
+    setSelectedTeacher(null)
+    setSelectedSlot(null)
+    setSelectedDate("")
     setStep("teacher")
   }
 
   function selectTeacherAndContinue(t: Teacher | null) {
     setSelectedTeacher(t)
+    setSelectedSlot(null)
     setStep("time")
   }
 
@@ -751,10 +765,12 @@ export default function EmbedBookingPage() {
     )
   }
 
+  const primaryColor = resolveStudioPrimaryColor(studioData.primaryColor)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <div className="max-w-xl mx-auto px-4 pt-6 pb-4 text-center">
+      <div className="max-w-2xl mx-auto px-4 pt-6 pb-4 text-center">
         <h1 className="text-xl font-bold text-gray-900">Book a Class</h1>
         <p className="text-gray-500 text-sm mt-1">{studioData.name}</p>
       </div>
@@ -784,7 +800,7 @@ export default function EmbedBookingPage() {
 
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
-        <div className="max-w-xl mx-auto px-4 pb-3">
+        <div className="max-w-2xl mx-auto px-4 pb-3">
           <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs">
             {selectedLocation && (
               <span className="flex items-center gap-1 text-gray-500">
@@ -803,7 +819,7 @@ export default function EmbedBookingPage() {
       )}
 
       {/* Content */}
-      <div className="max-w-xl mx-auto px-4 py-4">
+      <div className="max-w-2xl mx-auto px-4 py-4">
         {/* Back Button */}
         {step !== "location" && (
           <button
@@ -818,7 +834,7 @@ export default function EmbedBookingPage() {
         {/* Location Step */}
         {step === "location" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="w-5 h-5 text-violet-600" />
                 <h2 className="text-base font-semibold">Select Location</h2>
@@ -845,7 +861,7 @@ export default function EmbedBookingPage() {
         {/* Class Step */}
         {step === "class" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Link2 className="w-5 h-5 text-violet-600" />
                 <h2 className="text-base font-semibold">Select Class Type</h2>
@@ -881,7 +897,7 @@ export default function EmbedBookingPage() {
         {/* Teacher Step */}
         {step === "teacher" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <User className="w-5 h-5 text-violet-600" />
                 <h2 className="text-base font-semibold">Select Teacher</h2>
@@ -922,7 +938,7 @@ export default function EmbedBookingPage() {
         {/* Time Step */}
         {step === "time" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-violet-600" />
                 <h2 className="text-base font-semibold">Select Date & Time</h2>
@@ -997,7 +1013,7 @@ export default function EmbedBookingPage() {
           <div className="space-y-3">
             {/* Order Summary */}
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <CreditCard className="w-5 h-5 text-violet-600" />
                   <h2 className="text-base font-semibold">Complete Booking</h2>
@@ -1098,7 +1114,7 @@ export default function EmbedBookingPage() {
             {/* Auth / Payment */}
             {!client ? (
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-5">
+                <CardContent className="p-6">
                   <p className="font-medium text-gray-900 text-sm mb-3">{authMode === "login" ? "Sign in to book" : "Create account"}</p>
                   <form onSubmit={handleAuth} className="space-y-3">
                     {authError && <div className="p-2 text-xs text-red-600 bg-red-50 rounded">{authError}</div>}
@@ -1156,7 +1172,7 @@ export default function EmbedBookingPage() {
                 </Card>
 
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-5">
+                  <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-3">
                       <CreditCard className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900 text-sm">Payment</p>
@@ -1186,6 +1202,7 @@ export default function EmbedBookingPage() {
                           selectedSlot={selectedSlot}
                           selectedClass={selectedClass}
                           selectedLocation={selectedLocation}
+                          primaryColor={primaryColor}
                         />
                       ) : null
                     ) : (

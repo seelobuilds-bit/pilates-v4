@@ -1,21 +1,30 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  LogOut, 
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { startEmbedAutoResize } from "@/lib/embed-resize"
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  LogOut,
   ChevronLeft,
   CheckCircle,
   XCircle,
   Loader2,
-  AlertCircle
 } from "lucide-react"
+
+interface StudioData {
+  name: string
+  primaryColor: string | null
+}
 
 interface Booking {
   id: string
@@ -52,21 +61,49 @@ interface Client {
 export default function EmbedAccountPage() {
   const params = useParams()
   const subdomain = params.subdomain as string
-  
+
+  const [studio, setStudio] = useState<StudioData | null>(null)
   const [client, setClient] = useState<Client | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login")
+  const [authForm, setAuthForm] = useState({ email: "", password: "", firstName: "", lastName: "" })
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  const primaryColor = useMemo(
+    () => resolveStudioPrimaryColor(studio?.primaryColor),
+    [studio?.primaryColor]
+  )
 
   useEffect(() => {
-    fetchClientAndBookings()
+    const stopResize = startEmbedAutoResize()
+    void fetchStudio()
+    void fetchClientAndBookings()
+    return stopResize
   }, [subdomain])
+
+  async function fetchStudio() {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/data`)
+      if (!res.ok) return
+      const data = await res.json()
+      setStudio({
+        name: data.name,
+        primaryColor: data.primaryColor,
+      })
+    } catch (error) {
+      console.error("Failed to fetch studio info:", error)
+    }
+  }
 
   async function fetchClientAndBookings() {
     try {
       const meRes = await fetch(`/api/booking/${subdomain}/me`)
       if (!meRes.ok) {
-        setLoading(false)
+        setClient(null)
+        setBookings([])
         return
       }
       const meData = await meRes.json()
@@ -84,18 +121,47 @@ export default function EmbedAccountPage() {
     }
   }
 
+  async function handleAuth(e: React.FormEvent) {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError(null)
+
+    const endpoint = authMode === "login"
+      ? `/api/booking/${subdomain}/login`
+      : `/api/booking/${subdomain}/register`
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(authForm),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Authentication failed")
+      }
+
+      setAuthForm({ email: "", password: "", firstName: "", lastName: "" })
+      await fetchClientAndBookings()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Authentication failed")
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   async function handleCancelBooking(bookingId: string) {
     if (!confirm("Are you sure you want to cancel this booking?")) return
-    
+
     setCancellingId(bookingId)
     try {
       const res = await fetch(`/api/booking/${subdomain}/my-bookings/${bookingId}`, {
-        method: "DELETE"
+        method: "DELETE",
       })
-      
+
       if (res.ok) {
-        // Refresh bookings
-        fetchClientAndBookings()
+        await fetchClientAndBookings()
       } else {
         const data = await res.json()
         alert(data.error || "Failed to cancel booking")
@@ -109,57 +175,132 @@ export default function EmbedAccountPage() {
 
   async function handleLogout() {
     await fetch(`/api/booking/${subdomain}/logout`, { method: "POST" })
-    window.location.href = `/${subdomain}/embed`
+    setClient(null)
+    setBookings([])
   }
+
+  const upcomingBookings = bookings.filter(
+    (booking) => booking.status !== "CANCELLED" && new Date(booking.classSession.startTime) > new Date()
+  )
+  const pastBookings = bookings.filter(
+    (booking) => booking.status === "CANCELLED" || new Date(booking.classSession.startTime) <= new Date()
+  )
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-        <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-transparent">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     )
   }
 
   if (!client) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-        <Card className="border-0 shadow-lg max-w-md w-full">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Not Signed In</h2>
-            <p className="text-gray-500 mb-4">Please sign in to view your bookings.</p>
-            <Button 
-              onClick={() => window.location.href = `/${subdomain}/embed`}
-              className="bg-violet-600 hover:bg-violet-700"
-            >
-              Go to Booking
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen p-4 bg-transparent">
+        <div className="max-w-md mx-auto space-y-4">
+          <div className="text-center pt-2">
+            <p className="text-sm text-gray-500">{studio?.name || "Studio Account"}</p>
+            <h1 className="text-xl font-semibold text-gray-900 mt-1">
+              {authMode === "login" ? "Sign In" : "Create Account"}
+            </h1>
+          </div>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5">
+              <form onSubmit={handleAuth} className="space-y-3">
+                {authError && (
+                  <div className="p-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded">
+                    {authError}
+                  </div>
+                )}
+                {authMode === "register" && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">First Name</Label>
+                      <Input
+                        className="h-10"
+                        value={authForm.firstName}
+                        onChange={(e) => setAuthForm((prev) => ({ ...prev, firstName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Last Name</Label>
+                      <Input
+                        className="h-10"
+                        value={authForm.lastName}
+                        onChange={(e) => setAuthForm((prev) => ({ ...prev, lastName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    className="h-10"
+                    type="email"
+                    value={authForm.email}
+                    onChange={(e) => setAuthForm((prev) => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Password</Label>
+                  <Input
+                    className="h-10"
+                    type="password"
+                    value={authForm.password}
+                    onChange={(e) => setAuthForm((prev) => ({ ...prev, password: e.target.value }))}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-10"
+                  style={{ backgroundColor: primaryColor }}
+                  disabled={authLoading}
+                >
+                  {authLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Please wait...
+                    </>
+                  ) : authMode === "login" ? "Sign In" : "Create Account"}
+                </Button>
+                <p className="text-center text-xs text-gray-500">
+                  {authMode === "login" ? (
+                    <>
+                      No account?{" "}
+                      <button type="button" className="hover:underline" style={{ color: primaryColor }} onClick={() => setAuthMode("register")}>
+                        Sign up
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{" "}
+                      <button type="button" className="hover:underline" style={{ color: primaryColor }} onClick={() => setAuthMode("login")}>
+                        Sign in
+                      </button>
+                    </>
+                  )}
+                </p>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
-  const upcomingBookings = bookings.filter(
-    b => b.status !== "CANCELLED" && new Date(b.classSession.startTime) > new Date()
-  )
-  const pastBookings = bookings.filter(
-    b => b.status === "CANCELLED" || new Date(b.classSession.startTime) <= new Date()
-  )
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-transparent p-4">
       <div className="max-w-md mx-auto space-y-4">
-        {/* Header */}
         <div className="flex items-center justify-between">
-          <button 
-            onClick={() => window.location.href = `/${subdomain}/embed`}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
-          >
+          <Link href={`/${subdomain}/embed`} className="flex items-center gap-1 text-gray-600 hover:text-gray-900">
             <ChevronLeft className="h-5 w-5" />
             <span className="text-sm">Book Class</span>
-          </button>
-          <button 
+          </Link>
+          <button
             onClick={handleLogout}
             className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
           >
@@ -168,16 +309,14 @@ export default function EmbedAccountPage() {
           </button>
         </div>
 
-        {/* Profile Card */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Signed in as</p>
             <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
-            <p className="text-sm text-violet-600">{client.email}</p>
+            <p className="text-sm" style={{ color: primaryColor }}>{client.email}</p>
           </CardContent>
         </Card>
 
-        {/* Upcoming Bookings */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Upcoming Classes</h2>
           {upcomingBookings.length === 0 ? (
@@ -185,13 +324,9 @@ export default function EmbedAccountPage() {
               <CardContent className="p-6 text-center">
                 <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">No upcoming bookings</p>
-                <Button 
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => window.location.href = `/${subdomain}/embed`}
-                >
-                  Book a Class
-                </Button>
+                <Link href={`/${subdomain}/embed`}>
+                  <Button variant="outline" className="mt-4">Book a Class</Button>
+                </Link>
               </CardContent>
             </Card>
           ) : (
@@ -199,11 +334,14 @@ export default function EmbedAccountPage() {
               {upcomingBookings.map((booking) => (
                 <Card key={booking.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-3 gap-3">
                       <div>
-                        <h3 className="font-medium text-gray-900">
+                        <Link
+                          href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                          className="font-medium text-gray-900 hover:underline"
+                        >
                           {booking.classSession.classType.name}
-                        </h3>
+                        </Link>
                         <p className="text-sm text-gray-500">
                           with {booking.classSession.teacher.user.firstName} {booking.classSession.teacher.user.lastName}
                         </p>
@@ -213,24 +351,24 @@ export default function EmbedAccountPage() {
                         Confirmed
                       </Badge>
                     </div>
-                    
+
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="h-4 w-4" />
                         {new Date(booking.classSession.startTime).toLocaleDateString("en-US", {
                           weekday: "long",
                           month: "long",
-                          day: "numeric"
+                          day: "numeric",
                         })}
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <Clock className="h-4 w-4" />
                         {new Date(booking.classSession.startTime).toLocaleTimeString([], {
                           hour: "numeric",
-                          minute: "2-digit"
+                          minute: "2-digit",
                         })} - {new Date(booking.classSession.endTime).toLocaleTimeString([], {
                           hour: "numeric",
-                          minute: "2-digit"
+                          minute: "2-digit",
                         })}
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
@@ -260,7 +398,6 @@ export default function EmbedAccountPage() {
           )}
         </div>
 
-        {/* Past Bookings */}
         {pastBookings.length > 0 && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Past Classes</h2>
@@ -268,27 +405,29 @@ export default function EmbedAccountPage() {
               {pastBookings.slice(0, 5).map((booking) => (
                 <Card key={booking.id} className="border-0 shadow-sm opacity-75">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-medium text-gray-700">
+                        <Link
+                          href={`/${subdomain}/book?classSessionId=${booking.classSession.id}`}
+                          className="font-medium text-gray-700 hover:underline"
+                        >
                           {booking.classSession.classType.name}
-                        </h3>
+                        </Link>
                         <p className="text-sm text-gray-500">
                           {new Date(booking.classSession.startTime).toLocaleDateString("en-US", {
                             month: "short",
-                            day: "numeric"
+                            day: "numeric",
                           })} at {new Date(booking.classSession.startTime).toLocaleTimeString([], {
                             hour: "numeric",
-                            minute: "2-digit"
+                            minute: "2-digit",
                           })}
                         </p>
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className={booking.status === "CANCELLED" 
+                      <Badge
+                        variant="outline"
+                        className={booking.status === "CANCELLED"
                           ? "bg-red-50 text-red-700 border-red-200"
-                          : "bg-gray-50 text-gray-600 border-gray-200"
-                        }
+                          : "bg-gray-50 text-gray-600 border-gray-200"}
                       >
                         {booking.status === "CANCELLED" ? "Cancelled" : "Completed"}
                       </Badge>
