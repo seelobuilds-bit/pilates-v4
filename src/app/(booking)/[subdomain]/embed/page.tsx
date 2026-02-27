@@ -402,6 +402,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
   const [dateOffset, setDateOffset] = useState(0)
+  const [isCompactMobile, setIsCompactMobile] = useState(false)
 
   const [bookingType, setBookingType] = useState<"single" | "recurring" | "pack">("single")
   const [packSize, setPackSize] = useState(5)
@@ -448,6 +449,14 @@ export default function BookingPage() {
       window.sessionStorage.removeItem(dedupeKey)
     })
   }, [subdomain, trackingCodeFromUrl])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const syncMobileState = () => setIsCompactMobile(window.innerWidth < 430)
+    syncMobileState()
+    window.addEventListener("resize", syncMobileState)
+    return () => window.removeEventListener("resize", syncMobileState)
+  }, [])
 
   useEffect(() => {
     if (!embedFontHref || typeof window === "undefined" || typeof document === "undefined") return
@@ -599,7 +608,15 @@ export default function BookingPage() {
   }
 
   const availableDates = getAvailableDates()
-  const visibleDates = availableDates.slice(dateOffset, dateOffset + 5)
+  const visibleDateCount = isCompactMobile ? 3 : 5
+  const maxDateOffset = Math.max(0, availableDates.length - visibleDateCount)
+  const visibleDates = availableDates.slice(dateOffset, dateOffset + visibleDateCount)
+
+  useEffect(() => {
+    if (dateOffset > maxDateOffset) {
+      setDateOffset(maxDateOffset)
+    }
+  }, [dateOffset, maxDateOffset])
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)
@@ -892,7 +909,7 @@ export default function BookingPage() {
   return (
     <div className="bg-transparent" style={{ fontFamily: embedFontFamily }}>
       {/* Header */}
-      <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
+      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 pt-8 pb-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
         <p className="text-gray-500 mt-1">{studioData.name}</p>
       </div>
@@ -922,7 +939,7 @@ export default function BookingPage() {
 
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
-        <div className="max-w-2xl mx-auto px-4 pb-4">
+        <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 pb-4">
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm">
             {selectedLocation && (
               <span className="flex items-center gap-1.5 text-gray-500">
@@ -941,7 +958,7 @@ export default function BookingPage() {
       )}
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 py-6">
         {/* Back Button */}
         {step !== "location" && (
           <button
@@ -956,7 +973,7 @@ export default function BookingPage() {
         {/* Location Step */}
         {step === "location" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Location</h2>
@@ -983,7 +1000,7 @@ export default function BookingPage() {
         {/* Class Step */}
         {step === "class" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Link2 className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Class Type</h2>
@@ -1019,7 +1036,7 @@ export default function BookingPage() {
         {/* Teacher Step */}
         {step === "teacher" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Teacher</h2>
@@ -1061,7 +1078,7 @@ export default function BookingPage() {
         {/* Time Step */}
         {step === "time" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calendar className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Date & Time</h2>
@@ -1089,18 +1106,18 @@ export default function BookingPage() {
                         <button
                           key={d.date}
                           onClick={() => setSelectedDate(d.date)}
-                          className={`flex-1 py-2 px-1 rounded-xl text-center transition-all ${
+                          className={`flex-1 min-h-[64px] py-2 px-1 rounded-xl text-center transition-all ${
                             isSelected
                               ? "bg-violet-600 text-white"
                               : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                           }`}
                         >
                           {d.isToday || d.isTomorrow ? (
-                            <p className="font-medium text-sm">{d.label}</p>
+                            <p className={`font-medium ${isCompactMobile ? "text-xs" : "text-sm"}`}>{d.label}</p>
                           ) : (
                             <>
                               <p className="text-xs font-medium">{weekday}, {month}</p>
-                              <p className="text-sm font-semibold">{day}</p>
+                              <p className={`${isCompactMobile ? "text-xs" : "text-sm"} font-semibold`}>{day}</p>
                             </>
                           )}
                         </button>
@@ -1108,8 +1125,8 @@ export default function BookingPage() {
                     })}
                   </div>
                   <button
-                    onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 1))}
-                    disabled={dateOffset >= availableDates.length - 5}
+                    onClick={() => setDateOffset(Math.min(maxDateOffset, dateOffset + 1))}
+                    disabled={dateOffset >= maxDateOffset}
                     className="p-1 disabled:opacity-20 transition-opacity"
                   >
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -1149,7 +1166,7 @@ export default function BookingPage() {
         {step === "checkout" && (
           <div className="space-y-4">
             <Card className="border-0 shadow-none bg-transparent">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="w-5 h-5 text-violet-600" />
                   <h2 className="text-lg font-semibold">Complete Booking</h2>
