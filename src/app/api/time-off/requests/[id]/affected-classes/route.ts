@@ -38,8 +38,8 @@ export async function GET(
   if ("error" in auth) return auth.error
 
   const modules = await getStudioModuleAccess(auth.studioId)
-  if (!modules.employeesEnabled) {
-    return NextResponse.json({ error: "Employees module is disabled for this studio" }, { status: 403 })
+  if (!modules.timeOffEnabled) {
+    return NextResponse.json({ error: "Time Off module is disabled for this studio" }, { status: 403 })
   }
 
   try {

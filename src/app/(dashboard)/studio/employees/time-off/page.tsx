@@ -185,7 +185,7 @@ export default function StudioEmployeesTimeOffPage() {
       }
 
       const moduleData = await moduleRes.json()
-      if (moduleData?.employeesEnabled !== true) {
+      if (moduleData?.timeOffEnabled !== true) {
         setModuleEnabled(false)
         return
       }
@@ -374,9 +374,9 @@ export default function StudioEmployeesTimeOffPage() {
       <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
         <Card className="border-0 shadow-sm max-w-2xl">
           <CardContent className="p-6 space-y-3">
-            <h1 className="text-xl font-semibold text-gray-900">Employees Module Disabled</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Time Off Module Disabled</h1>
             <p className="text-sm text-gray-600">
-              Enable Employees in settings to manage time off requests.
+              Enable Time Off in settings to manage teacher requests.
             </p>
             <Link href="/studio/settings" className="text-sm font-medium text-violet-700 hover:text-violet-600">
               Open settings

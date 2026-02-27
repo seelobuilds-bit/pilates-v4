@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
   }
 
   const modules = await getStudioModuleAccess(session.user.studioId)
-  if (!modules.employeesEnabled) {
-    return NextResponse.json({ error: "Employees module is disabled for this studio" }, { status: 403 })
+  if (!modules.timeOffEnabled) {
+    return NextResponse.json({ error: "Time Off module is disabled for this studio" }, { status: 403 })
   }
 
   const range = monthRange(request.nextUrl.searchParams.get("month"))

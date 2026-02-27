@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 export type StudioModuleAccess = {
   invoicesEnabled: boolean
   employeesEnabled: boolean
+  timeOffEnabled: boolean
 }
 
 export async function getStudioModuleAccess(studioId: string): Promise<StudioModuleAccess> {
@@ -11,11 +12,13 @@ export async function getStudioModuleAccess(studioId: string): Promise<StudioMod
     select: {
       invoicesEnabled: true,
       employeesEnabled: true,
+      timeOffEnabled: true,
     },
   })
 
   return {
     invoicesEnabled: studio?.invoicesEnabled !== false,
     employeesEnabled: studio?.employeesEnabled === true,
+    timeOffEnabled: studio?.timeOffEnabled !== false,
   }
 }

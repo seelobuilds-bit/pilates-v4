@@ -59,8 +59,8 @@ export async function PATCH(
   }
 
   const modules = await getStudioModuleAccess(session.user.studioId)
-  if (!modules.employeesEnabled) {
-    return NextResponse.json({ error: "Employees module is disabled for this studio" }, { status: 403 })
+  if (!modules.timeOffEnabled) {
+    return NextResponse.json({ error: "Time Off module is disabled for this studio" }, { status: 403 })
   }
   const studioId = session.user.studioId
 
@@ -230,12 +230,19 @@ export async function PATCH(
         })
       })
 
-      await recalculateBalancesForRequestRange({
-        studioId: updated.studioId,
-        teacherId: updated.teacherId,
-        startDate: updated.startDate,
-        endDate: updated.endDate,
+      const teacher = await db.teacher.findUnique({
+        where: { id: updated.teacherId },
+        select: { engagementType: true },
       })
+
+      if (teacher?.engagementType === "EMPLOYEE") {
+        await recalculateBalancesForRequestRange({
+          studioId: updated.studioId,
+          teacherId: updated.teacherId,
+          startDate: updated.startDate,
+          endDate: updated.endDate,
+        })
+      }
 
       return NextResponse.json(updated)
     }

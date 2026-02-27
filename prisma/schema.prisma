@@ -111,6 +111,7 @@ model Studio {
   requiresClassSwapApproval Boolean @default(true)
   invoicesEnabled       Boolean   @default(true)
   employeesEnabled      Boolean   @default(false)
+  timeOffEnabled        Boolean   @default(true)
   country               StudioCountry @default(IE)
 
   locations     Location[]

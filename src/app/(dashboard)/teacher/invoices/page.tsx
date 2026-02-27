@@ -61,6 +61,7 @@ interface Invoice {
 export default function TeacherInvoicesPage() {
   const [loading, setLoading] = useState(true)
   const [moduleEnabled, setModuleEnabled] = useState(true)
+  const [disabledReason, setDisabledReason] = useState("Your studio has disabled the Invoices module.")
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [payRate, setPayRate] = useState<PayRate | null>(null)
   const [studioName, setStudioName] = useState("")
@@ -112,7 +113,9 @@ export default function TeacherInvoicesPage() {
     try {
       const res = await fetch("/api/teacher/invoices")
       if (res.status === 403) {
+        const data = await res.json().catch(() => ({}))
         setModuleEnabled(false)
+        setDisabledReason(data?.error || "Invoices are not available for this account.")
         setInvoices([])
         setLoading(false)
         return
@@ -287,7 +290,7 @@ export default function TeacherInvoicesPage() {
           <CardContent className="p-6 space-y-3">
             <h1 className="text-xl font-semibold text-gray-900">Invoices Disabled</h1>
             <p className="text-sm text-gray-600">
-              Your studio has disabled the Invoices module.
+              {disabledReason}
             </p>
             <Link href="/teacher/time-off" className="text-sm font-medium text-violet-700 hover:text-violet-600">
               Go to Time Off
@@ -841,7 +844,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

@@ -30,6 +30,7 @@ interface TimeOffRequest {
 }
 
 interface BalanceResponse {
+  isPaidLeaveTracked?: boolean
   balance: {
     annualLeaveEntitledDays: number
     annualLeaveUsedDays: number
@@ -59,6 +60,7 @@ export default function TeacherTimeOffPage() {
   const [moduleEnabled, setModuleEnabled] = useState(true)
   const [requests, setRequests] = useState<TimeOffRequest[]>([])
   const [balance, setBalance] = useState<BalanceResponse["balance"] | null>(null)
+  const [isPaidLeaveTracked, setIsPaidLeaveTracked] = useState(true)
 
   const [formType, setFormType] = useState<RequestType>("HOLIDAY")
   const [formStartDate, setFormStartDate] = useState("")
@@ -81,7 +83,7 @@ export default function TeacherTimeOffPage() {
         return
       }
       const moduleData = await moduleRes.json()
-      if (moduleData?.employeesEnabled !== true) {
+      if (moduleData?.timeOffEnabled !== true) {
         setModuleEnabled(false)
         return
       }
@@ -97,8 +99,10 @@ export default function TeacherTimeOffPage() {
       if (balanceRes.ok) {
         const balanceData = await balanceRes.json()
         setBalance(balanceData?.balance ?? null)
+        setIsPaidLeaveTracked(balanceData?.isPaidLeaveTracked !== false)
       } else {
         setBalance(null)
+        setIsPaidLeaveTracked(true)
       }
     } finally {
       if (isInitial) setLoading(false)
@@ -164,7 +168,7 @@ export default function TeacherTimeOffPage() {
           <CardContent className="p-6 space-y-3">
             <h1 className="text-xl font-semibold text-gray-900">Time Off Not Enabled</h1>
             <p className="text-sm text-gray-600">
-              Your studio has not enabled the Employees module yet.
+              Your studio has not enabled the Time Off module yet.
             </p>
             <Link href="/teacher" className="text-sm font-medium text-violet-700 hover:text-violet-600">
               Return to dashboard
@@ -186,30 +190,42 @@ export default function TeacherTimeOffPage() {
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle>My Balance</CardTitle>
-            <CardDescription>Current yearly entitlement, usage, and remaining totals.</CardDescription>
+            <CardDescription>
+              {isPaidLeaveTracked
+                ? "Current yearly entitlement, usage, and remaining totals."
+                : "Contractor mode: requests are tracked for approval only (no paid leave accrual)."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="text-sm font-medium text-gray-700">Annual Leave</p>
-              <p className="text-sm text-gray-600 mt-1">
-                Entitled: {balance?.annualLeaveEntitledDays ?? 0} days
-              </p>
-              <p className="text-sm text-gray-600">Used: {balance?.annualLeaveUsedDays ?? 0} days</p>
-              <p className={`text-sm font-semibold ${(balance?.annualLeaveRemainingDays ?? 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                Remaining: {balance?.annualLeaveRemainingDays ?? 0} days
-              </p>
-            </div>
+            {isPaidLeaveTracked ? (
+              <>
+                <div className="rounded-lg border border-gray-200 p-3">
+                  <p className="text-sm font-medium text-gray-700">Annual Leave</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Entitled: {balance?.annualLeaveEntitledDays ?? 0} days
+                  </p>
+                  <p className="text-sm text-gray-600">Used: {balance?.annualLeaveUsedDays ?? 0} days</p>
+                  <p className={`text-sm font-semibold ${(balance?.annualLeaveRemainingDays ?? 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    Remaining: {balance?.annualLeaveRemainingDays ?? 0} days
+                  </p>
+                </div>
 
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="text-sm font-medium text-gray-700">Paid Sick Leave</p>
-              <p className="text-sm text-gray-600 mt-1">
-                Entitled: {balance?.sickPaidEntitledDays ?? 0} days
-              </p>
-              <p className="text-sm text-gray-600">Used: {balance?.sickPaidUsedDays ?? 0} days</p>
-              <p className={`text-sm font-semibold ${(balance?.sickPaidRemainingDays ?? 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                Remaining: {balance?.sickPaidRemainingDays ?? 0} days
-              </p>
-            </div>
+                <div className="rounded-lg border border-gray-200 p-3">
+                  <p className="text-sm font-medium text-gray-700">Paid Sick Leave</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Entitled: {balance?.sickPaidEntitledDays ?? 0} days
+                  </p>
+                  <p className="text-sm text-gray-600">Used: {balance?.sickPaidUsedDays ?? 0} days</p>
+                  <p className={`text-sm font-semibold ${(balance?.sickPaidRemainingDays ?? 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    Remaining: {balance?.sickPaidRemainingDays ?? 0} days
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-600">
+                As a contractor, you can submit time-off requests, but paid leave balances are not applied.
+              </div>
+            )}
           </CardContent>
         </Card>
 

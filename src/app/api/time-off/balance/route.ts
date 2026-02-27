@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
   }
 
   const modules = await getStudioModuleAccess(session.user.studioId)
-  if (!modules.employeesEnabled) {
-    return NextResponse.json({ error: "Employees module is disabled for this studio" }, { status: 403 })
+  if (!modules.timeOffEnabled) {
+    return NextResponse.json({ error: "Time Off module is disabled for this studio" }, { status: 403 })
   }
 
   const searchParams = request.nextUrl.searchParams
@@ -56,6 +56,29 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (teacher.engagementType === "CONTRACTOR") {
+      return NextResponse.json({
+        teacher: {
+          id: teacher.id,
+          firstName: teacher.user.firstName,
+          lastName: teacher.user.lastName,
+          email: teacher.user.email,
+          engagementType: teacher.engagementType,
+        },
+        policy: null,
+        isPaidLeaveTracked: false,
+        balance: {
+          year,
+          annualLeaveEntitledDays: 0,
+          annualLeaveUsedDays: 0,
+          annualLeaveRemainingDays: 0,
+          sickPaidEntitledDays: 0,
+          sickPaidUsedDays: 0,
+          sickPaidRemainingDays: 0,
+        },
+      })
+    }
+
     const [balance, policy] = await Promise.all([
       recalculateTeacherTimeOffBalance({
         studioId: session.user.studioId,
@@ -74,6 +97,7 @@ export async function GET(request: NextRequest) {
         engagementType: teacher.engagementType,
       },
       policy,
+      isPaidLeaveTracked: true,
       balance: {
         ...balance,
         annualLeaveRemainingDays: Number((balance.annualLeaveEntitledDays - balance.annualLeaveUsedDays).toFixed(2)),

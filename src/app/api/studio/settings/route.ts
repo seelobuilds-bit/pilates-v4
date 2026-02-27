@@ -43,6 +43,7 @@ export async function GET() {
         requiresClassSwapApproval: true,
         invoicesEnabled: true,
         employeesEnabled: true,
+        timeOffEnabled: true,
         country: true,
         timeOffPolicyOverride: {
           select: {
@@ -99,6 +100,7 @@ export async function PATCH(request: NextRequest) {
       requiresClassSwapApproval,
       invoicesEnabled,
       employeesEnabled,
+      timeOffEnabled,
       country,
       timeOffPolicy,
     } = body
@@ -175,6 +177,7 @@ export async function PATCH(request: NextRequest) {
         }),
         ...(invoicesEnabled !== undefined && { invoicesEnabled: Boolean(invoicesEnabled) }),
         ...(employeesEnabled !== undefined && { employeesEnabled: Boolean(employeesEnabled) }),
+        ...(timeOffEnabled !== undefined && { timeOffEnabled: Boolean(timeOffEnabled) }),
         ...(normalizedCountry !== undefined && { country: targetCountry }),
       },
       select: {
@@ -186,6 +189,7 @@ export async function PATCH(request: NextRequest) {
         requiresClassSwapApproval: true,
         invoicesEnabled: true,
         employeesEnabled: true,
+        timeOffEnabled: true,
         country: true,
         timeOffPolicyOverride: {
           select: {

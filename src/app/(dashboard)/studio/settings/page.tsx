@@ -55,6 +55,7 @@ type StudioSettings = {
   requiresClassSwapApproval: boolean
   invoicesEnabled: boolean
   employeesEnabled: boolean
+  timeOffEnabled: boolean
   country: CountryCode
   timeOffPolicy: {
     annualLeaveWeeks: number
@@ -137,6 +138,7 @@ export default function SettingsPage() {
           requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
           invoicesEnabled: data.invoicesEnabled !== false,
           employeesEnabled: data.employeesEnabled === true,
+          timeOffEnabled: data.timeOffEnabled !== false,
           country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
           timeOffPolicy: {
             annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? 4),
@@ -255,6 +257,7 @@ export default function SettingsPage() {
           requiresClassSwapApproval: studio.requiresClassSwapApproval,
           invoicesEnabled: studio.invoicesEnabled,
           employeesEnabled: studio.employeesEnabled,
+          timeOffEnabled: studio.timeOffEnabled,
           country: studio.country,
           timeOffPolicy: studio.timeOffPolicy,
         }),
@@ -277,6 +280,7 @@ export default function SettingsPage() {
         requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
         invoicesEnabled: data.invoicesEnabled !== false,
         employeesEnabled: data.employeesEnabled === true,
+        timeOffEnabled: data.timeOffEnabled !== false,
         country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
         timeOffPolicy: {
           annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? prev.timeOffPolicy.annualLeaveWeeks),
@@ -607,7 +611,7 @@ export default function SettingsPage() {
                 <div>
                   <Label htmlFor="employees-enabled">Enable Employees</Label>
                   <p className="mt-1 text-xs text-gray-500">
-                    Enable Employees workspace and Time Off requests for studio and teacher portals.
+                    Enable Employees workspace and payroll features for staff.
                   </p>
                 </div>
                 <Switch
@@ -615,6 +619,24 @@ export default function SettingsPage() {
                   checked={studio?.employeesEnabled ?? false}
                   onCheckedChange={(checked) =>
                     setStudio((prev) => (prev ? { ...prev, employeesEnabled: checked } : prev))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="timeoff-enabled">Enable Time Off</Label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Enable Time Off requests/approvals for teachers (employees and contractors).
+                  </p>
+                </div>
+                <Switch
+                  id="timeoff-enabled"
+                  checked={studio?.timeOffEnabled ?? true}
+                  onCheckedChange={(checked) =>
+                    setStudio((prev) => (prev ? { ...prev, timeOffEnabled: checked } : prev))
                   }
                 />
               </div>
@@ -640,7 +662,7 @@ export default function SettingsPage() {
               </Select>
             </div>
 
-            {studio?.employeesEnabled && (
+            {studio?.employeesEnabled && studio?.timeOffEnabled && (
               <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm font-medium text-gray-900">Time Off Policy</p>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

@@ -39,6 +39,9 @@ type SidebarMode = "full" | "working"
 type ModuleAccess = {
   invoicesEnabled: boolean
   employeesEnabled: boolean
+  timeOffEnabled: boolean
+  isTeacherEmployee: boolean
+  canAccessTeacherInvoices: boolean
 }
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed-v1"
@@ -48,6 +51,9 @@ const WORKING_SLOT_COUNT = 4
 const DEFAULT_MODULE_ACCESS: ModuleAccess = {
   invoicesEnabled: true,
   employeesEnabled: false,
+  timeOffEnabled: true,
+  isTeacherEmployee: false,
+  canAccessTeacherInvoices: true,
 }
 
 const hqLinks: NavLink[] = [
@@ -117,6 +123,7 @@ function filterStudioLinkGroupsByModules(groups: NavGroup[], moduleAccess: Modul
       links: group.links.filter((link) => {
         if (link.href === "/studio/invoices") return moduleAccess.invoicesEnabled
         if (link.href === "/studio/employees") return moduleAccess.employeesEnabled
+        if (link.href === "/studio/employees/time-off") return moduleAccess.timeOffEnabled
         return true
       }),
     }))
@@ -146,8 +153,8 @@ export function Sidebar() {
   const filteredTeacherLinks = useMemo(
     () =>
       teacherLinks.filter((link) => {
-        if (link.href === "/teacher/invoices") return moduleAccess.invoicesEnabled
-        if (link.href === "/teacher/time-off") return moduleAccess.employeesEnabled
+        if (link.href === "/teacher/invoices") return moduleAccess.canAccessTeacherInvoices
+        if (link.href === "/teacher/time-off") return moduleAccess.timeOffEnabled
         return true
       }),
     [moduleAccess]
@@ -210,6 +217,12 @@ export function Sidebar() {
         setModuleAccess({
           invoicesEnabled: data?.invoicesEnabled !== false,
           employeesEnabled: data?.employeesEnabled === true,
+          timeOffEnabled: data?.timeOffEnabled !== false,
+          isTeacherEmployee: data?.isTeacherEmployee === true,
+          canAccessTeacherInvoices:
+            typeof data?.canAccessTeacherInvoices === "boolean"
+              ? data.canAccessTeacherInvoices
+              : data?.invoicesEnabled !== false,
         })
       } catch {
         // Keep defaults if module fetch fails.

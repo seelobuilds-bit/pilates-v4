@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.teacherId },
       include: { 
         studio: true,
-        payRate: true
+        payRate: true,
       }
     })
 
@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
     const modules = await getStudioModuleAccess(teacher.studioId)
     if (!modules.invoicesEnabled) {
       return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+    if (teacher.engagementType === "EMPLOYEE") {
+      return NextResponse.json({ error: "Invoices are only available for contractor teachers" }, { status: 403 })
     }
 
     // If action is "classes", fetch classes for invoice period
@@ -145,7 +148,7 @@ export async function POST(request: NextRequest) {
   try {
     const teacher = await db.teacher.findUnique({
       where: { id: session.user.teacherId },
-      select: { studioId: true }
+      select: { studioId: true, engagementType: true }
     })
 
     if (!teacher) {
@@ -155,6 +158,9 @@ export async function POST(request: NextRequest) {
     const modules = await getStudioModuleAccess(teacher.studioId)
     if (!modules.invoicesEnabled) {
       return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+    if (teacher.engagementType === "EMPLOYEE") {
+      return NextResponse.json({ error: "Invoices are only available for contractor teachers" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -221,7 +227,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const teacher = await db.teacher.findUnique({
       where: { id: session.user.teacherId },
-      select: { studioId: true },
+      select: { studioId: true, engagementType: true },
     })
 
     if (!teacher) {
@@ -231,6 +237,9 @@ export async function PATCH(request: NextRequest) {
     const modules = await getStudioModuleAccess(teacher.studioId)
     if (!modules.invoicesEnabled) {
       return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+    if (teacher.engagementType === "EMPLOYEE") {
+      return NextResponse.json({ error: "Invoices are only available for contractor teachers" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -301,7 +310,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const teacher = await db.teacher.findUnique({
       where: { id: session.user.teacherId },
-      select: { studioId: true },
+      select: { studioId: true, engagementType: true },
     })
 
     if (!teacher) {
@@ -311,6 +320,9 @@ export async function DELETE(request: NextRequest) {
     const modules = await getStudioModuleAccess(teacher.studioId)
     if (!modules.invoicesEnabled) {
       return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+    if (teacher.engagementType === "EMPLOYEE") {
+      return NextResponse.json({ error: "Invoices are only available for contractor teachers" }, { status: 403 })
     }
 
     const invoice = await db.teacherInvoice.findFirst({
@@ -335,7 +347,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete invoice" }, { status: 500 })
   }
 }
-
 
 
 
