@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
-import { resolveEmbedFontFamily } from "@/lib/embed-fonts"
+import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
 import {
   Calendar,
@@ -63,7 +63,9 @@ export default function EmbedAccountPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
-  const embedFontFamily = resolveEmbedFontFamily(searchParams.get("font"))
+  const embedFontKey = resolveEmbedFontKey(searchParams.get("font"))
+  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
+  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
 
   const [studio, setStudio] = useState<StudioData | null>(null)
   const [client, setClient] = useState<Client | null>(null)
@@ -86,6 +88,17 @@ export default function EmbedAccountPage() {
     void fetchClientAndBookings()
     return stopResize
   }, [subdomain])
+
+  useEffect(() => {
+    if (!embedFontHref || typeof window === "undefined" || typeof document === "undefined") return
+    const existing = document.querySelector(`link[data-embed-font="${embedFontKey}"]`)
+    if (existing) return
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = embedFontHref
+    link.setAttribute("data-embed-font", embedFontKey)
+    document.head.appendChild(link)
+  }, [embedFontHref, embedFontKey])
 
   async function fetchStudio() {
     try {

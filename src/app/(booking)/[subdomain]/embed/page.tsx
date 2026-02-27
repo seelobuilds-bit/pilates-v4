@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
-import { resolveEmbedFontFamily } from "@/lib/embed-fonts"
+import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
@@ -383,7 +383,9 @@ export default function BookingPage() {
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
   const classSessionIdFromUrl = searchParams.get("classSessionId")
-  const embedFontFamily = resolveEmbedFontFamily(searchParams.get("font"))
+  const embedFontKey = resolveEmbedFontKey(searchParams.get("font"))
+  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
+  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
   const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
@@ -446,6 +448,17 @@ export default function BookingPage() {
       window.sessionStorage.removeItem(dedupeKey)
     })
   }, [subdomain, trackingCodeFromUrl])
+
+  useEffect(() => {
+    if (!embedFontHref || typeof window === "undefined" || typeof document === "undefined") return
+    const existing = document.querySelector(`link[data-embed-font="${embedFontKey}"]`)
+    if (existing) return
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = embedFontHref
+    link.setAttribute("data-embed-font", embedFontKey)
+    document.head.appendChild(link)
+  }, [embedFontHref, embedFontKey])
 
   useEffect(() => {
     if ((!bookingComplete && !paymentSuccess) || typeof window === "undefined") return
