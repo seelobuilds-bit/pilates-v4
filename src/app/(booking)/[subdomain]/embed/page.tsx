@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
@@ -401,6 +401,7 @@ export default function BookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const slotsRequestIdRef = useRef(0)
   const [dateOffset, setDateOffset] = useState(0)
   const [isCompactMobile, setIsCompactMobile] = useState(false)
 
@@ -525,8 +526,10 @@ export default function BookingPage() {
   }, [paymentSuccess, sessionId, subdomain])
 
   useEffect(() => {
-    if (step === "time" && selectedLocation && selectedClass) {
+    if (step === "time" && selectedLocation && selectedClass && selectedDate) {
       fetchSlots()
+    } else if (step === "time" && !selectedDate) {
+      setTimeSlots([])
     }
   }, [step, selectedLocation, selectedClass, selectedTeacher, selectedDate])
 
@@ -570,6 +573,7 @@ export default function BookingPage() {
   }, [classSessionIdFromUrl, selectedSlot?.id, studioData, subdomain])
 
   async function fetchSlots() {
+    const requestId = ++slotsRequestIdRef.current
     setSlotsLoading(true)
     try {
       const searchParams = new URLSearchParams({
@@ -580,11 +584,15 @@ export default function BookingPage() {
       })
       const res = await fetch(`/api/booking/${subdomain}/slots?${searchParams}`)
       const data = await res.json()
+      if (requestId !== slotsRequestIdRef.current) return
       setTimeSlots(data)
     } catch {
+      if (requestId !== slotsRequestIdRef.current) return
       setTimeSlots([])
     }
-    setSlotsLoading(false)
+    if (requestId === slotsRequestIdRef.current) {
+      setSlotsLoading(false)
+    }
   }
 
   function getAvailableDates() {
@@ -645,6 +653,8 @@ export default function BookingPage() {
   function selectTeacherAndContinue(t: Teacher | null) {
     setSelectedTeacher(t)
     setSelectedSlot(null)
+    setSelectedDate((prev) => prev || tomorrowDate)
+    setDateOffset(0)
     setStep("time")
   }
 
@@ -1225,9 +1235,9 @@ export default function BookingPage() {
                             <p className="font-medium text-gray-900">Weekly Subscription</p>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
                             <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
+                            <p className="mt-2 text-base font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                           </div>
                         </div>
-                        <p className="self-end sm:self-auto shrink-0 font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                       </div>
                     </button>
 
@@ -1252,9 +1262,9 @@ export default function BookingPage() {
                             <p className="font-medium text-gray-900">Class Pack</p>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
                             <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
+                            <p className="mt-2 text-sm text-violet-600 font-medium">Choose size →</p>
                           </div>
                         </div>
-                        <p className="self-end sm:self-auto text-sm text-violet-600 font-medium">Choose size →</p>
                       </div>
                     </button>
                   </div>
@@ -1317,7 +1327,12 @@ export default function BookingPage() {
                           <p className="text-xs text-gray-500">Automatically buy another when empty</p>
                         </div>
                       </div>
-                      <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
+                      <Switch
+                        checked={autoRenew}
+                        onCheckedChange={setAutoRenew}
+                        className="data-[state=checked]:bg-[var(--studio-primary)] focus-visible:ring-[var(--studio-primary)]"
+                        style={{ "--studio-primary": primaryColor } as React.CSSProperties}
+                      />
                     </div>
                   </div>
                 )}
@@ -1454,7 +1469,12 @@ export default function BookingPage() {
                           Book this class using 1 credit instead of card payment.
                         </p>
                       </div>
-                      <Switch checked={useCredit} onCheckedChange={setUseCredit} />
+                      <Switch
+                        checked={useCredit}
+                        onCheckedChange={setUseCredit}
+                        className="data-[state=checked]:bg-[var(--studio-primary)] focus-visible:ring-[var(--studio-primary)]"
+                        style={{ "--studio-primary": primaryColor } as React.CSSProperties}
+                      />
                     </CardContent>
                   </Card>
                 )}
