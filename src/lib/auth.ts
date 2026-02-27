@@ -17,26 +17,17 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
+          const parsedEmail = String(credentials.email).trim().toLowerCase()
           const user = await db.user.findUnique({
-            where: { email: credentials.email },
-            include: {
-              ownedStudio: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-              teacher: {
-                include: {
-                  studio: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                }
-              }
-            }
+            where: { email: parsedEmail },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
           })
 
           if (!user || !user.password) {
@@ -49,15 +40,44 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
+          let studioId: string | null = null
+          let studioName: string | null = null
+          let teacherId: string | null = null
+
+          if (user.role === "OWNER") {
+            const studio = await db.studio.findFirst({
+              where: { ownerId: user.id },
+              select: { id: true, name: true },
+            })
+            studioId = studio?.id ?? null
+            studioName = studio?.name ?? null
+          }
+
+          if (user.role === "TEACHER") {
+            const teacher = await db.teacher.findFirst({
+              where: { userId: user.id },
+              select: {
+                id: true,
+                studioId: true,
+                studio: {
+                  select: { name: true },
+                },
+              },
+            })
+            teacherId = teacher?.id ?? null
+            studioId = teacher?.studioId ?? null
+            studioName = teacher?.studio?.name ?? null
+          }
+
           return {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            studioId: user.ownedStudio?.id || user.teacher?.studioId || null,
-            studioName: user.ownedStudio?.name || user.teacher?.studio?.name || null,
-            teacherId: user.teacher?.id || null,
+            studioId,
+            studioName,
+            teacherId,
           }
         } catch (error) {
           console.error("Credentials authorize failed:", error)
