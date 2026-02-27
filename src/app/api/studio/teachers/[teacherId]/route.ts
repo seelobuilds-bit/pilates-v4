@@ -165,9 +165,9 @@ export async function GET(
       locationCounts.set(session.location.name, (locationCounts.get(session.location.name) || 0) + 1)
     }
 
-    const bucketEndDate = new Date(endDate)
-    const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
+    const monthOffsets = [-2, -1, 0, 1, 2, 3]
+    const monthlyBuckets = monthOffsets.map((offset) => {
+      const date = new Date(endDate.getFullYear(), endDate.getMonth() + offset, 1)
       return {
         key: `${date.getFullYear()}-${date.getMonth()}`,
         month: date.toLocaleDateString("en-US", { month: "short" }),
@@ -175,7 +175,7 @@ export async function GET(
       }
     })
     const monthLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
-    for (const session of reportClassSessions) {
+    for (const session of allClassSessions) {
       const date = new Date(session.startTime)
       const key = `${date.getFullYear()}-${date.getMonth()}`
       const bucket = monthLookup.get(key)
@@ -209,6 +209,7 @@ export async function GET(
     return NextResponse.json({
       ...teacher,
       upcomingClasses: teacher.classSessions,
+      scheduleClasses: allClassSessions,
       stats: {
         totalClasses: reportClassSessions.length,
         totalStudents: uniqueStudents.size,

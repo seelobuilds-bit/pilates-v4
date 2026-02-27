@@ -129,6 +129,8 @@ export async function GET(
         lastName: client.lastName,
         email: client.email,
         phone: client.phone,
+        healthIssues: client.healthIssues,
+        classNotes: client.classNotes,
         createdAt: client.createdAt.toISOString(),
         bookingsCount,
         lastBooking: lastBooking?.toISOString() || null,
@@ -145,7 +147,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch client" }, { status: 500 })
   }
 }
-
 
 
 

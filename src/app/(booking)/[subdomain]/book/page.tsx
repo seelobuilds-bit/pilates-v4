@@ -513,8 +513,10 @@ export default function BookingPage() {
   }, [paymentSuccess, sessionId, subdomain])
 
   useEffect(() => {
-    if (step === "time" && selectedLocation && selectedClass) {
+    if (step === "time" && selectedLocation && selectedClass && selectedDate) {
       fetchSlots()
+    } else if (step === "time" && !selectedDate) {
+      setTimeSlots([])
     }
   }, [step, selectedLocation, selectedClass, selectedTeacher, selectedDate])
 
@@ -596,7 +598,22 @@ export default function BookingPage() {
   }
 
   const availableDates = getAvailableDates()
-  const visibleDates = availableDates.slice(dateOffset, dateOffset + 5)
+  const tomorrowDate = availableDates.find((d) => d.isTomorrow)?.date ?? availableDates[0]?.date ?? ""
+  const visibleDateCount = 5
+  const maxDateOffset = Math.max(0, availableDates.length - visibleDateCount)
+  const visibleDates = availableDates.slice(dateOffset, dateOffset + visibleDateCount)
+
+  useEffect(() => {
+    if (dateOffset > maxDateOffset) {
+      setDateOffset(maxDateOffset)
+    }
+  }, [dateOffset, maxDateOffset])
+
+  useEffect(() => {
+    if (step !== "time" || selectedDate || !tomorrowDate) return
+    setSelectedDate(tomorrowDate)
+    setDateOffset(0)
+  }, [step, selectedDate, tomorrowDate])
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)
@@ -618,6 +635,8 @@ export default function BookingPage() {
   function selectTeacherAndContinue(t: Teacher | null) {
     setSelectedTeacher(t)
     setSelectedSlot(null)
+    setSelectedDate((prev) => prev || tomorrowDate)
+    setDateOffset(0)
     setStep("time")
   }
 
@@ -1107,8 +1126,8 @@ export default function BookingPage() {
                     })}
                   </div>
                   <button
-                    onClick={() => setDateOffset(Math.min(availableDates.length - 5, dateOffset + 1))}
-                    disabled={dateOffset >= availableDates.length - 5}
+                    onClick={() => setDateOffset(Math.min(maxDateOffset, dateOffset + 1))}
+                    disabled={dateOffset >= maxDateOffset}
                     className="p-1 disabled:opacity-20 transition-opacity"
                   >
                     <ChevronRight className="w-5 h-5 text-gray-400" />

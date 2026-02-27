@@ -26,6 +26,8 @@ interface ClientDetail {
   lastName: string
   email: string
   phone: string | null
+  healthIssues: string | null
+  classNotes: string | null
   createdAt: string
   bookingsCount: number
   lastBooking: string | null
@@ -190,6 +192,20 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
             </div>
+            {(client.healthIssues?.trim() || client.classNotes?.trim()) && (
+              <div className="mt-3 space-y-2">
+                {client.healthIssues?.trim() && (
+                  <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-700">
+                    <span className="font-semibold">Health:</span> {client.healthIssues}
+                  </p>
+                )}
+                {client.classNotes?.trim() && (
+                  <p className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">
+                    <span className="font-semibold">Notes:</span> {client.classNotes}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Message Type Toggle */}
@@ -380,6 +396,29 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               </CardContent>
             </Card>
 
+            {(client.healthIssues?.trim() || client.classNotes?.trim()) && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Health & Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {client.healthIssues?.trim() && (
+                    <p className="rounded-md bg-red-50 px-2 py-1 text-red-700">
+                      <span className="font-semibold">Health:</span> {client.healthIssues}
+                    </p>
+                  )}
+                  {client.classNotes?.trim() && (
+                    <p className="rounded-md bg-amber-50 px-2 py-1 text-amber-700">
+                      <span className="font-semibold">Notes:</span> {client.classNotes}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Upcoming */}
             {client.upcomingBookings && client.upcomingBookings.length > 0 && (
               <Card className="border-0 shadow-sm">
@@ -407,7 +446,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

@@ -1241,24 +1241,22 @@ export default function BookingPage() {
                         bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "recurring" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
                           }`}>
                             <RefreshCw className="w-5 h-5" />
                           </div>
-                          <div className="text-left min-w-0">
+                          <div className="text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">Weekly Subscription</p>
-                              <Badge className="hidden sm:inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
+                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Save 15%</Badge>
                             </div>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
-                            <Badge className="mt-2 inline-flex sm:hidden bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
-                            <p className="mt-2 text-base font-semibold text-gray-900 sm:hidden">{formatPrice((selectedClass?.price || 0) * 0.85)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                           </div>
                         </div>
-                        <p className="hidden self-end sm:self-auto shrink-0 font-semibold text-gray-900 sm:block">{formatPrice((selectedClass?.price || 0) * 0.85)}<span className="text-sm font-normal text-gray-500">/week</span></p>
+                        <p className="font-semibold text-gray-900">{formatPrice((selectedClass?.price || 0) * 0.85)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                       </div>
                     </button>
 
@@ -1272,24 +1270,22 @@ export default function BookingPage() {
                         bookingType === "pack" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "pack" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
                           }`}>
                             <Sparkles className="w-5 h-5" />
                           </div>
-                          <div className="text-left min-w-0">
+                          <div className="text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">Class Pack</p>
-                              <Badge className="hidden sm:inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
+                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Up to 25% off</Badge>
                             </div>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
-                            <Badge className="mt-2 inline-flex sm:hidden bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
-                            <p className="mt-2 text-sm text-violet-600 font-medium sm:hidden">Choose size →</p>
                           </div>
                         </div>
-                        <p className="hidden self-end sm:self-auto text-sm text-violet-600 font-medium sm:block">Choose size →</p>
+                        <p className="text-sm text-violet-600 font-medium">Choose size →</p>
                       </div>
                     </button>
                   </div>

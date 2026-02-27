@@ -50,6 +50,7 @@ interface Teacher {
     email: string
   }
   upcomingClasses: ClassSession[]
+  scheduleClasses?: ClassSession[]
   stats: {
     totalClasses: number
     totalStudents: number
@@ -335,6 +336,24 @@ export default function TeacherDetailPage({
   }
 
   const safeExtendedStats = extendedStats || emptyTeacherStats
+  const scheduleClasses = teacher.scheduleClasses || teacher.upcomingClasses
+  const displayedWeekClasses = (() => {
+    const today = new Date()
+    const currentDay = today.getDay()
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - currentDay + (scheduleWeekOffset * 7))
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+    endOfWeek.setHours(23, 59, 59, 999)
+
+    return scheduleClasses.filter((cls) => {
+      const classDate = new Date(cls.startTime)
+      return classDate >= startOfWeek && classDate <= endOfWeek
+    })
+  })()
+
   const hasTeacherReportData =
     safeExtendedStats.revenue > 0 ||
     safeExtendedStats.classBreakdown.length > 0 ||
@@ -740,14 +759,14 @@ export default function TeacherDetailPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{teacher.upcomingClasses.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{displayedWeekClasses.length}</p>
                 <p className="text-sm text-gray-500">Classes This Week</p>
               </CardContent>
             </Card>
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold text-emerald-600">
-                  {teacher.upcomingClasses.reduce((sum, c) => sum + c._count.bookings, 0)}
+                  {displayedWeekClasses.reduce((sum, c) => sum + c._count.bookings, 0)}
                 </p>
                 <p className="text-sm text-gray-500">Total Bookings</p>
               </CardContent>
@@ -755,8 +774,8 @@ export default function TeacherDetailPage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold text-violet-600">
-                  {teacher.upcomingClasses.length > 0 
-                    ? Math.round(teacher.upcomingClasses.reduce((sum, c) => sum + (c._count.bookings / c.capacity) * 100, 0) / teacher.upcomingClasses.length)
+                  {displayedWeekClasses.length > 0 
+                    ? Math.round(displayedWeekClasses.reduce((sum, c) => sum + (c._count.bookings / c.capacity) * 100, 0) / displayedWeekClasses.length)
                     : 0}%
                 </p>
                 <p className="text-sm text-gray-500">Avg. Fill Rate</p>
@@ -765,7 +784,7 @@ export default function TeacherDetailPage({
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold text-blue-600">
-                  {teacher.upcomingClasses.reduce((sum, c) => sum + c.capacity, 0)}
+                  {displayedWeekClasses.reduce((sum, c) => sum + c.capacity, 0)}
                 </p>
                 <p className="text-sm text-gray-500">Total Capacity</p>
               </CardContent>
@@ -841,10 +860,10 @@ export default function TeacherDetailPage({
                 const weekEnd = new Date(weekDates[6])
                 weekEnd.setHours(23, 59, 59, 999)
                 
-                const classesByDay: Record<number, typeof teacher.upcomingClasses> = {
+                const classesByDay: Record<number, ClassSession[]> = {
                   0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []
                 }
-                teacher.upcomingClasses.forEach(cls => {
+                scheduleClasses.forEach(cls => {
                   const classDate = new Date(cls.startTime)
                   // Only include classes within the displayed week
                   if (classDate >= weekStart && classDate <= weekEnd) {
