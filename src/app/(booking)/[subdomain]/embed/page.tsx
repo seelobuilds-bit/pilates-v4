@@ -1235,9 +1235,10 @@ export default function BookingPage() {
                             <p className="font-medium text-gray-900">Weekly Subscription</p>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
                             <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
-                            <p className="mt-2 text-base font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
+                            <p className="mt-2 text-base font-semibold text-gray-900 sm:hidden">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                           </div>
                         </div>
+                        <p className="hidden self-end sm:self-auto shrink-0 font-semibold text-gray-900 sm:block">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                       </div>
                     </button>
 
@@ -1262,9 +1263,10 @@ export default function BookingPage() {
                             <p className="font-medium text-gray-900">Class Pack</p>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
                             <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
-                            <p className="mt-2 text-sm text-violet-600 font-medium">Choose size →</p>
+                            <p className="mt-2 text-sm text-violet-600 font-medium sm:hidden">Choose size →</p>
                           </div>
                         </div>
+                        <p className="hidden self-end sm:self-auto text-sm text-violet-600 font-medium sm:block">Choose size →</p>
                       </div>
                     </button>
                   </div>
