@@ -21,6 +21,7 @@ export async function GET() {
         subdomain: true,
         primaryColor: true,
         stripeCurrency: true,
+        requiresClassSwapApproval: true,
       }
     })
 
@@ -45,7 +46,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, primaryColor, currency } = body
+    const { name, primaryColor, currency, requiresClassSwapApproval } = body
 
     const normalizedCurrency = currency ? String(currency).toLowerCase() : undefined
     if (normalizedCurrency && !ALLOWED_CURRENCIES.includes(normalizedCurrency)) {
@@ -58,6 +59,9 @@ export async function PATCH(request: NextRequest) {
         ...(name !== undefined && { name }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(normalizedCurrency !== undefined && { stripeCurrency: normalizedCurrency }),
+        ...(requiresClassSwapApproval !== undefined && {
+          requiresClassSwapApproval: Boolean(requiresClassSwapApproval),
+        }),
       },
       select: {
         id: true,
@@ -65,6 +69,7 @@ export async function PATCH(request: NextRequest) {
         subdomain: true,
         primaryColor: true,
         stripeCurrency: true,
+        requiresClassSwapApproval: true,
       }
     })
 

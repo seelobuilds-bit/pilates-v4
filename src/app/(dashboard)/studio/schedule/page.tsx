@@ -62,6 +62,29 @@ interface BlockedTime {
   }
 }
 
+interface ClassSwapRequest {
+  id: string
+  status: "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED"
+  notes: string | null
+  adminNotes: string | null
+  createdAt: string
+  classSession: {
+    id: string
+    startTime: string
+    endTime: string
+    classType: { name: string }
+    location: { name: string }
+  }
+  fromTeacher: {
+    id: string
+    user: { firstName: string; lastName: string }
+  }
+  toTeacher: {
+    id: string
+    user: { firstName: string; lastName: string }
+  }
+}
+
 const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
 const classColors: Record<string, string> = {
@@ -118,6 +141,7 @@ export default function SchedulePage() {
   const [classTypes, setClassTypes] = useState<ClassType[]>([])
   const [classes, setClasses] = useState<ClassSession[]>([])
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([])
+  const [swapRequests, setSwapRequests] = useState<ClassSwapRequest[]>([])
   
   // Filters
   const [filterLocation, setFilterLocation] = useState<string>("all")
@@ -134,6 +158,7 @@ export default function SchedulePage() {
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
   const [showReassignModal, setShowReassignModal] = useState(false)
   const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
+  const [updatingSwapRequestId, setUpdatingSwapRequestId] = useState<string | null>(null)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -274,6 +299,12 @@ export default function SchedulePage() {
     if (blockedRes.ok) {
       const blockedData = await blockedRes.json()
       setBlockedTimes(blockedData)
+    }
+
+    const swapRes = await fetch("/api/studio/class-swaps?status=PENDING")
+    if (swapRes.ok) {
+      const swapData = await swapRes.json()
+      setSwapRequests(swapData)
     }
   }
 
@@ -440,6 +471,33 @@ export default function SchedulePage() {
     }
   }
 
+  const handleSwapRequestAction = async (requestId: string, action: "APPROVE" | "DECLINE") => {
+    setUpdatingSwapRequestId(requestId)
+    try {
+      const response = await fetch("/api/studio/class-swaps", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        alert(data.error || `Failed to ${action.toLowerCase()} swap request`)
+        return
+      }
+
+      setSwapRequests((prev) => prev.filter((request) => request.id !== requestId))
+      if (action === "APPROVE") {
+        await fetchSchedule()
+      }
+    } catch (error) {
+      console.error(`Failed to ${action.toLowerCase()} swap request:`, error)
+      alert(`Failed to ${action.toLowerCase()} swap request`)
+    } finally {
+      setUpdatingSwapRequestId(null)
+    }
+  }
+
   // Get selected teacher name for header
   const selectedTeacher = teachers.find(t => t.id === filterTeacher)
 
@@ -561,6 +619,78 @@ export default function SchedulePage() {
           </Link>
         </div>
       </div>
+
+      {swapRequests.length > 0 && (
+        <Card className="mb-4 border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">Pending Teacher Swap Requests</h2>
+              <Badge className="bg-amber-100 text-amber-700">{swapRequests.length}</Badge>
+            </div>
+            <div className="space-y-3">
+              {swapRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                >
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {request.classSession.classType.name} at {request.classSession.location.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(request.classSession.startTime).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        {new Date(request.classSession.startTime).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {request.fromTeacher.user.firstName} {request.fromTeacher.user.lastName}{" "}
+                        → {request.toTeacher.user.firstName} {request.toTeacher.user.lastName}
+                      </p>
+                      {request.notes ? (
+                        <p className="text-xs text-gray-600">Note: {request.notes}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-200 text-red-600 hover:bg-red-50"
+                        disabled={updatingSwapRequestId === request.id}
+                        onClick={() => void handleSwapRequestAction(request.id, "DECLINE")}
+                      >
+                        {updatingSwapRequestId === request.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Decline"
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        disabled={updatingSwapRequestId === request.id}
+                        onClick={() => void handleSwapRequestAction(request.id, "APPROVE")}
+                      >
+                        {updatingSwapRequestId === request.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Approve"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Bulk Actions Bar */}
       {selectMode && selectedClasses.size > 0 && (

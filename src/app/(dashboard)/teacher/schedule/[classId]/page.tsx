@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,23 @@ interface ClassSession {
   }[]
   _count: { bookings: number }
   clientAlertCount: number
+  availableSwapTeachers: {
+    id: string
+    user: { firstName: string; lastName: string }
+  }[]
+  swapPolicy: {
+    requiresApproval: boolean
+  }
+  latestSwapRequest: {
+    id: string
+    status: "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED"
+    createdAt: string
+    toTeacher: {
+      id: string
+      user: { firstName: string; lastName: string }
+    }
+    adminNotes?: string | null
+  } | null
 }
 
 export default function TeacherClassDetailPage({
@@ -62,22 +79,28 @@ export default function TeacherClassDetailPage({
   const [messageBody, setMessageBody] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
   const [messageSent, setMessageSent] = useState(false)
+  const [swapTeacherId, setSwapTeacherId] = useState("")
+  const [swapNotes, setSwapNotes] = useState("")
+  const [submittingSwap, setSubmittingSwap] = useState(false)
+  const [swapFeedback, setSwapFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(`/api/teacher/schedule/${resolvedParams.classId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setClassSession(data)
-        }
-      } catch (error) {
-        console.error("Failed to fetch class:", error)
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/teacher/schedule/${resolvedParams.classId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setClassSession(data)
       }
+    } catch (error) {
+      console.error("Failed to fetch class:", error)
+    } finally {
       setLoading(false)
     }
-    fetchData()
   }, [resolvedParams.classId])
+
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   const handleSendMessageToAll = async () => {
     if (!classSession || !messageBody.trim()) return
@@ -119,6 +142,50 @@ export default function TeacherClassDetailPage({
       setMessageSubject(`Update: ${classSession.classType.name} - ${new Date(classSession.startTime).toLocaleDateString()}`)
     }
     setShowMessageModal(true)
+  }
+
+  const handleSwapRequest = async () => {
+    if (!classSession || !swapTeacherId) {
+      setSwapFeedback({ type: "error", text: "Please select a teacher." })
+      return
+    }
+
+    setSubmittingSwap(true)
+    setSwapFeedback(null)
+    try {
+      const res = await fetch("/api/teacher/class-swaps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classSessionId: classSession.id,
+          toTeacherId: swapTeacherId,
+          notes: swapNotes,
+        }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit class swap")
+      }
+
+      setSwapTeacherId("")
+      setSwapNotes("")
+      setSwapFeedback({
+        type: "success",
+        text:
+          data.mode === "AUTO_APPROVED"
+            ? "Swap completed immediately."
+            : "Swap request sent for admin approval.",
+      })
+      await fetchData()
+    } catch (error) {
+      setSwapFeedback({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to submit class swap",
+      })
+    } finally {
+      setSubmittingSwap(false)
+    }
   }
 
   if (loading) {
@@ -473,15 +540,82 @@ export default function TeacherClassDetailPage({
               </CardContent>
             </Card>
           )}
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900">Swap This Class</h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  {classSession.swapPolicy.requiresApproval
+                    ? "Owner approval is required before the teacher change is applied."
+                    : "Owner approval is off. This swap will apply immediately."}
+                </p>
+              </div>
+
+              {classSession.latestSwapRequest && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                  <p className="font-medium text-gray-900">
+                    Latest request: {classSession.latestSwapRequest.status}
+                  </p>
+                  <p className="text-gray-600">
+                    To {classSession.latestSwapRequest.toTeacher.user.firstName}{" "}
+                    {classSession.latestSwapRequest.toTeacher.user.lastName}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="swapTeacher">Swap to</Label>
+                <select
+                  id="swapTeacher"
+                  value={swapTeacherId}
+                  onChange={(event) => setSwapTeacherId(event.target.value)}
+                  className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm"
+                >
+                  <option value="">Select teacher</option>
+                  {classSession.availableSwapTeachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.user.firstName} {teacher.user.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="swapNotes">Reason (optional)</Label>
+                <Textarea
+                  id="swapNotes"
+                  value={swapNotes}
+                  onChange={(event) => setSwapNotes(event.target.value)}
+                  rows={3}
+                  placeholder="Add context for this swap request."
+                />
+              </div>
+
+              {swapFeedback && (
+                <p className={`text-sm ${swapFeedback.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
+                  {swapFeedback.text}
+                </p>
+              )}
+
+              <Button
+                onClick={handleSwapRequest}
+                disabled={submittingSwap || !swapTeacherId}
+                className="w-full bg-violet-600 hover:bg-violet-700"
+              >
+                {submittingSwap ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Submit Swap"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   )
 }
-
-
-
-
 
 
 

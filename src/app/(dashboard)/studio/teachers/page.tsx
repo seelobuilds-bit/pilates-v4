@@ -59,9 +59,9 @@ export default async function TeachersPage() {
                         </h3>
                         <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-violet-500 transition-colors" />
                       </div>
-                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                        <Mail className="h-3 w-3" />
-                        {teacher.user.email}
+                      <p className="mt-1 flex items-start gap-1 text-sm text-gray-500">
+                        <Mail className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span className="leading-5 break-all">{teacher.user.email}</span>
                       </p>
                     </div>
                   </div>

@@ -67,6 +67,42 @@ export async function GET(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
+    const [studio, availableTeachers, latestSwapRequest] = await Promise.all([
+      db.studio.findUnique({
+        where: { id: classSession.studioId },
+        select: { requiresClassSwapApproval: true },
+      }),
+      db.teacher.findMany({
+        where: {
+          studioId: classSession.studioId,
+          isActive: true,
+          id: { not: teacherId },
+        },
+        select: {
+          id: true,
+          user: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
+      db.classSwapRequest.findFirst({
+        where: {
+          classSessionId: classSession.id,
+          fromTeacherId: teacherId,
+        },
+        include: {
+          toTeacher: {
+            select: {
+              id: true,
+              user: { select: { firstName: true, lastName: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
+
     const clientAlertCount = classSession.bookings.reduce((count, booking) => {
       const healthIssues = booking.client.healthIssues?.trim()
       const classNotes = booking.client.classNotes?.trim()
@@ -75,15 +111,18 @@ export async function GET(
 
     return NextResponse.json({
       ...classSession,
-      clientAlertCount
+      clientAlertCount,
+      availableSwapTeachers: availableTeachers,
+      swapPolicy: {
+        requiresApproval: studio?.requiresClassSwapApproval !== false,
+      },
+      latestSwapRequest,
     })
   } catch (error) {
     console.error("Failed to fetch class:", error)
     return NextResponse.json({ error: "Failed to fetch class" }, { status: 500 })
   }
 }
-
-
 
 
 

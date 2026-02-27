@@ -73,6 +73,9 @@ model User {
   
   // Sales CRM (for HQ staff)
   salesAgent              SalesAgent?
+
+  // Class swap approvals (studio owners)
+  resolvedClassSwapRequests ClassSwapRequest[] @relation("ClassSwapResolvedBy")
 }
 
 model Studio {
@@ -93,6 +96,7 @@ model Studio {
   stripePayoutsEnabled  Boolean   @default(false)
   stripeDetailsSubmitted Boolean  @default(false)
   stripeCurrency        String?   @default("usd")
+  requiresClassSwapApproval Boolean @default(true)
 
   locations     Location[]
   classTypes    ClassType[]
@@ -126,6 +130,7 @@ model Studio {
   // Class Flows & Training
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
+  classSwapRequests ClassSwapRequest[]
   
   // Social Media Marketing
   socialAccounts      SocialMediaAccount[]
@@ -637,6 +642,8 @@ model Teacher {
   invoices          TeacherInvoice[]
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
+  outgoingClassSwapRequests ClassSwapRequest[] @relation("ClassSwapFromTeacher")
+  incomingClassSwapRequests ClassSwapRequest[] @relation("ClassSwapToTeacher")
   
   // Social Media Marketing
   socialAccounts          SocialMediaAccount[]
@@ -846,6 +853,7 @@ model ClassSession {
 
   bookings  Booking[]
   waitlists Waitlist[]
+  swapRequests ClassSwapRequest[]
   
   @@index([recurringGroupId])
 }
@@ -1209,6 +1217,43 @@ enum TrainingRequestStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
+}
+
+enum ClassSwapRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+model ClassSwapRequest {
+  id          String                 @id @default(cuid())
+  status      ClassSwapRequestStatus @default(PENDING)
+  notes       String?                @db.Text
+  adminNotes  String?                @db.Text
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  resolvedAt  DateTime?
+
+  studioId    String
+  studio      Studio                 @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  classSessionId String
+  classSession   ClassSession        @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+
+  fromTeacherId String
+  fromTeacher   Teacher              @relation("ClassSwapFromTeacher", fields: [fromTeacherId], references: [id], onDelete: Cascade)
+
+  toTeacherId   String
+  toTeacher     Teacher              @relation("ClassSwapToTeacher", fields: [toTeacherId], references: [id], onDelete: Cascade)
+
+  resolvedById  String?
+  resolvedBy    User?                @relation("ClassSwapResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([studioId, status, createdAt])
+  @@index([classSessionId])
+  @@index([fromTeacherId])
+  @@index([toTeacherId])
 }
 
 // On-site training requests

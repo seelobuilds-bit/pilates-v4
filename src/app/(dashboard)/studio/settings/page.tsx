@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { EMBED_FONT_OPTIONS, EmbedFontKey, isEmbedFontKey } from "@/lib/embed-fonts"
 import { 
   Building2, 
@@ -52,6 +53,7 @@ export default function SettingsPage() {
     subdomain: string
     primaryColor: string
     currency: CurrencyCode
+    requiresClassSwapApproval: boolean
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingStudio, setSavingStudio] = useState(false)
@@ -118,7 +120,8 @@ export default function SettingsPage() {
           primaryColor: data.primaryColor || "#7c3aed",
           currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
             ? (data.stripeCurrency || "usd").toLowerCase()
-            : "usd"
+            : "usd",
+          requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
         })
       } else if (res.status === 401) {
         // Check if logged in as wrong user type
@@ -228,6 +231,7 @@ export default function SettingsPage() {
           name: studio.name,
           primaryColor: studio.primaryColor,
           currency: studio.currency,
+          requiresClassSwapApproval: studio.requiresClassSwapApproval,
         }),
       })
 
@@ -245,6 +249,7 @@ export default function SettingsPage() {
         currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
           ? (data.stripeCurrency || "usd").toLowerCase()
           : "usd",
+        requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
       }) : prev)
       setSaveMessage({ type: "success", text: "Studio settings saved" })
     } catch (error) {
@@ -583,6 +588,25 @@ export default function SettingsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="swap-approval">Require swap approval</Label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    When enabled, teachers must request owner approval before swapping a class with another teacher.
+                  </p>
+                </div>
+                <Switch
+                  id="swap-approval"
+                  checked={studio?.requiresClassSwapApproval ?? true}
+                  onCheckedChange={(checked) =>
+                    setStudio((prev) =>
+                      prev ? { ...prev, requiresClassSwapApproval: checked } : prev
+                    )
+                  }
+                />
+              </div>
             </div>
             {saveMessage && (
               <p className={`text-sm ${saveMessage.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
