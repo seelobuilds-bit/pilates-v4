@@ -149,6 +149,7 @@ export default function TeacherClassFlowsPage() {
     try {
       const payload = {
         requestKind,
+        requestSource: "TEACHER",
         title: requestForm.title.trim(),
         description: requestForm.description.trim(),
         trainingType: requestKind === "TRAINING" ? requestForm.trainingType : CLASS_FLOW_REQUEST_TYPE,
@@ -728,7 +729,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

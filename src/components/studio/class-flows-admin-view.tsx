@@ -26,7 +26,6 @@ import {
   Trash2,
   Edit,
   ChevronRight,
-  Award,
   File,
   Image as ImageIcon
 } from "lucide-react"
@@ -62,24 +61,25 @@ interface TrainingRequest {
   title: string
   description: string
   trainingType: string
+  trainingSubtype?: string | null
+  requestKind?: "CLASS_FLOW" | "TRAINING"
+  requestSource?: "TEACHER" | "OWNER"
   status: "PENDING" | "APPROVED" | "SCHEDULED" | "COMPLETED" | "CANCELLED"
   preferredDate1: string | null
+  preferredDate2?: string | null
+  preferredDate3?: string | null
   scheduledDate: string | null
   contactName: string
   contactEmail: string
   contactPhone?: string | null
   attendeeCount: number
   notes?: string | null
+  adminNotes?: string | null
   createdAt: string
   requestedBy: {
     id: string
     user: { firstName: string; lastName: string }
   }
-}
-
-interface TeacherOption {
-  id: string
-  name: string
 }
 
 type ClassFlowsAdminViewProps = {
@@ -94,6 +94,16 @@ const CLASS_FLOW_REQUEST_TYPE = "class-flow-request"
 
 function getRequestKind(trainingType: string): "CLASS_FLOW" | "TRAINING" {
   return trainingType === CLASS_FLOW_REQUEST_TYPE ? "CLASS_FLOW" : "TRAINING"
+}
+
+function getRequestSource(request: TrainingRequest): "TEACHER" | "OWNER" {
+  if (request.requestSource === "TEACHER" || request.requestSource === "OWNER") return request.requestSource
+  return getRequestKind(request.trainingType) === "CLASS_FLOW" ? "TEACHER" : "OWNER"
+}
+
+function getTrainingSubtype(request: TrainingRequest): string {
+  if (request.trainingSubtype && request.trainingSubtype.trim()) return request.trainingSubtype
+  return request.trainingType
 }
 
 export default function ClassFlowsAdminView({
@@ -111,10 +121,11 @@ export default function ClassFlowsAdminView({
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingContentId, setEditingContentId] = useState<string | null>(null)
-  const [teachers, setTeachers] = useState<TeacherOption[]>([])
   const [showTrainingRequest, setShowTrainingRequest] = useState(false)
   const [submittingTrainingRequest, setSubmittingTrainingRequest] = useState(false)
   const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null)
+  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
+  const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
 
   // Form state
@@ -170,11 +181,6 @@ export default function ClassFlowsAdminView({
 
   function showReadOnlyNotice() {
     alert("Demo mode is read-only.")
-  }
-
-  function toDateInputValue(value: string | null | undefined) {
-    if (!value) return ""
-    return value.slice(0, 10)
   }
 
   function isUploadedAsset(url: string | null | undefined): boolean {
@@ -251,13 +257,15 @@ export default function ClassFlowsAdminView({
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(adminEndpoint)
-      if (res.ok) {
-        const data = await res.json()
+      const [adminRes, requestsRes] = await Promise.all([
+        fetch(adminEndpoint),
+        fetch(trainingRequestEndpoint),
+      ])
+
+      if (adminRes.ok) {
+        const data = await adminRes.json()
         setCategories(data.categories || [])
-        setTrainingRequests(data.trainingRequests || [])
         setStats(data.stats || { totalViews: 0, completedCount: 0, pendingTrainingRequests: 0 })
-        setTeachers(data.teachers || [])
         const initialCategories = data.categories || []
         if (initialCategories.length > 0) {
           setSelectedCategory((previous) => {
@@ -270,11 +278,18 @@ export default function ClassFlowsAdminView({
           setSelectedCategory("")
         }
       }
+
+      if (requestsRes.ok) {
+        const requestsData = await requestsRes.json()
+        setTrainingRequests(requestsData || [])
+      } else {
+        setTrainingRequests([])
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error)
     }
     setLoading(false)
-  }, [adminEndpoint])
+  }, [adminEndpoint, trainingRequestEndpoint])
 
   useEffect(() => {
     void fetchData()
@@ -408,10 +423,15 @@ export default function ClassFlowsAdminView({
 
     setSubmittingTrainingRequest(true)
     try {
+      const payload = {
+        ...trainingForm,
+        requestKind: "TRAINING",
+        requestSource: "OWNER",
+      }
       const res = await fetch(trainingRequestEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(trainingForm)
+        body: JSON.stringify(payload)
       })
       if (res.ok) {
         setShowTrainingRequest(false)
@@ -432,11 +452,46 @@ export default function ClassFlowsAdminView({
           requestedById: ""
         })
         void fetchData()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Failed to submit training request")
       }
     } catch (error) {
       console.error("Failed to submit training request:", error)
+      alert("Failed to submit training request")
     } finally {
       setSubmittingTrainingRequest(false)
+    }
+  }
+
+  async function updateRequestStatus(
+    request: TrainingRequest,
+    status: "APPROVED" | "COMPLETED" | "CANCELLED",
+    options?: { sendToHQ?: boolean }
+  ) {
+    setUpdatingRequestId(request.id)
+    try {
+      const res = await fetch(trainingRequestEndpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: request.id,
+          status,
+          sendToHQ: options?.sendToHQ === true,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to update request")
+      }
+
+      void fetchData()
+    } catch (error) {
+      console.error("Failed to update request:", error)
+      alert(error instanceof Error ? error.message : "Failed to update request")
+    } finally {
+      setUpdatingRequestId(null)
     }
   }
 
@@ -448,23 +503,10 @@ export default function ClassFlowsAdminView({
 
     setApprovingRequestId(request.id)
     try {
-      const res = await fetch(trainingRequestEndpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: request.id,
-          status: "APPROVED",
-        }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to approve request")
-      }
-
-      const requestKind = getRequestKind(request.trainingType)
+      const requestKind = request.requestKind || getRequestKind(request.trainingType)
 
       if (requestKind === "CLASS_FLOW") {
+        await updateRequestStatus(request, "APPROVED")
         const targetCategoryId = selectedCategory || categories[0]?.id || ""
         if (!targetCategoryId) {
           setNewCategory((prev) => ({
@@ -485,28 +527,8 @@ export default function ClassFlowsAdminView({
           setShowAddContent(true)
         }
       } else {
-        setTrainingForm({
-          title: request.title,
-          description: request.description,
-          trainingType: request.trainingType || "custom",
-          preferredDate1: toDateInputValue(request.preferredDate1),
-          preferredDate2: "",
-          preferredDate3: "",
-          contactName: request.contactName,
-          contactEmail: request.contactEmail,
-          contactPhone: request.contactPhone || "",
-          location: "",
-          address: "",
-          attendeeCount: Math.max(1, request.attendeeCount || 1),
-          notes: request.notes || "",
-          requestedById: request.requestedBy.id,
-        })
-        setShowTrainingRequest(true)
+        await updateRequestStatus(request, "APPROVED", { sendToHQ: true })
       }
-
-      setTrainingRequests((prev) =>
-        prev.map((item) => (item.id === request.id ? { ...item, status: "APPROVED" } : item))
-      )
     } catch (error) {
       console.error("Failed to approve request:", error)
       alert(error instanceof Error ? error.message : "Failed to approve request")
@@ -546,6 +568,9 @@ export default function ClassFlowsAdminView({
 
   const activeCategory = categories.find((category) => category.id === selectedCategory) ?? categories[0] ?? null
   const activeCategoryContents = activeCategory?.contents ?? []
+  const teacherSubmittedRequests = trainingRequests.filter((request) => getRequestSource(request) === "TEACHER")
+  const ownerSubmittedRequests = trainingRequests.filter((request) => getRequestSource(request) === "OWNER")
+  const pendingTeacherRequests = teacherSubmittedRequests.filter((request) => request.status === "PENDING").length
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -568,8 +593,7 @@ export default function ClassFlowsAdminView({
             }}
           >
             <GraduationCap className="h-4 w-4 mr-2" />
-            Training Requests
-            <Badge className="ml-2 bg-violet-100 text-violet-700">{stats.pendingTrainingRequests}</Badge>
+            Request HQ Training
           </Button>
           <Button
             onClick={() => {
@@ -638,8 +662,8 @@ export default function ClassFlowsAdminView({
                 <GraduationCap className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingTrainingRequests}</p>
-                <p className="text-sm text-gray-500">Training Requests</p>
+                <p className="text-2xl font-bold text-gray-900">{pendingTeacherRequests}</p>
+                <p className="text-sm text-gray-500">Pending Requests</p>
               </div>
             </div>
           </CardContent>
@@ -825,78 +849,144 @@ export default function ClassFlowsAdminView({
                     }
                     setShowTrainingRequest(true)
                   }}
-                  disabled={teachers.length === 0}
                 >
                   <GraduationCap className="h-4 w-4 mr-2" />
-                  Request Training
+                  Request HQ Training
                 </Button>
               </div>
 
-              {trainingRequests.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <Award className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2">No training requests</h3>
-                  <p className="text-gray-500">Create the first on-site expert training request for your team.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {trainingRequests.map(request => (
-                    <div 
-                      key={request.id}
-                      className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 transition-colors hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="flex items-start gap-4 sm:items-center">
-                        <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center">
-                          <GraduationCap className="h-6 w-6 text-violet-600" />
-                        </div>
-                        <div>
-                          <div className="mb-1 flex flex-wrap items-center gap-2">
-                            <h4 className="font-medium text-gray-900">{request.title}</h4>
-                            <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
-                            <Badge variant="outline">
-                              {getRequestKind(request.trainingType) === "CLASS_FLOW" ? "Class Flow Request" : "Training Request"}
-                            </Badge>
+              <div className="space-y-6">
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900">Teacher Requests</h4>
+                    <Badge className="bg-violet-100 text-violet-700">{pendingTeacherRequests} pending</Badge>
+                  </div>
+                  {teacherSubmittedRequests.length === 0 ? (
+                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">No teacher requests yet.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {teacherSubmittedRequests.map((request) => {
+                        const requestKind = request.requestKind || getRequestKind(request.trainingType)
+                        const isExpanded = expandedRequestId === request.id
+                        const isBusy = approvingRequestId === request.id || updatingRequestId === request.id
+                        return (
+                          <div key={request.id} className="rounded-lg bg-gray-50 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex items-start gap-4 sm:items-center">
+                                <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center">
+                                  <GraduationCap className="h-6 w-6 text-violet-600" />
+                                </div>
+                                <div>
+                                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                                    <h4 className="font-medium text-gray-900">{request.title}</h4>
+                                    <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
+                                    <Badge variant="outline">{requestKind === "CLASS_FLOW" ? "Class Flow Request" : "Training Request"}</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-500">
+                                    Requested by {request.requestedBy.user.firstName} {request.requestedBy.user.lastName}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                                {request.status === "PENDING" && !readOnly && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-violet-600 hover:bg-violet-700"
+                                      onClick={() => void approveRequestAndContinue(request)}
+                                      disabled={isBusy}
+                                    >
+                                      {isBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                                      {requestKind === "CLASS_FLOW" ? "Approve & Add Content" : "Approve & Send to HQ"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => void updateRequestStatus(request, "CANCELLED")}
+                                      disabled={isBusy}
+                                    >
+                                      Deny
+                                    </Button>
+                                  </>
+                                )}
+                                {requestKind === "CLASS_FLOW" && request.status === "APPROVED" && !readOnly && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => void updateRequestStatus(request, "COMPLETED")}
+                                    disabled={isBusy}
+                                  >
+                                    Mark Completed
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setExpandedRequestId(isExpanded ? null : request.id)}
+                                >
+                                  {isExpanded ? "Hide Details" : "View Details"}
+                                  <ChevronRight className={`h-4 w-4 ml-2 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                                </Button>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600 space-y-2">
+                                <p><span className="font-medium text-gray-900">Description:</span> {request.description}</p>
+                                <p><span className="font-medium text-gray-900">Submitted:</span> {new Date(request.createdAt).toLocaleString()}</p>
+                                {request.notes ? <p><span className="font-medium text-gray-900">Teacher notes:</span> {request.notes}</p> : null}
+                                {request.adminNotes ? <p><span className="font-medium text-gray-900">Admin notes:</span> {request.adminNotes}</p> : null}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-sm text-gray-500">
-                            Requested by {request.requestedBy.user.firstName} {request.requestedBy.user.lastName} • 
-                            {request.attendeeCount} attendee{request.attendeeCount > 1 ? "s" : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 sm:justify-end">
-                        <div className="text-left sm:text-right">
-                          <p className="text-sm text-gray-500">
-                            {request.scheduledDate 
-                              ? new Date(request.scheduledDate).toLocaleDateString()
-                              : request.preferredDate1 
-                                ? `Preferred: ${new Date(request.preferredDate1).toLocaleDateString()}`
-                                : "No date set"
-                            }
-                          </p>
-                        </div>
-                        {request.status === "PENDING" && !readOnly ? (
-                          <Button
-                            size="sm"
-                            className="shrink-0 bg-violet-600 hover:bg-violet-700"
-                            onClick={() => void approveRequestAndContinue(request)}
-                            disabled={approvingRequestId === request.id}
-                          >
-                            {approvingRequestId === request.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : null}
-                            {getRequestKind(request.trainingType) === "CLASS_FLOW" ? "Approve & Add Content" : "Approve & Book Training"}
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" className="shrink-0" disabled>
-                            View Details
-                            <ChevronRight className="h-4 w-4 ml-2" />
-                          </Button>
-                        )}
-                      </div>
+                        )
+                      })}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+
+                <div>
+                  <h4 className="mb-3 font-medium text-gray-900">HQ Training Requests</h4>
+                  {ownerSubmittedRequests.length === 0 ? (
+                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">No studio-to-HQ requests yet.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {ownerSubmittedRequests.map((request) => {
+                        const isExpanded = expandedRequestId === request.id
+                        return (
+                          <div key={request.id} className="rounded-lg bg-gray-50 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className="mb-1 flex flex-wrap items-center gap-2">
+                                  <h4 className="font-medium text-gray-900">{request.title}</h4>
+                                  <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
+                                  <Badge variant="outline">Sent to HQ</Badge>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  Type: {getTrainingSubtype(request)} • {request.attendeeCount} attendee{request.attendeeCount > 1 ? "s" : ""}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="outline" onClick={() => setExpandedRequestId(isExpanded ? null : request.id)}>
+                                {isExpanded ? "Hide Details" : "View Details"}
+                                <ChevronRight className={`h-4 w-4 ml-2 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                              </Button>
+                            </div>
+                            {isExpanded && (
+                              <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600 space-y-2">
+                                <p><span className="font-medium text-gray-900">Description:</span> {request.description}</p>
+                                <p><span className="font-medium text-gray-900">Contact:</span> {request.contactName} ({request.contactEmail})</p>
+                                {request.preferredDate1 ? <p><span className="font-medium text-gray-900">Preferred Date 1:</span> {new Date(request.preferredDate1).toLocaleDateString()}</p> : null}
+                                {request.preferredDate2 ? <p><span className="font-medium text-gray-900">Preferred Date 2:</span> {new Date(request.preferredDate2).toLocaleDateString()}</p> : null}
+                                {request.preferredDate3 ? <p><span className="font-medium text-gray-900">Preferred Date 3:</span> {new Date(request.preferredDate3).toLocaleDateString()}</p> : null}
+                                {request.notes ? <p><span className="font-medium text-gray-900">Notes:</span> {request.notes}</p> : null}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -915,8 +1005,8 @@ export default function ClassFlowsAdminView({
                       <GraduationCap className="h-5 w-5 text-violet-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Request Expert Training</h3>
-                      <p className="text-sm text-gray-500">Create a request for your studio team</p>
+                      <h3 className="font-semibold text-gray-900">Request HQ Training</h3>
+                      <p className="text-sm text-gray-500">Send a direct training request to HQ</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setShowTrainingRequest(false)}>
@@ -925,25 +1015,6 @@ export default function ClassFlowsAdminView({
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Requested For Teacher</Label>
-                    <Select
-                      value={trainingForm.requestedById}
-                      onValueChange={(value) => setTrainingForm({ ...trainingForm, requestedById: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select teacher" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teachers.map((teacher) => (
-                          <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="space-y-2">
                     <Label>Training Title</Label>
                     <Input
@@ -1089,7 +1160,6 @@ export default function ClassFlowsAdminView({
                     onClick={submitTrainingRequest}
                     disabled={
                       submittingTrainingRequest ||
-                      !trainingForm.requestedById ||
                       !trainingForm.title ||
                       !trainingForm.description ||
                       !trainingForm.contactEmail
@@ -1556,10 +1626,3 @@ export default function ClassFlowsAdminView({
     </div>
   )
 }
-
-
-
-
-
-
-
