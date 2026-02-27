@@ -40,6 +40,7 @@ export async function GET() {
         subdomain: true,
         primaryColor: true,
         logoUrl: true,
+        logoScale: true,
         stripeCurrency: true,
         requiresClassSwapApproval: true,
         invoicesEnabled: true,
@@ -98,6 +99,7 @@ export async function PATCH(request: NextRequest) {
       name,
       primaryColor,
       logoUrl,
+      logoScale,
       currency,
       requiresClassSwapApproval,
       invoicesEnabled,
@@ -168,12 +170,22 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Working days/week must be between 1 and 7" }, { status: 400 })
     }
 
+    const normalizedLogoScale =
+      logoScale === undefined || logoScale === null ? undefined : Math.round(Number(logoScale))
+    if (
+      normalizedLogoScale !== undefined &&
+      (!Number.isFinite(normalizedLogoScale) || normalizedLogoScale < 50 || normalizedLogoScale > 200)
+    ) {
+      return NextResponse.json({ error: "Logo size must be between 50 and 200" }, { status: 400 })
+    }
+
     const studio = await db.studio.update({
       where: { id: auth.studioId },
       data: {
         ...(name !== undefined && { name }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
+        ...(normalizedLogoScale !== undefined && { logoScale: normalizedLogoScale }),
         ...(normalizedCurrency !== undefined && { stripeCurrency: normalizedCurrency }),
         ...(requiresClassSwapApproval !== undefined && {
           requiresClassSwapApproval: Boolean(requiresClassSwapApproval),
@@ -189,6 +201,7 @@ export async function PATCH(request: NextRequest) {
         subdomain: true,
         primaryColor: true,
         logoUrl: true,
+        logoScale: true,
         stripeCurrency: true,
         requiresClassSwapApproval: true,
         invoicesEnabled: true,

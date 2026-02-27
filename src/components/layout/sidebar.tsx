@@ -44,6 +44,7 @@ type ModuleAccess = {
   canAccessTeacherInvoices: boolean
   studioName?: string | null
   studioLogoUrl?: string | null
+  studioLogoScale?: number
 }
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed-v1"
@@ -235,6 +236,10 @@ export function Sidebar() {
               : data?.invoicesEnabled !== false,
           studioName: typeof data?.studioName === "string" ? data.studioName : null,
           studioLogoUrl: typeof data?.studioLogoUrl === "string" ? data.studioLogoUrl : null,
+          studioLogoScale:
+            typeof data?.studioLogoScale === "number" && Number.isFinite(data.studioLogoScale)
+              ? data.studioLogoScale
+              : 100,
         })
       } catch {
         // Keep defaults if module fetch fails.
@@ -353,6 +358,7 @@ export function Sidebar() {
   const headerTitle =
     role === "OWNER" || role === "TEACHER" ? moduleAccess.studioName || title : title
   const headerLogoUrl = role === "OWNER" || role === "TEACHER" ? moduleAccess.studioLogoUrl || null : null
+  const headerLogoHeight = Math.round(28 + (((moduleAccess.studioLogoScale ?? 100) - 50) / 150) * 40)
 
   const renderLink = (link: NavLink) => {
     const Icon = link.icon
@@ -408,18 +414,15 @@ export function Sidebar() {
       >
       {/* Header */}
       <div className={cn("flex items-center justify-between", isCompact ? "p-3" : "p-4")}>
-        <div className={cn("min-w-0", isCompact && "hidden")}>
+        <div className={cn("min-w-0 flex-1", isCompact && "hidden")}>
           {headerLogoUrl ? (
-            <div className="flex items-center gap-3">
+            <div className="min-w-0">
               <img
                 src={headerLogoUrl}
                 alt={`${headerTitle} logo`}
-                className="h-10 w-10 rounded-xl border border-gray-200 bg-white object-cover"
+                className="block max-w-full object-contain"
+                style={{ height: `${headerLogoHeight}px`, width: "auto" }}
               />
-              <div className="min-w-0">
-                <h1 className="truncate font-semibold text-gray-900">{headerTitle}</h1>
-                <p className="text-xs text-gray-500">{subtitle}</p>
-              </div>
             </div>
           ) : (
             <>
@@ -432,7 +435,8 @@ export function Sidebar() {
           <img
             src={headerLogoUrl}
             alt={`${headerTitle} logo`}
-            className="h-10 w-10 rounded-xl border border-gray-200 bg-white object-cover"
+            className="block max-w-full object-contain"
+            style={{ height: `${Math.min(headerLogoHeight, 44)}px`, width: "auto" }}
           />
         )}
         <div className="flex items-center gap-1">

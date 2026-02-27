@@ -17,6 +17,7 @@ export async function GET() {
       select: {
         name: true,
         logoUrl: true,
+        logoScale: true,
       },
     })
 
@@ -25,6 +26,7 @@ export async function GET() {
         ...modules,
         studioName: studio?.name ?? session.user.studioName ?? null,
         studioLogoUrl: studio?.logoUrl ?? null,
+        studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
       })
     }
 
@@ -44,6 +46,7 @@ export async function GET() {
       ...modules,
       studioName: studio?.name ?? session.user.studioName ?? null,
       studioLogoUrl: studio?.logoUrl ?? null,
+      studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
       teacherEngagementType: teacher?.engagementType ?? null,
       isTeacherEmployee,
       canAccessTeacherInvoices: modules.invoicesEnabled && !isTeacherEmployee,

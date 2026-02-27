@@ -52,6 +52,7 @@ type StudioSettings = {
   subdomain: string
   primaryColor: string
   logoUrl: string | null
+  logoScale: number
   currency: CurrencyCode
   requiresClassSwapApproval: boolean
   invoicesEnabled: boolean
@@ -135,6 +136,7 @@ export default function SettingsPage() {
           subdomain: data.subdomain,
           primaryColor: data.primaryColor || "#7c3aed",
           logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
+          logoScale: typeof data.logoScale === "number" ? data.logoScale : 100,
           currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
             ? (data.stripeCurrency || "usd").toLowerCase()
             : "usd",
@@ -257,6 +259,7 @@ export default function SettingsPage() {
           name: studio.name,
           primaryColor: studio.primaryColor,
           logoUrl: studio.logoUrl,
+          logoScale: studio.logoScale,
           currency: studio.currency,
           requiresClassSwapApproval: studio.requiresClassSwapApproval,
           invoicesEnabled: studio.invoicesEnabled,
@@ -279,6 +282,7 @@ export default function SettingsPage() {
         name: data.name,
         primaryColor: data.primaryColor || "#7c3aed",
         logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
+        logoScale: typeof data.logoScale === "number" ? data.logoScale : prev.logoScale,
         currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
           ? (data.stripeCurrency || "usd").toLowerCase()
           : "usd",
@@ -418,6 +422,8 @@ export default function SettingsPage() {
 })();
 </script>`
     : (loading ? "Loading..." : "Please log out and log back in to refresh your session")
+
+  const brandingPreviewHeight = Math.round(32 + (((studio?.logoScale ?? 100) - 50) / 150) * 64)
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
@@ -1022,13 +1028,16 @@ export default function SettingsPage() {
               <Label htmlFor="logo-upload">Studio Logo</Label>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 {studio?.logoUrl ? (
-                  <img
-                    src={studio.logoUrl}
-                    alt={`${studio?.name || "Studio"} logo`}
-                    className="h-16 w-16 rounded-2xl border border-gray-200 bg-white object-cover"
-                  />
+                  <div className="rounded-lg bg-gray-50 px-3 py-4">
+                    <img
+                      src={studio.logoUrl}
+                      alt={`${studio?.name || "Studio"} logo`}
+                      className="block max-w-full object-contain"
+                      style={{ height: `${brandingPreviewHeight}px`, width: "auto" }}
+                    />
+                  </div>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-xs font-medium text-gray-400">
+                  <div className="flex h-16 min-w-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 text-xs font-medium text-gray-400">
                     No logo
                   </div>
                 )}
@@ -1045,7 +1054,7 @@ export default function SettingsPage() {
                     }}
                   />
                   <div className="flex flex-wrap gap-2">
-                    <p className="text-xs text-gray-500">Square logos work best in the sidebar header.</p>
+                    <p className="text-xs text-gray-500">The logo keeps its natural aspect ratio in the sidebar.</p>
                     {uploadingLogo && (
                       <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1053,6 +1062,30 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </div>
+                  {studio?.logoUrl && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="logo-scale" className="text-xs text-gray-600">
+                          Logo Size
+                        </Label>
+                        <span className="text-xs font-medium text-gray-500">{studio.logoScale}%</span>
+                      </div>
+                      <input
+                        id="logo-scale"
+                        type="range"
+                        min={50}
+                        max={200}
+                        step={5}
+                        value={studio.logoScale}
+                        onChange={(e) =>
+                          setStudio((prev) =>
+                            prev ? { ...prev, logoScale: Number(e.target.value) } : prev
+                          )
+                        }
+                        className="w-full accent-violet-600"
+                      />
+                    </div>
+                  )}
                   {studio?.logoUrl && (
                     <Button
                       type="button"
