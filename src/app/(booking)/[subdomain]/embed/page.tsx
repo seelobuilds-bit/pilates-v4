@@ -608,6 +608,7 @@ export default function BookingPage() {
   }
 
   const availableDates = getAvailableDates()
+  const tomorrowDate = availableDates.find((d) => d.isTomorrow)?.date ?? availableDates[0]?.date ?? ""
   const visibleDateCount = isCompactMobile ? 3 : 5
   const maxDateOffset = Math.max(0, availableDates.length - visibleDateCount)
   const visibleDates = availableDates.slice(dateOffset, dateOffset + visibleDateCount)
@@ -617,6 +618,12 @@ export default function BookingPage() {
       setDateOffset(maxDateOffset)
     }
   }, [dateOffset, maxDateOffset])
+
+  useEffect(() => {
+    if (step !== "time" || selectedDate || !tomorrowDate) return
+    setSelectedDate(tomorrowDate)
+    setDateOffset(0)
+  }, [step, selectedDate, tomorrowDate])
 
   function selectLocationAndContinue(loc: Location) {
     setSelectedLocation(loc)
@@ -909,7 +916,7 @@ export default function BookingPage() {
   return (
     <div className="bg-transparent" style={{ fontFamily: embedFontFamily }}>
       {/* Header */}
-      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 pt-8 pb-6 text-center">
+      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-2 sm:px-4 pt-8 pb-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
         <p className="text-gray-500 mt-1">{studioData.name}</p>
       </div>
@@ -939,7 +946,7 @@ export default function BookingPage() {
 
       {/* Breadcrumb */}
       {(selectedLocation || selectedClass) && step !== "location" && (
-        <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 pb-4">
+        <div className="w-full max-w-none sm:max-w-2xl mx-auto px-2 sm:px-4 pb-4">
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm">
             {selectedLocation && (
               <span className="flex items-center gap-1.5 text-gray-500">
@@ -958,7 +965,7 @@ export default function BookingPage() {
       )}
 
       {/* Content */}
-      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-3 sm:px-4 py-6">
+      <div className="w-full max-w-none sm:max-w-2xl mx-auto px-2 sm:px-4 py-6">
         {/* Back Button */}
         {step !== "location" && (
           <button
@@ -973,7 +980,7 @@ export default function BookingPage() {
         {/* Location Step */}
         {step === "location" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Location</h2>
@@ -1000,7 +1007,7 @@ export default function BookingPage() {
         {/* Class Step */}
         {step === "class" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Link2 className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Class Type</h2>
@@ -1036,7 +1043,7 @@ export default function BookingPage() {
         {/* Teacher Step */}
         {step === "teacher" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Teacher</h2>
@@ -1078,7 +1085,7 @@ export default function BookingPage() {
         {/* Time Step */}
         {step === "time" && (
           <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calendar className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Date & Time</h2>
@@ -1166,7 +1173,7 @@ export default function BookingPage() {
         {step === "checkout" && (
           <div className="space-y-4">
             <Card className="border-0 shadow-none bg-transparent">
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="w-5 h-5 text-violet-600" />
                   <h2 className="text-lg font-semibold">Complete Booking</h2>
@@ -1207,22 +1214,20 @@ export default function BookingPage() {
                         bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-start gap-3 min-w-0">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "recurring" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
                           }`}>
                             <RefreshCw className="w-5 h-5" />
                           </div>
-                          <div className="text-left">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900">Weekly Subscription</p>
-                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Save 15%</Badge>
-                            </div>
+                          <div className="text-left min-w-0">
+                            <p className="font-medium text-gray-900">Weekly Subscription</p>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
+                            <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
                           </div>
                         </div>
-                        <p className="font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
+                        <p className="self-end sm:self-auto shrink-0 font-semibold text-gray-900">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                       </div>
                     </button>
 
@@ -1236,22 +1241,20 @@ export default function BookingPage() {
                         bookingType === "pack" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-start gap-3 min-w-0">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             bookingType === "pack" ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-600"
                           }`}>
                             <Sparkles className="w-5 h-5" />
                           </div>
-                          <div className="text-left">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900">Class Pack</p>
-                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Up to 25% off</Badge>
-                            </div>
+                          <div className="text-left min-w-0">
+                            <p className="font-medium text-gray-900">Class Pack</p>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
+                            <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
                           </div>
                         </div>
-                        <p className="text-sm text-violet-600 font-medium">Choose size →</p>
+                        <p className="self-end sm:self-auto text-sm text-violet-600 font-medium">Choose size →</p>
                       </div>
                     </button>
                   </div>
@@ -1283,7 +1286,7 @@ export default function BookingPage() {
 
                 {/* Pack Selection */}
                 {bookingType === "pack" && (
-                  <div className="mb-6 p-4 bg-white rounded-xl">
+                  <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Sparkles className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Choose Your Pack</p>
