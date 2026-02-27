@@ -640,7 +640,10 @@ export default function SettingsPage() {
                   <SelectTrigger id="embed-font">
                     <SelectValue placeholder="Select embed font" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    position="item-aligned"
+                    className="max-h-80 overflow-y-auto overscroll-contain"
+                  >
                     {EMBED_FONT_OPTIONS.map((fontOption) => (
                       <SelectItem key={fontOption.key} value={fontOption.key}>
                         {fontOption.label}
