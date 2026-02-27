@@ -39,6 +39,7 @@ export async function GET() {
         name: true,
         subdomain: true,
         primaryColor: true,
+        logoUrl: true,
         stripeCurrency: true,
         requiresClassSwapApproval: true,
         invoicesEnabled: true,
@@ -96,6 +97,7 @@ export async function PATCH(request: NextRequest) {
     const {
       name,
       primaryColor,
+      logoUrl,
       currency,
       requiresClassSwapApproval,
       invoicesEnabled,
@@ -171,6 +173,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...(name !== undefined && { name }),
         ...(primaryColor !== undefined && { primaryColor }),
+        ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
         ...(normalizedCurrency !== undefined && { stripeCurrency: normalizedCurrency }),
         ...(requiresClassSwapApproval !== undefined && {
           requiresClassSwapApproval: Boolean(requiresClassSwapApproval),
@@ -185,6 +188,7 @@ export async function PATCH(request: NextRequest) {
         name: true,
         subdomain: true,
         primaryColor: true,
+        logoUrl: true,
         stripeCurrency: true,
         requiresClassSwapApproval: true,
         invoicesEnabled: true,

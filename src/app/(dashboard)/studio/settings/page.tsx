@@ -51,6 +51,7 @@ type StudioSettings = {
   name: string
   subdomain: string
   primaryColor: string
+  logoUrl: string | null
   currency: CurrencyCode
   requiresClassSwapApproval: boolean
   invoicesEnabled: boolean
@@ -71,6 +72,7 @@ export default function SettingsPage() {
   const [studio, setStudio] = useState<StudioSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingStudio, setSavingStudio] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null)
   const [activeTemplates, setActiveTemplates] = useState(0)
@@ -132,6 +134,7 @@ export default function SettingsPage() {
           name: data.name,
           subdomain: data.subdomain,
           primaryColor: data.primaryColor || "#7c3aed",
+          logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
           currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
             ? (data.stripeCurrency || "usd").toLowerCase()
             : "usd",
@@ -253,6 +256,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           name: studio.name,
           primaryColor: studio.primaryColor,
+          logoUrl: studio.logoUrl,
           currency: studio.currency,
           requiresClassSwapApproval: studio.requiresClassSwapApproval,
           invoicesEnabled: studio.invoicesEnabled,
@@ -274,6 +278,7 @@ export default function SettingsPage() {
         ...prev,
         name: data.name,
         primaryColor: data.primaryColor || "#7c3aed",
+        logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
         currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
           ? (data.stripeCurrency || "usd").toLowerCase()
           : "usd",
@@ -294,6 +299,43 @@ export default function SettingsPage() {
       setSaveMessage({ type: "error", text: "Failed to save settings" })
     } finally {
       setSavingStudio(false)
+    }
+  }
+
+  const handleLogoUpload = async (file: File | null) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      setSaveMessage({ type: "error", text: "Logo must be an image file" })
+      return
+    }
+
+    setUploadingLogo(true)
+    setSaveMessage(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "studio-logos")
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.url) {
+        setSaveMessage({ type: "error", text: data?.error || "Failed to upload logo" })
+        return
+      }
+
+      setStudio((prev) => (prev ? { ...prev, logoUrl: data.url } : prev))
+      setSaveMessage({ type: "success", text: "Logo uploaded. Click Save Changes to publish it." })
+    } catch (error) {
+      console.error("Error uploading logo:", error)
+      setSaveMessage({ type: "error", text: "Failed to upload logo" })
+    } finally {
+      setUploadingLogo(false)
     }
   }
 
@@ -977,6 +1019,57 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="logo-upload">Studio Logo</Label>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {studio?.logoUrl ? (
+                  <img
+                    src={studio.logoUrl}
+                    alt={`${studio?.name || "Studio"} logo`}
+                    className="h-16 w-16 rounded-2xl border border-gray-200 bg-white object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-xs font-medium text-gray-400">
+                    No logo
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <Input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingLogo}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null
+                      void handleLogoUpload(file)
+                      e.target.value = ""
+                    }}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <p className="text-xs text-gray-500">Square logos work best in the sidebar header.</p>
+                    {uploadingLogo && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Uploading...
+                      </span>
+                    )}
+                  </div>
+                  {studio?.logoUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setStudio((prev) => (prev ? { ...prev, logoUrl: null } : prev))
+                        setSaveMessage({ type: "success", text: "Logo removed. Click Save Changes to publish it." })
+                      }}
+                    >
+                      Remove Logo
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="color">Primary Color</Label>
               <div className="flex items-center gap-3">
                 <input 
@@ -993,6 +1086,11 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+            {saveMessage && (
+              <p className={`text-sm ${saveMessage.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
+                {saveMessage.text}
+              </p>
+            )}
             <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
           </CardContent>
         </Card>

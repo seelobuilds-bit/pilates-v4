@@ -95,6 +95,7 @@ model Studio {
   name         String
   subdomain    String   @unique
   primaryColor String?  @default("#7c3aed")
+  logoUrl      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

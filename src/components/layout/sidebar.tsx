@@ -42,6 +42,8 @@ type ModuleAccess = {
   timeOffEnabled: boolean
   isTeacherEmployee: boolean
   canAccessTeacherInvoices: boolean
+  studioName?: string | null
+  studioLogoUrl?: string | null
 }
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed-v1"
@@ -128,6 +130,14 @@ function filterStudioLinkGroupsByModules(groups: NavGroup[], moduleAccess: Modul
       }),
     }))
     .filter((group) => group.links.length > 0)
+}
+
+function isRouteMatch(pathname: string, href: string): boolean {
+  if (pathname === href) return true
+  if (href === "/studio" || href === "/hq" || href === "/teacher" || href === "/sales") {
+    return false
+  }
+  return pathname.startsWith(`${href}/`)
 }
 
 export function Sidebar() {
@@ -223,6 +233,8 @@ export function Sidebar() {
             typeof data?.canAccessTeacherInvoices === "boolean"
               ? data.canAccessTeacherInvoices
               : data?.invoicesEnabled !== false,
+          studioName: typeof data?.studioName === "string" ? data.studioName : null,
+          studioLogoUrl: typeof data?.studioLogoUrl === "string" ? data.studioLogoUrl : null,
         })
       } catch {
         // Keep defaults if module fetch fails.
@@ -330,12 +342,21 @@ export function Sidebar() {
   }
 
   const isCompact = isCollapsed && !isMobileOpen
+  const activeHref = useMemo(() => {
+    const matches = links
+      .map((link) => link.href)
+      .filter((href) => isRouteMatch(pathname, href))
+      .sort((a, b) => b.length - a.length)
+
+    return matches[0] ?? null
+  }, [links, pathname])
+  const headerTitle =
+    role === "OWNER" || role === "TEACHER" ? moduleAccess.studioName || title : title
+  const headerLogoUrl = role === "OWNER" || role === "TEACHER" ? moduleAccess.studioLogoUrl || null : null
 
   const renderLink = (link: NavLink) => {
     const Icon = link.icon
-    const isRootRoute =
-      link.href === "/studio" || link.href === "/hq" || link.href === "/teacher" || link.href === "/sales"
-    const isActive = pathname === link.href || (!isRootRoute && pathname.startsWith(link.href))
+    const isActive = activeHref === link.href
 
     return (
       <Link
@@ -387,10 +408,33 @@ export function Sidebar() {
       >
       {/* Header */}
       <div className={cn("flex items-center justify-between", isCompact ? "p-3" : "p-4")}>
-        <div className={cn(isCompact && "hidden")}>
-          <h1 className="font-semibold text-gray-900">{title}</h1>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+        <div className={cn("min-w-0", isCompact && "hidden")}>
+          {headerLogoUrl ? (
+            <div className="flex items-center gap-3">
+              <img
+                src={headerLogoUrl}
+                alt={`${headerTitle} logo`}
+                className="h-10 w-10 rounded-xl border border-gray-200 bg-white object-cover"
+              />
+              <div className="min-w-0">
+                <h1 className="truncate font-semibold text-gray-900">{headerTitle}</h1>
+                <p className="text-xs text-gray-500">{subtitle}</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="font-semibold text-gray-900">{headerTitle}</h1>
+              <p className="text-xs text-gray-500">{subtitle}</p>
+            </>
+          )}
         </div>
+        {isCompact && headerLogoUrl && (
+          <img
+            src={headerLogoUrl}
+            alt={`${headerTitle} logo`}
+            className="h-10 w-10 rounded-xl border border-gray-200 bg-white object-cover"
+          />
+        )}
         <div className="flex items-center gap-1">
           <button
             type="button"

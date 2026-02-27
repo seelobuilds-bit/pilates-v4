@@ -12,8 +12,20 @@ export async function GET() {
 
   try {
     const modules = await getStudioModuleAccess(session.user.studioId)
+    const studio = await db.studio.findUnique({
+      where: { id: session.user.studioId },
+      select: {
+        name: true,
+        logoUrl: true,
+      },
+    })
+
     if (session.user.role !== "TEACHER" || !session.user.teacherId) {
-      return NextResponse.json(modules)
+      return NextResponse.json({
+        ...modules,
+        studioName: studio?.name ?? session.user.studioName ?? null,
+        studioLogoUrl: studio?.logoUrl ?? null,
+      })
     }
 
     const teacher = await db.teacher.findFirst({
@@ -30,6 +42,8 @@ export async function GET() {
 
     return NextResponse.json({
       ...modules,
+      studioName: studio?.name ?? session.user.studioName ?? null,
+      studioLogoUrl: studio?.logoUrl ?? null,
       teacherEngagementType: teacher?.engagementType ?? null,
       isTeacherEmployee,
       canAccessTeacherInvoices: modules.invoicesEnabled && !isTeacherEmployee,
