@@ -66,9 +66,13 @@ interface TrainingRequest {
   preferredDate1: string | null
   scheduledDate: string | null
   contactName: string
+  contactEmail: string
+  contactPhone?: string | null
   attendeeCount: number
+  notes?: string | null
   createdAt: string
   requestedBy: {
+    id: string
     user: { firstName: string; lastName: string }
   }
 }
@@ -84,6 +88,12 @@ type ClassFlowsAdminViewProps = {
   trainingRequestEndpoint?: string
   uploadEndpoint?: string
   readOnly?: boolean
+}
+
+const CLASS_FLOW_REQUEST_TYPE = "class-flow-request"
+
+function getRequestKind(trainingType: string): "CLASS_FLOW" | "TRAINING" {
+  return trainingType === CLASS_FLOW_REQUEST_TYPE ? "CLASS_FLOW" : "TRAINING"
 }
 
 export default function ClassFlowsAdminView({
@@ -104,6 +114,7 @@ export default function ClassFlowsAdminView({
   const [teachers, setTeachers] = useState<TeacherOption[]>([])
   const [showTrainingRequest, setShowTrainingRequest] = useState(false)
   const [submittingTrainingRequest, setSubmittingTrainingRequest] = useState(false)
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
 
   // Form state
@@ -159,6 +170,11 @@ export default function ClassFlowsAdminView({
 
   function showReadOnlyNotice() {
     alert("Demo mode is read-only.")
+  }
+
+  function toDateInputValue(value: string | null | undefined) {
+    if (!value) return ""
+    return value.slice(0, 10)
   }
 
   function isUploadedAsset(url: string | null | undefined): boolean {
@@ -421,6 +437,81 @@ export default function ClassFlowsAdminView({
       console.error("Failed to submit training request:", error)
     } finally {
       setSubmittingTrainingRequest(false)
+    }
+  }
+
+  async function approveRequestAndContinue(request: TrainingRequest) {
+    if (readOnly) {
+      showReadOnlyNotice()
+      return
+    }
+
+    setApprovingRequestId(request.id)
+    try {
+      const res = await fetch(trainingRequestEndpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: request.id,
+          status: "APPROVED",
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to approve request")
+      }
+
+      const requestKind = getRequestKind(request.trainingType)
+
+      if (requestKind === "CLASS_FLOW") {
+        const targetCategoryId = selectedCategory || categories[0]?.id || ""
+        if (!targetCategoryId) {
+          setNewCategory((prev) => ({
+            ...prev,
+            name: request.title.slice(0, 60),
+            description: request.description,
+          }))
+          setShowAddCategory(true)
+        } else {
+          resetNewContent()
+          setNewContent((prev) => ({
+            ...prev,
+            categoryId: targetCategoryId,
+            title: request.title,
+            description: request.description,
+            tags: "teacher-request",
+          }))
+          setShowAddContent(true)
+        }
+      } else {
+        setTrainingForm({
+          title: request.title,
+          description: request.description,
+          trainingType: request.trainingType || "custom",
+          preferredDate1: toDateInputValue(request.preferredDate1),
+          preferredDate2: "",
+          preferredDate3: "",
+          contactName: request.contactName,
+          contactEmail: request.contactEmail,
+          contactPhone: request.contactPhone || "",
+          location: "",
+          address: "",
+          attendeeCount: Math.max(1, request.attendeeCount || 1),
+          notes: request.notes || "",
+          requestedById: request.requestedBy.id,
+        })
+        setShowTrainingRequest(true)
+      }
+
+      setTrainingRequests((prev) =>
+        prev.map((item) => (item.id === request.id ? { ...item, status: "APPROVED" } : item))
+      )
+    } catch (error) {
+      console.error("Failed to approve request:", error)
+      alert(error instanceof Error ? error.message : "Failed to approve request")
+    } finally {
+      setApprovingRequestId(null)
     }
   }
 
@@ -723,7 +814,7 @@ export default function ClassFlowsAdminView({
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Expert Training Requests</h3>
+                  <h3 className="font-semibold text-gray-900">Team Requests</h3>
                 </div>
                 <Button
                   className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
@@ -762,6 +853,9 @@ export default function ClassFlowsAdminView({
                           <div className="mb-1 flex flex-wrap items-center gap-2">
                             <h4 className="font-medium text-gray-900">{request.title}</h4>
                             <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
+                            <Badge variant="outline">
+                              {getRequestKind(request.trainingType) === "CLASS_FLOW" ? "Class Flow Request" : "Training Request"}
+                            </Badge>
                           </div>
                           <p className="text-sm text-gray-500">
                             Requested by {request.requestedBy.user.firstName} {request.requestedBy.user.lastName} • 
@@ -780,10 +874,24 @@ export default function ClassFlowsAdminView({
                             }
                           </p>
                         </div>
-                        <Button size="sm" variant="outline" className="shrink-0">
-                          View Details
-                          <ChevronRight className="h-4 w-4 ml-2" />
-                        </Button>
+                        {request.status === "PENDING" && !readOnly ? (
+                          <Button
+                            size="sm"
+                            className="shrink-0 bg-violet-600 hover:bg-violet-700"
+                            onClick={() => void approveRequestAndContinue(request)}
+                            disabled={approvingRequestId === request.id}
+                          >
+                            {approvingRequestId === request.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
+                            {getRequestKind(request.trainingType) === "CLASS_FLOW" ? "Approve & Add Content" : "Approve & Book Training"}
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" className="shrink-0" disabled>
+                            View Details
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1448,10 +1556,6 @@ export default function ClassFlowsAdminView({
     </div>
   )
 }
-
-
-
-
 
 
 

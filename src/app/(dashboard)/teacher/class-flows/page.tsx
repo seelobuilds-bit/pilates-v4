@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   Play, 
   FileText, 
@@ -18,6 +21,8 @@ import {
   Star,
   Download,
   ArrowLeft,
+  GraduationCap,
+  Send,
 } from "lucide-react"
 
 interface Category {
@@ -49,6 +54,22 @@ interface Progress {
   [key: string]: { isCompleted: boolean; progressPercent: number }
 }
 
+type RequestKind = "CLASS_FLOW" | "TRAINING"
+
+interface TeacherRequest {
+  id: string
+  title: string
+  description: string
+  trainingType: string
+  status: "PENDING" | "APPROVED" | "SCHEDULED" | "COMPLETED" | "CANCELLED"
+  preferredDate1: string | null
+  preferredDate2: string | null
+  preferredDate3: string | null
+  createdAt: string
+}
+
+const CLASS_FLOW_REQUEST_TYPE = "class-flow-request"
+
 export default function TeacherClassFlowsPage() {
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
@@ -57,15 +78,37 @@ export default function TeacherClassFlowsPage() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
+  const [teacherRequests, setTeacherRequests] = useState<TeacherRequest[]>([])
+  const [requestKind, setRequestKind] = useState<RequestKind>("CLASS_FLOW")
+  const [requestForm, setRequestForm] = useState({
+    title: "",
+    description: "",
+    trainingType: "custom",
+    preferredDate1: "",
+    preferredDate2: "",
+    preferredDate3: "",
+  })
+  const [submittingRequest, setSubmittingRequest] = useState(false)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const [requestSuccess, setRequestSuccess] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/class-flows")
-      if (res.ok) {
-        const data = await res.json()
+      const [classFlowsRes, requestsRes] = await Promise.all([
+        fetch("/api/class-flows"),
+        fetch("/api/class-flows/training-requests")
+      ])
+
+      if (classFlowsRes.ok) {
+        const data = await classFlowsRes.json()
         setCategories(data.categories || [])
         setFeatured(data.featured || [])
         setProgress(data.progress || {})
+      }
+
+      if (requestsRes.ok) {
+        const data = await requestsRes.json()
+        setTeacherRequests(data || [])
       }
     } catch (error) {
       console.error("Failed to fetch data:", error)
@@ -93,6 +136,56 @@ export default function TeacherClassFlowsPage() {
     }
   }
 
+  async function submitTeacherRequest() {
+    setRequestError(null)
+    setRequestSuccess(null)
+
+    if (!requestForm.title.trim() || !requestForm.description.trim()) {
+      setRequestError("Title and description are required.")
+      return
+    }
+
+    setSubmittingRequest(true)
+    try {
+      const payload = {
+        requestKind,
+        title: requestForm.title.trim(),
+        description: requestForm.description.trim(),
+        trainingType: requestKind === "TRAINING" ? requestForm.trainingType : CLASS_FLOW_REQUEST_TYPE,
+        preferredDate1: requestKind === "TRAINING" ? requestForm.preferredDate1 || null : null,
+        preferredDate2: requestKind === "TRAINING" ? requestForm.preferredDate2 || null : null,
+        preferredDate3: requestKind === "TRAINING" ? requestForm.preferredDate3 || null : null,
+      }
+
+      const res = await fetch("/api/class-flows/training-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to submit request")
+      }
+
+      setRequestForm({
+        title: "",
+        description: "",
+        trainingType: "custom",
+        preferredDate1: "",
+        preferredDate2: "",
+        preferredDate3: "",
+      })
+      setRequestSuccess("Request sent to studio admin for approval.")
+      void fetchData()
+    } catch (error) {
+      console.error("Failed to submit teacher request:", error)
+      setRequestError(error instanceof Error ? error.message : "Failed to submit request")
+    } finally {
+      setSubmittingRequest(false)
+    }
+  }
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "VIDEO": return <Video className="h-4 w-4" />
@@ -111,6 +204,20 @@ export default function TeacherClassFlowsPage() {
       default: return "bg-gray-100 text-gray-700"
     }
   }
+
+  const getRequestStatusColor = (status: TeacherRequest["status"]) => {
+    switch (status) {
+      case "PENDING": return "bg-amber-100 text-amber-700"
+      case "APPROVED": return "bg-blue-100 text-blue-700"
+      case "SCHEDULED": return "bg-violet-100 text-violet-700"
+      case "COMPLETED": return "bg-emerald-100 text-emerald-700"
+      case "CANCELLED": return "bg-gray-100 text-gray-600"
+      default: return "bg-gray-100 text-gray-600"
+    }
+  }
+
+  const getRequestKindLabel = (trainingType: string) =>
+    trainingType === CLASS_FLOW_REQUEST_TYPE ? "Class Flow Request" : "Training Request"
 
   const allContent = categories.flatMap(c => c.contents.map(content => ({
     ...content,
@@ -317,6 +424,10 @@ export default function TeacherClassFlowsPage() {
             <BookOpen className="h-4 w-4 mr-2" />
             Content Library
           </TabsTrigger>
+          <TabsTrigger value="requests" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+            <GraduationCap className="h-4 w-4 mr-2" />
+            Requests
+          </TabsTrigger>
         </TabsList>
 
         {/* Content Library */}
@@ -472,11 +583,151 @@ export default function TeacherClassFlowsPage() {
           )}
         </TabsContent>
 
+        <TabsContent value="requests" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Request Support</h3>
+                <p className="text-sm text-gray-500">
+                  Ask studio admin for new class-flow content or expert training.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Request Type</Label>
+                  <Select value={requestKind} onValueChange={(value) => setRequestKind(value as RequestKind)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CLASS_FLOW">Class Flow Content</SelectItem>
+                      <SelectItem value="TRAINING">Teacher Training</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {requestKind === "TRAINING" && (
+                  <div className="space-y-2">
+                    <Label>Training Type</Label>
+                    <Select
+                      value={requestForm.trainingType}
+                      onValueChange={(value) => setRequestForm((prev) => ({ ...prev, trainingType: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="reformer-basics">Reformer Basics</SelectItem>
+                        <SelectItem value="reformer-advanced">Reformer Advanced</SelectItem>
+                        <SelectItem value="mat-certification">Mat Certification</SelectItem>
+                        <SelectItem value="tower-training">Tower Training</SelectItem>
+                        <SelectItem value="prenatal">Prenatal Pilates</SelectItem>
+                        <SelectItem value="rehabilitation">Rehabilitation Focus</SelectItem>
+                        <SelectItem value="custom">Custom Training</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={requestForm.title}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder={requestKind === "CLASS_FLOW" ? "e.g., Intermediate Reformer Sequence" : "e.g., Prenatal Teacher Workshop"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={requestForm.description}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Explain what you need and why."
+                  rows={4}
+                />
+              </div>
+
+              {requestKind === "TRAINING" && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Preferred Date 1</Label>
+                    <Input
+                      type="date"
+                      value={requestForm.preferredDate1}
+                      onChange={(e) => setRequestForm((prev) => ({ ...prev, preferredDate1: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Preferred Date 2</Label>
+                    <Input
+                      type="date"
+                      value={requestForm.preferredDate2}
+                      onChange={(e) => setRequestForm((prev) => ({ ...prev, preferredDate2: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Preferred Date 3</Label>
+                    <Input
+                      type="date"
+                      value={requestForm.preferredDate3}
+                      onChange={(e) => setRequestForm((prev) => ({ ...prev, preferredDate3: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {requestError && <p className="text-sm text-red-600">{requestError}</p>}
+              {requestSuccess && <p className="text-sm text-emerald-600">{requestSuccess}</p>}
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={submitTeacherRequest}
+                  disabled={submittingRequest}
+                  className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
+                >
+                  {submittingRequest ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Send Request
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Requests</h3>
+              {teacherRequests.length === 0 ? (
+                <p className="text-sm text-gray-500">No requests yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {teacherRequests.map((request) => (
+                    <div key={request.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-gray-900">{request.title}</p>
+                        <Badge className={getRequestStatusColor(request.status)}>{request.status}</Badge>
+                        <Badge variant="outline">{getRequestKindLabel(request.trainingType)}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{request.description}</p>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Submitted {new Date(request.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
     </div>
   )
 }
-
 
 
 
