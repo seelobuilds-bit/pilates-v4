@@ -18,7 +18,8 @@ export async function POST(
     const { subdomain } = await params
     
     const studio = await db.studio.findUnique({
-      where: { subdomain }
+      where: { subdomain },
+      select: { id: true }
     })
 
     if (!studio) {

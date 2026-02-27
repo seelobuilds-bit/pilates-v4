@@ -22,7 +22,8 @@ import {
   XCircle,
   RefreshCw,
   Mail,
-  ChevronRight
+  ChevronRight,
+  Settings,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -41,20 +42,32 @@ interface StripeStatus {
 }
 
 const CURRENCY_OPTIONS = ["usd", "eur", "gbp", "cad", "aud", "nzd"] as const
+const COUNTRY_OPTIONS = ["IE", "UK", "US"] as const
 
 type CurrencyCode = (typeof CURRENCY_OPTIONS)[number]
+type CountryCode = (typeof COUNTRY_OPTIONS)[number]
+
+type StudioSettings = {
+  name: string
+  subdomain: string
+  primaryColor: string
+  currency: CurrencyCode
+  requiresClassSwapApproval: boolean
+  invoicesEnabled: boolean
+  employeesEnabled: boolean
+  country: CountryCode
+  timeOffPolicy: {
+    annualLeaveWeeks: number
+    paidSickDaysPerYear: number
+    workingDaysPerWeek: number
+  }
+}
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   const stripeParam = searchParams.get("stripe")
   
-  const [studio, setStudio] = useState<{
-    name: string
-    subdomain: string
-    primaryColor: string
-    currency: CurrencyCode
-    requiresClassSwapApproval: boolean
-  } | null>(null)
+  const [studio, setStudio] = useState<StudioSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingStudio, setSavingStudio] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -122,6 +135,14 @@ export default function SettingsPage() {
             ? (data.stripeCurrency || "usd").toLowerCase()
             : "usd",
           requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
+          invoicesEnabled: data.invoicesEnabled !== false,
+          employeesEnabled: data.employeesEnabled === true,
+          country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
+          timeOffPolicy: {
+            annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? 4),
+            paidSickDaysPerYear: Number(data.timeOffPolicy?.paidSickDaysPerYear ?? 5),
+            workingDaysPerWeek: Number(data.timeOffPolicy?.workingDaysPerWeek ?? 5),
+          },
         })
       } else if (res.status === 401) {
         // Check if logged in as wrong user type
@@ -232,6 +253,10 @@ export default function SettingsPage() {
           primaryColor: studio.primaryColor,
           currency: studio.currency,
           requiresClassSwapApproval: studio.requiresClassSwapApproval,
+          invoicesEnabled: studio.invoicesEnabled,
+          employeesEnabled: studio.employeesEnabled,
+          country: studio.country,
+          timeOffPolicy: studio.timeOffPolicy,
         }),
       })
 
@@ -250,6 +275,14 @@ export default function SettingsPage() {
           ? (data.stripeCurrency || "usd").toLowerCase()
           : "usd",
         requiresClassSwapApproval: data.requiresClassSwapApproval !== false,
+        invoicesEnabled: data.invoicesEnabled !== false,
+        employeesEnabled: data.employeesEnabled === true,
+        country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
+        timeOffPolicy: {
+          annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? prev.timeOffPolicy.annualLeaveWeeks),
+          paidSickDaysPerYear: Number(data.timeOffPolicy?.paidSickDaysPerYear ?? prev.timeOffPolicy.paidSickDaysPerYear),
+          workingDaysPerWeek: Number(data.timeOffPolicy?.workingDaysPerWeek ?? prev.timeOffPolicy.workingDaysPerWeek),
+        },
       }) : prev)
       setSaveMessage({ type: "success", text: "Studio settings saved" })
     } catch (error) {
@@ -538,6 +571,157 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Modules */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Settings className="h-5 w-5 text-gray-400" />
+              Modules
+            </CardTitle>
+            <CardDescription>Configure workforce modules and country policy defaults.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="invoices-enabled">Enable Invoices</Label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Show teacher contractor invoices and related review/payment flows.
+                  </p>
+                </div>
+                <Switch
+                  id="invoices-enabled"
+                  checked={studio?.invoicesEnabled ?? true}
+                  onCheckedChange={(checked) =>
+                    setStudio((prev) => (prev ? { ...prev, invoicesEnabled: checked } : prev))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="employees-enabled">Enable Employees</Label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Enable Employees workspace and Time Off requests for studio and teacher portals.
+                  </p>
+                </div>
+                <Switch
+                  id="employees-enabled"
+                  checked={studio?.employeesEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    setStudio((prev) => (prev ? { ...prev, employeesEnabled: checked } : prev))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Select
+                value={studio?.country || "IE"}
+                onValueChange={(value) => {
+                  if (!COUNTRY_OPTIONS.includes(value as CountryCode)) return
+                  setStudio((prev) => (prev ? { ...prev, country: value as CountryCode } : prev))
+                }}
+              >
+                <SelectTrigger id="country">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IE">Ireland</SelectItem>
+                  <SelectItem value="UK">United Kingdom</SelectItem>
+                  <SelectItem value="US">United States</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {studio?.employeesEnabled && (
+              <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm font-medium text-gray-900">Time Off Policy</p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="policy-working-days">Working Days / Week</Label>
+                    <Input
+                      id="policy-working-days"
+                      type="number"
+                      min={1}
+                      max={7}
+                      value={studio?.timeOffPolicy.workingDaysPerWeek ?? 5}
+                      onChange={(e) =>
+                        setStudio((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                timeOffPolicy: {
+                                  ...prev.timeOffPolicy,
+                                  workingDaysPerWeek: Number(e.target.value || 5),
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="policy-annual-weeks">Annual Leave (Weeks)</Label>
+                    <Input
+                      id="policy-annual-weeks"
+                      type="number"
+                      min={0}
+                      max={12}
+                      step={0.5}
+                      value={studio?.timeOffPolicy.annualLeaveWeeks ?? 4}
+                      onChange={(e) =>
+                        setStudio((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                timeOffPolicy: {
+                                  ...prev.timeOffPolicy,
+                                  annualLeaveWeeks: Number(e.target.value || 0),
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="policy-sick-days">Paid Sick Days / Year</Label>
+                    <Input
+                      id="policy-sick-days"
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={studio?.timeOffPolicy.paidSickDaysPerYear ?? 5}
+                      onChange={(e) =>
+                        setStudio((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                timeOffPolicy: {
+                                  ...prev.timeOffPolicy,
+                                  paidSickDaysPerYear: Number(e.target.value || 0),
+                                },
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">
+              {savingStudio && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Changes
+            </Button>
           </CardContent>
         </Card>
 

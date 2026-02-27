@@ -61,6 +61,7 @@ export const studioLinkGroups: NavGroup[] = [
     links: [
       { href: "/studio/payments", label: "Payments", icon: CreditCard },
       { href: "/studio/invoices", label: "Invoices", icon: FileText },
+      { href: "/studio/employees", label: "Employees", icon: UserCircle },
       { href: "/studio/store", label: "Store", icon: ShoppingBag },
     ],
   },

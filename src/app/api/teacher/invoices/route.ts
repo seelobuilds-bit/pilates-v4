@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { getStudioModuleAccess } from "@/modules/employees/module-access"
 
 // GET - Fetch invoices for the logged-in teacher
 export async function GET(request: NextRequest) {
@@ -24,6 +25,11 @@ export async function GET(request: NextRequest) {
 
     if (!teacher) {
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+    }
+
+    const modules = await getStudioModuleAccess(teacher.studioId)
+    if (!modules.invoicesEnabled) {
+      return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
     }
 
     // If action is "classes", fetch classes for invoice period
@@ -146,6 +152,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
     }
 
+    const modules = await getStudioModuleAccess(teacher.studioId)
+    if (!modules.invoicesEnabled) {
+      return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+
     const body = await request.json()
     const {
       periodStart,
@@ -208,6 +219,20 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
+    const teacher = await db.teacher.findUnique({
+      where: { id: session.user.teacherId },
+      select: { studioId: true },
+    })
+
+    if (!teacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+    }
+
+    const modules = await getStudioModuleAccess(teacher.studioId)
+    if (!modules.invoicesEnabled) {
+      return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+
     const body = await request.json()
     const { invoiceId, action } = body
 
@@ -274,6 +299,20 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    const teacher = await db.teacher.findUnique({
+      where: { id: session.user.teacherId },
+      select: { studioId: true },
+    })
+
+    if (!teacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
+    }
+
+    const modules = await getStudioModuleAccess(teacher.studioId)
+    if (!modules.invoicesEnabled) {
+      return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+    }
+
     const invoice = await db.teacherInvoice.findFirst({
       where: {
         id: invoiceId,
@@ -296,7 +335,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete invoice" }, { status: 500 })
   }
 }
-
 
 
 

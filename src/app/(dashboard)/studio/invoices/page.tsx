@@ -65,6 +65,7 @@ interface Stats {
 
 export default function StudioInvoicesPage() {
   const [loading, setLoading] = useState(true)
+  const [moduleEnabled, setModuleEnabled] = useState(true)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -103,8 +104,16 @@ export default function StudioInvoicesPage() {
   async function fetchInvoices() {
     try {
       const res = await fetch("/api/studio/invoices")
+      if (res.status === 403) {
+        setModuleEnabled(false)
+        setInvoices([])
+        setStats(null)
+        setLoading(false)
+        return
+      }
       if (res.ok) {
         const data = await res.json()
+        setModuleEnabled(true)
         setInvoices(data.invoices || [])
         setStats(data.stats || null)
       }
@@ -221,6 +230,24 @@ export default function StudioInvoicesPage() {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  if (!moduleEnabled) {
+    return (
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+        <Card className="border-0 shadow-sm max-w-2xl">
+          <CardContent className="p-6 space-y-3">
+            <h1 className="text-xl font-semibold text-gray-900">Invoices Disabled</h1>
+            <p className="text-sm text-gray-600">
+              The Invoices module is currently disabled for this studio.
+            </p>
+            <Link href="/studio/settings" className="text-sm font-medium text-violet-700 hover:text-violet-600">
+              Open settings to enable Invoices
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -741,7 +768,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

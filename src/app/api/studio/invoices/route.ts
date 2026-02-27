@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { getStudioModuleAccess } from "@/modules/employees/module-access"
 
 // GET - Fetch all invoices for the studio
 export async function GET(request: NextRequest) {
@@ -8,6 +9,11 @@ export async function GET(request: NextRequest) {
 
   if (!session?.user?.studioId || session.user.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const modules = await getStudioModuleAccess(session.user.studioId)
+  if (!modules.invoicesEnabled) {
+    return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)
@@ -83,6 +89,11 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const modules = await getStudioModuleAccess(session.user.studioId)
+  if (!modules.invoicesEnabled) {
+    return NextResponse.json({ error: "Invoices module is disabled for this studio" }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     const { invoiceId, status, paidAmount, paymentMethod, paymentReference, notes } = body
@@ -149,7 +160,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update invoice" }, { status: 500 })
   }
 }
-
 
 
 

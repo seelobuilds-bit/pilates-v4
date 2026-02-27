@@ -15,6 +15,17 @@ enum Role {
   TEACHER
 }
 
+enum StudioCountry {
+  IE
+  UK
+  US
+}
+
+enum TeacherEngagementType {
+  CONTRACTOR
+  EMPLOYEE
+}
+
 enum MobilePushActorType {
   USER
   CLIENT
@@ -76,6 +87,7 @@ model User {
 
   // Class swap approvals (studio owners)
   resolvedClassSwapRequests ClassSwapRequest[] @relation("ClassSwapResolvedBy")
+  approvedTimeOffRequests   TimeOffRequest[]   @relation("TimeOffApprovedBy")
 }
 
 model Studio {
@@ -97,6 +109,9 @@ model Studio {
   stripeDetailsSubmitted Boolean  @default(false)
   stripeCurrency        String?   @default("usd")
   requiresClassSwapApproval Boolean @default(true)
+  invoicesEnabled       Boolean   @default(true)
+  employeesEnabled      Boolean   @default(false)
+  country               StudioCountry @default(IE)
 
   locations     Location[]
   classTypes    ClassType[]
@@ -131,6 +146,9 @@ model Studio {
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
   classSwapRequests ClassSwapRequest[]
+  timeOffRequests   TimeOffRequest[]
+  timeOffBalances   TimeOffBalance[]
+  timeOffPolicyOverride StudioTimeOffPolicyOverride?
   
   // Social Media Marketing
   socialAccounts      SocialMediaAccount[]
@@ -627,6 +645,11 @@ model Teacher {
   bio         String?
   specialties String[]
   isActive    Boolean  @default(true)
+  engagementType TeacherEngagementType @default(CONTRACTOR)
+  payrollAnnualSalary Float?
+  payrollHourlyRate Float?
+  payrollTaxRate Float?
+  payrollMetadata Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -644,6 +667,8 @@ model Teacher {
   trainingRequests  TrainingRequest[]
   outgoingClassSwapRequests ClassSwapRequest[] @relation("ClassSwapFromTeacher")
   incomingClassSwapRequests ClassSwapRequest[] @relation("ClassSwapToTeacher")
+  timeOffRequests   TimeOffRequest[]
+  timeOffBalances   TimeOffBalance[]
   
   // Social Media Marketing
   socialAccounts          SocialMediaAccount[]
@@ -1224,6 +1249,97 @@ enum ClassSwapRequestStatus {
   APPROVED
   DECLINED
   CANCELLED
+}
+
+enum TimeOffRequestType {
+  HOLIDAY
+  SICK
+  UNPAID
+  OTHER
+}
+
+enum TimeOffRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model TimeOffPolicy {
+  id                        String       @id @default(cuid())
+  country                   StudioCountry @unique
+  defaultAnnualLeaveWeeks   Float
+  defaultPaidSickDaysPerYear Int
+  workingDaysPerWeekDefault Int          @default(5)
+  metadata                  Json?
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  studioOverrides           StudioTimeOffPolicyOverride[]
+}
+
+model StudioTimeOffPolicyOverride {
+  id                       String      @id @default(cuid())
+  annualLeaveWeeksOverride Float?
+  paidSickDaysOverride     Int?
+  workingDaysPerWeekOverride Int?
+  metadata                 Json?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  studioId                 String      @unique
+  studio                   Studio      @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  policyId                 String?
+  policy                   TimeOffPolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+}
+
+model TimeOffRequest {
+  id            String             @id @default(cuid())
+  type          TimeOffRequestType
+  startDate     DateTime
+  endDate       DateTime
+  isHalfDayStart Boolean           @default(false)
+  isHalfDayEnd  Boolean            @default(false)
+  reasonText    String             @db.Text
+  status        TimeOffRequestStatus @default(PENDING)
+  adminNotes    String?            @db.Text
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  approvedByUserId String?
+  approvedAt    DateTime?
+
+  studioId      String
+  studio        Studio             @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  teacherId     String
+  teacher       Teacher            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  approvedBy    User?              @relation("TimeOffApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([studioId, status, startDate])
+  @@index([teacherId, status])
+}
+
+model TimeOffBalance {
+  id                    String      @id @default(cuid())
+  year                  Int
+  annualLeaveEntitledDays Float
+  annualLeaveUsedDays   Float       @default(0)
+  sickPaidEntitledDays  Float
+  sickPaidUsedDays      Float       @default(0)
+  lastRecalculatedAt    DateTime    @default(now())
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  studioId              String
+  studio                Studio      @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  teacherId             String
+  teacher               Teacher     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([studioId, teacherId, year])
+  @@index([teacherId, year])
 }
 
 model ClassSwapRequest {

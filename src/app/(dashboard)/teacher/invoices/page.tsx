@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Link from "next/link"
 import {
   FileText,
   Plus,
@@ -59,6 +60,7 @@ interface Invoice {
 
 export default function TeacherInvoicesPage() {
   const [loading, setLoading] = useState(true)
+  const [moduleEnabled, setModuleEnabled] = useState(true)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [payRate, setPayRate] = useState<PayRate | null>(null)
   const [studioName, setStudioName] = useState("")
@@ -109,8 +111,15 @@ export default function TeacherInvoicesPage() {
   async function fetchInvoices() {
     try {
       const res = await fetch("/api/teacher/invoices")
+      if (res.status === 403) {
+        setModuleEnabled(false)
+        setInvoices([])
+        setLoading(false)
+        return
+      }
       if (res.ok) {
         const data = await res.json()
+        setModuleEnabled(true)
         setInvoices(data.invoices || [])
         if (data.payRate) setPayRate(data.payRate)
         if (data.studio) setStudioName(data.studio.name)
@@ -267,6 +276,24 @@ export default function TeacherInvoicesPage() {
     return (
       <div className="h-full min-h-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    )
+  }
+
+  if (!moduleEnabled) {
+    return (
+      <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+        <Card className="border-0 shadow-sm max-w-2xl">
+          <CardContent className="p-6 space-y-3">
+            <h1 className="text-xl font-semibold text-gray-900">Invoices Disabled</h1>
+            <p className="text-sm text-gray-600">
+              Your studio has disabled the Invoices module.
+            </p>
+            <Link href="/teacher/time-off" className="text-sm font-medium text-violet-700 hover:text-violet-600">
+              Go to Time Off
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -814,7 +841,6 @@ function InvoiceList({
     </div>
   )
 }
-
 
 
 

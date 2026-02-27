@@ -11,7 +11,6 @@ import {
   defaultWorkingLinkHrefs,
   studioLinkGroups,
   studioLinkHrefs,
-  studioLinks,
 } from "@/components/layout/nav-config"
 import {
   LayoutDashboard,
@@ -37,11 +36,19 @@ import {
 } from "lucide-react"
 
 type SidebarMode = "full" | "working"
+type ModuleAccess = {
+  invoicesEnabled: boolean
+  employeesEnabled: boolean
+}
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed-v1"
 const SIDEBAR_MODE_KEY = "sidebar-mode-v1"
 const SIDEBAR_WORKING_LINKS_KEY = "sidebar-working-links-v1"
 const WORKING_SLOT_COUNT = 4
+const DEFAULT_MODULE_ACCESS: ModuleAccess = {
+  invoicesEnabled: true,
+  employeesEnabled: false,
+}
 
 const hqLinks: NavLink[] = [
   { href: "/hq", label: "Dashboard", icon: LayoutDashboard },
@@ -61,6 +68,7 @@ const teacherLinks: NavLink[] = [
   { href: "/teacher/class-flows", label: "Class Flows", icon: PlayCircle },
   { href: "/teacher/clients", label: "Clients", icon: UserCircle },
   { href: "/teacher/invoices", label: "Invoices", icon: FileText },
+  { href: "/teacher/time-off", label: "Time Off", icon: Calendar },
   { href: "/teacher/vault", label: "The Vault", icon: Lock },
   { href: "/teacher/inbox", label: "Inbox", icon: Inbox },
   { href: "/teacher/community", label: "Community", icon: MessageSquare },
@@ -77,8 +85,8 @@ const salesAgentLinks: NavLink[] = [
   { href: "/sales/settings", label: "Settings", icon: Settings },
 ]
 
-function normalizeWorkingLinks(hrefs: string[]): string[] {
-  const validSet = new Set(studioLinkHrefs)
+function normalizeWorkingLinks(hrefs: string[], availableHrefs: string[] = studioLinkHrefs): string[] {
+  const validSet = new Set(availableHrefs)
   const deduped: string[] = []
 
   for (const href of hrefs) {
@@ -93,13 +101,26 @@ function normalizeWorkingLinks(hrefs: string[]): string[] {
     }
   }
 
-  for (const href of studioLinkHrefs) {
+  for (const href of availableHrefs) {
     if (!deduped.includes(href)) {
       deduped.push(href)
     }
   }
 
   return deduped.slice(0, WORKING_SLOT_COUNT)
+}
+
+function filterStudioLinkGroupsByModules(groups: NavGroup[], moduleAccess: ModuleAccess): NavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      links: group.links.filter((link) => {
+        if (link.href === "/studio/invoices") return moduleAccess.invoicesEnabled
+        if (link.href === "/studio/employees") return moduleAccess.employeesEnabled
+        return true
+      }),
+    }))
+    .filter((group) => group.links.length > 0)
 }
 
 export function Sidebar() {
@@ -113,9 +134,27 @@ export function Sidebar() {
   const [showExtras, setShowExtras] = useState(false)
   const [showWorkingCustomize, setShowWorkingCustomize] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [moduleAccess, setModuleAccess] = useState<ModuleAccess>(DEFAULT_MODULE_ACCESS)
+  const [moduleAccessLoaded, setModuleAccessLoaded] = useState(false)
 
-  let links = studioLinks
-  let linkGroups: NavGroup[] = studioLinkGroups
+  const filteredStudioGroups = useMemo(
+    () => filterStudioLinkGroupsByModules(studioLinkGroups, moduleAccess),
+    [moduleAccess]
+  )
+  const filteredStudioLinks = useMemo(() => filteredStudioGroups.flatMap((group) => group.links), [filteredStudioGroups])
+  const filteredStudioHrefList = useMemo(() => filteredStudioLinks.map((link) => link.href), [filteredStudioLinks])
+  const filteredTeacherLinks = useMemo(
+    () =>
+      teacherLinks.filter((link) => {
+        if (link.href === "/teacher/invoices") return moduleAccess.invoicesEnabled
+        if (link.href === "/teacher/time-off") return moduleAccess.employeesEnabled
+        return true
+      }),
+    [moduleAccess]
+  )
+
+  let links = filteredStudioLinks
+  let linkGroups: NavGroup[] = filteredStudioGroups
   let title = session?.user?.studioName || "Studio"
   let subtitle = "Studio Portal"
   const isStudioOwner = role === "OWNER"
@@ -131,13 +170,13 @@ export function Sidebar() {
     title = "CURRENT"
     subtitle = "Sales Portal"
   } else if (role === "TEACHER") {
-    links = teacherLinks
-    linkGroups = [{ title: "Navigation", links: teacherLinks }]
+    links = filteredTeacherLinks
+    linkGroups = [{ title: "Navigation", links: filteredTeacherLinks }]
     title = session?.user?.studioName || "Studio"
     subtitle = "Teacher Portal"
   }
 
-  const studioLinksByHref = useMemo(() => new Map(studioLinks.map((link) => [link.href, link])), [])
+  const studioLinksByHref = useMemo(() => new Map(filteredStudioLinks.map((link) => [link.href, link])), [filteredStudioLinks])
 
   const workingPrimaryLinks = useMemo<NavLink[]>(
     () =>
@@ -152,10 +191,40 @@ export function Sidebar() {
   )
 
   const workingSet = useMemo(() => new Set(workingLinkHrefs), [workingLinkHrefs])
-  const extrasLinks = useMemo(() => studioLinks.filter((link) => !workingSet.has(link.href)), [workingSet])
+  const extrasLinks = useMemo(() => filteredStudioLinks.filter((link) => !workingSet.has(link.href)), [filteredStudioLinks, workingSet])
 
   const activeGroups: NavGroup[] =
     isStudioOwner && sidebarMode === "working" ? [{ title: "Working View", links: workingPrimaryLinks }] : linkGroups
+
+  useEffect(() => {
+    if (role !== "OWNER" && role !== "TEACHER") return
+
+    let active = true
+
+    const loadModuleAccess = async () => {
+      try {
+        const res = await fetch("/api/studio/module-access")
+        if (!res.ok) return
+        const data = await res.json()
+        if (!active) return
+        setModuleAccess({
+          invoicesEnabled: data?.invoicesEnabled !== false,
+          employeesEnabled: data?.employeesEnabled === true,
+        })
+      } catch {
+        // Keep defaults if module fetch fails.
+      } finally {
+        if (active) {
+          setModuleAccessLoaded(true)
+        }
+      }
+    }
+
+    loadModuleAccess()
+    return () => {
+      active = false
+    }
+  }, [role])
 
   useEffect(() => {
     try {
@@ -174,13 +243,18 @@ export function Sidebar() {
       if (savedWorkingLinks) {
         const parsed = JSON.parse(savedWorkingLinks)
         if (Array.isArray(parsed)) {
-          setWorkingLinkHrefs(normalizeWorkingLinks(parsed))
+          setWorkingLinkHrefs(normalizeWorkingLinks(parsed, filteredStudioHrefList))
         }
       }
     } catch {
-      setWorkingLinkHrefs(defaultWorkingLinkHrefs)
+      setWorkingLinkHrefs(normalizeWorkingLinks(defaultWorkingLinkHrefs, filteredStudioHrefList))
     }
   }, [])
+
+  useEffect(() => {
+    if (!isStudioOwner || !moduleAccessLoaded) return
+    setWorkingLinkHrefs((prev) => normalizeWorkingLinks(prev, filteredStudioHrefList))
+  }, [filteredStudioHrefList, isStudioOwner, moduleAccessLoaded])
 
   // Keep the dashboard route warm so top-level nav feels instant.
   useEffect(() => {
@@ -238,7 +312,7 @@ export function Sidebar() {
         next[index] = nextHref
       }
 
-      return normalizeWorkingLinks(next)
+      return normalizeWorkingLinks(next, filteredStudioHrefList)
     })
   }
 
@@ -371,7 +445,7 @@ export function Sidebar() {
                     onChange={(event) => handleWorkingSlotChange(index, event.target.value)}
                     className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700"
                   >
-                    {studioLinks.map((link) => (
+                    {filteredStudioLinks.map((link) => (
                       <option key={link.href} value={link.href}>
                         {link.label}
                       </option>

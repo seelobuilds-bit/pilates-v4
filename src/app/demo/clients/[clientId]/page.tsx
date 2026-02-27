@@ -43,6 +43,8 @@ interface Client {
   lastName: string
   email: string
   phone: string | null
+  healthIssues: string | null
+  classNotes: string | null
   credits: number
   isActive: boolean
   createdAt: string
@@ -837,6 +839,28 @@ export default function ClientDetailPage({
                     Send Message
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm lg:col-span-2">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-gray-900 mb-4">Health & Teacher Notes</h3>
+                {client.healthIssues?.trim() || client.classNotes?.trim() ? (
+                  <div className="space-y-3">
+                    {client.healthIssues?.trim() && (
+                      <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                        <span className="font-semibold">Health issues:</span> {client.healthIssues}
+                      </p>
+                    )}
+                    {client.classNotes?.trim() && (
+                      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+                        <span className="font-semibold">Notes for teachers:</span> {client.classNotes}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No health issues or class notes provided yet.</p>
+                )}
               </CardContent>
             </Card>
           </div>

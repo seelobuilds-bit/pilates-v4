@@ -20,10 +20,20 @@ export const authOptions: NextAuthOptions = {
           const user = await db.user.findUnique({
             where: { email: credentials.email },
             include: {
-              ownedStudio: true,
+              ownedStudio: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
               teacher: {
                 include: {
-                  studio: true
+                  studio: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
                 }
               }
             }
