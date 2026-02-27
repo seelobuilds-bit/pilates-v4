@@ -9,6 +9,7 @@ import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElement
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -571,7 +572,15 @@ export default function AccountPage() {
   
   // Auth state
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [authForm, setAuthForm] = useState({ email: "", password: "", firstName: "", lastName: "", phone: "" })
+  const [authForm, setAuthForm] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    healthIssues: "",
+    classNotes: "",
+  })
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
 
@@ -948,27 +957,52 @@ export default function AccountPage() {
                   </div>
                 )}
                 {authMode === "register" && (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={authForm.firstName}
+                          onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={authForm.lastName}
+                          onChange={(e) => setAuthForm({ ...authForm, lastName: e.target.value })}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={authForm.firstName}
-                        onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })}
-                        required
-                        className="h-11"
+                      <Label htmlFor="healthIssues">Health Issues (Optional)</Label>
+                      <Textarea
+                        id="healthIssues"
+                        value={authForm.healthIssues}
+                        onChange={(e) => setAuthForm({ ...authForm, healthIssues: e.target.value })}
+                        placeholder="Injuries, pregnancy, conditions, or movement limitations"
+                        rows={3}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={authForm.lastName}
-                        onChange={(e) => setAuthForm({ ...authForm, lastName: e.target.value })}
-                        required
-                        className="h-11"
+                      <Label htmlFor="classNotes">Notes for Teachers (Optional)</Label>
+                      <Textarea
+                        id="classNotes"
+                        value={authForm.classNotes}
+                        onChange={(e) => setAuthForm({ ...authForm, classNotes: e.target.value })}
+                        placeholder="Anything your teachers should know before class"
+                        rows={3}
                       />
                     </div>
+                    <p className="text-xs text-gray-500">
+                      These notes are visible to teachers before class.
+                    </p>
                   </div>
                 )}
                 <div className="space-y-2">

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
 import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
@@ -73,7 +74,14 @@ export default function EmbedAccountPage() {
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [authForm, setAuthForm] = useState({ email: "", password: "", firstName: "", lastName: "" })
+  const [authForm, setAuthForm] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    healthIssues: "",
+    classNotes: "",
+  })
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
@@ -158,7 +166,14 @@ export default function EmbedAccountPage() {
         throw new Error(data.error || "Authentication failed")
       }
 
-      setAuthForm({ email: "", password: "", firstName: "", lastName: "" })
+      setAuthForm({
+        email: "",
+        password: "",
+        firstName: "",
+        lastName: "",
+        healthIssues: "",
+        classNotes: "",
+      })
       await fetchClientAndBookings()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Authentication failed")
@@ -229,25 +244,50 @@ export default function EmbedAccountPage() {
                   </div>
                 )}
                 {authMode === "register" && (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">First Name</Label>
+                        <Input
+                          className="h-10"
+                          value={authForm.firstName}
+                          onChange={(e) => setAuthForm((prev) => ({ ...prev, firstName: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Last Name</Label>
+                        <Input
+                          className="h-10"
+                          value={authForm.lastName}
+                          onChange={(e) => setAuthForm((prev) => ({ ...prev, lastName: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">First Name</Label>
-                      <Input
-                        className="h-10"
-                        value={authForm.firstName}
-                        onChange={(e) => setAuthForm((prev) => ({ ...prev, firstName: e.target.value }))}
-                        required
+                      <Label className="text-xs">Health Issues (Optional)</Label>
+                      <Textarea
+                        value={authForm.healthIssues}
+                        onChange={(e) => setAuthForm((prev) => ({ ...prev, healthIssues: e.target.value }))}
+                        placeholder="Injuries, pregnancy, conditions, or movement limitations"
+                        rows={3}
+                        className="text-xs"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Last Name</Label>
-                      <Input
-                        className="h-10"
-                        value={authForm.lastName}
-                        onChange={(e) => setAuthForm((prev) => ({ ...prev, lastName: e.target.value }))}
-                        required
+                      <Label className="text-xs">Notes for Teachers (Optional)</Label>
+                      <Textarea
+                        value={authForm.classNotes}
+                        onChange={(e) => setAuthForm((prev) => ({ ...prev, classNotes: e.target.value }))}
+                        placeholder="Anything your teachers should know before class"
+                        rows={3}
+                        className="text-xs"
                       />
                     </div>
+                    <p className="text-[11px] text-gray-500">
+                      These notes are visible to teachers before class.
+                    </p>
                   </div>
                 )}
                 <div className="space-y-1.5">

@@ -754,6 +754,8 @@ model Client {
   firstName           String
   lastName            String
   phone               String?
+  healthIssues        String?  @db.Text
+  classNotes          String?  @db.Text
   birthday            DateTime?
   isActive            Boolean  @default(true)
   credits             Int      @default(0)

@@ -33,6 +33,7 @@ interface ClassSession {
   classType: { name: string }
   location: { name: string }
   _count: { bookings: number }
+  clientAlertCount: number
 }
 
 interface BlockedTime {
@@ -427,9 +428,17 @@ export default function TeacherSchedulePage() {
                             <MapPin className="h-4 w-4 text-gray-400" />
                             {cls.location.name}
                           </p>
-                          <Badge variant="secondary" className="justify-self-start sm:justify-self-end">
-                            {cls._count.bookings}/{cls.capacity}
-                          </Badge>
+                          <div className="flex items-center gap-2 justify-self-start sm:justify-self-end">
+                            <Badge variant="secondary">
+                              {cls._count.bookings}/{cls.capacity}
+                            </Badge>
+                            {cls.clientAlertCount > 0 && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {cls.clientAlertCount}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </Link>
                     ))
@@ -498,6 +507,12 @@ export default function TeacherSchedulePage() {
                                 {new Date(cls.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                               </p>
                               <p className="text-xs text-gray-400 mt-1">{cls.location.name}</p>
+                              {cls.clientAlertCount > 0 && (
+                                <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  {cls.clientAlertCount} client alert{cls.clientAlertCount === 1 ? "" : "s"}
+                                </p>
+                              )}
                             </div>
                           </Link>
                         ))}
@@ -591,9 +606,17 @@ export default function TeacherSchedulePage() {
                                 {cls._count.bookings}/{cls.capacity}
                               </span>
                             </div>
-                            {cls._count.bookings > 0 && (
-                              <Send className="h-3 w-3 text-violet-400" />
-                            )}
+                            <div className="flex items-center gap-1">
+                              {cls.clientAlertCount > 0 && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                  <AlertTriangle className="h-2.5 w-2.5" />
+                                  {cls.clientAlertCount}
+                                </span>
+                              )}
+                              {cls._count.bookings > 0 && (
+                                <Send className="h-3 w-3 text-violet-400" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </Link>
@@ -796,7 +819,6 @@ export default function TeacherSchedulePage() {
     </div>
   )
 }
-
 
 
 

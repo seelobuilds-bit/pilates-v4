@@ -21,14 +21,31 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { email, password, firstName, lastName } = body
+    const { email, password, firstName, lastName, phone, healthIssues, classNotes } = body
 
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    const parsedEmail = String(email).trim().toLowerCase()
+    const parsedFirstName = String(firstName).trim()
+    const parsedLastName = String(lastName).trim()
+    const parsedPhone = typeof phone === "string" ? phone.trim() : null
+    const parsedHealthIssues = typeof healthIssues === "string" ? healthIssues.trim() : null
+    const parsedClassNotes = typeof classNotes === "string" ? classNotes.trim() : null
+
+    if (!parsedEmail || !parsedFirstName || !parsedLastName) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
     const existingClient = await db.client.findFirst({
-      where: { email, studioId: studio.id }
+      where: {
+        studioId: studio.id,
+        email: {
+          equals: parsedEmail,
+          mode: "insensitive"
+        }
+      }
     })
 
     if (existingClient) {
@@ -39,10 +56,13 @@ export async function POST(
 
     const client = await db.client.create({
       data: {
-        email,
+        email: parsedEmail,
         password: hashedPassword,
-        firstName,
-        lastName,
+        firstName: parsedFirstName,
+        lastName: parsedLastName,
+        phone: parsedPhone || null,
+        healthIssues: parsedHealthIssues || null,
+        classNotes: parsedClassNotes || null,
         studioId: studio.id
       }
     })
@@ -70,10 +90,10 @@ export async function POST(
     await sendSystemTemplateEmail({
       studioId: studio.id,
       templateType: "CLIENT_WELCOME",
-      to: email,
+      to: parsedEmail,
       variables: {
-        firstName,
-        lastName,
+        firstName: parsedFirstName,
+        lastName: parsedLastName,
         studioName: studio.name,
         bookingUrl
       }

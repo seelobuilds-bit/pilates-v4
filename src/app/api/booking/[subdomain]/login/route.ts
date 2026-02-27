@@ -32,8 +32,16 @@ export async function POST(
       return NextResponse.json({ error: "Email and password required" }, { status: 400 })
     }
 
+    const parsedEmail = String(email).trim().toLowerCase()
+
     const client = await db.client.findFirst({
-      where: { email, studioId: studio.id }
+      where: {
+        studioId: studio.id,
+        email: {
+          equals: parsedEmail,
+          mode: "insensitive"
+        }
+      }
     })
 
     if (!client || !client.password) {

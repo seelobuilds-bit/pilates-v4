@@ -7,12 +7,14 @@ import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElement
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
 import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
+import { formatCurrency } from "@/lib/utils"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
   Check, Clock, RefreshCw, Sparkles, Lock, LogOut, CheckCircle, Mail, CalendarCheck, Loader2
@@ -40,6 +42,7 @@ function StripePaymentWrapper({
   selectedClass,
   selectedLocation,
   primaryColor,
+  currencyCode,
 }: {
   clientSecret: string
   connectedAccountId: string
@@ -52,6 +55,7 @@ function StripePaymentWrapper({
   selectedClass: ClassType | null
   selectedLocation: Location | null
   primaryColor: string
+  currencyCode: string
 }) {
   const stripePromise = useMemo(
     () =>
@@ -94,6 +98,7 @@ function StripePaymentWrapper({
         selectedSlot={selectedSlot}
         selectedClass={selectedClass}
         selectedLocation={selectedLocation}
+        currencyCode={currencyCode}
       />
     </Elements>
   )
@@ -109,6 +114,7 @@ function EmbeddedPaymentForm({
   selectedSlot,
   selectedClass,
   selectedLocation,
+  currencyCode,
 }: { 
   subdomain: string
   paymentId: string
@@ -118,6 +124,7 @@ function EmbeddedPaymentForm({
   selectedSlot: TimeSlot | null
   selectedClass: ClassType | null
   selectedLocation: Location | null
+  currencyCode: string
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -288,7 +295,7 @@ function EmbeddedPaymentForm({
           ) : (
             <>
               <Lock className="w-4 h-4 mr-2" />
-              Pay ${amount.toFixed(2)}
+              Pay {formatCurrency(amount, currencyCode)}
             </>
           )}
         </Button>
@@ -338,6 +345,7 @@ interface StudioData {
   id: string
   name: string
   primaryColor: string
+  stripeCurrency?: string | null
   locations: Location[]
   classTypes: ClassType[]
   teachers: Teacher[]
@@ -412,7 +420,14 @@ export default function BookingPage() {
 
   const [client, setClient] = useState<ClientInfo | null>(null)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [authForm, setAuthForm] = useState({ email: "", password: "", firstName: "", lastName: "" })
+  const [authForm, setAuthForm] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    healthIssues: "",
+    classNotes: "",
+  })
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState(false)
@@ -921,6 +936,8 @@ export default function BookingPage() {
 
   const currentStepIndex = STEPS.indexOf(step)
   const primaryColor = resolveStudioPrimaryColor(studioData.primaryColor)
+  const studioCurrency = (studioData.stripeCurrency || "usd").toLowerCase()
+  const formatPrice = (amount: number) => formatCurrency(amount, studioCurrency)
   const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
@@ -1211,7 +1228,7 @@ export default function BookingPage() {
                           <p className="text-sm text-gray-500">Pay for just this class</p>
                         </div>
                       </div>
-                      <p className="font-semibold text-gray-900">${selectedClass?.price}</p>
+                      <p className="font-semibold text-gray-900">{formatPrice(selectedClass?.price ?? 0)}</p>
                     </button>
 
                     {/* Weekly Subscription */}
@@ -1238,10 +1255,10 @@ export default function BookingPage() {
                             </div>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
                             <Badge className="mt-2 inline-flex sm:hidden bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
-                            <p className="mt-2 text-base font-semibold text-gray-900 sm:hidden">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
+                            <p className="mt-2 text-base font-semibold text-gray-900 sm:hidden">{formatPrice((selectedClass?.price || 0) * 0.85)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                           </div>
                         </div>
-                        <p className="hidden self-end sm:self-auto shrink-0 font-semibold text-gray-900 sm:block">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
+                        <p className="hidden self-end sm:self-auto shrink-0 font-semibold text-gray-900 sm:block">{formatPrice((selectedClass?.price || 0) * 0.85)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                       </div>
                     </button>
 
@@ -1391,9 +1408,9 @@ export default function BookingPage() {
                       <span className="text-gray-500">{bookingType === "recurring" ? "Weekly Payment" : bookingType === "pack" ? `Total (${packSize} classes)` : "Total"}</span>
                       <span className="flex items-center gap-2">
                         {bookingType === "recurring" && (
-                          <span className="text-gray-400 line-through">${selectedClass?.price.toFixed(2)}</span>
+                          <span className="text-gray-400 line-through">{formatPrice(selectedClass?.price ?? 0)}</span>
                         )}
-                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>${totalPrice.toFixed(2)}</span>
+                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>{formatPrice(totalPrice)}</span>
                       </span>
                     </div>
                     {bookingType === "single" && useCredit && (
@@ -1412,15 +1429,38 @@ export default function BookingPage() {
                   <form onSubmit={handleAuth} className="space-y-4">
                     {authError && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">{authError}</div>}
                     {authMode === "register" && (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div>
-                          <Label>First Name</Label>
-                          <Input value={authForm.firstName} onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })} required />
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label>First Name</Label>
+                            <Input value={authForm.firstName} onChange={(e) => setAuthForm({ ...authForm, firstName: e.target.value })} required />
+                          </div>
+                          <div>
+                            <Label>Last Name</Label>
+                            <Input value={authForm.lastName} onChange={(e) => setAuthForm({ ...authForm, lastName: e.target.value })} required />
+                          </div>
                         </div>
                         <div>
-                          <Label>Last Name</Label>
-                          <Input value={authForm.lastName} onChange={(e) => setAuthForm({ ...authForm, lastName: e.target.value })} required />
+                          <Label>Health Issues (Optional)</Label>
+                          <Textarea
+                            value={authForm.healthIssues}
+                            onChange={(e) => setAuthForm({ ...authForm, healthIssues: e.target.value })}
+                            placeholder="Injuries, pregnancy, conditions, or movement limitations"
+                            rows={3}
+                          />
                         </div>
+                        <div>
+                          <Label>Notes for Teachers (Optional)</Label>
+                          <Textarea
+                            value={authForm.classNotes}
+                            onChange={(e) => setAuthForm({ ...authForm, classNotes: e.target.value })}
+                            placeholder="Anything your teachers should know before class"
+                            rows={3}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          These notes are visible to teachers before class.
+                        </p>
                       </div>
                     )}
                     <div>
@@ -1526,6 +1566,7 @@ export default function BookingPage() {
                           selectedClass={selectedClass}
                           selectedLocation={selectedLocation}
                           primaryColor={primaryColor}
+                          currencyCode={studioCurrency}
                         />
                       ) : (
                         <div className="text-center py-4">

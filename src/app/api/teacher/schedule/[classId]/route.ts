@@ -46,7 +46,9 @@ export async function GET(
                 firstName: true,
                 lastName: true,
                 email: true,
-                phone: true
+                phone: true,
+                healthIssues: true,
+                classNotes: true
               }
             }
           }
@@ -65,13 +67,21 @@ export async function GET(
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    return NextResponse.json(classSession)
+    const clientAlertCount = classSession.bookings.reduce((count, booking) => {
+      const healthIssues = booking.client.healthIssues?.trim()
+      const classNotes = booking.client.classNotes?.trim()
+      return healthIssues || classNotes ? count + 1 : count
+    }, 0)
+
+    return NextResponse.json({
+      ...classSession,
+      clientAlertCount
+    })
   } catch (error) {
     console.error("Failed to fetch class:", error)
     return NextResponse.json({ error: "Failed to fetch class" }, { status: 500 })
   }
 }
-
 
 
 

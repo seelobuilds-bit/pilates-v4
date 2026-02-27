@@ -13,7 +13,8 @@ import {
   TrendingUp, 
   DollarSign,
   ChevronRight,
-  MapPin
+  MapPin,
+  AlertTriangle
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -25,6 +26,7 @@ interface ClassSession {
   classType: { name: string }
   location: { name: string }
   _count: { bookings: number }
+  clientAlertCount?: number
 }
 
 interface TeacherStats {
@@ -187,9 +189,17 @@ export default function TeacherDashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge className={`w-fit ${cls._count.bookings >= cls.capacity ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
-                      {cls._count.bookings}/{cls.capacity}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`w-fit ${cls._count.bookings >= cls.capacity ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
+                        {cls._count.bookings}/{cls.capacity}
+                      </Badge>
+                      {(cls.clientAlertCount ?? 0) > 0 && (
+                        <Badge variant="destructive" className="w-fit gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {cls.clientAlertCount}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -297,8 +307,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
-
 
 
 

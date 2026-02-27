@@ -19,7 +19,8 @@ import {
   MessageSquare,
   Send,
   X,
-  CheckCircle
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react"
 
 interface ClassSession {
@@ -36,10 +37,13 @@ interface ClassSession {
       firstName: string
       lastName: string
       email: string
-      phone?: string | null 
+      phone?: string | null
+      healthIssues?: string | null
+      classNotes?: string | null
     } 
   }[]
   _count: { bookings: number }
+  clientAlertCount: number
 }
 
 export default function TeacherClassDetailPage({
@@ -321,14 +325,27 @@ export default function TeacherClassDetailPage({
             <CardContent className="p-6">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="font-semibold text-gray-900">Booked Clients</h2>
-                <Badge className="w-fit" variant={classSession._count.bookings >= classSession.capacity ? "destructive" : "secondary"}>
-                  {classSession._count.bookings}/{classSession.capacity} spots
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  {classSession.clientAlertCount > 0 && (
+                    <Badge variant="destructive" className="w-fit gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {classSession.clientAlertCount} client alert{classSession.clientAlertCount === 1 ? "" : "s"}
+                    </Badge>
+                  )}
+                  <Badge className="w-fit" variant={classSession._count.bookings >= classSession.capacity ? "destructive" : "secondary"}>
+                    {classSession._count.bookings}/{classSession.capacity} spots
+                  </Badge>
+                </div>
               </div>
               
               {classSession.bookings && classSession.bookings.length > 0 ? (
                 <div className="space-y-2">
-                  {classSession.bookings.map((booking) => (
+                  {classSession.bookings.map((booking) => {
+                    const healthIssues = booking.client.healthIssues?.trim()
+                    const classNotes = booking.client.classNotes?.trim()
+                    const hasClientAlerts = Boolean(healthIssues || classNotes)
+
+                    return (
                     <Link key={booking.id} href={`/teacher/clients/${booking.client.id}`}>
                       <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100 cursor-pointer sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
@@ -338,6 +355,20 @@ export default function TeacherClassDetailPage({
                           <div>
                             <p className="font-medium text-gray-900">{booking.client.firstName} {booking.client.lastName}</p>
                             <p className="text-sm text-gray-500">{booking.client.email}</p>
+                            {hasClientAlerts && (
+                              <div className="mt-2 space-y-1">
+                                {healthIssues && (
+                                  <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-700">
+                                    <span className="font-semibold">Health:</span> {healthIssues}
+                                  </p>
+                                )}
+                                {classNotes && (
+                                  <p className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">
+                                    <span className="font-semibold">Notes:</span> {classNotes}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <Badge variant="outline" className="w-fit text-emerald-600 border-emerald-200">
@@ -345,7 +376,7 @@ export default function TeacherClassDetailPage({
                         </Badge>
                       </div>
                     </Link>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
@@ -447,7 +478,6 @@ export default function TeacherClassDetailPage({
     </div>
   )
 }
-
 
 
 

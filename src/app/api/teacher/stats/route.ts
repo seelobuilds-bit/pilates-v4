@@ -25,7 +25,7 @@ export async function GET() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const sixMonthWindowStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-    const [upcomingClasses, recentClasses, monthClasses, monthBookings, sixMonthClasses] = await Promise.all([
+    const [upcomingClassesRaw, recentClasses, monthClasses, monthBookings, sixMonthClasses] = await Promise.all([
       db.classSession.findMany({
         where: {
           teacherId,
@@ -38,6 +38,19 @@ export async function GET() {
         include: {
           classType: true,
           location: true,
+          bookings: {
+            where: {
+              status: "CONFIRMED"
+            },
+            select: {
+              client: {
+                select: {
+                  healthIssues: true,
+                  classNotes: true
+                }
+              }
+            }
+          },
           _count: { select: { bookings: true } }
         },
         orderBy: { startTime: "asc" }
@@ -123,6 +136,19 @@ export async function GET() {
         }
       })
     ])
+
+    const upcomingClasses = upcomingClassesRaw.map((classSession) => {
+      const clientAlertCount = classSession.bookings.reduce((count, booking) => {
+        const healthIssues = booking.client.healthIssues?.trim()
+        const classNotes = booking.client.classNotes?.trim()
+        return healthIssues || classNotes ? count + 1 : count
+      }, 0)
+
+      return {
+        ...classSession,
+        clientAlertCount
+      }
+    })
 
     const nonCancelledBookings = monthBookings.filter((booking) => booking.status !== "CANCELLED")
     const uniqueStudents = new Set(nonCancelledBookings.map((booking) => booking.clientId))
@@ -214,10 +240,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
-
-
-
 
 
 

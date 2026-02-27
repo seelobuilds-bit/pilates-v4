@@ -14,6 +14,7 @@ export async function GET(
         id: true,
         name: true,
         primaryColor: true,
+        stripeCurrency: true,
         stripeChargesEnabled: true,
         stripeOnboardingComplete: true,
         locations: {
@@ -50,6 +51,7 @@ export async function GET(
       id: studio.id,
       name: studio.name,
       primaryColor: studio.primaryColor,
+      stripeCurrency: studio.stripeCurrency || "usd",
       locations: studio.locations,
       classTypes: studio.classTypes,
       teachers: studio.teachers,

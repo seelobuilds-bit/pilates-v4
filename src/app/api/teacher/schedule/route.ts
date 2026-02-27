@@ -37,22 +37,43 @@ export async function GET(request: NextRequest) {
       include: {
         classType: true,
         location: true,
+        bookings: {
+          where: {
+            status: "CONFIRMED"
+          },
+          select: {
+            client: {
+              select: {
+                healthIssues: true,
+                classNotes: true
+              }
+            }
+          }
+        },
         _count: { select: { bookings: true } }
       },
       orderBy: { startTime: "asc" }
     })
 
-    return NextResponse.json(classes)
+    const classesWithAlerts = classes.map((classSession) => {
+      const clientAlertCount = classSession.bookings.reduce((count, booking) => {
+        const healthIssues = booking.client.healthIssues?.trim()
+        const classNotes = booking.client.classNotes?.trim()
+        return healthIssues || classNotes ? count + 1 : count
+      }, 0)
+
+      return {
+        ...classSession,
+        clientAlertCount
+      }
+    })
+
+    return NextResponse.json(classesWithAlerts)
   } catch (error) {
     console.error("Failed to fetch teacher schedule:", error)
     return NextResponse.json({ error: "Failed to fetch schedule" }, { status: 500 })
   }
 }
-
-
-
-
-
 
 
 
