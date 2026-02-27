@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -48,6 +49,21 @@ interface CalendarRow {
   }>
 }
 
+interface ReassignmentClassRow {
+  id: string
+  startTime: string
+  endTime: string
+  classTypeName: string
+  locationName: string
+  currentTeacherName: string
+}
+
+interface ReassignmentTeacherOption {
+  id: string
+  name: string
+  email: string
+}
+
 function monthString(date = new Date()) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`
 }
@@ -65,6 +81,17 @@ function formatDate(value: string) {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return "—"
   return parsed.toLocaleDateString()
+}
+
+function formatDateTime(value: string) {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "—"
+  return parsed.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 }
 
 function statusBadgeClass(status: RequestStatus) {
@@ -88,6 +115,14 @@ export default function StudioEmployeesTimeOffPage() {
 
   const [requests, setRequests] = useState<TimeOffRequestRow[]>([])
   const [calendarRows, setCalendarRows] = useState<CalendarRow[]>([])
+  const [activeRequest, setActiveRequest] = useState<TimeOffRequestRow | null>(null)
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false)
+  const [reassignLoading, setReassignLoading] = useState(false)
+  const [submittingDecision, setSubmittingDecision] = useState(false)
+  const [reassignmentClasses, setReassignmentClasses] = useState<ReassignmentClassRow[]>([])
+  const [reassignmentTeachers, setReassignmentTeachers] = useState<ReassignmentTeacherOption[]>([])
+  const [reassignmentMap, setReassignmentMap] = useState<Record<string, string>>({})
+  const [decisionNotes, setDecisionNotes] = useState("")
 
   const monthRange = useMemo(() => getMonthRange(month), [month])
 
@@ -199,18 +234,132 @@ export default function StudioEmployeesTimeOffPage() {
     loadData(false)
   }, [statusFilter, typeFilter, teacherFilter, startDateFilter, endDateFilter, month])
 
-  const handleDecision = async (requestId: string, action: "APPROVE" | "REJECT") => {
-    const adminNotes = window.prompt("Add admin notes (optional):") || ""
-    await fetch(`/api/time-off/requests/${requestId}`, {
+  const submitDecision = async (
+    requestId: string,
+    action: "APPROVE" | "REJECT",
+    options?: { adminNotes?: string; reassignments?: Array<{ classSessionId: string; toTeacherId: string }> }
+  ) => {
+    setSubmittingDecision(true)
+    const response = await fetch(`/api/time-off/requests/${requestId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action,
-        adminNotes,
+        adminNotes: options?.adminNotes ?? "",
+        reassignments: options?.reassignments ?? [],
       }),
     })
-    await loadData(false)
+    setSubmittingDecision(false)
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data?.error || `Failed to ${action.toLowerCase()} request`)
+    }
   }
+
+  const handleReject = async (requestId: string) => {
+    const adminNotes = window.prompt("Add admin notes (optional):") || ""
+    try {
+      await submitDecision(requestId, "REJECT", { adminNotes })
+      await loadData(false)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Failed to reject request")
+    }
+  }
+
+  const openApproveFlow = async (requestRow: TimeOffRequestRow) => {
+    const shouldReassign = window.confirm(
+      "Approve this request now. Do you also want to reassign the affected classes during this time off?"
+    )
+
+    if (!shouldReassign) {
+      const adminNotes = window.prompt("Add admin notes (optional):") || ""
+      try {
+        await submitDecision(requestRow.id, "APPROVE", { adminNotes })
+        await loadData(false)
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : "Failed to approve request")
+      }
+      return
+    }
+
+    setActiveRequest(requestRow)
+    setDecisionNotes("")
+    setReassignLoading(true)
+    setReassignDialogOpen(true)
+
+    try {
+      const response = await fetch(`/api/time-off/requests/${requestRow.id}/affected-classes`)
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to load classes for reassignment")
+      }
+
+      const classes = Array.isArray(data?.classes) ? data.classes : []
+      const teachers = Array.isArray(data?.teachers) ? data.teachers : []
+      setReassignmentClasses(classes)
+      setReassignmentTeachers(teachers)
+      setReassignmentMap({})
+    } catch (error) {
+      setReassignDialogOpen(false)
+      window.alert(error instanceof Error ? error.message : "Failed to load reassignment data")
+    } finally {
+      setReassignLoading(false)
+    }
+  }
+
+  const submitApproveWithReassignments = async () => {
+    if (!activeRequest) return
+
+    const reassignments = reassignmentClasses
+      .map((classRow) => {
+        const toTeacherId = reassignmentMap[classRow.id]
+        if (!toTeacherId || toTeacherId === "none") return null
+        return {
+          classSessionId: classRow.id,
+          toTeacherId,
+        }
+      })
+      .filter((item): item is { classSessionId: string; toTeacherId: string } => Boolean(item))
+
+    try {
+      await submitDecision(activeRequest.id, "APPROVE", {
+        adminNotes: decisionNotes,
+        reassignments,
+      })
+      setReassignDialogOpen(false)
+      setActiveRequest(null)
+      setReassignmentClasses([])
+      setReassignmentTeachers([])
+      setReassignmentMap({})
+      setDecisionNotes("")
+      await loadData(false)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Failed to approve request")
+    }
+  }
+
+  const approveWithoutReassigning = async () => {
+    if (!activeRequest) return
+    try {
+      await submitDecision(activeRequest.id, "APPROVE", {
+        adminNotes: decisionNotes,
+      })
+      setReassignDialogOpen(false)
+      setActiveRequest(null)
+      setReassignmentClasses([])
+      setReassignmentTeachers([])
+      setReassignmentMap({})
+      setDecisionNotes("")
+      await loadData(false)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Failed to approve request")
+    }
+  }
+
+  const selectedReassignmentsCount = Object.values(reassignmentMap).filter(
+    (teacherId) => teacherId && teacherId !== "none"
+  ).length
 
   if (loading) {
     return (
@@ -453,7 +602,8 @@ export default function StudioEmployeesTimeOffPage() {
                         <Button
                           size="sm"
                           className="bg-emerald-600 hover:bg-emerald-700"
-                          onClick={() => handleDecision(request.id, "APPROVE")}
+                          disabled={submittingDecision}
+                          onClick={() => openApproveFlow(request)}
                         >
                           Approve
                         </Button>
@@ -461,7 +611,8 @@ export default function StudioEmployeesTimeOffPage() {
                           size="sm"
                           variant="outline"
                           className="border-red-200 text-red-700 hover:bg-red-50"
-                          onClick={() => handleDecision(request.id, "REJECT")}
+                          disabled={submittingDecision}
+                          onClick={() => handleReject(request.id)}
                         >
                           Reject
                         </Button>
@@ -479,6 +630,110 @@ export default function StudioEmployeesTimeOffPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={reassignDialogOpen}
+        onOpenChange={(open) => {
+          setReassignDialogOpen(open)
+          if (!open) {
+            setActiveRequest(null)
+            setReassignmentClasses([])
+            setReassignmentTeachers([])
+            setReassignmentMap({})
+            setDecisionNotes("")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Approve Request and Reassign Classes</DialogTitle>
+            <DialogDescription>
+              {activeRequest
+                ? `Optional: reassign classes during ${formatDate(activeRequest.startDate)} to ${formatDate(activeRequest.endDate)} before approving.`
+                : "Optionally reassign impacted classes before approving this request."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {reassignLoading ? (
+            <div className="py-10 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="decision-notes">Admin Notes (optional)</Label>
+                <Input
+                  id="decision-notes"
+                  value={decisionNotes}
+                  onChange={(event) => setDecisionNotes(event.target.value)}
+                  placeholder="Add notes for this decision"
+                />
+              </div>
+
+              {reassignmentClasses.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+                  No classes are currently assigned to this teacher in the selected time-off window.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reassignmentClasses.map((classRow) => (
+                    <div key={classRow.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {classRow.classTypeName} • {classRow.locationName}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {formatDateTime(classRow.startTime)} → {formatDateTime(classRow.endTime)}
+                          </p>
+                          <p className="text-xs text-gray-500">Current teacher: {classRow.currentTeacherName}</p>
+                        </div>
+                        <div className="w-full md:w-[260px]">
+                          <Select
+                            value={reassignmentMap[classRow.id] || "none"}
+                            onValueChange={(value) =>
+                              setReassignmentMap((prev) => ({
+                                ...prev,
+                                [classRow.id]: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Keep current teacher" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Keep current teacher</SelectItem>
+                              {reassignmentTeachers.map((teacher) => (
+                                <SelectItem key={teacher.id} value={teacher.id}>
+                                  {teacher.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
+            <p className="text-xs text-gray-500">
+              {selectedReassignmentsCount} class{selectedReassignmentsCount === 1 ? "" : "es"} set for reassignment
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={approveWithoutReassigning} disabled={submittingDecision || reassignLoading}>
+                Approve Without Reassigning
+              </Button>
+              <Button onClick={submitApproveWithReassignments} disabled={submittingDecision || reassignLoading}>
+                Approve and Apply Reassignments
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
