@@ -942,7 +942,7 @@ export default function BookingPage() {
 
         {/* Location Step */}
         {step === "location" && (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-none bg-transparent">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-violet-600" />
@@ -953,7 +953,7 @@ export default function BookingPage() {
                   <button
                     key={loc.id}
                     onClick={() => selectLocationAndContinue(loc)}
-                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div>
                       <p className="font-medium text-gray-900">{loc.name}</p>
@@ -969,7 +969,7 @@ export default function BookingPage() {
 
         {/* Class Step */}
         {step === "class" && (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-none bg-transparent">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Link2 className="w-5 h-5 text-violet-600" />
@@ -980,7 +980,7 @@ export default function BookingPage() {
                   <button
                     key={ct.id}
                     onClick={() => selectClassAndContinue(ct)}
-                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all text-left"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -1005,7 +1005,7 @@ export default function BookingPage() {
 
         {/* Teacher Step */}
         {step === "teacher" && (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-none bg-transparent">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-violet-600" />
@@ -1014,7 +1014,7 @@ export default function BookingPage() {
               <div className="space-y-3">
                 <button
                   onClick={() => selectTeacherAndContinue(null)}
-                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
+                  className="w-full p-4 border border-gray-200 rounded-2xl bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                 >
                   <div>
                     <p className="font-medium text-gray-900">Any Available Teacher</p>
@@ -1026,7 +1026,7 @@ export default function BookingPage() {
                   <button
                     key={t.id}
                     onClick={() => selectTeacherAndContinue(t)}
-                    className="w-full p-4 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
+                    className="w-full p-4 border border-gray-200 rounded-2xl bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all flex items-start sm:items-center justify-between gap-3 text-left"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-medium shrink-0">
@@ -1047,7 +1047,7 @@ export default function BookingPage() {
 
         {/* Time Step */}
         {step === "time" && (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-none bg-transparent">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calendar className="w-5 h-5 text-violet-600" />
@@ -1114,7 +1114,7 @@ export default function BookingPage() {
                       <button
                         key={slot.id}
                         onClick={() => selectSlotAndContinue(slot)}
-                        className="py-4 px-6 border border-gray-200 rounded-2xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
+                        className="py-4 px-6 border border-gray-200 rounded-2xl bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all text-center"
                       >
                         <p className="font-bold text-gray-900">
                           {new Date(slot.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
@@ -1150,7 +1150,7 @@ export default function BookingPage() {
                     <button
                       onClick={() => setBookingType("single")}
                       className={`w-full p-4 border rounded-xl transition-all flex items-center justify-between ${
-                        bookingType === "single" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                        bookingType === "single" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1174,7 +1174,7 @@ export default function BookingPage() {
                         setUseCredit(false)
                       }}
                       className={`w-full p-4 border rounded-xl transition-all ${
-                        bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                        bookingType === "recurring" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1203,7 +1203,7 @@ export default function BookingPage() {
                         setUseCredit(false)
                       }}
                       className={`w-full p-4 border rounded-xl transition-all ${
-                        bookingType === "pack" ? "border-violet-600 bg-violet-50" : "hover:border-gray-300"
+                        bookingType === "pack" ? "border-violet-600 bg-violet-50" : "bg-white hover:border-gray-300"
                       }`}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1229,7 +1229,7 @@ export default function BookingPage() {
 
                 {/* Weekly Details */}
                 {bookingType === "recurring" && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                  <div className="mb-6 p-4 bg-white rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <RefreshCw className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Weekly Subscription</p>
@@ -1253,7 +1253,7 @@ export default function BookingPage() {
 
                 {/* Pack Selection */}
                 {bookingType === "pack" && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                  <div className="mb-6 p-4 bg-white rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <Sparkles className="w-4 h-4 text-violet-600" />
                       <p className="font-medium text-gray-900">Choose Your Pack</p>
@@ -1266,7 +1266,7 @@ export default function BookingPage() {
                             key={size}
                             onClick={() => setPackSize(size)}
                             className={`p-3 rounded-lg border text-center transition-all ${
-                              packSize === size ? "border-violet-600 bg-white" : "hover:border-gray-300"
+                              packSize === size ? "border-violet-600 bg-white" : "bg-white hover:border-gray-300"
                             }`}
                           >
                             <p className="font-bold text-gray-900">{size}</p>
