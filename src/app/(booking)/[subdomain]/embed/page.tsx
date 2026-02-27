@@ -1232,9 +1232,12 @@ export default function BookingPage() {
                             <RefreshCw className="w-5 h-5" />
                           </div>
                           <div className="text-left min-w-0">
-                            <p className="font-medium text-gray-900">Weekly Subscription</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-900">Weekly Subscription</p>
+                              <Badge className="hidden sm:inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
+                            </div>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
-                            <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
+                            <Badge className="mt-2 inline-flex sm:hidden bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Save 15%</Badge>
                             <p className="mt-2 text-base font-semibold text-gray-900 sm:hidden">${((selectedClass?.price || 0) * 0.85).toFixed(0)}<span className="text-sm font-normal text-gray-500">/week</span></p>
                           </div>
                         </div>
@@ -1260,9 +1263,12 @@ export default function BookingPage() {
                             <Sparkles className="w-5 h-5" />
                           </div>
                           <div className="text-left min-w-0">
-                            <p className="font-medium text-gray-900">Class Pack</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-900">Class Pack</p>
+                              <Badge className="hidden sm:inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
+                            </div>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
-                            <Badge className="mt-2 inline-flex bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
+                            <Badge className="mt-2 inline-flex sm:hidden bg-emerald-100 text-emerald-700 border-0 whitespace-nowrap">Up to 25% off</Badge>
                             <p className="mt-2 text-sm text-violet-600 font-medium sm:hidden">Choose size →</p>
                           </div>
                         </div>
