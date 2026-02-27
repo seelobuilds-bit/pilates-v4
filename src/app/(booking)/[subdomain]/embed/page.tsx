@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { resolveEmbedFontFamily } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
@@ -382,6 +383,7 @@ export default function BookingPage() {
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
   const classSessionIdFromUrl = searchParams.get("classSessionId")
+  const embedFontFamily = resolveEmbedFontFamily(searchParams.get("font"))
   const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
@@ -761,7 +763,7 @@ export default function BookingPage() {
 
   if (loading || !studioData) {
     return (
-      <div className="flex items-center justify-center bg-transparent py-10">
+      <div className="flex items-center justify-center bg-transparent py-10" style={{ fontFamily: embedFontFamily }}>
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500">Loading...</p>
@@ -773,7 +775,7 @@ export default function BookingPage() {
   // Show booking success screen
   if (bookingComplete || paymentSuccess) {
     return (
-      <div className="bg-transparent flex items-center justify-center p-4">
+      <div className="bg-transparent flex items-center justify-center p-4" style={{ fontFamily: embedFontFamily }}>
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             {/* Success Icon */}
@@ -848,7 +850,7 @@ export default function BookingPage() {
   // Show payment canceled message
   if (paymentCanceled) {
     return (
-      <div className="bg-transparent flex items-center justify-center p-4">
+      <div className="bg-transparent flex items-center justify-center p-4" style={{ fontFamily: embedFontFamily }}>
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -875,7 +877,7 @@ export default function BookingPage() {
   const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
-    <div className="bg-transparent">
+    <div className="bg-transparent" style={{ fontFamily: embedFontFamily }}>
       {/* Header */}
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
@@ -1133,7 +1135,7 @@ export default function BookingPage() {
         {/* Checkout Step */}
         {step === "checkout" && (
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
+            <Card className="border-0 shadow-none bg-transparent">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="w-5 h-5 text-violet-600" />

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EMBED_FONT_OPTIONS, EmbedFontKey, isEmbedFontKey } from "@/lib/embed-fonts"
 import { 
   Building2, 
   Globe, 
@@ -58,6 +59,7 @@ export default function SettingsPage() {
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null)
   const [activeTemplates, setActiveTemplates] = useState(0)
   const [baseUrl, setBaseUrl] = useState("")
+  const [embedFont, setEmbedFont] = useState<EmbedFontKey>("inter")
   const [stripeLoading, setStripeLoading] = useState(false)
   const [connectingStripe, setConnectingStripe] = useState(false)
 
@@ -87,6 +89,11 @@ export default function SettingsPage() {
     }
   }, [stripeParam])
 
+  useEffect(() => {
+    if (!studio?.subdomain || typeof window === "undefined") return
+    window.localStorage.setItem(`embed-font:${studio.subdomain}`, embedFont)
+  }, [studio?.subdomain, embedFont])
+
   const fetchStudioData = async () => {
     try {
       // Set base URL from window location or production URL
@@ -98,6 +105,13 @@ export default function SettingsPage() {
       const res = await fetch("/api/studio/settings")
       if (res.ok) {
         const data = await res.json()
+        const storedFont =
+          typeof window !== "undefined" ? window.localStorage.getItem(`embed-font:${data.subdomain}`) : null
+        if (isEmbedFontKey(storedFont)) {
+          setEmbedFont(storedFont)
+        } else {
+          setEmbedFont("inter")
+        }
         setStudio({
           name: data.name,
           subdomain: data.subdomain,
@@ -250,7 +264,7 @@ export default function SettingsPage() {
   }
 
   const bookingEmbedCode = studio?.subdomain
-    ? `<iframe id="sf-booking-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed" width="100%" style="display:block;width:100%;height:1200px;min-height:1200px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
+    ? `<iframe id="sf-booking-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed${embedFont !== "inter" ? `?font=${encodeURIComponent(embedFont)}` : ""}" width="100%" style="display:block;width:100%;height:1200px;min-height:1200px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
 <script>
 (function () {
   var iframe = document.getElementById("sf-booking-embed-${studio.subdomain}");
@@ -286,7 +300,7 @@ export default function SettingsPage() {
     : (loading ? "Loading..." : "Please log out and log back in to refresh your session")
 
   const authEmbedCode = studio?.subdomain
-    ? `<iframe id="sf-account-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed/account" width="100%" style="display:block;width:100%;height:980px;min-height:980px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
+    ? `<iframe id="sf-account-embed-${studio.subdomain}" src="${baseUrl}/${studio.subdomain}/embed/account${embedFont !== "inter" ? `?font=${encodeURIComponent(embedFont)}` : ""}" width="100%" style="display:block;width:100%;height:980px;min-height:980px;border:0 !important;outline:0 !important;box-shadow:none !important;border-radius:0 !important;background:transparent !important;overflow:hidden;" frameborder="0" scrolling="no" loading="lazy" allowtransparency="true"></iframe>
 <script>
 (function () {
   var iframe = document.getElementById("sf-account-embed-${studio.subdomain}");
@@ -616,6 +630,25 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Embed Code</Label>
+              <div className="space-y-2">
+                <Label htmlFor="embed-font">Embed Font</Label>
+                <Select value={embedFont} onValueChange={(value) => {
+                  if (isEmbedFontKey(value)) {
+                    setEmbedFont(value)
+                  }
+                }}>
+                  <SelectTrigger id="embed-font">
+                    <SelectValue placeholder="Select embed font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMBED_FONT_OPTIONS.map((fontOption) => (
+                      <SelectItem key={fontOption.key} value={fontOption.key}>
+                        {fontOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <textarea 
                 readOnly
                 className="w-full h-24 p-3 text-sm font-mono bg-gray-50 border rounded-lg resize-none"

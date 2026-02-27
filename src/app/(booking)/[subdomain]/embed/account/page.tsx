@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { resolveEmbedFontFamily } from "@/lib/embed-fonts"
 import { startEmbedAutoResize } from "@/lib/embed-resize"
 import {
   Calendar,
@@ -60,7 +61,9 @@ interface Client {
 
 export default function EmbedAccountPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
+  const embedFontFamily = resolveEmbedFontFamily(searchParams.get("font"))
 
   const [studio, setStudio] = useState<StudioData | null>(null)
   const [client, setClient] = useState<Client | null>(null)
@@ -188,7 +191,7 @@ export default function EmbedAccountPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-4 bg-transparent py-10">
+      <div className="flex items-center justify-center p-4 bg-transparent py-10" style={{ fontFamily: embedFontFamily }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     )
@@ -196,7 +199,7 @@ export default function EmbedAccountPage() {
 
   if (!client) {
     return (
-      <div className="p-4 bg-transparent">
+      <div className="p-4 bg-transparent" style={{ fontFamily: embedFontFamily }}>
         <div className="max-w-md mx-auto space-y-4">
           <div className="text-center pt-2">
             <p className="text-sm text-gray-500">{studio?.name || "Studio Account"}</p>
@@ -293,7 +296,7 @@ export default function EmbedAccountPage() {
   }
 
   return (
-    <div className="bg-transparent p-4">
+    <div className="bg-transparent p-4" style={{ fontFamily: embedFontFamily }}>
       <div className="max-w-md mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link href={`/${subdomain}/embed`} className="flex items-center gap-1 text-gray-600 hover:text-gray-900">
