@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { 
-  Play, 
   FileText, 
   Video, 
   BookOpen,
@@ -23,6 +21,7 @@ import {
   ArrowLeft,
   GraduationCap,
   Send,
+  ChevronRight,
 } from "lucide-react"
 
 interface Category {
@@ -76,7 +75,7 @@ export default function TeacherClassFlowsPage() {
   const [featured, setFeatured] = useState<Content[]>([])
   const [progress, setProgress] = useState<Progress>({})
   const [selectedContent, setSelectedContent] = useState<Content | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
   const [teacherRequests, setTeacherRequests] = useState<TeacherRequest[]>([])
   const [requestKind, setRequestKind] = useState<RequestKind>("CLASS_FLOW")
@@ -101,9 +100,17 @@ export default function TeacherClassFlowsPage() {
 
       if (classFlowsRes.ok) {
         const data = await classFlowsRes.json()
-        setCategories(data.categories || [])
+        const nextCategories = data.categories || []
+        setCategories(nextCategories)
         setFeatured(data.featured || [])
         setProgress(data.progress || {})
+        setSelectedCategory((previous) => {
+          if (nextCategories.length === 0) return ""
+          if (previous && nextCategories.some((category: Category) => category.id === previous)) {
+            return previous
+          }
+          return nextCategories[0].id
+        })
       }
 
       if (requestsRes.ok) {
@@ -187,15 +194,6 @@ export default function TeacherClassFlowsPage() {
     }
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "VIDEO": return <Video className="h-4 w-4" />
-      case "PDF": return <FileText className="h-4 w-4" />
-      case "ARTICLE": return <BookOpen className="h-4 w-4" />
-      default: return <Play className="h-4 w-4" />
-    }
-  }
-
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "BEGINNER": return "bg-emerald-100 text-emerald-700"
@@ -222,18 +220,21 @@ export default function TeacherClassFlowsPage() {
 
   const allContent = categories.flatMap(c => c.contents.map(content => ({
     ...content,
+    categoryId: c.id,
     categoryName: c.name,
     categoryIcon: c.icon
   })))
 
   const filteredContent = allContent.filter(c => {
-    if (selectedCategory !== "all" && c.categoryName !== selectedCategory) return false
+    if (selectedCategory && c.categoryId !== selectedCategory) return false
     if (difficultyFilter !== "all" && c.difficulty !== difficultyFilter) return false
     return true
   })
 
   const completedCount = Object.values(progress).filter(p => p.isCompleted).length
   const totalContent = allContent.length
+  const activeCategory = categories.find((category) => category.id === selectedCategory) ?? categories[0] ?? null
+  const activeCategoryContents = filteredContent.filter((content) => content.categoryId === activeCategory?.id)
 
   if (loading) {
     return (
@@ -433,87 +434,7 @@ export default function TeacherClassFlowsPage() {
 
         {/* Content Library */}
         <TabsContent value="library" className="space-y-6">
-          {/* Featured */}
-          {featured.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-500" />
-                Featured Content
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {featured.slice(0, 3).map(content => (
-                  <Card 
-                    key={content.id}
-                    className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setSelectedContent(content)}
-                  >
-                    <div className="aspect-video bg-gray-100 relative rounded-t-lg overflow-hidden">
-                      {content.thumbnailUrl ? (
-                        <Image
-                          src={content.thumbnailUrl}
-                          alt={content.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          {getTypeIcon(content.type)}
-                        </div>
-                      )}
-                      {progress[content.id]?.isCompleted && (
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-emerald-500">
-                            <CheckCircle className="h-3 w-3" />
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-gray-900 line-clamp-1 mb-1">{content.title}</h4>
-                      <p className="text-sm text-gray-500 line-clamp-2">{content.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="w-full flex-1">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      {cat.icon} {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-full flex-1">
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="BEGINNER">Beginner</SelectItem>
-                  <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                  <SelectItem value="ADVANCED">Advanced</SelectItem>
-                  <SelectItem value="EXPERT">Expert</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Content Grid */}
-          {filteredContent.length === 0 ? (
+          {categories.length === 0 ? (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-12 text-center">
                 <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -522,64 +443,117 @@ export default function TeacherClassFlowsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredContent.map(content => (
-                <Card 
-                  key={content.id}
-                  className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => setSelectedContent(content)}
-                >
-                  <div className="aspect-video bg-gray-100 relative rounded-t-lg overflow-hidden">
-                    {content.thumbnailUrl ? (
-                      <Image
-                        src={content.thumbnailUrl}
-                        alt={content.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
-                          {getTypeIcon(content.type)}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Card className="border-0 shadow-sm lg:col-span-1">
+                <CardContent className="p-4">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="font-semibold">Categories</h3>
+                    <Badge variant="secondary">{categories.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`w-full rounded-lg p-3 text-left transition-colors ${
+                          activeCategory?.id === category.id
+                            ? "border-2 border-violet-200 bg-violet-50"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{category.icon || "📚"}</span>
+                            <div>
+                              <p className="font-medium text-gray-900">{category.name}</p>
+                              <p className="text-xs text-gray-500">{category._count.contents} items</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
                         </div>
-                      </div>
-                    )}
-                    {content.type === "VIDEO" && content.duration && (
-                      <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                        {content.duration} min
-                      </div>
-                    )}
-                    {progress[content.id]?.isCompleted && (
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-emerald-500">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Done
-                        </Badge>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center">
-                          <Play className="h-6 w-6 text-violet-600 ml-1" />
-                        </div>
-                      </div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm lg:col-span-2">
+                <CardContent className="p-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="font-semibold">{activeCategory?.name || "Select a category"}</h3>
+                      {activeCategory?.description ? (
+                        <p className="text-sm text-gray-500">{activeCategory.description}</p>
+                      ) : null}
+                    </div>
+                    <div className="w-full sm:w-[210px]">
+                      <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="All Levels" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Levels</SelectItem>
+                          <SelectItem value="BEGINNER">Beginner</SelectItem>
+                          <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                          <SelectItem value="ADVANCED">Advanced</SelectItem>
+                          <SelectItem value="EXPERT">Expert</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {content.categoryIcon} {content.categoryName}
-                      </Badge>
-                      <Badge className={`text-xs ${getDifficultyColor(content.difficulty)}`}>
-                        {content.difficulty}
-                      </Badge>
+
+                  {activeCategoryContents.length === 0 ? (
+                    <div className="rounded-lg bg-gray-50 py-8 text-center">
+                      <p className="text-gray-500">No content in this category yet</p>
                     </div>
-                    <h4 className="font-medium text-gray-900 line-clamp-1 mb-1">{content.title}</h4>
-                    <p className="text-sm text-gray-500 line-clamp-2">{content.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+                  ) : (
+                    <div className="space-y-3">
+                      {activeCategoryContents.map((content) => (
+                        <button
+                          key={content.id}
+                          className="w-full rounded-lg bg-gray-50 p-4 text-left transition-colors hover:bg-gray-100"
+                          onClick={() => setSelectedContent(content)}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-start gap-4 sm:items-center">
+                              <div className={`rounded-lg p-2 ${content.type === "VIDEO" ? "bg-blue-100" : "bg-amber-100"}`}>
+                                {content.type === "VIDEO" ? (
+                                  <Video className="h-5 w-5 text-blue-600" />
+                                ) : (
+                                  <FileText className="h-5 w-5 text-amber-600" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-900">{content.title}</p>
+                                  {featured.some((item) => item.id === content.id) ? (
+                                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                  ) : null}
+                                  {progress[content.id]?.isCompleted ? (
+                                    <Badge className="bg-emerald-100 text-emerald-700">Completed</Badge>
+                                  ) : null}
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+                                  <Badge variant="outline" className={`text-xs ${getDifficultyColor(content.difficulty)}`}>
+                                    {content.difficulty}
+                                  </Badge>
+                                  {content.duration ? (
+                                    <span className="text-xs text-gray-500">{content.duration} min</span>
+                                  ) : null}
+                                </div>
+                                {content.description ? (
+                                  <p className="mt-2 line-clamp-2 text-sm text-gray-500">{content.description}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                            <ChevronRight className="hidden h-4 w-4 shrink-0 text-gray-400 sm:block" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
         </TabsContent>
@@ -733,9 +707,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
-
-
 
 
 
