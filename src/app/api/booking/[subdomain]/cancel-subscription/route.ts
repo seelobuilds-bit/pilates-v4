@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { verifyClientToken } from "@/lib/client-auth"
+import { cancelClientBookingPlan } from "@/lib/client-booking-plans"
 import { getStripe } from "@/lib/stripe"
 
 // POST - Cancel a subscription
@@ -11,8 +12,9 @@ export async function POST(
   try {
     const { subdomain } = await params
     const body = await request.json()
-    const { subscriptionId } = body
-    if (!subscriptionId) {
+    const subscriptionId = typeof body?.subscriptionId === "string" ? body.subscriptionId : ""
+    const bookingPlanId = typeof body?.bookingPlanId === "string" ? body.bookingPlanId : ""
+    if (!subscriptionId && !bookingPlanId) {
       return NextResponse.json({ error: "Subscription ID required" }, { status: 400 })
     }
 
@@ -37,6 +39,32 @@ export async function POST(
 
     if (decoded.studioId !== studio.id) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    if (bookingPlanId) {
+      const result = await cancelClientBookingPlan({
+        planId: bookingPlanId,
+        clientId: decoded.clientId,
+        studioId: studio.id,
+      })
+
+      if (!result.ok) {
+        return NextResponse.json({ error: "Booking plan not found" }, { status: 404 })
+      }
+
+      if (result.alreadyCancelled) {
+        return NextResponse.json({
+          success: true,
+          message: result.message,
+          accessUntil: result.accessUntil,
+        })
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        accessUntil: result.accessUntil,
+      })
     }
 
     // Get the subscription
@@ -107,9 +135,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to cancel subscription" }, { status: 500 })
   }
 }
-
-
-
 
 
 

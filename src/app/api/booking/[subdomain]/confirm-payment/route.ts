@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
 import { trackSocialLinkConversion } from "@/lib/social-tracking"
+import { upsertClientPackAutoRenewPlan, upsertClientWeeklyBookingPlan } from "@/lib/client-booking-plans"
 
 // POST - Confirm payment succeeded and create booking
 export async function POST(
@@ -85,6 +86,16 @@ export async function POST(
     const creditsPurchased = Number.isFinite(metadataCreditsPurchased) && metadataCreditsPurchased > 0
       ? metadataCreditsPurchased
       : 1
+    const bookingType = paymentIntent.metadata?.bookingType || "single"
+    const autoRenewRequested = paymentIntent.metadata?.autoRenew === "true"
+    const stripeSubscriptionId = paymentIntent.metadata?.stripeSubscriptionId || null
+    const nextChargeAtRaw = paymentIntent.metadata?.nextChargeAt || null
+    const nextChargeAt =
+      nextChargeAtRaw && !Number.isNaN(new Date(nextChargeAtRaw).getTime()) ? new Date(nextChargeAtRaw) : null
+    const stripePaymentMethodId =
+      typeof paymentIntent.payment_method === "string"
+        ? paymentIntent.payment_method
+        : paymentIntent.payment_method?.id || null
     const unitBookingAmount = (payment.amount / 100) / creditsPurchased
 
     if (!classSessionId || !clientId) {
@@ -247,6 +258,38 @@ export async function POST(
     const booking = decision.booking
     const trackingCode = paymentIntent.metadata?.trackingCode || null
 
+    try {
+      if (bookingType === "pack" && autoRenewRequested && stripePaymentMethodId) {
+        await upsertClientPackAutoRenewPlan({
+          studioId: studio.id,
+          clientId,
+          classTypeName: booking.classSession.classType.name,
+          teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
+          locationName: booking.classSession.location.name,
+          creditsPerRenewal: creditsPurchased,
+          pricePerCycle: payment.amount / 100,
+          currency: payment.currency,
+          stripePaymentMethodId,
+        })
+      }
+
+      if (bookingType === "recurring" && stripeSubscriptionId) {
+        await upsertClientWeeklyBookingPlan({
+          studioId: studio.id,
+          clientId,
+          classTypeName: booking.classSession.classType.name,
+          teacherName: `${booking.classSession.teacher.user.firstName} ${booking.classSession.teacher.user.lastName}`,
+          locationName: booking.classSession.location.name,
+          pricePerCycle: payment.amount / 100,
+          currency: payment.currency,
+          stripeSubscriptionId,
+          nextChargeAt,
+        })
+      }
+    } catch (planError) {
+      console.error("[BOOKING] Failed to sync client booking plan:", planError)
+    }
+
     if (trackingCode) {
       const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""
       const userAgent = request.headers.get("user-agent") || ""
@@ -303,7 +346,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to confirm payment" }, { status: 500 })
   }
 }
-
 
 
 

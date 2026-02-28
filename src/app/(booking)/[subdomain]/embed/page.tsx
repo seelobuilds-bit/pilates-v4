@@ -555,6 +555,15 @@ export default function BookingPage() {
   }, [bookingType, useCredit])
 
   useEffect(() => {
+    if (bookingType !== "single") return
+    if ((client?.credits || 0) > 0) {
+      setUseCredit(true)
+      return
+    }
+    setUseCredit(false)
+  }, [bookingType, client?.credits])
+
+  useEffect(() => {
     if (!classSessionIdFromUrl || !studioData || selectedSlot?.id === classSessionIdFromUrl) return
     const classSessionId = classSessionIdFromUrl
 
@@ -1355,6 +1364,10 @@ export default function BookingPage() {
                         style={{ "--studio-primary": primaryColor } as React.CSSProperties}
                       />
                     </div>
+                    <p className="mt-3 text-xs text-gray-500">
+                      Your selected class will be booked now, and the remaining {Math.max(packSize - 1, 0)} credit{packSize - 1 === 1 ? "" : "s"} will be added to your account for future bookings.
+                      Book as normal after this and your credits will apply automatically when you choose to use one.
+                    </p>
                   </div>
                 )}
 
@@ -1510,7 +1523,7 @@ export default function BookingPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">Use class credit</p>
                         <p className="text-xs text-gray-500">
-                          Book this class using 1 credit instead of card payment.
+                          Book this class using 1 credit instead of card payment. This is selected automatically when credits are available.
                         </p>
                       </div>
                       <Switch

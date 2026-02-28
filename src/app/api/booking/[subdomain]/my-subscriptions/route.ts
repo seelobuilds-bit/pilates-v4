@@ -36,43 +36,54 @@ export async function GET(
 
     // Get client's vault subscriptions
     const now = new Date()
-    const subscriptions = await db.vaultSubscriber.findMany({
-      where: {
-        clientId: client.id,
-        OR: [
-          { status: "active" },
-          { status: "cancelled", currentPeriodEnd: { gt: now } },
-        ],
-      },
-      include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            audience: true,
-            monthlyPrice: true,
-            yearlyPrice: true,
-            features: true,
-            description: true,
-            communityChat: {
-              select: {
-                id: true,
-                isEnabled: true
+    const [subscriptions, bookingPlans] = await Promise.all([
+      db.vaultSubscriber.findMany({
+        where: {
+          clientId: client.id,
+          OR: [
+            { status: "active" },
+            { status: "cancelled", currentPeriodEnd: { gt: now } },
+          ],
+        },
+        include: {
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              audience: true,
+              monthlyPrice: true,
+              yearlyPrice: true,
+              features: true,
+              description: true,
+              communityChat: {
+                select: {
+                  id: true,
+                  isEnabled: true
+                }
               }
             }
           }
-        }
-      },
-      orderBy: { createdAt: "desc" }
-    })
+        },
+        orderBy: { createdAt: "desc" }
+      }),
+      db.clientBookingPlan.findMany({
+        where: {
+          clientId: client.id,
+          OR: [
+            { status: "active" },
+            { status: "cancelled" },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
 
-    return NextResponse.json({ subscriptions })
+    return NextResponse.json({ subscriptions, bookingPlans })
   } catch (error) {
     console.error("Failed to fetch subscriptions:", error)
     return NextResponse.json({ error: "Failed to fetch subscriptions" }, { status: 500 })
   }
 }
-
 
 
 

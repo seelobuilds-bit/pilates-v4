@@ -4,7 +4,7 @@ import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
 import { getStudioPrimaryColor, mobileTheme, setStudioRuntimePrimaryColor, withOpacity } from "@/src/lib/theme"
-import type { MobilePushCategory } from "@/src/types/mobile"
+import type { MobileClientPlan, MobilePushCategory } from "@/src/types/mobile"
 
 const PUSH_CATEGORY_OPTIONS: {
   key: MobilePushCategory
@@ -24,6 +24,15 @@ function normalizeHexColor(value: string) {
     return null
   }
   return candidate
+}
+
+function formatPlanPrice(amount?: number | null, currency?: string | null) {
+  if (typeof amount !== "number") return null
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: (currency || "USD").toUpperCase(),
+    minimumFractionDigits: 2,
+  }).format(amount)
 }
 
 export default function ProfileScreen() {
@@ -46,6 +55,9 @@ export default function ProfileScreen() {
   const [pushStatusLoading, setPushStatusLoading] = useState(false)
   const [brandColorInput, setBrandColorInput] = useState(primaryColor)
   const [updatingBrandColor, setUpdatingBrandColor] = useState(false)
+  const [loadingClientPlans, setLoadingClientPlans] = useState(false)
+  const [clientPlans, setClientPlans] = useState<MobileClientPlan[]>([])
+  const [cancellingPlanId, setCancellingPlanId] = useState<string | null>(null)
   const [pushStatus, setPushStatus] = useState<{
     totalCount: number
     enabledCount: number
@@ -85,6 +97,27 @@ export default function ProfileScreen() {
   useEffect(() => {
     void loadPushStatus()
   }, [loadPushStatus])
+
+  const loadClientPlans = useCallback(async () => {
+    if (!token || user?.role !== "CLIENT") {
+      setClientPlans([])
+      return
+    }
+
+    setLoadingClientPlans(true)
+    try {
+      const response = await mobileApi.clientPlans(token)
+      setClientPlans(response.plans)
+    } catch {
+      setClientPlans([])
+    } finally {
+      setLoadingClientPlans(false)
+    }
+  }, [token, user?.role])
+
+  useEffect(() => {
+    void loadClientPlans()
+  }, [loadClientPlans])
 
   const handleAccountDeletionRequest = async () => {
     if (!accountDeletionUrl) {
@@ -158,6 +191,7 @@ export default function ProfileScreen() {
   const displayName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Unknown User"
   const studioName = bootstrap?.studio?.name || user?.studio?.name || mobileConfig.studioName
   const isOwner = user?.role === "OWNER"
+  const isClient = user?.role === "CLIENT"
   const storedStudioColor = bootstrap?.studio?.primaryColor || user?.studio?.primaryColor || null
 
   useEffect(() => {
@@ -195,6 +229,42 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleCancelClientPlan = async (plan: MobileClientPlan) => {
+    if (!token) {
+      Alert.alert("Session expired", "Please sign in again.")
+      return
+    }
+
+    Alert.alert(
+      plan.kind === "WEEKLY" ? "Cancel weekly subscription?" : "Cancel auto-renew pack?",
+      plan.kind === "WEEKLY"
+        ? "This keeps the current billing period active, then stops the weekly renewal."
+        : "This stops future pack renewals. Any credits already on your account stay available.",
+      [
+        { text: "Keep plan", style: "cancel" },
+        {
+          text: "Cancel plan",
+          style: "destructive",
+          onPress: () => {
+            setCancellingPlanId(plan.id)
+            void mobileApi.cancelClientPlan(token, plan.id)
+              .then(async (response) => {
+                Alert.alert("Plan updated", response.message)
+                await Promise.all([loadClientPlans(), refreshBootstrap()])
+              })
+              .catch((error) => {
+                const message = error instanceof Error ? error.message : "Failed to cancel class plan"
+                Alert.alert("Could not cancel", message)
+              })
+              .finally(() => {
+                setCancellingPlanId(null)
+              })
+          },
+        },
+      ]
+    )
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
@@ -208,7 +278,71 @@ export default function ProfileScreen() {
         <Text style={styles.row}>Name: {displayName}</Text>
         <Text style={styles.row}>Email: {user?.email || "-"}</Text>
         <Text style={styles.row}>Role: {user?.role || "-"}</Text>
+        {isClient ? <Text style={styles.row}>Credits: {bootstrap?.metrics?.availableCredits ?? user?.credits ?? 0}</Text> : null}
+        {isClient ? <Text style={styles.row}>Active Class Plans: {bootstrap?.metrics?.activeClassPlans ?? 0}</Text> : null}
       </View>
+
+      {isClient ? (
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Class Plans</Text>
+          {loadingClientPlans ? <Text style={styles.row}>Loading class plans...</Text> : null}
+          {!loadingClientPlans && clientPlans.length === 0 ? (
+            <Text style={styles.row}>No weekly subscriptions or pack auto-renew plans yet.</Text>
+          ) : null}
+          {clientPlans.map((plan) => {
+            const priceLabel = formatPlanPrice(plan.pricePerCycle, plan.currency || bootstrap?.studio?.currency || user?.studio?.currency || null)
+            return (
+              <View
+                key={plan.id}
+                style={[
+                  styles.planCard,
+                  plan.status === "active"
+                    ? { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.06) }
+                    : styles.planCardCancelled,
+                ]}
+              >
+                <View style={styles.planHeader}>
+                  <View style={styles.planTitleBlock}>
+                    <Text style={styles.planTitle}>{plan.title}</Text>
+                    <Text style={[styles.planBadge, plan.status === "active" ? { color: primaryColor } : styles.planBadgeCancelled]}>
+                      {plan.status === "active" ? "Active" : "Cancelling"}
+                    </Text>
+                  </View>
+                  {priceLabel ? <Text style={styles.planPrice}>{priceLabel}{plan.kind === "WEEKLY" ? "/week" : ""}</Text> : null}
+                </View>
+                {plan.description ? <Text style={styles.planMeta}>{plan.description}</Text> : null}
+                {plan.classTypeName ? <Text style={styles.planMeta}>Class: {plan.classTypeName}</Text> : null}
+                {plan.teacherName ? <Text style={styles.planMeta}>Teacher: {plan.teacherName}</Text> : null}
+                {plan.locationName ? <Text style={styles.planMeta}>Location: {plan.locationName}</Text> : null}
+                {typeof plan.creditsPerRenewal === "number" ? (
+                  <Text style={styles.planMeta}>Credits per renew: {plan.creditsPerRenewal}</Text>
+                ) : null}
+                {plan.nextChargeAt ? (
+                  <Text style={styles.planMeta}>
+                    {plan.status === "active" ? "Next renewal" : "Ends"}: {new Date(plan.nextChargeAt).toLocaleString()}
+                  </Text>
+                ) : null}
+                {plan.status === "active" ? (
+                  <Pressable
+                    style={[
+                      styles.secondaryButton,
+                      styles.planActionButton,
+                      { borderColor: primaryColor },
+                      cancellingPlanId === plan.id && styles.secondaryButtonDisabled,
+                    ]}
+                    onPress={() => void handleCancelClientPlan(plan)}
+                    disabled={cancellingPlanId === plan.id}
+                  >
+                    <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
+                      {cancellingPlanId === plan.id ? "Cancelling..." : "Cancel plan"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )
+          })}
+        </View>
+      ) : null}
 
       {isOwner ? (
         <View style={styles.sectionCard}>
@@ -373,6 +507,50 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   row: { color: mobileTheme.colors.textMuted },
+  planCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    gap: 4,
+    marginTop: 8,
+  },
+  planCardCancelled: {
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+  },
+  planHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  planTitleBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  planTitle: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+  },
+  planBadge: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  planBadgeCancelled: {
+    color: mobileTheme.colors.textSubtle,
+  },
+  planPrice: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  planMeta: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 12,
+  },
+  planActionButton: {
+    marginTop: 6,
+  },
   actionsCard: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,

@@ -131,6 +131,7 @@ export async function GET(
         phone: client.phone,
         healthIssues: client.healthIssues,
         classNotes: client.classNotes,
+        credits: client.credits,
         createdAt: client.createdAt.toISOString(),
         bookingsCount,
         lastBooking: lastBooking?.toISOString() || null,
@@ -148,7 +149,70 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  const session = await getSession()
 
+  if (!session?.user?.teacherId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const { clientId } = await params
+    const teacherId = session.user.teacherId
+    const body = await request.json()
+    const creditDeltaRaw = Number(body?.creditDelta)
+
+    if (!Number.isFinite(creditDeltaRaw) || !Number.isInteger(creditDeltaRaw) || creditDeltaRaw === 0) {
+      return NextResponse.json({ error: "A non-zero integer creditDelta is required" }, { status: 400 })
+    }
+
+    const hasBooking = await db.booking.findFirst({
+      where: {
+        clientId,
+        classSession: {
+          teacherId,
+        },
+      },
+      select: { id: true },
+    })
+
+    if (!hasBooking) {
+      return NextResponse.json({
+        error: "You can only edit credits for clients who have booked your classes",
+      }, { status: 403 })
+    }
+
+    const existingClient = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, credits: true },
+    })
+
+    if (!existingClient) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
+    const nextCredits = Math.max(0, existingClient.credits + creditDeltaRaw)
+
+    const updatedClient = await db.client.update({
+      where: { id: clientId },
+      data: {
+        credits: nextCredits,
+      },
+      select: {
+        id: true,
+        credits: true,
+      },
+    })
+
+    return NextResponse.json(updatedClient)
+  } catch (error) {
+    console.error("Failed to update client credits:", error)
+    return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
+  }
+}
 
 
 

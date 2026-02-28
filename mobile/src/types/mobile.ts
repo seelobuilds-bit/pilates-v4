@@ -16,6 +16,7 @@ export interface MobileSessionUser {
   lastName: string
   teacherId?: string | null
   clientId?: string | null
+  credits?: number | null
   studio: StudioSummary
 }
 
@@ -29,6 +30,37 @@ export interface MobileBootstrapResponse {
   role: MobileRole
   studio: StudioSummary
   metrics: Record<string, number>
+}
+
+export interface MobileClientPlan {
+  id: string
+  kind: "PACK" | "WEEKLY"
+  status: "active" | "cancelled"
+  title: string
+  description?: string | null
+  autoRenew: boolean
+  creditsPerRenewal?: number | null
+  pricePerCycle?: number | null
+  currency?: string | null
+  nextChargeAt?: string | null
+  classTypeName?: string | null
+  teacherName?: string | null
+  locationName?: string | null
+  cancelledAt?: string | null
+  updatedAt: string
+}
+
+export interface MobileClientPlansResponse {
+  role: "CLIENT"
+  studio: StudioSummary
+  plans: MobileClientPlan[]
+}
+
+export interface MobileClientPlanCancelResponse {
+  success: boolean
+  alreadyCancelled: boolean
+  message: string
+  accessUntil?: string | null
 }
 
 export interface MobileStudioBrandingResponse {
@@ -272,6 +304,7 @@ export interface MobileClientDetailResponse {
     lastName: string
     email: string
     phone: string | null
+    credits: number
     isActive: boolean
     createdAt: string
     lastBookingAt: string | null

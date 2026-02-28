@@ -116,7 +116,16 @@ export async function GET(request: NextRequest) {
     }
 
     const clientId = decoded.clientId || decoded.sub
-    const [upcomingBookings, completedBookings] = await Promise.all([
+    const [clientRecord, upcomingBookings, completedBookings, activeClassPlans] = await Promise.all([
+      db.client.findFirst({
+        where: {
+          id: clientId,
+          studioId: studio.id,
+        },
+        select: {
+          credits: true,
+        },
+      }),
       db.booking.count({
         where: {
           studioId: studio.id,
@@ -132,6 +141,13 @@ export async function GET(request: NextRequest) {
           status: "COMPLETED",
         },
       }),
+      db.clientBookingPlan.count({
+        where: {
+          studioId: studio.id,
+          clientId,
+          status: "active",
+        },
+      }),
     ])
 
     return NextResponse.json({
@@ -140,6 +156,8 @@ export async function GET(request: NextRequest) {
       metrics: {
         upcomingBookings,
         completedBookings,
+        availableCredits: clientRecord?.credits || 0,
+        activeClassPlans,
       },
     })
   } catch (error) {

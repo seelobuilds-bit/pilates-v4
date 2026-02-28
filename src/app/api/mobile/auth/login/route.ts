@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
         password: true,
         firstName: true,
         lastName: true,
+        credits: true,
       },
     })
 
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         email: client.email,
         firstName: client.firstName,
         lastName: client.lastName,
+        credits: client.credits,
         studio: {
           id: studio.id,
           name: studio.name,

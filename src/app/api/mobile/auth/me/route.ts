@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
         firstName: true,
         lastName: true,
         studioId: true,
+        credits: true,
       },
     })
 
@@ -87,6 +88,7 @@ export async function GET(request: NextRequest) {
       firstName: client.firstName,
       lastName: client.lastName,
       clientId: client.id,
+      credits: client.credits,
       studio: studioSummary,
     })
   } catch (error) {

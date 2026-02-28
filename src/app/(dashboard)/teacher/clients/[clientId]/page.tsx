@@ -28,6 +28,7 @@ interface ClientDetail {
   phone: string | null
   healthIssues: string | null
   classNotes: string | null
+  credits: number
   createdAt: string
   bookingsCount: number
   lastBooking: string | null
@@ -59,6 +60,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [updatingCredits, setUpdatingCredits] = useState(false)
   
   // Message compose
   const [messageType, setMessageType] = useState<"email" | "sms">("email")
@@ -117,6 +119,29 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
       console.error("Failed to send message:", error)
     } finally {
       setSending(false)
+    }
+  }
+
+  const adjustCredits = async (delta: number) => {
+    setUpdatingCredits(true)
+    try {
+      const res = await fetch(`/api/teacher/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creditDelta: delta }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Failed to update credits")
+      }
+
+      const data = await res.json()
+      setClient((prev) => (prev ? { ...prev, credits: data.credits } : prev))
+    } catch (error) {
+      console.error("Failed to adjust credits:", error)
+    } finally {
+      setUpdatingCredits(false)
     }
   }
 
@@ -181,10 +206,14 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
           {/* Mobile client snapshot */}
           <div className="lg:hidden p-4 bg-white border-b">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-              <div>
-                <p className="text-gray-500">Member since</p>
-                <p className="font-medium text-gray-900">{new Date(client.createdAt).toLocaleDateString()}</p>
-              </div>
+                <div>
+                  <p className="text-gray-500">Credits</p>
+                  <p className="font-medium text-gray-900">{client.credits}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Member since</p>
+                  <p className="font-medium text-gray-900">{new Date(client.createdAt).toLocaleDateString()}</p>
+                </div>
               {client.lastBooking && (
                 <div>
                   <p className="text-gray-500">Last class</p>
@@ -206,6 +235,24 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                 )}
               </div>
             )}
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updatingCredits}
+                onClick={() => void adjustCredits(1)}
+              >
+                +1 Credit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updatingCredits || client.credits <= 0}
+                onClick={() => void adjustCredits(-1)}
+              >
+                -1 Credit
+              </Button>
+            </div>
           </div>
 
           {/* Message Type Toggle */}
@@ -371,6 +418,28 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                   <Label className="text-xs text-gray-500">Member Since</Label>
                   <p>{new Date(client.createdAt).toLocaleDateString()}</p>
                 </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Credits</Label>
+                  <p>{client.credits}</p>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={updatingCredits}
+                    onClick={() => void adjustCredits(1)}
+                  >
+                    +1
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={updatingCredits || client.credits <= 0}
+                    onClick={() => void adjustCredits(-1)}
+                  >
+                    -1
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -446,7 +515,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

@@ -4,6 +4,7 @@ import { verifyClientToken } from "@/lib/client-auth"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
 import { normalizeSocialTrackingCode, trackSocialLinkConversion } from "@/lib/social-tracking"
+import { triggerClientPackAutoRenew } from "@/lib/client-booking-plans"
 
 export async function POST(
   request: NextRequest,
@@ -37,7 +38,7 @@ export async function POST(
 
     // NOTE: This endpoint is intended for free bookings (no Stripe).
     // Paid bookings must go through the PaymentIntent flow.
-    const booking = await db.$transaction(async (tx) => {
+    const decision = await db.$transaction(async (tx) => {
       // Lock the class session row to prevent overbooking races
       await lockClassSession(tx, classSessionId)
 
@@ -112,7 +113,27 @@ export async function POST(
         throw new Error("Class is full")
       }
 
+      let autoRenewPackPlanId: string | null = null
       if (shouldUseCredit) {
+        const currentClient = await tx.client.findUnique({
+          where: { id: decoded.clientId },
+          select: { credits: true },
+        })
+
+        if (currentClient?.credits === 1) {
+          const autoRenewPack = await tx.clientBookingPlan.findFirst({
+            where: {
+              studioId: studio.id,
+              clientId: decoded.clientId,
+              kind: "PACK",
+              status: "active",
+              autoRenew: true,
+            },
+            select: { id: true },
+          })
+          autoRenewPackPlanId = autoRenewPack?.id || null
+        }
+
         await tx.client.update({
           where: { id: decoded.clientId },
           data: {
@@ -123,7 +144,7 @@ export async function POST(
         })
       }
 
-      return tx.booking.create({
+      const booking = await tx.booking.create({
         data: {
           studioId: studio.id,
           clientId: decoded.clientId,
@@ -142,7 +163,21 @@ export async function POST(
           },
         },
       })
+
+      return {
+        booking,
+        autoRenewPackPlanId,
+      }
     })
+
+    const booking = decision.booking
+
+    if (decision.autoRenewPackPlanId) {
+      const renewalResult = await triggerClientPackAutoRenew(decision.autoRenewPackPlanId)
+      if (!renewalResult.renewed) {
+        console.error("[BOOKING] Class pack auto-renew was not completed:", renewalResult)
+      }
+    }
 
     if (normalizedTrackingCode) {
       const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || ""

@@ -8,6 +8,8 @@ import type {
   MobileCommunityMessage,
   MobileCommunityResponse,
   MobileClientDetailResponse,
+  MobileClientPlanCancelResponse,
+  MobileClientPlansResponse,
   MobileClientsResponse,
   MobileInboxResponse,
   MobileInboxThreadResponse,
@@ -202,6 +204,20 @@ export const mobileApi = {
   clientDetail(token: string, clientId: string) {
     return request<MobileClientDetailResponse>(`/api/mobile/clients/${clientId}`, {
       method: "GET",
+      token,
+    })
+  },
+
+  clientPlans(token: string) {
+    return request<MobileClientPlansResponse>("/api/mobile/client-plans", {
+      method: "GET",
+      token,
+    })
+  },
+
+  cancelClientPlan(token: string, planId: string) {
+    return request<MobileClientPlanCancelResponse>(`/api/mobile/client-plans/${planId}/cancel`, {
+      method: "POST",
       token,
     })
   },

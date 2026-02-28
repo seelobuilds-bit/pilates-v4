@@ -124,6 +124,7 @@ model Studio {
   bookings      Booking[]
   payments      Payment[]
   waitlists     Waitlist[]
+  clientBookingPlans ClientBookingPlan[]
   
   // Communication settings
   emailConfig   StudioEmailConfig?
@@ -820,11 +821,44 @@ model Client {
   
   // Waitlist entries
   waitlists               Waitlist[]
+  bookingPlans            ClientBookingPlan[]
 
   // Mobile push devices
   mobilePushDevices MobilePushDevice[]
 
   @@unique([email, studioId])
+}
+
+model ClientBookingPlan {
+  id                  String   @id @default(cuid())
+  kind                String
+  status              String   @default("active")
+  title               String
+  description         String?
+  autoRenew           Boolean  @default(false)
+  creditsPerRenewal   Int?
+  pricePerCycle       Float?
+  currency            String   @default("usd")
+  nextChargeAt        DateTime?
+  stripeSubscriptionId String? @unique
+  stripePaymentMethodId String?
+  classTypeName       String?
+  teacherName         String?
+  locationName        String?
+  lastRenewedAt       DateTime?
+  cancelledAt         DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  studioId            String
+  studio              Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  clientId            String
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([studioId, status])
+  @@index([clientId, status])
+  @@index([clientId, kind])
 }
 
 model MobilePushDevice {

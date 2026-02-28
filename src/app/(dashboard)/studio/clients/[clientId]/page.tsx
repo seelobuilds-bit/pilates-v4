@@ -120,6 +120,7 @@ export default function ClientDetailPage({
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [communications, setCommunications] = useState<Communication[]>([])
   const [currency, setCurrency] = useState("usd")
+  const [updatingCredits, setUpdatingCredits] = useState(false)
   const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
@@ -172,6 +173,48 @@ export default function ClientDetailPage({
 
     fetchCurrency()
   }, [resolvedParams.clientId, reportPeriod, customStartDate, customEndDate])
+
+  async function adjustCredits(delta: number) {
+    if (!client) return
+
+    setUpdatingCredits(true)
+    try {
+      const nextCredits = Math.max(0, client.credits + delta)
+      const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: client.firstName,
+          lastName: client.lastName,
+          phone: client.phone,
+          credits: nextCredits,
+          isActive: client.isActive,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to update credits")
+      }
+
+      const updatedClient = await res.json()
+      setClient((prev) => (prev ? { ...prev, credits: updatedClient.credits } : prev))
+      setStats((prev) =>
+        prev
+          ? {
+              ...prev,
+              membershipType:
+                updatedClient.credits > 0
+                  ? `${updatedClient.credits} credit${updatedClient.credits === 1 ? "" : "s"} available`
+                  : "No active package",
+            }
+          : prev
+      )
+    } catch (creditError) {
+      console.error("Failed to update credits:", creditError)
+    } finally {
+      setUpdatingCredits(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -830,8 +873,21 @@ export default function ClientDetailPage({
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                  <Button variant="outline" className="flex-1 w-full">
-                    Add Credits
+                  <Button
+                    variant="outline"
+                    className="flex-1 w-full"
+                    disabled={updatingCredits}
+                    onClick={() => void adjustCredits(1)}
+                  >
+                    Add 1 Credit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 w-full"
+                    disabled={updatingCredits || client.credits <= 0}
+                    onClick={() => void adjustCredits(-1)}
+                  >
+                    Remove 1 Credit
                   </Button>
                   <Button className="flex-1 w-full bg-violet-600 hover:bg-violet-700">
                     Send Message

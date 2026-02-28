@@ -266,6 +266,9 @@ export async function POST(
         )
       }
 
+      const weeklySubscriptionPeriodEnd =
+        (weeklySubscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
+
       await stripe.paymentIntents.update(
         expandedPaymentIntent.id,
         {
@@ -283,6 +286,10 @@ export async function POST(
             autoRenew: "false",
             unitClassPriceCents: String(weeklyAmountCents),
             stripeSubscriptionId: weeklySubscription.id,
+            nextChargeAt:
+              typeof weeklySubscriptionPeriodEnd === "number"
+                ? new Date(weeklySubscriptionPeriodEnd * 1000).toISOString()
+                : "",
             ...(attributedTrackingCode ? { trackingCode: attributedTrackingCode } : {}),
           },
         },
@@ -337,6 +344,7 @@ export async function POST(
         automatic_payment_methods: {
           enabled: true,
         },
+        ...(bookingType === "pack" && autoRenew ? { setup_future_usage: "off_session" as const } : {}),
         metadata: {
           clientId: client.id,
           studioId: studio.id,

@@ -514,6 +514,22 @@ interface Subscription {
   }
 }
 
+interface BookingPlan {
+  id: string
+  kind: "PACK" | "WEEKLY"
+  status: string
+  title: string
+  description?: string | null
+  autoRenew: boolean
+  creditsPerRenewal?: number | null
+  pricePerCycle?: number | null
+  currency: string
+  nextChargeAt?: string | null
+  classTypeName?: string | null
+  teacherName?: string | null
+  locationName?: string | null
+}
+
 interface Course {
   id: string
   title: string
@@ -564,6 +580,7 @@ export default function AccountPage() {
   const [studio, setStudio] = useState<Studio | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [bookingPlans, setBookingPlans] = useState<BookingPlan[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -605,6 +622,7 @@ export default function AccountPage() {
   // Cancel subscription state
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null)
+  const [bookingPlanToCancel, setBookingPlanToCancel] = useState<BookingPlan | null>(null)
   const [cancelling, setCancelling] = useState(false)
   const [renewingSubscriptionId, setRenewingSubscriptionId] = useState<string | null>(null)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
@@ -652,6 +670,7 @@ export default function AccountPage() {
         if (subscriptionsRes.ok) {
           const data = await subscriptionsRes.json()
           setSubscriptions(data.subscriptions || [])
+          setBookingPlans(data.bookingPlans || [])
         }
 
         if (coursesRes.ok) {
@@ -850,14 +869,18 @@ export default function AccountPage() {
   }
 
   async function handleCancelSubscription() {
-    if (!subscriptionToCancel) return
+    if (!subscriptionToCancel && !bookingPlanToCancel) return
     
     setCancelling(true)
     try {
       const res = await fetch(`/api/booking/${subdomain}/cancel-subscription`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscriptionToCancel.id })
+        body: JSON.stringify(
+          subscriptionToCancel
+            ? { subscriptionId: subscriptionToCancel.id }
+            : { bookingPlanId: bookingPlanToCancel?.id }
+        )
       })
 
       if (res.ok) {
@@ -865,6 +888,7 @@ export default function AccountPage() {
         alert(data.message)
         setShowCancelModal(false)
         setSubscriptionToCancel(null)
+        setBookingPlanToCancel(null)
         await fetchData()
       } else {
         const error = await res.json()
@@ -1104,6 +1128,7 @@ export default function AccountPage() {
 
   const activeSubscriptions = subscriptions.filter(hasSubscriptionAccess)
   const hasActiveSubscription = activeSubscriptions.length > 0
+  const visibleBookingPlans = bookingPlans.filter((plan) => plan.status === "active" || plan.status === "cancelled")
   const clientPlans = availablePlans.filter(p => p.audience === "CLIENTS")
   const teacherPlans = availablePlans.filter(p => p.audience === "TEACHERS")
   const selectedPlanPrice = selectedPlan
@@ -1508,6 +1533,73 @@ export default function AccountPage() {
 
           {/* Subscriptions Tab */}
           <TabsContent value="subscriptions" className="space-y-6">
+            {visibleBookingPlans.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900">Class Booking Plans</h3>
+                {visibleBookingPlans.map((plan) => (
+                  <Card key={plan.id} className="border-0 shadow-sm overflow-hidden">
+                    <div className="p-6" style={{ background: `linear-gradient(135deg, ${primaryColor}12 0%, ${primaryColor}05 100%)` }}>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <h4 className="text-lg font-semibold text-gray-900">{plan.title}</h4>
+                          {plan.description ? <p className="text-sm text-gray-500">{plan.description}</p> : null}
+                        </div>
+                        {plan.status === "cancelled" ? (
+                          <Badge className="bg-amber-100 text-amber-800 border-0">Cancels Soon</Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
+                        )}
+                      </div>
+
+                      <div className="mt-4 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
+                        {plan.classTypeName ? (
+                          <span><span className="font-medium">Class:</span> {plan.classTypeName}</span>
+                        ) : null}
+                        {plan.teacherName ? (
+                          <span><span className="font-medium">Teacher:</span> {plan.teacherName}</span>
+                        ) : null}
+                        {plan.locationName ? (
+                          <span><span className="font-medium">Location:</span> {plan.locationName}</span>
+                        ) : null}
+                        {typeof plan.pricePerCycle === "number" ? (
+                          <span>
+                            <span className="font-medium">Price:</span>{" "}
+                            {new Intl.NumberFormat(undefined, {
+                              style: "currency",
+                              currency: (plan.currency || "usd").toUpperCase(),
+                            }).format(plan.pricePerCycle)}
+                            {plan.kind === "WEEKLY" ? "/week" : ""}
+                          </span>
+                        ) : null}
+                        {plan.kind === "PACK" && typeof plan.creditsPerRenewal === "number" ? (
+                          <span><span className="font-medium">Credits per renew:</span> {plan.creditsPerRenewal}</span>
+                        ) : null}
+                        {plan.kind === "WEEKLY" && plan.nextChargeAt ? (
+                          <span><span className="font-medium">{plan.status === "cancelled" ? "Ends:" : "Renews:"}</span> {new Date(plan.nextChargeAt).toLocaleDateString()}</span>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                          disabled={plan.status === "cancelled"}
+                          onClick={() => {
+                            setBookingPlanToCancel(plan)
+                            setSubscriptionToCancel(null)
+                            setShowCancelModal(true)
+                          }}
+                        >
+                          {plan.kind === "WEEKLY" ? "Cancel Weekly Plan" : "Cancel Auto-Renew"}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
             {/* Active Subscriptions */}
             {activeSubscriptions.length > 0 && (
               <div className="space-y-4">
@@ -1580,6 +1672,7 @@ export default function AccountPage() {
                               className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                               onClick={() => {
                                 setSubscriptionToCancel(sub)
+                                setBookingPlanToCancel(null)
                                 setShowCancelModal(true)
                               }}
                             >
@@ -2046,18 +2139,35 @@ export default function AccountPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
-              Cancel Subscription
+              {bookingPlanToCancel ? "Cancel Class Plan" : "Cancel Subscription"}
             </DialogTitle>
           </DialogHeader>
           
-          {subscriptionToCancel && (
+          {(subscriptionToCancel || bookingPlanToCancel) && (
             <div className="py-4">
               <p className="text-gray-600 mb-4">
-                Are you sure you want to cancel your <strong>{subscriptionToCancel.plan.name}</strong> subscription?
+                Are you sure you want to cancel{" "}
+                <strong>
+                  {subscriptionToCancel ? subscriptionToCancel.plan.name : bookingPlanToCancel?.title}
+                </strong>
+                ?
               </p>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-amber-800">
-                  <strong>Note:</strong> You will retain access until <strong>{new Date(subscriptionToCancel.currentPeriodEnd).toLocaleDateString()}</strong>. After that, you will lose access to subscriber-only content and community features.
+                  {subscriptionToCancel ? (
+                    <>
+                      <strong>Note:</strong> You will retain access until{" "}
+                      <strong>{new Date(subscriptionToCancel.currentPeriodEnd).toLocaleDateString()}</strong>. After that, you will lose access to subscriber-only content and community features.
+                    </>
+                  ) : bookingPlanToCancel?.kind === "WEEKLY" ? (
+                    <>
+                      <strong>Note:</strong> Weekly billing will stop at the end of the current billing period.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Note:</strong> Auto-renew will stop, but your remaining class credits will stay on your account.
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -2066,6 +2176,7 @@ export default function AccountPage() {
                   onClick={() => {
                     setShowCancelModal(false)
                     setSubscriptionToCancel(null)
+                    setBookingPlanToCancel(null)
                   }}
                   className="flex-1"
                 >

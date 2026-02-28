@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { sendMobilePushNotification } from "@/lib/mobile-push"
+import { triggerClientPackAutoRenew } from "@/lib/client-booking-plans"
 
 function formatStartTime(value: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
         id: true,
         firstName: true,
         lastName: true,
+        credits: true,
       },
     })
 
@@ -98,7 +100,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cannot book a class in the past" }, { status: 400 })
     }
 
-    if (classSession.classType.price > 0) {
+    const canUseCredit = client.credits > 0
+    const autoRenewPackPlanId =
+      classSession.classType.price > 0 && client.credits === 1
+        ? (
+            await db.clientBookingPlan.findFirst({
+              where: {
+                studioId: studio.id,
+                clientId: client.id,
+                kind: "PACK",
+                status: "active",
+                autoRenew: true,
+              },
+              select: { id: true },
+            })
+          )?.id || null
+        : null
+
+    if (classSession.classType.price > 0 && !canUseCredit) {
       return NextResponse.json(
         { error: "Paid classes must be booked on web checkout for now" },
         { status: 400 }
@@ -124,13 +143,37 @@ export async function POST(request: NextRequest) {
 
     if (existingBooking) {
       if (existingBooking.status === "CANCELLED" || existingBooking.status === "NO_SHOW") {
-        const reactivated = await db.booking.update({
-          where: { id: existingBooking.id },
-          data: {
-            status: "CONFIRMED",
-            cancelledAt: null,
-            cancellationReason: null,
-          },
+        const reactivationData: {
+          status: "CONFIRMED"
+          cancelledAt: null
+          cancellationReason: null
+          paidAmount?: number
+        } = {
+          status: "CONFIRMED",
+          cancelledAt: null,
+          cancellationReason: null,
+        }
+
+        if (classSession.classType.price > 0 && canUseCredit) {
+          reactivationData.paidAmount = classSession.classType.price
+        }
+
+        const reactivated = await db.$transaction(async (tx) => {
+          if (classSession.classType.price > 0 && canUseCredit) {
+            await tx.client.update({
+              where: { id: client.id },
+              data: {
+                credits: {
+                  decrement: 1,
+                },
+              },
+            })
+          }
+
+          return tx.booking.update({
+            where: { id: existingBooking.id },
+            data: reactivationData,
+          })
         })
 
         try {
@@ -152,24 +195,44 @@ export async function POST(request: NextRequest) {
           console.error("Mobile booking reactivated push failed:", pushError)
         }
 
+        if (autoRenewPackPlanId) {
+          const renewalResult = await triggerClientPackAutoRenew(autoRenewPackPlanId)
+          if (!renewalResult.renewed) {
+            console.error("Mobile class pack auto-renew did not complete:", renewalResult)
+          }
+        }
+
         return NextResponse.json({ success: true, bookingId: reactivated.id, status: reactivated.status })
       }
 
       return NextResponse.json({ error: "You are already booked in this class" }, { status: 409 })
     }
 
-    const booking = await db.booking.create({
-      data: {
-        studioId: studio.id,
-        clientId,
-        classSessionId: classSession.id,
-        status: "CONFIRMED",
-        paidAmount: 0,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
+    const booking = await db.$transaction(async (tx) => {
+      if (classSession.classType.price > 0 && canUseCredit) {
+        await tx.client.update({
+          where: { id: client.id },
+          data: {
+            credits: {
+              decrement: 1,
+            },
+          },
+        })
+      }
+
+      return tx.booking.create({
+        data: {
+          studioId: studio.id,
+          clientId,
+          classSessionId: classSession.id,
+          status: "CONFIRMED",
+          paidAmount: classSession.classType.price > 0 && canUseCredit ? classSession.classType.price : 0,
+        },
+        select: {
+          id: true,
+          status: true,
+        },
+      })
     })
 
     try {
@@ -191,7 +254,19 @@ export async function POST(request: NextRequest) {
       console.error("Mobile booking push failed:", pushError)
     }
 
-    return NextResponse.json({ success: true, bookingId: booking.id, status: booking.status })
+    if (autoRenewPackPlanId) {
+      const renewalResult = await triggerClientPackAutoRenew(autoRenewPackPlanId)
+      if (!renewalResult.renewed) {
+        console.error("Mobile class pack auto-renew did not complete:", renewalResult)
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      bookingId: booking.id,
+      status: booking.status,
+      usedCredit: classSession.classType.price > 0 && canUseCredit,
+    })
   } catch (error) {
     console.error("Mobile schedule book error:", error)
     return NextResponse.json({ error: "Failed to book class" }, { status: 500 })

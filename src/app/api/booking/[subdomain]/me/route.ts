@@ -40,6 +40,7 @@ export async function GET(
       firstName: client.firstName,
       lastName: client.lastName,
       email: client.email,
+      phone: client.phone,
       credits: client.credits,
     })
   } catch {

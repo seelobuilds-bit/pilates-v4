@@ -197,10 +197,20 @@ export async function GET(
 
     if (decoded.role === "CLIENT") {
       const clientId = decoded.clientId || decoded.sub
+      const client = await db.client.findFirst({
+        where: {
+          id: clientId,
+          studioId: studio.id,
+        },
+        select: {
+          credits: true,
+        },
+      })
       const clientBooking = session.bookings.find((booking) => booking.clientId === clientId) || null
       const classStartsInFuture = session.startTime > new Date()
       const isFreeClass = session.classType.price <= 0
       const isPaidClass = session.classType.price > 0
+      const hasCredits = (client?.credits || 0) > 0
       const hasActiveBooking =
         !!clientBooking && clientBooking.status !== "CANCELLED" && clientBooking.status !== "NO_SHOW"
 
@@ -215,8 +225,8 @@ export async function GET(
               cancelledAt: clientBooking.cancelledAt?.toISOString() || null,
             }
           : null,
-        canBook: classStartsInFuture && isFreeClass && remainingSpots > 0 && !hasActiveBooking,
-        canCheckoutOnWeb: classStartsInFuture && isPaidClass && remainingSpots > 0 && !hasActiveBooking,
+        canBook: classStartsInFuture && remainingSpots > 0 && !hasActiveBooking && (isFreeClass || hasCredits),
+        canCheckoutOnWeb: classStartsInFuture && isPaidClass && remainingSpots > 0 && !hasActiveBooking && !hasCredits,
       })
     }
 

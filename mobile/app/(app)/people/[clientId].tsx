@@ -115,6 +115,7 @@ export default function ClientDetailScreen() {
             <Text style={styles.nameText}>{data.client.firstName} {data.client.lastName}</Text>
             <Text style={styles.metaText}>{data.client.email}</Text>
             <Text style={styles.metaText}>{data.client.phone || "No phone"}</Text>
+            <Text style={styles.metaText}>Credits {data.client.credits}</Text>
             <Text style={styles.metaText}>Created {new Date(data.client.createdAt).toLocaleDateString()}</Text>
             <Text style={[styles.activePill, data.client.isActive ? styles.activeYes : styles.activeNo]}>
               {data.client.isActive ? "Active" : "Inactive"}
@@ -152,6 +153,10 @@ export default function ClientDetailScreen() {
               <Text style={styles.statLabel}>Total Spent</Text>
               <Text style={styles.statValue}>{formatCurrency(data.client.stats.totalSpent, currency)}</Text>
               <Text style={styles.metaText}>Last booking {data.client.lastBookingAt ? formatDateTime(data.client.lastBookingAt) : "-"}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Credits</Text>
+              <Text style={styles.statValue}>{data.client.credits}</Text>
             </View>
           </View>
 
