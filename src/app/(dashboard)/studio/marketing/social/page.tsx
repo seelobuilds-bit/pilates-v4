@@ -766,7 +766,6 @@ export default function SocialMediaPage() {
                 <Card key={category.id} className="border-0 shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">{category.icon || "📚"}</span>
                       <div>
                         <h3 className="font-semibold text-gray-900">{category.name}</h3>
                         <p className="text-sm text-gray-500">{category.description}</p>

@@ -43,7 +43,8 @@ import {
   AlertCircle,
   Video,
   Users,
-  Wallet
+  Wallet,
+  Send
 } from "lucide-react"
 
 // Stripe Payment Wrapper for subscriptions
@@ -329,6 +330,175 @@ interface ChatMessage {
       user?: { firstName: string; lastName: string } | null
     }
   }
+}
+
+interface ClientInboxMessage {
+  id: string
+  channel: "CHAT" | "EMAIL" | "SMS"
+  direction: "INBOUND" | "OUTBOUND"
+  subject?: string | null
+  body: string
+  fromName?: string | null
+  toName?: string | null
+  createdAt: string
+}
+
+function ClientInbox({ subdomain, primaryColor }: { subdomain: string; primaryColor: string }) {
+  const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState<ClientInboxMessage[]>([])
+  const [newMessage, setNewMessage] = useState("")
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const fetchInbox = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/inbox`)
+      if (!res.ok) {
+        throw new Error("Failed to load inbox")
+      }
+      const data = await res.json()
+      setMessages(data.messages || [])
+      setError(null)
+    } catch (err) {
+      console.error("Failed to fetch client inbox:", err)
+      setError("Failed to load inbox")
+    } finally {
+      setLoading(false)
+    }
+  }, [subdomain])
+
+  useEffect(() => {
+    void fetchInbox()
+    const interval = setInterval(() => {
+      void fetchInbox()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [fetchInbox])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newMessage.trim() || sending) return
+
+    setSending(true)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/inbox`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: newMessage.trim(),
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to send message")
+      }
+
+      setNewMessage("")
+      await fetchInbox()
+    } catch (err) {
+      console.error("Failed to send client inbox message:", err)
+      setError("Failed to send message")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto" style={{ color: primaryColor }} />
+      </div>
+    )
+  }
+
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <MessageSquare className="h-5 w-5" style={{ color: primaryColor }} />
+          Inbox
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-xl border bg-gray-50 p-4 h-[420px] overflow-y-auto space-y-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-center">
+              <div>
+                <MessageSquare className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-500 text-sm">No messages yet. Start the conversation.</p>
+              </div>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className={`flex ${msg.direction === "INBOUND" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                    msg.direction === "INBOUND"
+                      ? "text-white rounded-br-md"
+                      : "bg-white border rounded-bl-md"
+                  }`}
+                  style={msg.direction === "INBOUND" ? { backgroundColor: primaryColor } : undefined}
+                >
+                  <div className={`flex items-center gap-2 mb-1 text-xs ${msg.direction === "INBOUND" ? "text-white/75" : "text-gray-500"}`}>
+                    <Badge
+                      variant="outline"
+                      className={msg.direction === "INBOUND" ? "border-white/30 text-white/85" : ""}
+                    >
+                      {msg.channel === "EMAIL" ? "Email" : msg.channel === "SMS" ? "SMS" : "Chat"}
+                    </Badge>
+                    <span>{msg.direction === "INBOUND" ? "You" : msg.fromName || "Studio"}</span>
+                  </div>
+                  {msg.subject ? (
+                    <p className={`font-medium text-sm mb-1 ${msg.direction === "INBOUND" ? "text-white" : "text-gray-900"}`}>
+                      {msg.subject}
+                    </p>
+                  ) : null}
+                  <p className={`text-sm whitespace-pre-wrap ${msg.direction === "INBOUND" ? "text-white" : "text-gray-700"}`}>
+                    {msg.body}
+                  </p>
+                  <p className={`text-xs mt-2 ${msg.direction === "INBOUND" ? "text-white/65" : "text-gray-400"}`}>
+                    {new Date(msg.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {error ? (
+          <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </div>
+        ) : null}
+
+        <form onSubmit={sendMessage} className="flex gap-2">
+          <Textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Send a message to your studio..."
+            rows={3}
+            className="flex-1"
+            disabled={sending}
+          />
+          <Button
+            type="submit"
+            disabled={!newMessage.trim() || sending}
+            className="self-end"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  )
 }
 
 function ClientCommunityChat({ planId, subdomain }: { planId: string; subdomain: string }) {
@@ -1285,6 +1455,10 @@ export default function AccountPage() {
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Bookings</span>
             </TabsTrigger>
+            <TabsTrigger value="inbox" className="gap-2 shrink-0">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Inbox</span>
+            </TabsTrigger>
             {studio.hasVault && (
               <TabsTrigger value="vault" className="gap-2 shrink-0">
                 <Video className="h-4 w-4" />
@@ -1416,6 +1590,10 @@ export default function AccountPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="inbox" className="space-y-6">
+            <ClientInbox subdomain={subdomain} primaryColor={primaryColor} />
           </TabsContent>
 
           {/* Vault Tab */}
