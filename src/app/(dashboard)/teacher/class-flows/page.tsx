@@ -641,11 +641,15 @@ export default function TeacherClassFlowsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>{requestKind === "CLASS_FLOW" ? "Description" : "What should this training cover?"}</Label>
                 <Textarea
                   value={requestForm.description}
                   onChange={(e) => setRequestForm((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Explain what you need and why."
+                  placeholder={
+                    requestKind === "CLASS_FLOW"
+                      ? "Explain what you need and why."
+                      : "Be specific about the skills, corrections, sequences, or teaching gaps you want this training to focus on."
+                  }
                   rows={4}
                 />
               </div>
@@ -729,7 +733,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

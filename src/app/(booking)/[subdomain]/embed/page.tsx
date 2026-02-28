@@ -357,7 +357,9 @@ interface ClientInfo {
   firstName: string
   lastName: string
   email: string
+  phone?: string
   credits: number
+  token?: string
 }
 
 type Step = "location" | "class" | "teacher" | "time" | "checkout"
@@ -419,6 +421,7 @@ export default function BookingPage() {
   const [useCredit, setUseCredit] = useState(false)
 
   const [client, setClient] = useState<ClientInfo | null>(null)
+  const [embedClientToken, setEmbedClientToken] = useState<string | null>(null)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
   const [authForm, setAuthForm] = useState({
     email: "",
@@ -451,6 +454,20 @@ export default function BookingPage() {
     }
     setStoredTrackingCode(normalizeTrackingCode(window.sessionStorage.getItem(storageKey)))
   }, [subdomain, trackingCodeFromUrl])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem(`embed_client_token:${subdomain}`)
+    setEmbedClientToken(stored || null)
+  }, [subdomain])
+
+  const embedAuthHeaders = useMemo<Record<string, string>>(
+    () => {
+      if (!embedClientToken) return {} as Record<string, string>
+      return { Authorization: `Bearer ${embedClientToken}` }
+    },
+    [embedClientToken]
+  )
 
   useEffect(() => {
     if (!trackingCodeFromUrl || typeof window === "undefined") return
@@ -510,7 +527,9 @@ export default function BookingPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch(`/api/booking/${subdomain}/me`)
+        const res = await fetch(`/api/booking/${subdomain}/me`, {
+          headers: embedAuthHeaders,
+        })
         if (res.ok) {
           const data = await res.json()
           setClient(data)
@@ -518,7 +537,7 @@ export default function BookingPage() {
       } catch {}
     }
     checkAuth()
-  }, [subdomain])
+  }, [subdomain, embedAuthHeaders])
 
   // Handle payment success
   useEffect(() => {
@@ -709,6 +728,10 @@ export default function BookingPage() {
       }
 
       const data = await res.json()
+      if (typeof data?.token === "string" && typeof window !== "undefined") {
+        window.localStorage.setItem(`embed_client_token:${subdomain}`, data.token)
+        setEmbedClientToken(data.token)
+      }
       setClient(data)
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Authentication failed")
@@ -718,6 +741,10 @@ export default function BookingPage() {
 
   async function handleLogout() {
     await fetch(`/api/booking/${subdomain}/logout`, { method: "POST" })
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(`embed_client_token:${subdomain}`)
+    }
+    setEmbedClientToken(null)
     setClient(null)
   }
 
@@ -798,7 +825,7 @@ export default function BookingPage() {
       // Free booking (no Stripe) - payment handled by embedded form when Stripe is enabled
       const res = await fetch(`/api/booking/${subdomain}/book`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...embedAuthHeaders },
         body: JSON.stringify({
           classSessionId: selectedSlot.id,
           bookingType,

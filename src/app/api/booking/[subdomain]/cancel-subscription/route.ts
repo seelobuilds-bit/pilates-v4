@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyClientToken } from "@/lib/client-auth"
+import { verifyClientTokenFromRequest } from "@/lib/client-auth"
 import { cancelClientBookingPlan } from "@/lib/client-booking-plans"
 import { getStripe } from "@/lib/stripe"
 
@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // Authenticate client
-    const decoded = await verifyClientToken(subdomain)
+    const decoded = await verifyClientTokenFromRequest(request, subdomain)
     if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
@@ -135,7 +135,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to cancel subscription" }, { status: 500 })
   }
 }
-
 
 
 

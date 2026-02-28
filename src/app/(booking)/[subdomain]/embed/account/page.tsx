@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -58,6 +58,8 @@ interface Client {
   firstName: string
   lastName: string
   email: string
+  credits?: number
+  token?: string
 }
 
 export default function EmbedAccountPage() {
@@ -70,6 +72,7 @@ export default function EmbedAccountPage() {
 
   const [studio, setStudio] = useState<StudioData | null>(null)
   const [client, setClient] = useState<Client | null>(null)
+  const [embedClientToken, setEmbedClientToken] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
@@ -92,10 +95,20 @@ export default function EmbedAccountPage() {
 
   useEffect(() => {
     const stopResize = startEmbedAutoResize()
+    if (typeof window !== "undefined") {
+      setEmbedClientToken(window.localStorage.getItem(`embed_client_token:${subdomain}`) || null)
+    }
     void fetchStudio()
-    void fetchClientAndBookings()
     return stopResize
   }, [subdomain])
+
+  const embedAuthHeaders = useMemo<Record<string, string>>(
+    () => {
+      if (!embedClientToken) return {} as Record<string, string>
+      return { Authorization: `Bearer ${embedClientToken}` }
+    },
+    [embedClientToken]
+  )
 
   useEffect(() => {
     if (!embedFontHref || typeof window === "undefined" || typeof document === "undefined") return
@@ -122,9 +135,11 @@ export default function EmbedAccountPage() {
     }
   }
 
-  async function fetchClientAndBookings() {
+  const fetchClientAndBookings = useCallback(async () => {
     try {
-      const meRes = await fetch(`/api/booking/${subdomain}/me`)
+      const meRes = await fetch(`/api/booking/${subdomain}/me`, {
+        headers: embedAuthHeaders,
+      })
       if (!meRes.ok) {
         setClient(null)
         setBookings([])
@@ -133,7 +148,9 @@ export default function EmbedAccountPage() {
       const meData = await meRes.json()
       setClient(meData)
 
-      const bookingsRes = await fetch(`/api/booking/${subdomain}/my-bookings`)
+      const bookingsRes = await fetch(`/api/booking/${subdomain}/my-bookings`, {
+        headers: embedAuthHeaders,
+      })
       if (bookingsRes.ok) {
         const bookingsData = await bookingsRes.json()
         setBookings(bookingsData)
@@ -143,7 +160,11 @@ export default function EmbedAccountPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [embedAuthHeaders, subdomain])
+
+  useEffect(() => {
+    void fetchClientAndBookings()
+  }, [fetchClientAndBookings])
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault()
@@ -166,6 +187,12 @@ export default function EmbedAccountPage() {
         throw new Error(data.error || "Authentication failed")
       }
 
+      const data = await res.json()
+      if (typeof data?.token === "string" && typeof window !== "undefined") {
+        window.localStorage.setItem(`embed_client_token:${subdomain}`, data.token)
+        setEmbedClientToken(data.token)
+      }
+
       setAuthForm({
         email: "",
         password: "",
@@ -174,6 +201,7 @@ export default function EmbedAccountPage() {
         healthIssues: "",
         classNotes: "",
       })
+      setClient(data)
       await fetchClientAndBookings()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Authentication failed")
@@ -189,6 +217,7 @@ export default function EmbedAccountPage() {
     try {
       const res = await fetch(`/api/booking/${subdomain}/my-bookings/${bookingId}`, {
         method: "DELETE",
+        headers: embedAuthHeaders,
       })
 
       if (res.ok) {
@@ -206,6 +235,10 @@ export default function EmbedAccountPage() {
 
   async function handleLogout() {
     await fetch(`/api/booking/${subdomain}/logout`, { method: "POST" })
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(`embed_client_token:${subdomain}`)
+    }
+    setEmbedClientToken(null)
     setClient(null)
     setBookings([])
   }

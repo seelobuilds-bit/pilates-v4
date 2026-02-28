@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyClientToken } from "@/lib/client-auth"
+import { verifyClientTokenFromRequest } from "@/lib/client-auth"
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const decoded = await verifyClientToken(subdomain)
+    const decoded = await verifyClientTokenFromRequest(request, subdomain)
 
     if (!decoded) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

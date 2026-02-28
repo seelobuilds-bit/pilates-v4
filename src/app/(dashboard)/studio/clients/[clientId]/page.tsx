@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -43,6 +44,7 @@ interface Client {
   phone: string | null
   healthIssues: string | null
   classNotes: string | null
+  staffNotes: string | null
   credits: number
   isActive: boolean
   createdAt: string
@@ -121,6 +123,9 @@ export default function ClientDetailPage({
   const [communications, setCommunications] = useState<Communication[]>([])
   const [currency, setCurrency] = useState("usd")
   const [updatingCredits, setUpdatingCredits] = useState(false)
+  const [creditAdjustAmount, setCreditAdjustAmount] = useState("1")
+  const [staffNotesDraft, setStaffNotesDraft] = useState("")
+  const [savingStaffNotes, setSavingStaffNotes] = useState(false)
   const [reportPeriod, setReportPeriod] = useState(DEFAULT_REPORT_PERIOD)
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
@@ -174,6 +179,10 @@ export default function ClientDetailPage({
     fetchCurrency()
   }, [resolvedParams.clientId, reportPeriod, customStartDate, customEndDate])
 
+  useEffect(() => {
+    setStaffNotesDraft(client?.staffNotes || "")
+  }, [client?.staffNotes])
+
   async function adjustCredits(delta: number) {
     if (!client) return
 
@@ -213,6 +222,37 @@ export default function ClientDetailPage({
       console.error("Failed to update credits:", creditError)
     } finally {
       setUpdatingCredits(false)
+    }
+  }
+
+  async function saveStaffNotes() {
+    if (!client) return
+
+    setSavingStaffNotes(true)
+    try {
+      const res = await fetch(`/api/studio/clients/${resolvedParams.clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: client.firstName,
+          lastName: client.lastName,
+          phone: client.phone,
+          credits: client.credits,
+          isActive: client.isActive,
+          staffNotes: staffNotesDraft,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to update staff notes")
+      }
+
+      const updatedClient = await res.json()
+      setClient((prev) => (prev ? { ...prev, staffNotes: updatedClient.staffNotes } : prev))
+    } catch (notesError) {
+      console.error("Failed to update staff notes:", notesError)
+    } finally {
+      setSavingStaffNotes(false)
     }
   }
 
@@ -873,21 +913,31 @@ export default function ClientDetailPage({
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                  <div className="flex w-full flex-col gap-2 sm:max-w-[180px]">
+                    <Label htmlFor="creditAdjustAmount" className="text-xs text-gray-500">Adjust by</Label>
+                    <Input
+                      id="creditAdjustAmount"
+                      type="number"
+                      min="1"
+                      value={creditAdjustAmount}
+                      onChange={(e) => setCreditAdjustAmount(e.target.value)}
+                    />
+                  </div>
                   <Button
                     variant="outline"
                     className="flex-1 w-full"
                     disabled={updatingCredits}
-                    onClick={() => void adjustCredits(1)}
+                    onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
                   >
-                    Add 1 Credit
+                    Add Credits
                   </Button>
                   <Button
                     variant="outline"
                     className="flex-1 w-full"
                     disabled={updatingCredits || client.credits <= 0}
-                    onClick={() => void adjustCredits(-1)}
+                    onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
                   >
-                    Remove 1 Credit
+                    Remove Credits
                   </Button>
                   <Button className="flex-1 w-full bg-violet-600 hover:bg-violet-700">
                     Send Message
@@ -915,6 +965,26 @@ export default function ClientDetailPage({
                 ) : (
                   <p className="text-sm text-gray-500">No health issues or class notes provided yet.</p>
                 )}
+                <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                  <Label htmlFor="studioStaffNotes">Internal Team Notes</Label>
+                  <Textarea
+                    id="studioStaffNotes"
+                    value={staffNotesDraft}
+                    onChange={(e) => setStaffNotesDraft(e.target.value)}
+                    placeholder="Shared notes for teachers and studio admins only"
+                    rows={4}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={() => void saveStaffNotes()}
+                      disabled={savingStaffNotes}
+                    >
+                      {savingStaffNotes ? "Saving..." : "Save Internal Notes"}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

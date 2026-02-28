@@ -16,6 +16,9 @@ interface RequestMeta {
   forwardedToHqAt?: string
   forwardedRequestId?: string
   forwardedFromRequestId?: string
+  internalBlockedTimeId?: string
+  internalTeacherId?: string
+  handledInternally?: boolean
 }
 
 function getRequestKind(trainingType: string | null | undefined): RequestKind {
@@ -47,6 +50,10 @@ function parseAdminNotes(input: string | null | undefined) {
 function encodeAdminNotes(meta: RequestMeta, plain: string | null | undefined) {
   const cleanPlain = typeof plain === "string" ? plain.trim() : ""
   return `${ADMIN_NOTES_META_PREFIX}${JSON.stringify(meta)}${cleanPlain ? `\n${cleanPlain}` : ""}`
+}
+
+function formatScheduledWindow(start: Date, end: Date) {
+  return `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
 }
 
 function inferRequestSource(meta: RequestMeta, trainingType: string): RequestSource {
@@ -230,11 +237,15 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { id, status, adminNotes, sendToHQ } = body as {
+    const { id, status, adminNotes, sendToHQ, scheduleInternally, scheduledStart, scheduledEnd, assignedTeacherId } = body as {
       id?: string
       status?: "PENDING" | "APPROVED" | "SCHEDULED" | "COMPLETED" | "CANCELLED"
       adminNotes?: string
       sendToHQ?: boolean
+      scheduleInternally?: boolean
+      scheduledStart?: string
+      scheduledEnd?: string
+      assignedTeacherId?: string
     }
 
     if (!id || !status) {
@@ -263,6 +274,102 @@ export async function PATCH(request: NextRequest) {
     const currentSource = inferRequestSource(currentParsed.meta, current.trainingType)
     const currentTrainingSubtype =
       currentKind === "TRAINING" ? currentParsed.meta.trainingSubtype || current.trainingType : undefined
+
+    let targetStatus = status
+    let mergedMeta: RequestMeta = {
+      ...currentParsed.meta,
+      ...(currentKind === "TRAINING" && currentTrainingSubtype ? { trainingSubtype: currentTrainingSubtype } : {}),
+    }
+
+    if (scheduleInternally) {
+      if (currentKind !== "TRAINING") {
+        return NextResponse.json({ error: "Only training requests can be scheduled internally" }, { status: 400 })
+      }
+
+      const start = scheduledStart ? new Date(scheduledStart) : null
+      const end = scheduledEnd ? new Date(scheduledEnd) : null
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+        return NextResponse.json({ error: "Valid internal training start and end times are required" }, { status: 400 })
+      }
+
+      const targetTeacherId = typeof assignedTeacherId === "string" && assignedTeacherId.trim()
+        ? assignedTeacherId.trim()
+        : current.requestedById
+
+      const teacher = await db.teacher.findFirst({
+        where: {
+          id: targetTeacherId,
+          studioId: session.user.studioId,
+        },
+        select: { id: true },
+      })
+
+      if (!teacher) {
+        return NextResponse.json({ error: "Assigned teacher not found" }, { status: 404 })
+      }
+
+      const conflictingClasses = await db.classSession.findMany({
+        where: {
+          teacherId: teacher.id,
+          OR: [
+            { startTime: { gte: start, lt: end } },
+            { endTime: { gt: start, lte: end } },
+            { AND: [{ startTime: { lte: start } }, { endTime: { gte: end } }] },
+          ],
+        },
+        select: { id: true },
+      })
+
+      if (conflictingClasses.length > 0) {
+        return NextResponse.json({ error: "The assigned teacher already has classes during that internal training slot" }, { status: 400 })
+      }
+
+      const conflictingBlockedTimes = await db.teacherBlockedTime.findMany({
+        where: {
+          teacherId: teacher.id,
+          OR: [
+            { startTime: { gte: start, lt: end } },
+            { endTime: { gt: start, lte: end } },
+            { AND: [{ startTime: { lte: start } }, { endTime: { gte: end } }] },
+          ],
+        },
+        select: { id: true },
+      })
+
+      if (conflictingBlockedTimes.length > 0 && !mergedMeta.internalBlockedTimeId) {
+        return NextResponse.json({ error: "That teacher already has blocked time during the selected training slot" }, { status: 400 })
+      }
+
+      const blockedReason = `Internal Training: ${current.title}`
+      const blockedTime = mergedMeta.internalBlockedTimeId
+        ? await db.teacherBlockedTime.update({
+            where: { id: mergedMeta.internalBlockedTimeId },
+            data: {
+              teacherId: teacher.id,
+              startTime: start,
+              endTime: end,
+              reason: blockedReason,
+            },
+          })
+        : await db.teacherBlockedTime.create({
+            data: {
+              teacherId: teacher.id,
+              startTime: start,
+              endTime: end,
+              reason: blockedReason,
+              isRecurring: false,
+              recurringDays: [],
+            },
+          })
+
+      mergedMeta = {
+        ...mergedMeta,
+        internalBlockedTimeId: blockedTime.id,
+        internalTeacherId: teacher.id,
+        handledInternally: true,
+      }
+      targetStatus = "SCHEDULED"
+    }
 
     let forwardedRequest: Record<string, unknown> | null = null
     if (sendToHQ && status === "APPROVED" && currentKind === "TRAINING" && currentSource === "TEACHER") {
@@ -298,9 +405,8 @@ export async function PATCH(request: NextRequest) {
       forwardedRequest = normalizeTrainingRequest(createdForward)
     }
 
-    const mergedMeta: RequestMeta = {
-      ...currentParsed.meta,
-      ...(currentKind === "TRAINING" && currentTrainingSubtype ? { trainingSubtype: currentTrainingSubtype } : {}),
+    mergedMeta = {
+      ...mergedMeta,
       ...(forwardedRequest
         ? {
             forwardedToHqAt: new Date().toISOString(),
@@ -312,7 +418,13 @@ export async function PATCH(request: NextRequest) {
     const updated = await db.trainingRequest.update({
       where: { id: current.id },
       data: {
-        status,
+        status: targetStatus,
+        ...(scheduleInternally && scheduledStart && scheduledEnd
+          ? {
+              scheduledDate: new Date(scheduledStart),
+              scheduledTime: formatScheduledWindow(new Date(scheduledStart), new Date(scheduledEnd)),
+            }
+          : {}),
         adminNotes: encodeAdminNotes(
           mergedMeta,
           typeof adminNotes === "string" ? adminNotes : currentParsed.plain
@@ -331,9 +443,11 @@ export async function PATCH(request: NextRequest) {
 
     const normalizedUpdated = normalizeTrainingRequest(updated)
     const action =
-      status === "APPROVED"
+      targetStatus === "APPROVED" || targetStatus === "SCHEDULED"
         ? normalizedUpdated.requestKind === "CLASS_FLOW"
           ? { type: "CLASS_FLOW_CONTENT" as const, destination: "/studio/class-flows" }
+          : scheduleInternally
+            ? { type: "TRAINING_SCHEDULED" as const, destination: "/studio/schedule" }
           : sendToHQ
             ? { type: "SENT_TO_HQ" as const, destination: "/studio/class-flows" }
             : { type: "TRAINING_REVIEWED" as const, destination: "/studio/class-flows" }
@@ -349,7 +463,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update training request" }, { status: 500 })
   }
 }
-
 
 
 

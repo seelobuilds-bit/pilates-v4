@@ -28,6 +28,7 @@ interface ClientDetail {
   phone: string | null
   healthIssues: string | null
   classNotes: string | null
+  staffNotes: string | null
   credits: number
   createdAt: string
   bookingsCount: number
@@ -61,6 +62,9 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingCredits, setUpdatingCredits] = useState(false)
+  const [creditAdjustAmount, setCreditAdjustAmount] = useState("1")
+  const [staffNotesDraft, setStaffNotesDraft] = useState("")
+  const [savingStaffNotes, setSavingStaffNotes] = useState(false)
   
   // Message compose
   const [messageType, setMessageType] = useState<"email" | "sms">("email")
@@ -87,6 +91,10 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   useEffect(() => {
     fetchClient()
   }, [fetchClient])
+
+  useEffect(() => {
+    setStaffNotesDraft(client?.staffNotes || "")
+  }, [client?.staffNotes])
 
   useEffect(() => {
     // Scroll to bottom of messages
@@ -142,6 +150,29 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
       console.error("Failed to adjust credits:", error)
     } finally {
       setUpdatingCredits(false)
+    }
+  }
+
+  const saveStaffNotes = async () => {
+    setSavingStaffNotes(true)
+    try {
+      const res = await fetch(`/api/teacher/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffNotes: staffNotesDraft }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Failed to update staff notes")
+      }
+
+      const data = await res.json()
+      setClient((prev) => (prev ? { ...prev, staffNotes: data.staffNotes } : prev))
+    } catch (error) {
+      console.error("Failed to update staff notes:", error)
+    } finally {
+      setSavingStaffNotes(false)
     }
   }
 
@@ -235,22 +266,53 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                 )}
               </div>
             )}
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col gap-2">
+              <div>
+                <Label htmlFor="teacherCreditAdjustMobile" className="text-xs text-gray-500">Adjust credits by</Label>
+                <Input
+                  id="teacherCreditAdjustMobile"
+                  type="number"
+                  min="1"
+                  value={creditAdjustAmount}
+                  onChange={(e) => setCreditAdjustAmount(e.target.value)}
+                  className="mt-1 h-9"
+                />
+              </div>
+              <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 disabled={updatingCredits}
-                onClick={() => void adjustCredits(1)}
+                onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
               >
-                +1 Credit
+                Add
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 disabled={updatingCredits || client.credits <= 0}
-                onClick={() => void adjustCredits(-1)}
+                onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
               >
-                -1 Credit
+                Remove
+              </Button>
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              <Label htmlFor="teacherStaffNotesMobile" className="text-xs text-gray-500">Internal Team Notes</Label>
+              <Textarea
+                id="teacherStaffNotesMobile"
+                value={staffNotesDraft}
+                onChange={(e) => setStaffNotesDraft(e.target.value)}
+                placeholder="Shared notes for teachers and studio admins"
+                rows={3}
+              />
+              <Button
+                size="sm"
+                className="w-full bg-violet-600 hover:bg-violet-700"
+                onClick={() => void saveStaffNotes()}
+                disabled={savingStaffNotes}
+              >
+                {savingStaffNotes ? "Saving..." : "Save Notes"}
               </Button>
             </div>
           </div>
@@ -488,6 +550,64 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               </Card>
             )}
 
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Internal Team Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="teacherCreditAdjustDesktop" className="text-xs text-gray-500">Adjust credits by</Label>
+                  <Input
+                    id="teacherCreditAdjustDesktop"
+                    type="number"
+                    min="1"
+                    value={creditAdjustAmount}
+                    onChange={(e) => setCreditAdjustAmount(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={updatingCredits}
+                    onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={updatingCredits || client.credits <= 0}
+                    onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Textarea
+                    value={staffNotesDraft}
+                    onChange={(e) => setStaffNotesDraft(e.target.value)}
+                    placeholder="Shared notes for teachers and studio admins"
+                    rows={4}
+                  />
+                  <Button
+                    size="sm"
+                    className="w-full bg-violet-600 hover:bg-violet-700"
+                    onClick={() => void saveStaffNotes()}
+                    disabled={savingStaffNotes}
+                  >
+                    {savingStaffNotes ? "Saving..." : "Save Notes"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Upcoming */}
             {client.upcomingBookings && client.upcomingBookings.length > 0 && (
               <Card className="border-0 shadow-sm">
@@ -515,7 +635,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

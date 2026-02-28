@@ -77,7 +77,10 @@ export async function POST(
       id: client.id,
       firstName: client.firstName,
       lastName: client.lastName,
-      email: client.email
+      email: client.email,
+      phone: client.phone,
+      credits: client.credits,
+      token,
     })
   } catch (error) {
     console.error("Login error:", error)

@@ -226,8 +226,49 @@ export async function GET(
   }
 }
 
-export async function PATCH() {
-  return NextResponse.json({ error: "Demo is read-only" }, { status: 403 })
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  try {
+    const studioId = await getDemoStudioId()
+    if (!studioId) {
+      return NextResponse.json({ error: "Demo studio not configured" }, { status: 404 })
+    }
+
+    const { clientId } = await params
+    const body = await request.json()
+
+    const existingClient = await db.client.findFirst({
+      where: {
+        id: clientId,
+        studioId,
+      },
+    })
+
+    if (!existingClient) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
+    const credits = Number.isFinite(body?.credits) ? Math.max(0, Number(body.credits)) : existingClient.credits
+
+    const updatedClient = await db.client.update({
+      where: { id: existingClient.id },
+      data: {
+        firstName: typeof body?.firstName === "string" ? body.firstName.trim() : existingClient.firstName,
+        lastName: typeof body?.lastName === "string" ? body.lastName.trim() : existingClient.lastName,
+        phone: typeof body?.phone === "string" ? body.phone.trim() || null : existingClient.phone,
+        credits,
+        isActive: typeof body?.isActive === "boolean" ? body.isActive : existingClient.isActive,
+        staffNotes: typeof body?.staffNotes === "string" ? body.staffNotes.trim() || null : existingClient.staffNotes,
+      },
+    })
+
+    return NextResponse.json(updatedClient)
+  } catch (error) {
+    console.error("Error updating demo client:", error)
+    return NextResponse.json({ error: "Failed to update client" }, { status: 500 })
+  }
 }
 
 export async function DELETE() {

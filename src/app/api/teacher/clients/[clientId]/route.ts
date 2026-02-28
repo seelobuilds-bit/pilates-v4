@@ -131,6 +131,7 @@ export async function GET(
         phone: client.phone,
         healthIssues: client.healthIssues,
         classNotes: client.classNotes,
+        staffNotes: client.staffNotes,
         credits: client.credits,
         createdAt: client.createdAt.toISOString(),
         bookingsCount,
@@ -163,10 +164,18 @@ export async function PATCH(
     const { clientId } = await params
     const teacherId = session.user.teacherId
     const body = await request.json()
-    const creditDeltaRaw = Number(body?.creditDelta)
+    const rawCreditDelta = body?.creditDelta
+    const hasCreditDelta = rawCreditDelta !== undefined && rawCreditDelta !== null && rawCreditDelta !== ""
+    const creditDeltaRaw = Number(rawCreditDelta)
+    const hasValidCreditDelta =
+      hasCreditDelta && Number.isFinite(creditDeltaRaw) && Number.isInteger(creditDeltaRaw) && creditDeltaRaw !== 0
+    const hasStaffNotesField = typeof body?.staffNotes === "string"
 
-    if (!Number.isFinite(creditDeltaRaw) || !Number.isInteger(creditDeltaRaw) || creditDeltaRaw === 0) {
-      return NextResponse.json({ error: "A non-zero integer creditDelta is required" }, { status: 400 })
+    if (!hasValidCreditDelta && !hasStaffNotesField) {
+      return NextResponse.json(
+        { error: "Provide a non-zero integer creditDelta or staffNotes" },
+        { status: 400 }
+      )
     }
 
     const hasBooking = await db.booking.findFirst({
@@ -187,23 +196,31 @@ export async function PATCH(
 
     const existingClient = await db.client.findUnique({
       where: { id: clientId },
-      select: { id: true, credits: true },
+      select: { id: true, credits: true, staffNotes: true },
     })
 
     if (!existingClient) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    const nextCredits = Math.max(0, existingClient.credits + creditDeltaRaw)
+    const nextCredits = hasValidCreditDelta
+      ? Math.max(0, existingClient.credits + creditDeltaRaw)
+      : existingClient.credits
 
     const updatedClient = await db.client.update({
       where: { id: clientId },
       data: {
         credits: nextCredits,
+        ...(hasStaffNotesField
+          ? {
+              staffNotes: typeof body.staffNotes === "string" ? body.staffNotes.trim() || null : null,
+            }
+          : {}),
       },
       select: {
         id: true,
         credits: true,
+        staffNotes: true,
       },
     })
 
@@ -213,8 +230,6 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
   }
 }
-
-
 
 
 

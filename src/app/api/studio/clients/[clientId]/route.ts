@@ -258,7 +258,11 @@ export async function PATCH(
         lastName: body.lastName,
         phone: body.phone,
         credits: body.credits,
-        isActive: body.isActive
+        isActive: body.isActive,
+        staffNotes:
+          typeof body.staffNotes === "string"
+            ? body.staffNotes.trim() || null
+            : existingClient.staffNotes,
       }
     })
 

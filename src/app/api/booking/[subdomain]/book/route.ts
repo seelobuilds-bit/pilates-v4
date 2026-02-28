@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyClientToken } from "@/lib/client-auth"
+import { verifyClientTokenFromRequest } from "@/lib/client-auth"
 import { sendBookingConfirmationEmail } from "@/lib/email"
 import { lockClassSession } from "@/lib/db-locks"
 import { normalizeSocialTrackingCode, trackSocialLinkConversion } from "@/lib/social-tracking"
@@ -21,7 +21,7 @@ export async function POST(
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const decoded = await verifyClientToken(subdomain)
+    const decoded = await verifyClientTokenFromRequest(request, subdomain)
 
     if (!decoded) {
       return NextResponse.json({ error: "Please sign in to book" }, { status: 401 })

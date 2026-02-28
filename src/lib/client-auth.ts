@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { verify, sign } from "jsonwebtoken"
 
@@ -12,16 +13,25 @@ export interface ClientTokenPayload {
   exp?: number
 }
 
-/**
- * Verify client JWT token from cookies
- * Returns null if token is invalid or JWT_SECRET is not configured
- */
-export async function verifyClientToken(subdomain: string): Promise<ClientTokenPayload | null> {
+function decodeClientToken(token: string): ClientTokenPayload | null {
   if (!JWT_SECRET) {
     console.error("CRITICAL: JWT_SECRET environment variable is not set")
     return null
   }
 
+  try {
+    return verify(token, JWT_SECRET) as ClientTokenPayload
+  } catch (error) {
+    console.error("Token verification failed:", error)
+    return null
+  }
+}
+
+/**
+ * Verify client JWT token from cookies
+ * Returns null if token is invalid or JWT_SECRET is not configured
+ */
+export async function verifyClientToken(subdomain: string): Promise<ClientTokenPayload | null> {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get(`client_token_${subdomain}`)?.value
@@ -30,12 +40,37 @@ export async function verifyClientToken(subdomain: string): Promise<ClientTokenP
       return null
     }
 
-    const decoded = verify(token, JWT_SECRET) as ClientTokenPayload
-    return decoded
+    return decodeClientToken(token)
   } catch (error) {
     console.error("Token verification failed:", error)
     return null
   }
+}
+
+export function verifyClientTokenValue(token: string | null | undefined): ClientTokenPayload | null {
+  if (!token) return null
+  return decodeClientToken(token)
+}
+
+export async function verifyClientTokenFromRequest(
+  request: NextRequest | Request,
+  subdomain: string
+): Promise<ClientTokenPayload | null> {
+  const authHeader =
+    "headers" in request && typeof request.headers?.get === "function"
+      ? request.headers.get("authorization")
+      : null
+  const bearerToken =
+    typeof authHeader === "string" && authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : null
+
+  if (bearerToken) {
+    const decodedBearer = verifyClientTokenValue(bearerToken)
+    if (decodedBearer) return decodedBearer
+  }
+
+  return verifyClientToken(subdomain)
 }
 
 /**
