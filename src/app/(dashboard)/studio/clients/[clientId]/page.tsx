@@ -912,7 +912,8 @@ export default function ClientDetailPage({
                     </Badge>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-3">
                   <div className="flex w-full flex-col gap-2 sm:max-w-[180px]">
                     <Label htmlFor="creditAdjustAmount" className="text-xs text-gray-500">Adjust by</Label>
                     <Input
@@ -921,11 +922,13 @@ export default function ClientDetailPage({
                       min="1"
                       value={creditAdjustAmount}
                       onChange={(e) => setCreditAdjustAmount(e.target.value)}
+                      className="text-center"
                     />
                   </div>
+                  <div className="flex w-full flex-col justify-center gap-3 sm:flex-row">
                   <Button
                     variant="outline"
-                    className="flex-1 w-full"
+                    className="w-full sm:flex-1"
                     disabled={updatingCredits}
                     onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
                   >
@@ -933,15 +936,17 @@ export default function ClientDetailPage({
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1 w-full"
+                    className="w-full sm:flex-1"
                     disabled={updatingCredits || client.credits <= 0}
                     onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
                   >
                     Remove Credits
                   </Button>
-                  <Button className="flex-1 w-full bg-violet-600 hover:bg-violet-700">
+                  <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:flex-1">
                     Send Message
                   </Button>
+                  </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

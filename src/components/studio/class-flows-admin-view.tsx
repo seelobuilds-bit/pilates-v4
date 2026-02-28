@@ -73,10 +73,21 @@ interface TrainingRequest {
   contactName: string
   contactEmail: string
   contactPhone?: string | null
+  location?: string | null
+  address?: string | null
   attendeeCount: number
   notes?: string | null
   adminNotes?: string | null
   createdAt: string
+  metadata?: {
+    forwardedToHqAt?: string
+    forwardedRequestId?: string
+    forwardedFromRequestId?: string
+    internalOnly?: boolean
+    handledInternally?: boolean
+    internalTeacherId?: string
+    internalTeacherIds?: string[]
+  }
   requestedBy: {
     id: string
     user: { firstName: string; lastName: string }
@@ -101,6 +112,10 @@ type ClassFlowsAdminViewProps = {
 }
 
 const CLASS_FLOW_REQUEST_TYPE = "class-flow-request"
+const DEFAULT_INTERNAL_START_HOUR = "10"
+const DEFAULT_INTERNAL_START_MINUTE = "00"
+const DEFAULT_INTERNAL_END_HOUR = "12"
+const DEFAULT_INTERNAL_END_MINUTE = "00"
 
 function getRequestKind(trainingType: string): "CLASS_FLOW" | "TRAINING" {
   return trainingType === CLASS_FLOW_REQUEST_TYPE ? "CLASS_FLOW" : "TRAINING"
@@ -114,6 +129,31 @@ function getRequestSource(request: TrainingRequest): "TEACHER" | "OWNER" {
 function getTrainingSubtype(request: TrainingRequest): string {
   if (request.trainingSubtype && request.trainingSubtype.trim()) return request.trainingSubtype
   return request.trainingType
+}
+
+function createEmptyTrainingForm() {
+  return {
+    title: "",
+    description: "",
+    trainingType: "",
+    preferredDate1: "",
+    preferredDate2: "",
+    preferredDate3: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
+    location: "",
+    address: "",
+    attendeeCount: 1,
+    notes: "",
+    requestedById: "",
+    assignedTeacherIds: [] as string[],
+    scheduledDate: "",
+    scheduledStartHour: DEFAULT_INTERNAL_START_HOUR,
+    scheduledStartMinute: DEFAULT_INTERNAL_START_MINUTE,
+    scheduledEndHour: DEFAULT_INTERNAL_END_HOUR,
+    scheduledEndMinute: DEFAULT_INTERNAL_END_MINUTE,
+  }
 }
 
 export default function ClassFlowsAdminView({
@@ -133,12 +173,13 @@ export default function ClassFlowsAdminView({
   const [saving, setSaving] = useState(false)
   const [editingContentId, setEditingContentId] = useState<string | null>(null)
   const [showTrainingRequest, setShowTrainingRequest] = useState(false)
+  const [trainingModalMode, setTrainingModalMode] = useState<"hq" | "internal">("hq")
   const [submittingTrainingRequest, setSubmittingTrainingRequest] = useState(false)
   const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null)
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null)
+  const [linkedTeacherRequestId, setLinkedTeacherRequestId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
-  const [internalSchedule, setInternalSchedule] = useState<Record<string, { teacherId: string; start: string; end: string }>>({})
 
   // Form state
   const [newContent, setNewContent] = useState({
@@ -163,22 +204,7 @@ export default function ClassFlowsAdminView({
     color: "#7c3aed"
   })
 
-  const [trainingForm, setTrainingForm] = useState({
-    title: "",
-    description: "",
-    trainingType: "",
-    preferredDate1: "",
-    preferredDate2: "",
-    preferredDate3: "",
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
-    location: "",
-    address: "",
-    attendeeCount: 1,
-    notes: "",
-    requestedById: ""
-  })
+  const [trainingForm, setTrainingForm] = useState(createEmptyTrainingForm)
 
   // Upload state
   const [uploadingVideo, setUploadingVideo] = useState(false)
@@ -315,6 +341,73 @@ export default function ClassFlowsAdminView({
     void fetchData()
   }, [fetchData])
 
+  function resetTrainingRequestModal() {
+    setTrainingForm(createEmptyTrainingForm())
+    setLinkedTeacherRequestId(null)
+    setShowTrainingRequest(false)
+    setTrainingModalMode("hq")
+  }
+
+  function openHqTrainingModal() {
+    setTrainingModalMode("hq")
+    setLinkedTeacherRequestId(null)
+    setTrainingForm(createEmptyTrainingForm())
+    setShowTrainingRequest(true)
+  }
+
+  function openInternalTrainingModal(request?: TrainingRequest) {
+    const defaultForm = createEmptyTrainingForm()
+    const selectedTeacherIds = Array.from(
+      new Set(
+        request?.metadata?.internalTeacherIds?.length
+          ? request.metadata.internalTeacherIds
+          : [request?.requestedBy.id].filter((value): value is string => Boolean(value))
+      )
+    )
+
+    setTrainingModalMode("internal")
+    setLinkedTeacherRequestId(request && getRequestSource(request) === "TEACHER" ? request.id : null)
+    setTrainingForm({
+      ...defaultForm,
+      title: request?.title || "",
+      description: request?.description || "",
+      trainingType: request ? getTrainingSubtype(request) : "",
+      contactName: request?.contactName || "",
+      contactEmail: request?.contactEmail || "",
+      contactPhone: request?.contactPhone || "",
+      location: request?.location || "",
+      address: request?.address || "",
+      attendeeCount: selectedTeacherIds.length || request?.attendeeCount || 1,
+      notes: request?.notes || "",
+      requestedById: request?.requestedBy.id || "",
+      assignedTeacherIds: selectedTeacherIds,
+      scheduledDate: request?.scheduledDate ? new Date(request.scheduledDate).toISOString().slice(0, 10) : "",
+      scheduledStartHour: request?.scheduledDate ? new Date(request.scheduledDate).toISOString().slice(11, 13) : DEFAULT_INTERNAL_START_HOUR,
+      scheduledStartMinute: request?.scheduledDate ? new Date(request.scheduledDate).toISOString().slice(14, 16) : DEFAULT_INTERNAL_START_MINUTE,
+      scheduledEndHour: DEFAULT_INTERNAL_END_HOUR,
+      scheduledEndMinute: DEFAULT_INTERNAL_END_MINUTE,
+    })
+    setShowTrainingRequest(true)
+  }
+
+  function buildInternalDateTime(date: string, hour: string, minute: string) {
+    if (!date) return ""
+    return `${date}T${hour}:${minute}`
+  }
+
+  function getTeacherName(teacherId: string) {
+    const teacher = teachers.find((entry) => entry.id === teacherId)
+    return teacher ? `${teacher.user.firstName} ${teacher.user.lastName}` : "Unknown teacher"
+  }
+
+  function wasSentToHq(request: TrainingRequest) {
+    return Boolean(request.metadata?.forwardedToHqAt || request.metadata?.forwardedRequestId || request.metadata?.forwardedFromRequestId)
+  }
+
+  function isInternalTrainingRequest(request: TrainingRequest) {
+    return Boolean(request.metadata?.internalOnly || request.metadata?.handledInternally)
+  }
+
   async function createCategory() {
     if (readOnly) {
       showReadOnlyNotice()
@@ -443,10 +536,30 @@ export default function ClassFlowsAdminView({
 
     setSubmittingTrainingRequest(true)
     try {
+      const isInternal = trainingModalMode === "internal"
       const payload = {
         ...trainingForm,
         requestKind: "TRAINING",
         requestSource: "OWNER",
+        attendeeCount: isInternal
+          ? Math.max(trainingForm.assignedTeacherIds.length, 1)
+          : Math.max(trainingForm.attendeeCount || 1, 1),
+        ...(isInternal
+          ? {
+              scheduleInternally: true,
+              scheduledStart: buildInternalDateTime(
+                trainingForm.scheduledDate,
+                trainingForm.scheduledStartHour,
+                trainingForm.scheduledStartMinute
+              ),
+              scheduledEnd: buildInternalDateTime(
+                trainingForm.scheduledDate,
+                trainingForm.scheduledEndHour,
+                trainingForm.scheduledEndMinute
+              ),
+              assignedTeacherIds: trainingForm.assignedTeacherIds,
+            }
+          : {}),
       }
       const res = await fetch(trainingRequestEndpoint, {
         method: "POST",
@@ -454,23 +567,23 @@ export default function ClassFlowsAdminView({
         body: JSON.stringify(payload)
       })
       if (res.ok) {
-        setShowTrainingRequest(false)
-        setTrainingForm({
-          title: "",
-          description: "",
-          trainingType: "",
-          preferredDate1: "",
-          preferredDate2: "",
-          preferredDate3: "",
-          contactName: "",
-          contactEmail: "",
-          contactPhone: "",
-          location: "",
-          address: "",
-          attendeeCount: 1,
-          notes: "",
-          requestedById: ""
-        })
+        if (isInternal && linkedTeacherRequestId) {
+          const linkedResponse = await fetch(trainingRequestEndpoint, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: linkedTeacherRequestId,
+              status: "APPROVED",
+              adminNotes: "Handled in-house via a separately scheduled internal training session.",
+            }),
+          })
+
+          if (!linkedResponse.ok) {
+            const linkedData = await linkedResponse.json().catch(() => ({}))
+            throw new Error(linkedData.error || "Internal training was created, but the original teacher request could not be updated")
+          }
+        }
+        resetTrainingRequestModal()
         void fetchData()
       } else {
         const data = await res.json().catch(() => ({}))
@@ -523,21 +636,6 @@ export default function ClassFlowsAdminView({
     } finally {
       setUpdatingRequestId(null)
     }
-  }
-
-  async function scheduleRequestInternally(request: TrainingRequest) {
-    const schedule = internalSchedule[request.id]
-    if (!schedule?.start || !schedule?.end) {
-      alert("Select a start and end time for the internal training session.")
-      return
-    }
-
-    await updateRequestStatus(request, "APPROVED", {
-      scheduleInternally: true,
-      scheduledStart: schedule.start,
-      scheduledEnd: schedule.end,
-      assignedTeacherId: schedule.teacherId || request.requestedBy.id,
-    })
   }
 
   async function approveRequestAndContinue(request: TrainingRequest) {
@@ -615,6 +713,8 @@ export default function ClassFlowsAdminView({
   const activeCategoryContents = activeCategory?.contents ?? []
   const teacherSubmittedRequests = trainingRequests.filter((request) => getRequestSource(request) === "TEACHER")
   const ownerSubmittedRequests = trainingRequests.filter((request) => getRequestSource(request) === "OWNER")
+  const hqTrainingRequests = ownerSubmittedRequests.filter((request) => !isInternalTrainingRequest(request))
+  const internalTrainingRequests = ownerSubmittedRequests.filter((request) => isInternalTrainingRequest(request))
   const pendingTeacherRequests = teacherSubmittedRequests.filter((request) => request.status === "PENDING").length
 
   return (
@@ -634,11 +734,25 @@ export default function ClassFlowsAdminView({
                 showReadOnlyNotice()
                 return
               }
-              setShowTrainingRequest(true)
+              openHqTrainingModal()
             }}
           >
             <GraduationCap className="h-4 w-4 mr-2" />
             Request HQ Training
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (readOnly) {
+                showReadOnlyNotice()
+                return
+              }
+              openInternalTrainingModal()
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Schedule In-House Training
           </Button>
           <Button
             onClick={() => {
@@ -892,11 +1006,25 @@ export default function ClassFlowsAdminView({
                       showReadOnlyNotice()
                       return
                     }
-                    setShowTrainingRequest(true)
+                    openHqTrainingModal()
                   }}
                 >
                   <GraduationCap className="h-4 w-4 mr-2" />
                   Request HQ Training
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    if (readOnly) {
+                      showReadOnlyNotice()
+                      return
+                    }
+                    openInternalTrainingModal()
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Schedule In-House Training
                 </Button>
               </div>
 
@@ -954,7 +1082,7 @@ export default function ClassFlowsAdminView({
                                           disabled={isBusy}
                                         >
                                           {isBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                                          Approve In-House
+                                          Approve
                                         </Button>
                                         <Button
                                           size="sm"
@@ -963,7 +1091,15 @@ export default function ClassFlowsAdminView({
                                           disabled={isBusy}
                                         >
                                           {isBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                                          Approve & Send to HQ
+                                          Send to HQ
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => openInternalTrainingModal(request)}
+                                          disabled={isBusy}
+                                        >
+                                          Create In-House Session
                                         </Button>
                                       </>
                                     )}
@@ -999,94 +1135,28 @@ export default function ClassFlowsAdminView({
                             </div>
                             {isExpanded && (
                               <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600 space-y-2">
+                                <p><span className="font-medium text-gray-900">Type:</span> {requestKind === "CLASS_FLOW" ? "Class Flow Request" : "Training Request"}</p>
+                                {requestKind === "TRAINING" ? <p><span className="font-medium text-gray-900">Training Type:</span> {getTrainingSubtype(request)}</p> : null}
                                 <p><span className="font-medium text-gray-900">Description:</span> {request.description}</p>
                                 <p><span className="font-medium text-gray-900">Submitted:</span> {new Date(request.createdAt).toLocaleString()}</p>
+                                <p><span className="font-medium text-gray-900">Requested by:</span> {request.requestedBy.user.firstName} {request.requestedBy.user.lastName}</p>
+                                <p><span className="font-medium text-gray-900">Contact:</span> {request.contactName} ({request.contactEmail})</p>
+                                {request.contactPhone ? <p><span className="font-medium text-gray-900">Phone:</span> {request.contactPhone}</p> : null}
+                                {request.location ? <p><span className="font-medium text-gray-900">Location:</span> {request.location}</p> : null}
+                                {request.address ? <p><span className="font-medium text-gray-900">Address:</span> {request.address}</p> : null}
+                                <p><span className="font-medium text-gray-900">Attendees:</span> {request.attendeeCount}</p>
+                                {request.preferredDate1 ? <p><span className="font-medium text-gray-900">Preferred Date 1:</span> {new Date(request.preferredDate1).toLocaleDateString()}</p> : null}
+                                {request.preferredDate2 ? <p><span className="font-medium text-gray-900">Preferred Date 2:</span> {new Date(request.preferredDate2).toLocaleDateString()}</p> : null}
+                                {request.preferredDate3 ? <p><span className="font-medium text-gray-900">Preferred Date 3:</span> {new Date(request.preferredDate3).toLocaleDateString()}</p> : null}
+                                {request.scheduledDate ? <p><span className="font-medium text-gray-900">Scheduled:</span> {new Date(request.scheduledDate).toLocaleString()}{request.scheduledTime ? ` (${request.scheduledTime})` : ""}</p> : null}
+                                {request.metadata?.internalTeacherIds?.length ? (
+                                  <p><span className="font-medium text-gray-900">Internal Teachers:</span> {request.metadata.internalTeacherIds.map(getTeacherName).join(", ")}</p>
+                                ) : null}
+                                {wasSentToHq(request) ? (
+                                  <p><span className="font-medium text-gray-900">HQ Status:</span> Sent to HQ for fulfilment</p>
+                                ) : null}
                                 {request.notes ? <p><span className="font-medium text-gray-900">Teacher notes:</span> {request.notes}</p> : null}
                                 {request.adminNotes ? <p><span className="font-medium text-gray-900">Admin notes:</span> {request.adminNotes}</p> : null}
-                                {requestKind === "TRAINING" && !readOnly ? (
-                                  <div className="mt-3 rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3 space-y-3">
-                                    <p className="text-sm font-medium text-gray-900">Schedule internally</p>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Teacher</Label>
-                                        <Select
-                                          value={internalSchedule[request.id]?.teacherId || request.requestedBy.id}
-                                          onValueChange={(value) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: value,
-                                                start: prev[request.id]?.start || "",
-                                                end: prev[request.id]?.end || "",
-                                              },
-                                            }))
-                                          }
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select teacher" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {teachers.map((teacher) => (
-                                              <SelectItem key={teacher.id} value={teacher.id}>
-                                                {teacher.user.firstName} {teacher.user.lastName}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Start</Label>
-                                        <Input
-                                          type="datetime-local"
-                                          value={internalSchedule[request.id]?.start || ""}
-                                          onChange={(e) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: prev[request.id]?.teacherId || request.requestedBy.id,
-                                                start: e.target.value,
-                                                end: prev[request.id]?.end || "",
-                                              },
-                                            }))
-                                          }
-                                        />
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">End</Label>
-                                        <Input
-                                          type="datetime-local"
-                                          value={internalSchedule[request.id]?.end || ""}
-                                          onChange={(e) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: prev[request.id]?.teacherId || request.requestedBy.id,
-                                                start: prev[request.id]?.start || "",
-                                                end: e.target.value,
-                                              },
-                                            }))
-                                          }
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => void scheduleRequestInternally(request)}
-                                        disabled={isBusy}
-                                      >
-                                        Schedule Internal Session
-                                      </Button>
-                                      {request.status === "SCHEDULED" && request.scheduledDate ? (
-                                        <span className="text-xs text-gray-500">
-                                          Scheduled for {new Date(request.scheduledDate).toLocaleString()}
-                                          {request.scheduledTime ? ` (${request.scheduledTime})` : ""}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                ) : null}
                               </div>
                             )}
                           </div>
@@ -1097,14 +1167,13 @@ export default function ClassFlowsAdminView({
                 </div>
 
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900">Studio Training Requests</h4>
-                  {ownerSubmittedRequests.length === 0 ? (
-                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">No owner-submitted training requests yet.</div>
+                  <h4 className="mb-3 font-medium text-gray-900">HQ Training Requests</h4>
+                  {hqTrainingRequests.length === 0 ? (
+                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">No HQ training requests yet.</div>
                   ) : (
                     <div className="space-y-3">
-                      {ownerSubmittedRequests.map((request) => {
+                      {hqTrainingRequests.map((request) => {
                         const isExpanded = expandedRequestId === request.id
-                        const isBusy = updatingRequestId === request.id
                         return (
                           <div key={request.id} className="rounded-lg bg-gray-50 p-4">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1112,23 +1181,13 @@ export default function ClassFlowsAdminView({
                                 <div className="mb-1 flex flex-wrap items-center gap-2">
                                   <h4 className="font-medium text-gray-900">{request.title}</h4>
                                   <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
-                                  <Badge variant="outline">Studio Request</Badge>
+                                  <Badge variant="outline">HQ Request</Badge>
                                 </div>
                                 <p className="text-sm text-gray-500">
                                   Type: {getTrainingSubtype(request)} • {request.attendeeCount} attendee{request.attendeeCount > 1 ? "s" : ""}
                                 </p>
                               </div>
                               <div className="flex flex-wrap gap-2">
-                                {!readOnly && request.status !== "COMPLETED" && request.status !== "CANCELLED" ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setExpandedRequestId(isExpanded ? null : request.id)}
-                                  >
-                                    {isExpanded ? "Hide Schedule" : "Schedule In-House"}
-                                    <ChevronRight className={`h-4 w-4 ml-2 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                                  </Button>
-                                ) : null}
                                 <Button size="sm" variant="outline" onClick={() => setExpandedRequestId(isExpanded ? null : request.id)}>
                                   {isExpanded ? "Hide Details" : "View Details"}
                                   <ChevronRight className={`h-4 w-4 ml-2 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
@@ -1138,95 +1197,70 @@ export default function ClassFlowsAdminView({
                             {isExpanded && (
                               <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600 space-y-2">
                                 <p><span className="font-medium text-gray-900">Description:</span> {request.description}</p>
+                                <p><span className="font-medium text-gray-900">Training Type:</span> {getTrainingSubtype(request)}</p>
+                                <p><span className="font-medium text-gray-900">Submitted:</span> {new Date(request.createdAt).toLocaleString()}</p>
+                                <p><span className="font-medium text-gray-900">Requested by:</span> {request.requestedBy.user.firstName} {request.requestedBy.user.lastName}</p>
                                 <p><span className="font-medium text-gray-900">Contact:</span> {request.contactName} ({request.contactEmail})</p>
+                                {request.contactPhone ? <p><span className="font-medium text-gray-900">Phone:</span> {request.contactPhone}</p> : null}
+                                {request.location ? <p><span className="font-medium text-gray-900">Location:</span> {request.location}</p> : null}
+                                {request.address ? <p><span className="font-medium text-gray-900">Address:</span> {request.address}</p> : null}
+                                <p><span className="font-medium text-gray-900">Attendees:</span> {request.attendeeCount}</p>
                                 {request.preferredDate1 ? <p><span className="font-medium text-gray-900">Preferred Date 1:</span> {new Date(request.preferredDate1).toLocaleDateString()}</p> : null}
                                 {request.preferredDate2 ? <p><span className="font-medium text-gray-900">Preferred Date 2:</span> {new Date(request.preferredDate2).toLocaleDateString()}</p> : null}
                                 {request.preferredDate3 ? <p><span className="font-medium text-gray-900">Preferred Date 3:</span> {new Date(request.preferredDate3).toLocaleDateString()}</p> : null}
+                                {request.scheduledDate ? <p><span className="font-medium text-gray-900">Scheduled:</span> {new Date(request.scheduledDate).toLocaleString()}{request.scheduledTime ? ` (${request.scheduledTime})` : ""}</p> : null}
                                 {request.notes ? <p><span className="font-medium text-gray-900">Notes:</span> {request.notes}</p> : null}
-                                {!readOnly ? (
-                                  <div className="mt-3 rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3 space-y-3">
-                                    <p className="text-sm font-medium text-gray-900">Schedule internally</p>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Teacher</Label>
-                                        <Select
-                                          value={internalSchedule[request.id]?.teacherId || request.requestedBy.id}
-                                          onValueChange={(value) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: value,
-                                                start: prev[request.id]?.start || "",
-                                                end: prev[request.id]?.end || "",
-                                              },
-                                            }))
-                                          }
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select teacher" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {teachers.map((teacher) => (
-                                              <SelectItem key={teacher.id} value={teacher.id}>
-                                                {teacher.user.firstName} {teacher.user.lastName}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Start</Label>
-                                        <Input
-                                          type="datetime-local"
-                                          value={internalSchedule[request.id]?.start || ""}
-                                          onChange={(e) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: prev[request.id]?.teacherId || request.requestedBy.id,
-                                                start: e.target.value,
-                                                end: prev[request.id]?.end || "",
-                                              },
-                                            }))
-                                          }
-                                        />
-                                      </div>
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">End</Label>
-                                        <Input
-                                          type="datetime-local"
-                                          value={internalSchedule[request.id]?.end || ""}
-                                          onChange={(e) =>
-                                            setInternalSchedule((prev) => ({
-                                              ...prev,
-                                              [request.id]: {
-                                                teacherId: prev[request.id]?.teacherId || request.requestedBy.id,
-                                                start: prev[request.id]?.start || "",
-                                                end: e.target.value,
-                                              },
-                                            }))
-                                          }
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => void scheduleRequestInternally(request)}
-                                        disabled={isBusy}
-                                      >
-                                        Schedule Internal Session
-                                      </Button>
-                                      {request.status === "SCHEDULED" && request.scheduledDate ? (
-                                        <span className="text-xs text-gray-500">
-                                          Scheduled for {new Date(request.scheduledDate).toLocaleString()}
-                                          {request.scheduledTime ? ` (${request.scheduledTime})` : ""}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </div>
+                                {request.adminNotes ? <p><span className="font-medium text-gray-900">Admin notes:</span> {request.adminNotes}</p> : null}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="mb-3 font-medium text-gray-900">In-House Training Sessions</h4>
+                  {internalTrainingRequests.length === 0 ? (
+                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">No in-house training sessions scheduled yet.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {internalTrainingRequests.map((request) => {
+                        const isExpanded = expandedRequestId === request.id
+                        return (
+                          <div key={request.id} className="rounded-lg bg-gray-50 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className="mb-1 flex flex-wrap items-center gap-2">
+                                  <h4 className="font-medium text-gray-900">{request.title}</h4>
+                                  <Badge className={getStatusColor(request.status)}>{request.status}</Badge>
+                                  <Badge variant="outline">In-House</Badge>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  {request.metadata?.internalTeacherIds?.length
+                                    ? `${request.metadata.internalTeacherIds.map(getTeacherName).join(", ")}`
+                                    : `${request.attendeeCount} attendee${request.attendeeCount > 1 ? "s" : ""}`}
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <Button size="sm" variant="outline" onClick={() => setExpandedRequestId(isExpanded ? null : request.id)}>
+                                  {isExpanded ? "Hide Details" : "View Details"}
+                                  <ChevronRight className={`h-4 w-4 ml-2 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                                </Button>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600 space-y-2">
+                                <p><span className="font-medium text-gray-900">Training Type:</span> {getTrainingSubtype(request)}</p>
+                                <p><span className="font-medium text-gray-900">Description:</span> {request.description}</p>
+                                <p><span className="font-medium text-gray-900">Scheduled:</span> {request.scheduledDate ? new Date(request.scheduledDate).toLocaleString() : "Not set"}{request.scheduledTime ? ` (${request.scheduledTime})` : ""}</p>
+                                {request.metadata?.internalTeacherIds?.length ? (
+                                  <p><span className="font-medium text-gray-900">Teachers:</span> {request.metadata.internalTeacherIds.map(getTeacherName).join(", ")}</p>
                                 ) : null}
+                                <p><span className="font-medium text-gray-900">Contact:</span> {request.contactName} ({request.contactEmail})</p>
+                                {request.notes ? <p><span className="font-medium text-gray-900">Notes:</span> {request.notes}</p> : null}
+                                {request.adminNotes ? <p><span className="font-medium text-gray-900">Admin notes:</span> {request.adminNotes}</p> : null}
                               </div>
                             )}
                           </div>
@@ -1244,7 +1278,7 @@ export default function ClassFlowsAdminView({
       {/* Training Request Modal */}
       {showTrainingRequest && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowTrainingRequest(false)} />
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={resetTrainingRequestModal} />
           <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
@@ -1254,11 +1288,17 @@ export default function ClassFlowsAdminView({
                       <GraduationCap className="h-5 w-5 text-violet-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Create Training Request</h3>
-                      <p className="text-sm text-gray-500">You can send this to HQ or keep it in-house after review.</p>
+                      <h3 className="font-semibold text-gray-900">
+                        {trainingModalMode === "internal" ? "Schedule In-House Training" : "Create HQ Training Request"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {trainingModalMode === "internal"
+                          ? "Create an internal training session and add one or more teachers to it."
+                          : "Send a training request to HQ with the exact outcome you need."}
+                      </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setShowTrainingRequest(false)}>
+                  <Button variant="ghost" size="sm" onClick={resetTrainingRequestModal}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1304,51 +1344,185 @@ export default function ClassFlowsAdminView({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Assign Teacher</Label>
-                    <Select
-                      value={trainingForm.requestedById}
-                      onValueChange={(value) => setTrainingForm({ ...trainingForm, requestedById: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a teacher" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teachers.map((teacher) => (
-                          <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.user.firstName} {teacher.user.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {trainingModalMode === "hq" ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Lead Teacher</Label>
+                        <Select
+                          value={trainingForm.requestedById}
+                          onValueChange={(value) => setTrainingForm({ ...trainingForm, requestedById: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a teacher" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teachers.map((teacher) => (
+                              <SelectItem key={teacher.id} value={teacher.id}>
+                                {teacher.user.firstName} {teacher.user.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label>Preferred Date 1</Label>
-                      <Input
-                        type="date"
-                        value={trainingForm.preferredDate1}
-                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate1: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Preferred Date 2</Label>
-                      <Input
-                        type="date"
-                        value={trainingForm.preferredDate2}
-                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate2: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Preferred Date 3</Label>
-                      <Input
-                        type="date"
-                        value={trainingForm.preferredDate3}
-                        onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate3: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="space-y-2">
+                          <Label>Preferred Date 1</Label>
+                          <Input
+                            type="date"
+                            value={trainingForm.preferredDate1}
+                            onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate1: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Preferred Date 2</Label>
+                          <Input
+                            type="date"
+                            value={trainingForm.preferredDate2}
+                            onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate2: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Preferred Date 3</Label>
+                          <Input
+                            type="date"
+                            value={trainingForm.preferredDate3}
+                            onChange={(e) => setTrainingForm({ ...trainingForm, preferredDate3: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Teachers in this session</Label>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {teachers.map((teacher) => {
+                            const selected = trainingForm.assignedTeacherIds.includes(teacher.id)
+                            return (
+                              <button
+                                key={teacher.id}
+                                type="button"
+                                onClick={() =>
+                                  setTrainingForm((prev) => {
+                                    const nextIds = selected
+                                      ? prev.assignedTeacherIds.filter((id) => id !== teacher.id)
+                                      : [...prev.assignedTeacherIds, teacher.id]
+                                    return {
+                                      ...prev,
+                                      assignedTeacherIds: nextIds,
+                                      attendeeCount: Math.max(nextIds.length, 1),
+                                      requestedById: nextIds[0] || prev.requestedById,
+                                    }
+                                  })
+                                }
+                                className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                                  selected
+                                    ? "border-violet-300 bg-violet-50 text-violet-700"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-violet-200"
+                                }`}
+                              >
+                                {teacher.user.firstName} {teacher.user.lastName}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <p className="text-xs text-gray-500">Select every teacher who should be blocked into this internal training session.</p>
+                      </div>
+
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <div className="space-y-2 sm:col-span-3">
+                            <Label>Training Date</Label>
+                            <Input
+                              type="date"
+                              value={trainingForm.scheduledDate}
+                              onChange={(e) => setTrainingForm({ ...trainingForm, scheduledDate: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Start Hour</Label>
+                            <Select
+                              value={trainingForm.scheduledStartHour}
+                              onValueChange={(value) => setTrainingForm({ ...trainingForm, scheduledStartHour: value })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, hour) => hour.toString().padStart(2, "0")).map((hour) => (
+                                  <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Start Minute</Label>
+                            <Select
+                              value={trainingForm.scheduledStartMinute}
+                              onValueChange={(value) => setTrainingForm({ ...trainingForm, scheduledStartMinute: value })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {["00", "15", "30", "45"].map((minute) => (
+                                  <SelectItem key={minute} value={minute}>{minute}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>End Hour</Label>
+                            <Select
+                              value={trainingForm.scheduledEndHour}
+                              onValueChange={(value) => setTrainingForm({ ...trainingForm, scheduledEndHour: value })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, hour) => hour.toString().padStart(2, "0")).map((hour) => (
+                                  <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>End Minute</Label>
+                            <Select
+                              value={trainingForm.scheduledEndMinute}
+                              onValueChange={(value) => setTrainingForm({ ...trainingForm, scheduledEndMinute: value })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {["00", "15", "30", "45"].map((minute) => (
+                                  <SelectItem key={minute} value={minute}>{minute}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => {
+                                const tomorrow = new Date()
+                                tomorrow.setDate(tomorrow.getDate() + 1)
+                                setTrainingForm((prev) => ({
+                                  ...prev,
+                                  scheduledDate: tomorrow.toISOString().slice(0, 10),
+                                  scheduledStartHour: "10",
+                                  scheduledStartMinute: "00",
+                                  scheduledEndHour: "12",
+                                  scheduledEndMinute: "00",
+                                }))
+                              }}
+                            >
+                              Tomorrow 10:00 - 12:00
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -1360,12 +1534,13 @@ export default function ClassFlowsAdminView({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Number of Attendees</Label>
+                      <Label>{trainingModalMode === "internal" ? "Participants" : "Number of Attendees"}</Label>
                       <Input
                         type="number"
-                        value={trainingForm.attendeeCount}
+                        value={trainingModalMode === "internal" ? Math.max(trainingForm.assignedTeacherIds.length, 1) : trainingForm.attendeeCount}
                         onChange={(e) => setTrainingForm({ ...trainingForm, attendeeCount: parseInt(e.target.value, 10) || 1 })}
                         min={1}
+                        disabled={trainingModalMode === "internal"}
                       />
                     </div>
                   </div>
@@ -1414,14 +1589,18 @@ export default function ClassFlowsAdminView({
                     <Textarea
                       value={trainingForm.notes}
                       onChange={(e) => setTrainingForm({ ...trainingForm, notes: e.target.value })}
-                      placeholder="Add extra detail on what the teacher is struggling with or what you want covered."
+                      placeholder={
+                        trainingModalMode === "internal"
+                          ? "Add extra context for the teachers attending this internal session."
+                          : "Add extra detail on what the teacher is struggling with or what you want covered."
+                      }
                       rows={2}
                     />
                   </div>
                 </div>
 
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <Button variant="outline" onClick={() => setShowTrainingRequest(false)} className="w-full sm:w-auto">
+                  <Button variant="outline" onClick={resetTrainingRequestModal} className="w-full sm:w-auto">
                     Cancel
                   </Button>
                   <Button
@@ -1430,11 +1609,19 @@ export default function ClassFlowsAdminView({
                       submittingTrainingRequest ||
                       !trainingForm.title ||
                       !trainingForm.description ||
-                      !trainingForm.contactEmail
+                      (trainingModalMode === "hq" && !trainingForm.requestedById) ||
+                      (trainingModalMode === "internal" &&
+                        (!trainingForm.scheduledDate || trainingForm.assignedTeacherIds.length === 0))
                     }
                     className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                   >
-                    {submittingTrainingRequest ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
+                    {submittingTrainingRequest ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : trainingModalMode === "internal" ? (
+                      "Schedule Session"
+                    ) : (
+                      "Submit Request"
+                    )}
                   </Button>
                 </div>
               </CardContent>

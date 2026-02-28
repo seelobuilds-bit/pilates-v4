@@ -455,6 +455,28 @@ export default function ReportsPage() {
     }
   }
 
+  const applyQuickCustomRange = (preset: "today" | "7" | "30" | "month") => {
+    const end = new Date()
+    const start = new Date(end)
+
+    if (preset === "today") {
+      const today = toLocalDateInputValue(end)
+      setCustomStartDate(today)
+      setCustomEndDate(today)
+      return
+    }
+
+    if (preset === "month") {
+      start.setDate(1)
+    } else {
+      const days = preset === "7" ? 7 : 30
+      start.setDate(end.getDate() - (days - 1))
+    }
+
+    setCustomStartDate(toLocalDateInputValue(start))
+    setCustomEndDate(toLocalDateInputValue(end))
+  }
+
   const handleReachOut = (client: { id: string; name: string; email: string; phone?: string }) => {
     // Navigate to inbox with client details pre-populated
     const params = new URLSearchParams({
@@ -608,6 +630,23 @@ export default function ReportsPage() {
                       </Button>
                     </div>
                     <div className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-500 uppercase">Quick picks</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button type="button" variant="outline" size="sm" onClick={() => applyQuickCustomRange("today")}>
+                            Today
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => applyQuickCustomRange("7")}>
+                            Last 7 days
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => applyQuickCustomRange("30")}>
+                            Last 30 days
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => applyQuickCustomRange("month")}>
+                            This month
+                          </Button>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="start-date" className="text-xs font-medium text-gray-500 uppercase">From</Label>
@@ -616,7 +655,7 @@ export default function ReportsPage() {
                             type="date" 
                             value={customStartDate}
                             onChange={(e) => setCustomStartDate(e.target.value)}
-                            className="mt-1.5"
+                            className="mt-1.5 h-11"
                           />
                         </div>
                         <div>
@@ -626,7 +665,7 @@ export default function ReportsPage() {
                             type="date" 
                             value={customEndDate}
                             onChange={(e) => setCustomEndDate(e.target.value)}
-                            className="mt-1.5"
+                            className="mt-1.5 h-11"
                           />
                         </div>
                       </div>

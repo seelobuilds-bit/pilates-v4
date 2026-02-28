@@ -266,8 +266,8 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                 )}
               </div>
             )}
-            <div className="mt-3 flex flex-col gap-2">
-              <div>
+            <div className="mt-3 flex flex-col items-center gap-3">
+              <div className="w-full max-w-[180px]">
                 <Label htmlFor="teacherCreditAdjustMobile" className="text-xs text-gray-500">Adjust credits by</Label>
                 <Input
                   id="teacherCreditAdjustMobile"
@@ -275,10 +275,10 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                   min="1"
                   value={creditAdjustAmount}
                   onChange={(e) => setCreditAdjustAmount(e.target.value)}
-                  className="mt-1 h-9"
+                  className="mt-1 h-9 text-center"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex w-full justify-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -566,10 +566,10 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                     min="1"
                     value={creditAdjustAmount}
                     onChange={(e) => setCreditAdjustAmount(e.target.value)}
-                    className="mt-1"
+                    className="mt-1 text-center"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex justify-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -635,7 +635,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 
