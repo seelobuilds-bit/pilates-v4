@@ -484,23 +484,38 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                   <Label className="text-xs text-gray-500">Credits</Label>
                   <p>{client.credits}</p>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={updatingCredits}
-                    onClick={() => void adjustCredits(1)}
-                  >
-                    +1
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={updatingCredits || client.credits <= 0}
-                    onClick={() => void adjustCredits(-1)}
-                  >
-                    -1
-                  </Button>
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <Label htmlFor="teacherCreditAdjustDesktop" className="text-xs text-gray-500">Adjust credits by</Label>
+                    <Input
+                      id="teacherCreditAdjustDesktop"
+                      type="number"
+                      min="1"
+                      value={creditAdjustAmount}
+                      onChange={(e) => setCreditAdjustAmount(e.target.value)}
+                      className="mt-1 text-center"
+                    />
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={updatingCredits}
+                      onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={updatingCredits || client.credits <= 0}
+                      onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -558,37 +573,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="teacherCreditAdjustDesktop" className="text-xs text-gray-500">Adjust credits by</Label>
-                  <Input
-                    id="teacherCreditAdjustDesktop"
-                    type="number"
-                    min="1"
-                    value={creditAdjustAmount}
-                    onChange={(e) => setCreditAdjustAmount(e.target.value)}
-                    className="mt-1 text-center"
-                  />
-                </div>
-                <div className="flex justify-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    disabled={updatingCredits}
-                    onClick={() => void adjustCredits(Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
-                  >
-                    Add
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    disabled={updatingCredits || client.credits <= 0}
-                    onClick={() => void adjustCredits(-Math.max(1, parseInt(creditAdjustAmount, 10) || 1))}
-                  >
-                    Remove
-                  </Button>
-                </div>
                 <div className="space-y-2">
                   <Textarea
                     value={staffNotesDraft}
@@ -635,7 +619,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 
