@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { sendEmail, sendSMS } from "@/lib/communications"
+import { sendMobilePushNotification } from "@/lib/mobile-push"
 
 // GET - Fetch all messages/conversations for the studio
 export async function GET(request: NextRequest) {
@@ -127,9 +128,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    let result
+    const normalizedChannel = String(channel).toUpperCase()
 
-    if (channel === "EMAIL") {
+    let result: { success: boolean; messageId?: string; error?: string }
+
+    if (normalizedChannel === "CHAT") {
+      const createdMessage = await db.message.create({
+        data: {
+          channel: "CHAT",
+          direction: "OUTBOUND",
+          status: "SENT",
+          body: messageBody,
+          fromAddress: `chat@${client.studioId}.thecurrent.app`,
+          toAddress: client.email || client.phone || `client-${client.id}`,
+          fromName: session.user.firstName ? `${session.user.firstName} ${session.user.lastName}`.trim() : "Studio Team",
+          toName: `${client.firstName} ${client.lastName}`,
+          threadId: `s_${studioId}_c_${client.id}`,
+          sentAt: new Date(),
+          studioId,
+          clientId: client.id,
+        },
+        select: { id: true },
+      })
+
+      result = { success: true, messageId: createdMessage.id }
+
+      try {
+        await sendMobilePushNotification({
+          studioId,
+          clientIds: [client.id],
+          category: "INBOX",
+          title: `New message from ${session.user.firstName || "your studio"}`,
+          body: messageBody,
+          data: {
+            type: "mobile_inbox_message",
+            channel: "CHAT",
+            studioId,
+            clientId: client.id,
+          },
+        })
+      } catch (pushError) {
+        console.error("Studio chat push notify failed:", pushError)
+      }
+    } else if (normalizedChannel === "EMAIL") {
       if (!client.email) {
         return NextResponse.json({ error: "Client has no email address" }, { status: 400 })
       }
@@ -141,7 +182,7 @@ export async function POST(request: NextRequest) {
         body: messageBody,
         clientId: client.id
       })
-    } else if (channel === "SMS") {
+    } else if (normalizedChannel === "SMS") {
       if (!client.phone) {
         return NextResponse.json({ error: "Client has no phone number" }, { status: 400 })
       }

@@ -12,7 +12,7 @@ type ConversationSummary = {
   lastMessage: {
     id: string
     direction: "INBOUND" | "OUTBOUND"
-    channel: "EMAIL" | "SMS"
+    channel: "CHAT" | "EMAIL" | "SMS"
     body: string
     createdAt: string
   } | null

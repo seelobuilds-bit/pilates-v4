@@ -129,7 +129,7 @@ export async function GET(request: Request) {
       {
         totalMessages: number
         lastMessage: {
-          channel: "EMAIL" | "SMS"
+          channel: "CHAT" | "EMAIL" | "SMS"
           body: string
           createdAt: string
           direction: "INBOUND" | "OUTBOUND"
@@ -188,7 +188,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 })
   }
 }
-
 
 
 

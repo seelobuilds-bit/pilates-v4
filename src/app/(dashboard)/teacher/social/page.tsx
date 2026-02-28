@@ -31,7 +31,6 @@ import {
   ClipboardList,
   Radio,
   Settings,
-  BookOpen,
   Flame,
   Eye,
   Heart,
@@ -1217,8 +1216,7 @@ export default function TeacherSocialPage() {
                         {/* Module Summary */}
                         {submission.homework.module.summary && (
                           <div className="p-4 bg-white rounded-lg mb-4">
-                            <h5 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                              <BookOpen className="h-4 w-4 text-violet-500" />
+                            <h5 className="font-medium text-gray-900 mb-2">
                               Module Recap
                             </h5>
                             <p className="text-sm text-gray-700">{submission.homework.module.summary}</p>
@@ -1816,8 +1814,7 @@ export default function TeacherSocialPage() {
                   {/* Module Summary */}
                   {selectedModule.summary && (
                     <div className="p-4 bg-gradient-to-r from-violet-50 to-pink-50 rounded-xl">
-                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-violet-500" />
+                      <h3 className="font-semibold text-gray-900 mb-2">
                         Module Summary
                       </h3>
                       <p className="text-gray-700">{selectedModule.summary}</p>

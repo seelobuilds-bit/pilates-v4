@@ -216,7 +216,7 @@ export interface MobileConversationSummary {
   lastMessage: {
     id: string
     direction: "INBOUND" | "OUTBOUND"
-    channel: "EMAIL" | "SMS"
+    channel: "CHAT" | "EMAIL" | "SMS"
     body: string
     createdAt: string
   } | null
@@ -224,7 +224,7 @@ export interface MobileConversationSummary {
 
 export interface MobileInboxMessage {
   id: string
-  channel: "EMAIL" | "SMS"
+  channel: "CHAT" | "EMAIL" | "SMS"
   direction: "INBOUND" | "OUTBOUND"
   subject?: string | null
   body: string

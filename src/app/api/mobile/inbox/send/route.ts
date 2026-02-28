@@ -32,12 +32,12 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}))
     const clientIdFromBody = String(body?.clientId || "").trim()
-    const channel = String(body?.channel || "").trim().toUpperCase()
+    const requestedChannel = String(body?.channel || "").trim().toUpperCase()
     const message = String(body?.message || "").trim()
     const subject = String(body?.subject || "").trim()
 
-    if (!message || !["EMAIL", "SMS"].includes(channel)) {
-      return NextResponse.json({ error: "channel (EMAIL|SMS) and message are required" }, { status: 400 })
+    if (!message) {
+      return NextResponse.json({ error: "message is required" }, { status: 400 })
     }
 
     if (decoded.role === "CLIENT") {
@@ -61,10 +61,10 @@ export async function POST(request: NextRequest) {
 
       const inboundMessage = await db.message.create({
         data: {
-          channel: channel === "SMS" ? "SMS" : "EMAIL",
+          channel: "CHAT",
           direction: "INBOUND",
           status: "SENT",
-          subject: subject || null,
+          subject: null,
           body: message,
           fromAddress: client.email || "client@mobile.thecurrent.app",
           toAddress: `inbox@${studio.subdomain}.thecurrent.app`,
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           body: message,
           data: {
             type: "mobile_inbox_message",
-            channel: channel === "SMS" ? "SMS" : "EMAIL",
+            channel: "CHAT",
             clientId: client.id,
             studioId: studio.id,
           },
@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     const clientId = clientIdFromBody
+    const channel = requestedChannel || "CHAT"
 
     if (!clientId) {
       return NextResponse.json({ error: "clientId is required" }, { status: 400 })
@@ -154,6 +155,50 @@ export async function POST(request: NextRequest) {
 
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
+    }
+
+    if (!["CHAT", "EMAIL", "SMS"].includes(channel)) {
+      return NextResponse.json({ error: "channel must be CHAT, EMAIL, or SMS" }, { status: 400 })
+    }
+
+    if (channel === "CHAT") {
+      const createdMessage = await db.message.create({
+        data: {
+          channel: "CHAT",
+          direction: "OUTBOUND",
+          status: "SENT",
+          body: message,
+          fromAddress: `chat@${studio.subdomain}.thecurrent.app`,
+          toAddress: client.email || client.phone || `client-${client.id}`,
+          fromName: decoded.role === "TEACHER" ? "Your teacher" : studio.name,
+          toName: `${client.firstName} ${client.lastName}`,
+          threadId: `s_${studio.id}_c_${client.id}`,
+          studioId: studio.id,
+          clientId: client.id,
+          sentAt: new Date(),
+        },
+        select: { id: true },
+      })
+
+      try {
+        await sendMobilePushNotification({
+          studioId: studio.id,
+          clientIds: [client.id],
+          category: "INBOX",
+          title: `Message from ${decoded.role === "TEACHER" ? "your teacher" : studio.name}`,
+          body: message,
+          data: {
+            type: "mobile_inbox_message",
+            channel: "CHAT",
+            studioId: studio.id,
+            clientId: client.id,
+          },
+        })
+      } catch (pushError) {
+        console.error("Mobile inbox push notify (client recipient) failed:", pushError)
+      }
+
+      return NextResponse.json({ success: true, messageId: createdMessage.id })
     }
 
     if (channel === "EMAIL") {

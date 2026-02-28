@@ -221,6 +221,7 @@ model StudioSmsConfig {
 
 // Message types
 enum MessageChannel {
+  CHAT
   EMAIL
   SMS
 }

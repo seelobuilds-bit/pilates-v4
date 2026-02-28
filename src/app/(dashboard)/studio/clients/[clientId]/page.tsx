@@ -81,7 +81,7 @@ interface ClientStats {
 
 interface Communication {
   id: string
-  type: "email" | "sms"
+  type: "chat" | "email" | "sms"
   direction: "inbound" | "outbound"
   subject?: string
   content: string
@@ -720,7 +720,12 @@ export default function ClientDetailPage({
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          {comm.type === "email" ? (
+                          {comm.type === "chat" ? (
+                            <Badge variant="secondary" className="bg-violet-100 text-violet-700">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Chat
+                            </Badge>
+                          ) : comm.type === "email" ? (
                             <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                               <Mail className="h-3 w-3 mr-1" />
                               Email

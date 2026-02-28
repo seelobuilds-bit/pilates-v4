@@ -78,13 +78,13 @@ export default function InboxScreen() {
   const [threadLoading, setThreadLoading] = useState(false)
   const [threadError, setThreadError] = useState<string | null>(null)
 
-  const [channel, setChannel] = useState<"EMAIL" | "SMS">("EMAIL")
+  const [channel, setChannel] = useState<"CHAT" | "EMAIL" | "SMS">("CHAT")
   const [subject, setSubject] = useState("")
   const [composerText, setComposerText] = useState("")
   const [sending, setSending] = useState(false)
   const [search, setSearch] = useState("")
   const [unreadOnly, setUnreadOnly] = useState(false)
-  const [clientChannelFilter, setClientChannelFilter] = useState<"ALL" | "EMAIL" | "SMS">("ALL")
+  const [clientChannelFilter, setClientChannelFilter] = useState<"ALL" | "CHAT" | "EMAIL" | "SMS">("ALL")
   const handledRouteClientIdRef = useRef<string | null>(null)
 
   const isClient = useMemo(() => user?.role === "CLIENT", [user?.role])
@@ -128,6 +128,7 @@ export default function InboxScreen() {
   const clientChannelCounts = useMemo(() => {
     return {
       ALL: messages.length,
+      CHAT: messages.filter((message) => message.channel === "CHAT").length,
       EMAIL: messages.filter((message) => message.channel === "EMAIL").length,
       SMS: messages.filter((message) => message.channel === "SMS").length,
     } as const
@@ -210,13 +211,13 @@ export default function InboxScreen() {
     try {
       await mobileApi.sendInboxMessage(token, {
         clientId: activeConversation?.clientId,
-        channel,
+        channel: isClient ? "CHAT" : channel,
         subject,
         message: composerText.trim(),
       })
 
       setComposerText("")
-      if (channel === "EMAIL") {
+      if (!isClient && channel === "EMAIL") {
         setSubject("")
       }
 
@@ -296,6 +297,15 @@ export default function InboxScreen() {
             <Pressable
               style={[
                 styles.channelButton,
+                channel === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
+              onPress={() => setChannel("CHAT")}
+            >
+              <Text style={[styles.channelButtonText, channel === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Chat</Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.channelButton,
                 channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
               ]}
               onPress={() => setChannel("EMAIL")}
@@ -357,16 +367,29 @@ export default function InboxScreen() {
           style={styles.searchInput}
         />
         {isClient ? (
-          <View style={styles.channelRow}>
-            <Pressable
-              style={[
-                styles.channelButton,
-                clientChannelFilter === "ALL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
+            <View style={styles.channelRow}>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  clientChannelFilter === "ALL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
               onPress={() => setClientChannelFilter("ALL")}
             >
               <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
                 {`All (${clientChannelCounts.ALL})`}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.channelButton,
+                clientChannelFilter === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
+              onPress={() => setClientChannelFilter("CHAT")}
+            >
+              <Text
+                style={[styles.channelButtonText, clientChannelFilter === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}
+              >
+                {`Chat (${clientChannelCounts.CHAT})`}
               </Text>
             </Pressable>
             <Pressable
@@ -438,40 +461,10 @@ export default function InboxScreen() {
           />
 
           <View style={styles.composerWrap}>
-            <View style={styles.channelRow}>
-              <Pressable
-                style={[
-                  styles.channelButton,
-                  channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-                ]}
-                onPress={() => setChannel("EMAIL")}
-              >
-                <Text style={[styles.channelButtonText, channel === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Email</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.channelButton,
-                  channel === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-                ]}
-                onPress={() => setChannel("SMS")}
-              >
-                <Text style={[styles.channelButtonText, channel === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
-              </Pressable>
-            </View>
-
-            {channel === "EMAIL" ? (
-              <TextInput
-                value={subject}
-                onChangeText={setSubject}
-                placeholder="Subject (optional)"
-                style={styles.subjectInput}
-              />
-            ) : null}
-
             <TextInput
               value={composerText}
               onChangeText={setComposerText}
-              placeholder="Write a message..."
+              placeholder="Write a chat message..."
               style={styles.messageInput}
               multiline
             />

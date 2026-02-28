@@ -187,7 +187,7 @@ export async function GET(
 
     const communications = messages.map((message) => ({
       id: message.id,
-      type: message.channel === "SMS" ? "sms" : "email",
+      type: message.channel === "CHAT" ? "chat" : message.channel === "SMS" ? "sms" : "email",
       direction: message.direction === "INBOUND" ? "inbound" : "outbound",
       subject: message.subject || undefined,
       content: message.body,

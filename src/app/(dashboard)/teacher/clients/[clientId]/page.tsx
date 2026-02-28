@@ -42,7 +42,7 @@ interface ClientDetail {
 
 interface Message {
   id: string
-  channel: "EMAIL" | "SMS"
+  channel: "CHAT" | "EMAIL" | "SMS"
   direction: "INBOUND" | "OUTBOUND"
   subject: string | null
   body: string
@@ -366,7 +366,9 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                         msg.direction === "OUTBOUND"
                           ? msg.channel === "EMAIL"
                             ? "bg-emerald-600 text-white rounded-br-md"
-                            : "bg-blue-600 text-white rounded-br-md"
+                            : msg.channel === "SMS"
+                              ? "bg-blue-600 text-white rounded-br-md"
+                              : "bg-violet-600 text-white rounded-br-md"
                           : "bg-white shadow-sm rounded-bl-md"
                       }`}
                     >
@@ -379,8 +381,10 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
                         }`}>
                           {msg.channel === "EMAIL" ? (
                             <><Mail className="h-3 w-3 mr-1" /> Email</>
-                          ) : (
+                          ) : msg.channel === "SMS" ? (
                             <><MessageSquare className="h-3 w-3 mr-1" /> SMS</>
+                          ) : (
+                            <><MessageSquare className="h-3 w-3 mr-1" /> Chat</>
                           )}
                         </Badge>
                         {msg.sentBy && (
@@ -619,7 +623,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

@@ -14,7 +14,6 @@ import { Switch } from "@/components/ui/switch"
 import { getPublicSocialMediaMode } from "@/lib/social-media-mode"
 import { 
   Video, 
-  BookOpen,
   Plus,
   Loader2,
   CheckCircle,
@@ -1707,8 +1706,7 @@ export default function SocialMediaPage() {
                   {/* Module Summary */}
                   {selectedModule.summary && (
                     <div className="p-4 bg-gradient-to-r from-violet-50 to-pink-50 rounded-xl">
-                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-violet-500" />
+                      <h3 className="font-semibold text-gray-900 mb-2">
                         Module Summary
                       </h3>
                       <p className="text-gray-700">{selectedModule.summary}</p>
@@ -2061,4 +2059,3 @@ export default function SocialMediaPage() {
     </div>
   )
 }
-

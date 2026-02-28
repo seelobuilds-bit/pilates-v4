@@ -550,7 +550,7 @@ export const mobileApi = {
 
   sendInboxMessage(
     token: string,
-    params: { clientId?: string; channel: "EMAIL" | "SMS"; message: string; subject?: string }
+    params: { clientId?: string; channel: "CHAT" | "EMAIL" | "SMS"; message: string; subject?: string }
   ) {
     return request<{ success: boolean; messageId?: string }>("/api/mobile/inbox/send", {
       method: "POST",

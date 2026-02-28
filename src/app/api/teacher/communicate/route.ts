@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { sendEmail, sendSMS } from "@/lib/communications"
+import { sendMobilePushNotification } from "@/lib/mobile-push"
 
 export async function POST(request: Request) {
   const session = await getSession()
@@ -60,7 +61,49 @@ export async function POST(request: Request) {
 
     const teacherName = teacher?.user ? `${teacher.user.firstName} ${teacher.user.lastName}` : "Your Teacher"
 
-    if (type === "email") {
+    const normalizedType = String(type).toLowerCase()
+
+    if (normalizedType === "chat") {
+      const createdMessage = await db.message.create({
+        data: {
+          channel: "CHAT",
+          direction: "OUTBOUND",
+          status: "SENT",
+          body: message,
+          fromAddress: `chat@${client.studioId}.thecurrent.app`,
+          toAddress: client.email || client.phone || `client-${client.id}`,
+          fromName: teacherName,
+          toName: `${client.firstName} ${client.lastName}`,
+          threadId: `s_${client.studioId}_c_${client.id}`,
+          sentAt: new Date(),
+          studioId: client.studioId,
+          clientId: client.id,
+        },
+        select: { id: true },
+      })
+
+      try {
+        await sendMobilePushNotification({
+          studioId: client.studioId,
+          clientIds: [client.id],
+          category: "INBOX",
+          title: `New message from ${teacherName}`,
+          body: message,
+          data: {
+            type: "mobile_inbox_message",
+            channel: "CHAT",
+            studioId: client.studioId,
+            clientId: client.id,
+          },
+        })
+      } catch (pushError) {
+        console.error("Teacher chat push notify failed:", pushError)
+      }
+
+      return NextResponse.json({ success: true, message: "Chat message sent", messageId: createdMessage.id })
+    }
+
+    if (normalizedType === "email") {
       const emailConfig = client.studio.emailConfig
 
       if (!emailConfig) {
@@ -84,7 +127,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true, message: "Email sent successfully" })
 
-    } else if (type === "sms") {
+    } else if (normalizedType === "sms") {
       if (!client.phone) {
         return NextResponse.json({ error: "Client has no phone number" }, { status: 400 })
       }
@@ -121,7 +164,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-
 
 
 

@@ -27,7 +27,7 @@ import {
 
 interface Message {
   id: string
-  channel: "EMAIL" | "SMS"
+  channel: "CHAT" | "EMAIL" | "SMS"
   direction: "INBOUND" | "OUTBOUND"
   status: string
   subject?: string | null
@@ -78,8 +78,8 @@ export default function TeacherInboxPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [filterType, setFilterType] = useState<"all" | "email" | "sms">("all")
-  const [composeType, setComposeType] = useState<"email" | "sms">("email")
+  const [filterType, setFilterType] = useState<"all" | "chat" | "email" | "sms">("all")
+  const [composeType, setComposeType] = useState<"chat" | "email" | "sms">("chat")
   const [newMessage, setNewMessage] = useState("")
   const [newSubject, setNewSubject] = useState("")
   const [sending, setSending] = useState(false)
@@ -144,7 +144,7 @@ export default function TeacherInboxPage() {
           },
           lastMessage: c.lastMessage ? {
             id: '',
-            channel: c.lastMessage.channel as "EMAIL" | "SMS",
+            channel: c.lastMessage.channel as "CHAT" | "EMAIL" | "SMS",
             direction: c.lastMessage.direction as "INBOUND" | "OUTBOUND",
             status: 'SENT',
             body: c.lastMessage.body,
@@ -457,7 +457,7 @@ export default function TeacherInboxPage() {
           <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
               <Mail className="h-4 w-4 mr-2" />
-              Email & SMS
+              Inbox
               {totalUnread > 0 && (
                 <Badge className="ml-2 bg-violet-100 text-violet-700 hover:bg-violet-100">{totalUnread}</Badge>
               )}
@@ -528,6 +528,7 @@ export default function TeacherInboxPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="chat">Chat</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="sms">SMS</SelectItem>
                   </SelectContent>
@@ -571,7 +572,12 @@ export default function TeacherInboxPage() {
                           {conv.lastMessage?.body || 'No messages yet'}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          {conv.lastMessage?.channel === "EMAIL" ? (
+                          {conv.lastMessage?.channel === "CHAT" ? (
+                            <Badge variant="secondary" className="text-xs bg-violet-50 text-violet-700">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Chat
+                            </Badge>
+                          ) : conv.lastMessage?.channel === "EMAIL" ? (
                             <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">
                               <Mail className="h-3 w-3 mr-1" />
                               Email
@@ -768,7 +774,11 @@ export default function TeacherInboxPage() {
                       >
                         <div className={`max-w-lg rounded-lg p-4 ${
                           msg.direction === 'OUTBOUND' 
-                            ? msg.channel === 'EMAIL' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+                            ? msg.channel === 'EMAIL'
+                              ? 'bg-blue-600 text-white'
+                              : msg.channel === 'SMS'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-violet-600 text-white'
                             : 'bg-white border border-gray-200'
                         }`}>
                           {msg.subject && (
@@ -815,6 +825,17 @@ export default function TeacherInboxPage() {
                   {/* Message Type Toggle */}
                   <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
                     <button
+                      onClick={() => setComposeType("chat")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                        composeType === "chat" 
+                          ? "bg-white text-violet-600 shadow-sm font-medium" 
+                          : "text-gray-500 hover:text-gray-900"
+                      }`}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Chat</span>
+                    </button>
+                    <button
                       onClick={() => setComposeType("email")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
                         composeType === "email" 
@@ -850,7 +871,7 @@ export default function TeacherInboxPage() {
                   
                   <div className="flex gap-2">
                     <Textarea
-                      placeholder={`Type your ${composeType === 'email' ? 'email' : 'SMS'} message...`}
+                      placeholder={`Type your ${composeType === 'chat' ? 'chat' : composeType === 'email' ? 'email' : 'SMS'} message...`}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       rows={3}
@@ -859,7 +880,13 @@ export default function TeacherInboxPage() {
                     <Button 
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim() || sending || !selectedClient}
-                      className={`self-end shrink-0 ${composeType === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      className={`self-end shrink-0 ${
+                        composeType === 'email'
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : composeType === 'sms'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-violet-600 hover:bg-violet-700'
+                      }`}
                     >
                       {sending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -1296,7 +1323,6 @@ export default function TeacherInboxPage() {
     </div>
   )
 }
-
 
 
 
