@@ -449,7 +449,7 @@ export default function ScheduleScreen() {
           <DateTimePicker
             value={pickerValue}
             mode="date"
-            display={Platform.OS === "ios" ? "compact" : "default"}
+            display={Platform.OS === "ios" ? "spinner" : "default"}
             minimumDate={dateRange.minDate}
             maximumDate={dateRange.maxDate}
             onChange={handleDatePickerChange}

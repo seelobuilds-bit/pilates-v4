@@ -8,7 +8,6 @@ import {
   buildReportRequestParams,
   defaultCustomRange,
   formatDateInput,
-  type MobileReportRangePreset,
   parseDateInput,
   resolveReportRange,
 } from "@/src/lib/report-range"
@@ -45,11 +44,14 @@ function buildMetricPriority(role: string | undefined) {
   return ["booked", "completed", "completion-rate", "cancelled"]
 }
 
-const RANGE_SHORTCUTS: { id: Exclude<MobileReportRangePreset, "CUSTOM">; label: string }[] = [
-  { id: "TODAY", label: "Today" },
-  { id: "THIS_MONTH", label: "This month" },
-  { id: "LAST_30", label: "Last 30d" },
-]
+function buildInitialRange() {
+  const fallback = defaultCustomRange()
+  const thisMonth = resolveReportRange("THIS_MONTH", fallback.start, fallback.end)
+  return {
+    start: thisMonth.start,
+    end: thisMonth.end,
+  }
+}
 
 function formatTrendValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
@@ -107,8 +109,7 @@ export default function HomeScreen() {
 
   const [openingActionId, setOpeningActionId] = useState<string | null>(null)
   const [reportsData, setReportsData] = useState<MobileReportsResponse | null>(null)
-  const [rangePreset, setRangePreset] = useState<MobileReportRangePreset>("THIS_MONTH")
-  const [customRange, setCustomRange] = useState(() => defaultCustomRange())
+  const [customRange, setCustomRange] = useState(() => buildInitialRange())
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [reportError, setReportError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -119,9 +120,10 @@ export default function HomeScreen() {
   const quickActions = useMemo(() => buildQuickActions(roleFeatures), [roleFeatures])
 
   const roleMetricPriority = useMemo(() => buildMetricPriority(user?.role), [user?.role])
-  const activeRange = useMemo(
-    () => resolveReportRange(rangePreset, customRange.start, customRange.end),
-    [customRange.end, customRange.start, rangePreset]
+  const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
+  const reportRequestParams = useMemo(
+    () => buildReportRequestParams("CUSTOM", customRange.start, customRange.end),
+    [customRange.end, customRange.start]
   )
 
   const displayedTrendMetrics = useMemo(() => {
@@ -146,7 +148,7 @@ export default function HomeScreen() {
       try {
         await refreshBootstrap()
         if (token) {
-          const response = await mobileApi.reports(token, buildReportRequestParams(rangePreset, customRange.start, customRange.end))
+          const response = await mobileApi.reports(token, reportRequestParams)
           setReportsData(response)
         } else {
           setReportsData(null)
@@ -159,7 +161,7 @@ export default function HomeScreen() {
         setRefreshing(false)
       }
     },
-    [customRange.end, customRange.start, rangePreset, refreshBootstrap, token]
+    [refreshBootstrap, reportRequestParams, token]
   )
 
   useEffect(() => {
@@ -197,7 +199,6 @@ export default function HomeScreen() {
         start: activeRangePicker === "start" ? safeDate : current.start,
         end: activeRangePicker === "end" ? safeDate : current.end,
       }))
-      setRangePreset("CUSTOM")
       setActiveRangePicker(null)
     },
     [activeRangePicker]
@@ -214,53 +215,14 @@ export default function HomeScreen() {
           {bootstrap?.studio?.name ?? user?.studio?.name ?? "Studio"} - {user?.role ?? "-"}
         </Text>
 
-        <View style={styles.shortcutRow}>
-          {RANGE_SHORTCUTS.map((option) => {
-            const selected = option.id === rangePreset
-            return (
-              <Pressable
-                key={option.id}
-                style={[
-                  styles.shortcutButton,
-                  selected
-                    ? { borderColor: withOpacity(primaryColor, 0.56), backgroundColor: withOpacity(primaryColor, 0.18) }
-                    : null,
-                ]}
-                onPress={() => setRangePreset(option.id)}
-              >
-                <Text style={[styles.shortcutButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
         <View style={styles.customRangeRow}>
-          <Pressable
-            style={styles.customDateButton}
-            onPress={() => {
-              if (rangePreset !== "CUSTOM") {
-                setCustomRange({ start: activeRange.start, end: activeRange.end })
-              }
-              setActiveRangePicker("start")
-            }}
-          >
+          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
             <Text style={styles.customDateLabel}>From</Text>
-            <Text style={styles.customDateValue}>
-              {(rangePreset === "CUSTOM" ? customRange.start : activeRange.start).toLocaleDateString()}
-            </Text>
+            <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
           </Pressable>
-          <Pressable
-            style={styles.customDateButton}
-            onPress={() => {
-              if (rangePreset !== "CUSTOM") {
-                setCustomRange({ start: activeRange.start, end: activeRange.end })
-              }
-              setActiveRangePicker("end")
-            }}
-          >
+          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
             <Text style={styles.customDateLabel}>To</Text>
-            <Text style={styles.customDateValue}>
-              {(rangePreset === "CUSTOM" ? customRange.end : activeRange.end).toLocaleDateString()}
-            </Text>
+            <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
           </Pressable>
         </View>
 
@@ -268,7 +230,7 @@ export default function HomeScreen() {
           <DateTimePicker
             value={activeRangePicker === "start" ? customRange.start : customRange.end}
             mode="date"
-            display={Platform.OS === "ios" ? "compact" : "default"}
+            display={Platform.OS === "ios" ? "spinner" : "default"}
             maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
             minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
             onChange={handleRangePickerChange}
@@ -350,27 +312,6 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     color: mobileTheme.colors.textMuted,
-  },
-  shortcutRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 2,
-  },
-  shortcutButton: {
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flex: 1,
-    alignItems: "center",
-  },
-  shortcutButtonText: {
-    color: mobileTheme.colors.textSubtle,
-    fontWeight: "700",
-    fontSize: 11,
-    textAlign: "center",
   },
   customRangeRow: {
     flexDirection: "row",

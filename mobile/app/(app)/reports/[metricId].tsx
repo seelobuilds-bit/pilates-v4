@@ -10,7 +10,6 @@ import {
   formatDateInput,
   parseDateInput,
   resolveReportRange,
-  type MobileReportRangePreset,
 } from "@/src/lib/report-range"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
@@ -79,38 +78,27 @@ function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = 
   return `${sign}${Math.abs(Math.round(delta))}`
 }
 
-function isValidPreset(value: string | undefined): value is MobileReportRangePreset {
-  return value === "TODAY" || value === "THIS_MONTH" || value === "LAST_30" || value === "CUSTOM"
+function buildInitialRange(startDateParam?: string, endDateParam?: string) {
+  const fallback = defaultCustomRange()
+  const thisMonth = resolveReportRange("THIS_MONTH", fallback.start, fallback.end)
+  return {
+    start: parseDateInput(startDateParam) || thisMonth.start,
+    end: parseDateInput(endDateParam) || thisMonth.end,
+  }
 }
-
-const RANGE_SHORTCUTS: { id: Exclude<MobileReportRangePreset, "CUSTOM">; label: string }[] = [
-  { id: "TODAY", label: "Today" },
-  { id: "THIS_MONTH", label: "This month" },
-  { id: "LAST_30", label: "Last 30d" },
-]
 
 export default function ReportMetricDetailScreen() {
   const { token, user } = useAuth()
   const { width } = useWindowDimensions()
   const {
     metricId,
-    preset: presetParam,
     startDate: startDateParam,
     endDate: endDateParam,
-  } = useLocalSearchParams<{ metricId?: string; preset?: string; startDate?: string; endDate?: string }>()
+  } = useLocalSearchParams<{ metricId?: string; startDate?: string; endDate?: string }>()
   const primaryColor = getStudioPrimaryColor()
   const isNarrowScreen = width <= 360
 
-  const initialCustomRange = useMemo(() => {
-    const fallback = defaultCustomRange()
-    return {
-      start: parseDateInput(startDateParam) || fallback.start,
-      end: parseDateInput(endDateParam) || fallback.end,
-    }
-  }, [endDateParam, startDateParam])
-
-  const [rangePreset, setRangePreset] = useState<MobileReportRangePreset>(isValidPreset(presetParam) ? presetParam : "THIS_MONTH")
-  const [customRange, setCustomRange] = useState(initialCustomRange)
+  const [customRange, setCustomRange] = useState(() => buildInitialRange(startDateParam, endDateParam))
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [showAllTrendPoints, setShowAllTrendPoints] = useState(false)
   const [data, setData] = useState<MobileReportsResponse | null>(null)
@@ -119,9 +107,10 @@ export default function ReportMetricDetailScreen() {
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const activeRange = useMemo(
-    () => resolveReportRange(rangePreset, customRange.start, customRange.end),
-    [customRange.end, customRange.start, rangePreset]
+  const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
+  const reportRequestParams = useMemo(
+    () => buildReportRequestParams("CUSTOM", customRange.start, customRange.end),
+    [customRange.end, customRange.start]
   )
 
   const resolvedMetricId = useMemo(() => String(metricId || "").trim(), [metricId])
@@ -140,7 +129,7 @@ export default function ReportMetricDetailScreen() {
       setReportLoading(true)
       setError(null)
       try {
-        const response = await mobileApi.reports(token, buildReportRequestParams(rangePreset, customRange.start, customRange.end))
+        const response = await mobileApi.reports(token, reportRequestParams)
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load metric detail"
@@ -151,7 +140,7 @@ export default function ReportMetricDetailScreen() {
         setRefreshing(false)
       }
     },
-    [customRange.end, customRange.start, rangePreset, token]
+    [reportRequestParams, token]
   )
 
   useEffect(() => {
@@ -219,7 +208,6 @@ export default function ReportMetricDetailScreen() {
         start: activeRangePicker === "start" ? safeDate : current.start,
         end: activeRangePicker === "end" ? safeDate : current.end,
       }))
-      setRangePreset("CUSTOM")
       setActiveRangePicker(null)
     },
     [activeRangePicker]
@@ -245,58 +233,21 @@ export default function ReportMetricDetailScreen() {
             ))}
           </View>
         ) : null}
-        <View style={styles.shortcutRow}>
-          {RANGE_SHORTCUTS.map((option) => {
-            const selected = option.id === rangePreset
-            return (
-              <Pressable
-                key={option.id}
-                style={[
-                  styles.shortcutButton,
-                  selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.16) } : null,
-                ]}
-                onPress={() => setRangePreset(option.id)}
-              >
-                <Text style={[styles.shortcutButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
         <View style={styles.customRangeRow}>
-          <Pressable
-            style={styles.customDateButton}
-            onPress={() => {
-              if (rangePreset !== "CUSTOM") {
-                setCustomRange({ start: activeRange.start, end: activeRange.end })
-              }
-              setActiveRangePicker("start")
-            }}
-          >
+          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
             <Text style={styles.customDateLabel}>From</Text>
-            <Text style={styles.customDateValue}>
-              {(rangePreset === "CUSTOM" ? customRange.start : activeRange.start).toLocaleDateString()}
-            </Text>
+            <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
           </Pressable>
-          <Pressable
-            style={styles.customDateButton}
-            onPress={() => {
-              if (rangePreset !== "CUSTOM") {
-                setCustomRange({ start: activeRange.start, end: activeRange.end })
-              }
-              setActiveRangePicker("end")
-            }}
-          >
+          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
             <Text style={styles.customDateLabel}>To</Text>
-            <Text style={styles.customDateValue}>
-              {(rangePreset === "CUSTOM" ? customRange.end : activeRange.end).toLocaleDateString()}
-            </Text>
+            <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
           </Pressable>
         </View>
         {activeRangePicker ? (
           <DateTimePicker
             value={activeRangePicker === "start" ? customRange.start : customRange.end}
             mode="date"
-            display={Platform.OS === "ios" ? "compact" : "default"}
+            display={Platform.OS === "ios" ? "spinner" : "default"}
             maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
             minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
             onChange={handleRangePickerChange}
@@ -323,7 +274,7 @@ export default function ReportMetricDetailScreen() {
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Period Context</Text>
-            <Text style={styles.metaText}>Window: {formatDate(data.range.start)} - {formatDate(data.range.end)}</Text>
+            <Text style={styles.metaText}>Window: {formatDate(reportRequestParams.startDate)} - {formatDate(reportRequestParams.endDate)}</Text>
             <Text style={styles.metaText}>Generated: {formatDateTime(data.generatedAt)}</Text>
             <Text style={styles.metaText}>Role: {data.role}</Text>
           </View>
@@ -435,27 +386,6 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 12,
     fontWeight: "700",
-  },
-  shortcutRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 2,
-  },
-  shortcutButton: {
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flex: 1,
-    alignItems: "center",
-  },
-  shortcutButtonText: {
-    color: mobileTheme.colors.textSubtle,
-    fontWeight: "700",
-    fontSize: 11,
-    textAlign: "center",
   },
   customRangeRow: {
     flexDirection: "row",
