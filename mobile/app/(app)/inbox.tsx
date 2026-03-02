@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -54,17 +54,36 @@ function ConversationCard({
   )
 }
 
-function MessageCard({ item, primaryColor }: { item: MobileInboxMessage; primaryColor: string }) {
-  const inbound = item.direction === "INBOUND"
+function MessageCard({
+  item,
+  primaryColor,
+  isClientView,
+}: {
+  item: MobileInboxMessage
+  primaryColor: string
+  isClientView: boolean
+}) {
+  const authoredByCurrentUser = isClientView ? item.direction === "INBOUND" : item.direction === "OUTBOUND"
+  const senderLabel = authoredByCurrentUser ? "You" : isClientView ? "Studio" : "Client"
 
   return (
-    <View style={[styles.card, inbound ? styles.inboundCard : [styles.outboundCard, { borderLeftColor: primaryColor }]]}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{inbound ? "From Studio" : "From You"}</Text>
-        <Text style={[styles.messageChannel, { color: primaryColor }]}>{item.channel}</Text>
+    <View style={[styles.messageRow, authoredByCurrentUser ? styles.messageRowCurrent : styles.messageRowOther]}>
+      <View
+        style={[
+          styles.messageBubble,
+          authoredByCurrentUser
+            ? [styles.messageBubbleCurrent, { backgroundColor: withOpacity(primaryColor, 0.14), borderColor: withOpacity(primaryColor, 0.28) }]
+            : styles.messageBubbleOther,
+        ]}
+      >
+        <View style={styles.messageMetaRow}>
+          <Text style={styles.messageSender}>{senderLabel}</Text>
+          <Text style={[styles.messageChannel, { color: primaryColor }]}>{item.channel}</Text>
+        </View>
+        {item.subject ? <Text style={styles.messageSubject}>{item.subject}</Text> : null}
+        <Text style={styles.messageBody}>{item.body}</Text>
+        <Text style={styles.messageTime}>{formatTimestamp(item.createdAt)}</Text>
       </View>
-      <Text style={styles.lastMessageTime}>{formatTimestamp(item.createdAt)}</Text>
-      <Text style={styles.lastMessageBody}>{item.body}</Text>
     </View>
   )
 }
@@ -283,218 +302,93 @@ export default function InboxScreen() {
     router.replace("/(app)/inbox")
   }, [conversations, isClient, openConversation, routeClientId, router])
 
+  const keyboardVerticalOffset = Platform.select({
+    ios: 96,
+    android: 24,
+    default: 0,
+  })
+
   if (!isClient && activeConversation) {
     return (
-      <View style={styles.container}>
-        <View style={styles.threadHeader}>
-          <Pressable style={styles.backButton} onPress={() => setActiveConversation(null)}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{activeConversation.clientName}</Text>
-            <Text style={styles.subtitle}>{activeConversation.clientEmail}</Text>
-          </View>
-        </View>
-
-        {threadError ? <Text style={styles.error}>{threadError}</Text> : null}
-
-        {threadLoading && threadMessages.length === 0 ? (
-          <View style={styles.threadLoadingWrap}>
-            <ActivityIndicator size="small" />
-            <Text style={styles.loading}>Loading conversation...</Text>
-          </View>
-        ) : null}
-
-        <FlatList
-          data={threadMessages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} />}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={threadLoading} onRefresh={() => void loadThread(activeConversation.clientId)} />}
-        />
-
-        <View style={styles.composerWrap}>
-          <View style={styles.composerChannelRow}>
-            <Pressable
-              style={[
-                styles.channelButton,
-                channel === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setChannel("CHAT")}
-            >
-              <Text style={[styles.channelButtonText, channel === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Chat</Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardRoot}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+      >
+        <View style={styles.container}>
+          <View style={styles.threadHeader}>
+            <Pressable style={styles.backButton} onPress={() => setActiveConversation(null)}>
+              <Text style={styles.backButtonText}>Back</Text>
             </Pressable>
-            <Pressable
-              style={[
-                styles.channelButton,
-                channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setChannel("EMAIL")}
-            >
-              <Text style={[styles.channelButtonText, channel === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Email</Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.channelButton,
-                channel === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setChannel("SMS")}
-            >
-              <Text style={[styles.channelButtonText, channel === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>{activeConversation.clientName}</Text>
+              <Text style={styles.subtitle}>{activeConversation.clientEmail}</Text>
+            </View>
           </View>
 
-          {channel === "EMAIL" ? (
-            <TextInput
-              value={subject}
-              onChangeText={setSubject}
-              placeholder="Subject (optional)"
-              style={styles.subjectInput}
-            />
+          {threadError ? <Text style={styles.error}>{threadError}</Text> : null}
+
+          {threadLoading && threadMessages.length === 0 ? (
+            <View style={styles.threadLoadingWrap}>
+              <ActivityIndicator size="small" />
+              <Text style={styles.loading}>Loading conversation...</Text>
+            </View>
           ) : null}
 
-          <TextInput
-            value={composerText}
-            onChangeText={setComposerText}
-            placeholder="Write a message..."
-            style={styles.messageInput}
-            multiline
-          />
-
-          <Pressable
-            style={[styles.sendButton, { backgroundColor: primaryColor }, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
-            onPress={() => void sendMessage()}
-            disabled={sending || !composerText.trim()}
-          >
-            <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send"}</Text>
-          </Pressable>
-        </View>
-      </View>
-    )
-  }
-
-  const hasData = isClient ? filteredMessages.length > 0 : filteredConversations.length > 0
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Inbox</Text>
-      <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
-      <View style={styles.overviewRow}>
-        {inboxSummary.map((item) => (
-          <View key={item.label} style={styles.overviewPill}>
-            <Text style={styles.overviewLabel}>{item.label}</Text>
-            <Text style={[styles.overviewValue, { color: primaryColor }]}>{item.value}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.filtersWrap}>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder={isClient ? "Search messages..." : "Search clients/messages..."}
-          style={styles.searchInput}
-        />
-        {isClient ? (
-            <View style={styles.filterChannelRow}>
-              <Pressable
-                style={[
-                  styles.channelButton,
-                  clientChannelFilter === "ALL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-                ]}
-              onPress={() => setClientChannelFilter("ALL")}
-            >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
-                {`All (${clientChannelCounts.ALL})`}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.channelButton,
-                clientChannelFilter === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setClientChannelFilter("CHAT")}
-            >
-              <Text
-                style={[styles.channelButtonText, clientChannelFilter === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}
-              >
-                {`Chat (${clientChannelCounts.CHAT})`}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.channelButton,
-                clientChannelFilter === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setClientChannelFilter("EMAIL")}
-            >
-              <Text
-                style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}
-              >
-                {`Email (${clientChannelCounts.EMAIL})`}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.channelButton,
-                clientChannelFilter === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setClientChannelFilter("SMS")}
-            >
-              <Text style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
-                {`SMS (${clientChannelCounts.SMS})`}
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.unreadRow}>
-            <Pressable
-              style={[
-                styles.unreadChip,
-                !unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setUnreadOnly(false)}
-            >
-              <Text style={[styles.unreadChipText, !unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`All (${conversations.length})`}</Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.unreadChip,
-                unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setUnreadOnly(true)}
-            >
-              <Text style={[styles.unreadChipText, unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`Unread (${unreadConversationCount})`}</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      {loading && !hasData ? <Text style={styles.loading}>Loading inbox...</Text> : null}
-
-      {!loading && !hasData && !error ? (
-        <Text style={styles.empty}>{searchNormalized ? "No results for current filters." : "No inbox activity yet."}</Text>
-      ) : null}
-
-      {isClient ? (
-        <>
           <FlatList
-            data={filteredMessages}
+            data={threadMessages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} />}
+            renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} isClientView={false} />}
             style={styles.list}
-            contentContainerStyle={styles.listContent}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
+            contentContainerStyle={styles.threadListContent}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={<RefreshControl refreshing={threadLoading} onRefresh={() => void loadThread(activeConversation.clientId)} />}
           />
 
           <View style={styles.composerWrap}>
+            <View style={styles.composerChannelRow}>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  channel === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setChannel("CHAT")}
+              >
+                <Text style={[styles.channelButtonText, channel === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Chat</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  channel === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setChannel("EMAIL")}
+              >
+                <Text style={[styles.channelButtonText, channel === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>Email</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  channel === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setChannel("SMS")}
+              >
+                <Text style={[styles.channelButtonText, channel === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}>SMS</Text>
+              </Pressable>
+            </View>
+
+            {channel === "EMAIL" ? (
+              <TextInput
+                value={subject}
+                onChangeText={setSubject}
+                placeholder="Subject (optional)"
+                style={styles.subjectInput}
+              />
+            ) : null}
+
             <TextInput
               value={composerText}
               onChangeText={setComposerText}
-              placeholder="Write a chat message..."
+              placeholder="Write a message..."
               style={styles.messageInput}
               multiline
             />
@@ -507,22 +401,173 @@ export default function InboxScreen() {
               <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send"}</Text>
             </Pressable>
           </View>
-        </>
-      ) : (
-        <FlatList
-          data={filteredConversations}
-          keyExtractor={(item) => item.clientId}
-          renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} primaryColor={primaryColor} />}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
-        />
-      )}
-    </View>
+        </View>
+      </KeyboardAvoidingView>
+    )
+  }
+
+  const hasData = isClient ? filteredMessages.length > 0 : filteredConversations.length > 0
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.keyboardRoot}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Inbox</Text>
+        <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
+        <View style={styles.overviewRow}>
+          {inboxSummary.map((item) => (
+            <View key={item.label} style={styles.overviewPill}>
+              <Text style={styles.overviewLabel}>{item.label}</Text>
+              <Text style={[styles.overviewValue, { color: primaryColor }]}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.filtersWrap}>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder={isClient ? "Search messages..." : "Search clients/messages..."}
+            style={styles.searchInput}
+          />
+          {isClient ? (
+            <View style={styles.filterChannelRow}>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  clientChannelFilter === "ALL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setClientChannelFilter("ALL")}
+              >
+                <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
+                  {`All (${clientChannelCounts.ALL})`}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  clientChannelFilter === "CHAT" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setClientChannelFilter("CHAT")}
+              >
+                <Text
+                  style={[styles.channelButtonText, clientChannelFilter === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}
+                >
+                  {`Chat (${clientChannelCounts.CHAT})`}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  clientChannelFilter === "EMAIL" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setClientChannelFilter("EMAIL")}
+              >
+                <Text
+                  style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}
+                >
+                  {`Email (${clientChannelCounts.EMAIL})`}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.channelButton,
+                  clientChannelFilter === "SMS" && [styles.channelButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setClientChannelFilter("SMS")}
+              >
+                <Text
+                  style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}
+                >
+                  {`SMS (${clientChannelCounts.SMS})`}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.unreadRow}>
+              <Pressable
+                style={[
+                  styles.unreadChip,
+                  !unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setUnreadOnly(false)}
+              >
+                <Text style={[styles.unreadChipText, !unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`All (${conversations.length})`}</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.unreadChip,
+                  unreadOnly && [styles.unreadChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                ]}
+                onPress={() => setUnreadOnly(true)}
+              >
+                <Text style={[styles.unreadChipText, unreadOnly && [styles.unreadChipTextActive, { color: primaryColor }]]}>{`Unread (${unreadConversationCount})`}</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {loading && !hasData ? <Text style={styles.loading}>Loading inbox...</Text> : null}
+
+        {!loading && !hasData && !error ? (
+          <Text style={styles.empty}>{searchNormalized ? "No results for current filters." : "No inbox activity yet."}</Text>
+        ) : null}
+
+        {isClient ? (
+          <>
+            <FlatList
+              data={filteredMessages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <MessageCard item={item} primaryColor={primaryColor} isClientView />}
+              style={styles.list}
+              contentContainerStyle={styles.threadListContent}
+              keyboardShouldPersistTaps="handled"
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
+            />
+
+            <View style={styles.composerWrap}>
+              <TextInput
+                value={composerText}
+                onChangeText={setComposerText}
+                placeholder="Write a chat message..."
+                style={styles.messageInput}
+                multiline
+              />
+
+              <Pressable
+                style={[styles.sendButton, { backgroundColor: primaryColor }, (sending || !composerText.trim()) && styles.sendButtonDisabled]}
+                onPress={() => void sendMessage()}
+                disabled={sending || !composerText.trim()}
+              >
+                <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send"}</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <FlatList
+            data={filteredConversations}
+            keyExtractor={(item) => item.clientId}
+            renderItem={({ item }) => <ConversationCard item={item} onOpen={openConversation} primaryColor={primaryColor} />}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInbox(true)} />}
+          />
+        )}
+      </View>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
+  keyboardRoot: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
@@ -621,6 +666,10 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 24,
   },
+  threadListContent: {
+    gap: 10,
+    paddingBottom: 16,
+  },
   card: {
     backgroundColor: mobileTheme.colors.surface,
     borderRadius: 12,
@@ -684,9 +733,58 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   messageChannel: {
-    color: mobileTheme.colors.text,
     fontWeight: "600",
+    fontSize: 11,
+    textTransform: "uppercase",
+  },
+  messageRow: {
+    width: "100%",
+  },
+  messageRowCurrent: {
+    alignItems: "flex-end",
+  },
+  messageRowOther: {
+    alignItems: "flex-start",
+  },
+  messageBubble: {
+    maxWidth: "88%",
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  messageBubbleCurrent: {
+    alignSelf: "flex-end",
+  },
+  messageBubbleOther: {
+    alignSelf: "flex-start",
+    backgroundColor: mobileTheme.colors.surface,
+    borderColor: mobileTheme.colors.border,
+  },
+  messageMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  messageSender: {
+    color: mobileTheme.colors.text,
     fontSize: 12,
+    fontWeight: "700",
+  },
+  messageSubject: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  messageBody: {
+    color: mobileTheme.colors.text,
+    lineHeight: 20,
+  },
+  messageTime: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 11,
   },
   loading: {
     color: mobileTheme.colors.textFaint,
@@ -709,6 +807,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: mobileTheme.colors.border,
     paddingTop: 10,
+    paddingBottom: 6,
     gap: 8,
   },
   filterChannelRow: {
@@ -719,6 +818,7 @@ const styles = StyleSheet.create({
   composerChannelRow: {
     flexDirection: "row",
     gap: 8,
+    flexWrap: "wrap",
   },
   channelRow: {
     flexDirection: "row",
