@@ -32,7 +32,14 @@ function ConversationCard({
         {item.unreadCount > 0 ? <Text style={[styles.badge, { backgroundColor: primaryColor }]}>{item.unreadCount}</Text> : null}
       </View>
       <Text style={styles.cardMeta}>{item.clientEmail}</Text>
-      <Text style={styles.cardMeta}>Messages: {item.messageCount}</Text>
+      <View style={styles.cardMetaRow}>
+        <Text style={styles.cardMeta}>Messages: {item.messageCount}</Text>
+        {item.lastMessage ? (
+          <Text style={[styles.inlinePill, { color: primaryColor, borderColor: withOpacity(primaryColor, 0.2) }]}>
+            {item.lastMessage.channel}
+          </Text>
+        ) : null}
+      </View>
       {item.lastMessage ? (
         <>
           <Text style={styles.lastMessageTime}>{formatTimestamp(item.lastMessage.createdAt)}</Text>
@@ -53,7 +60,7 @@ function MessageCard({ item, primaryColor }: { item: MobileInboxMessage; primary
   return (
     <View style={[styles.card, inbound ? styles.inboundCard : [styles.outboundCard, { borderLeftColor: primaryColor }]]}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{inbound ? "Inbound" : "Outbound"}</Text>
+        <Text style={styles.cardTitle}>{inbound ? "From Studio" : "From You"}</Text>
         <Text style={[styles.messageChannel, { color: primaryColor }]}>{item.channel}</Text>
       </View>
       <Text style={styles.lastMessageTime}>{formatTimestamp(item.createdAt)}</Text>
@@ -133,6 +140,21 @@ export default function InboxScreen() {
       SMS: messages.filter((message) => message.channel === "SMS").length,
     } as const
   }, [messages])
+  const inboxSummary = useMemo(() => {
+    if (isClient) {
+      return [
+        { label: "Messages", value: String(messages.length) },
+        { label: "Chat", value: String(clientChannelCounts.CHAT) },
+        { label: "External", value: String(clientChannelCounts.EMAIL + clientChannelCounts.SMS) },
+      ]
+    }
+
+    return [
+      { label: "Threads", value: String(conversations.length) },
+      { label: "Unread", value: String(unreadConversationCount) },
+      { label: "Visible", value: String(filteredConversations.length) },
+    ]
+  }, [clientChannelCounts.CHAT, clientChannelCounts.EMAIL, clientChannelCounts.SMS, conversations.length, filteredConversations.length, isClient, messages.length, unreadConversationCount])
 
   const loadInbox = useCallback(
     async (isRefresh = false) => {
@@ -293,7 +315,7 @@ export default function InboxScreen() {
         />
 
         <View style={styles.composerWrap}>
-          <View style={styles.channelRow}>
+          <View style={styles.composerChannelRow}>
             <Pressable
               style={[
                 styles.channelButton,
@@ -358,6 +380,14 @@ export default function InboxScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Inbox</Text>
       <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
+      <View style={styles.overviewRow}>
+        {inboxSummary.map((item) => (
+          <View key={item.label} style={styles.overviewPill}>
+            <Text style={styles.overviewLabel}>{item.label}</Text>
+            <Text style={[styles.overviewValue, { color: primaryColor }]}>{item.value}</Text>
+          </View>
+        ))}
+      </View>
 
       <View style={styles.filtersWrap}>
         <TextInput
@@ -367,7 +397,7 @@ export default function InboxScreen() {
           style={styles.searchInput}
         />
         {isClient ? (
-            <View style={styles.channelRow}>
+            <View style={styles.filterChannelRow}>
               <Pressable
                 style={[
                   styles.channelButton,
@@ -525,6 +555,30 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     marginBottom: 4,
   },
+  overviewRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  overviewPill: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  overviewLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  overviewValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
   filtersWrap: {
     gap: 8,
   },
@@ -539,6 +593,7 @@ const styles = StyleSheet.create({
   unreadRow: {
     flexDirection: "row",
     gap: 8,
+    flexWrap: "wrap",
   },
   unreadChip: {
     borderWidth: 1,
@@ -595,6 +650,12 @@ const styles = StyleSheet.create({
   cardMeta: {
     color: mobileTheme.colors.textFaint,
   },
+  cardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   lastMessageTime: {
     color: mobileTheme.colors.textSubtle,
     fontSize: 12,
@@ -610,6 +671,15 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.text,
     color: "white",
     textAlign: "center",
+    fontWeight: "700",
+    overflow: "hidden",
+  },
+  inlinePill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    fontSize: 11,
     fontWeight: "700",
     overflow: "hidden",
   },
@@ -641,6 +711,15 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     gap: 8,
   },
+  filterChannelRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  composerChannelRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
   channelRow: {
     flexDirection: "row",
     gap: 8,
@@ -659,6 +738,7 @@ const styles = StyleSheet.create({
   channelButtonText: {
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
+    fontSize: 12,
   },
   channelButtonTextActive: {
     fontWeight: "700",

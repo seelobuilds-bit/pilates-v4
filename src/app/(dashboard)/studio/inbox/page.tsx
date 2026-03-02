@@ -576,11 +576,11 @@ export default function InboxPage() {
                     {conv.client ? `${conv.client.firstName[0]}${conv.client.lastName[0]}` : '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <p className={`font-medium truncate ${conv.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
                         {conv.client ? `${conv.client.firstName} ${conv.client.lastName}` : 'Unknown'}
                       </p>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      <span className="hidden text-xs text-gray-500 flex-shrink-0 sm:inline">
                         {conv.lastMessage.sentAt 
                           ? new Date(conv.lastMessage.sentAt).toLocaleDateString() 
                           : new Date(conv.lastMessage.createdAt).toLocaleDateString()}
@@ -830,7 +830,7 @@ export default function InboxPage() {
             {/* Compose Area */}
             <div className="shrink-0 border-t border-gray-200 bg-white p-3 pb-20 sm:p-4 sm:pb-4 lg:pr-28">
               {/* Message Type Toggle */}
-              <div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-100 p-1 mb-3">
+              <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg bg-gray-100 p-1">
                 <button
                   onClick={() => setComposeType("chat")}
                   className={`flex items-center justify-center gap-1 py-2 rounded-md text-xs sm:text-sm transition-colors ${
@@ -866,6 +866,13 @@ export default function InboxPage() {
                   <span>SMS</span>
                 </button>
               </div>
+              <p className="mb-3 text-xs text-gray-500">
+                {composeType === "chat"
+                  ? "Chat stays inside the shared inbox thread."
+                  : composeType === "email"
+                    ? "Email sends to the client and is mirrored into this thread."
+                    : "SMS sends to the client and is mirrored into this thread."}
+              </p>
               
               {composeType === "email" && (
                 <Input
@@ -1051,11 +1058,11 @@ export default function InboxPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <p className={`font-medium truncate ${conv.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
                             @{conv.platformUsername || "Unknown"}
                           </p>
-                          <span className="text-xs text-gray-500 flex-shrink-0">
+                          <span className="hidden text-xs text-gray-500 flex-shrink-0 sm:inline">
                             {conv.lastMessage?.createdAt && new Date(conv.lastMessage.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -1120,7 +1127,7 @@ export default function InboxPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Platform</label>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <Button
                         type="button"
                         variant={socialComposePlatform === "INSTAGRAM" ? "default" : "outline"}
