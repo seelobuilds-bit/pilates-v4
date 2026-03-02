@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
@@ -107,6 +107,7 @@ export default function ReportMetricDetailScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedInitially = useRef(false)
 
   const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
   const reportRequestParams = useMemo(
@@ -117,7 +118,7 @@ export default function ReportMetricDetailScreen() {
   const resolvedMetricId = useMemo(() => String(metricId || "").trim(), [metricId])
 
   const loadReports = useCallback(
-    async (isRefresh = false) => {
+    async (range: { start: Date; end: Date }, isRefresh = false) => {
       if (!token) {
         setLoading(false)
         setData(null)
@@ -130,7 +131,7 @@ export default function ReportMetricDetailScreen() {
       setReportLoading(true)
       setError(null)
       try {
-        const response = await mobileApi.reports(token, reportRequestParams)
+        const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load metric detail"
@@ -141,12 +142,14 @@ export default function ReportMetricDetailScreen() {
         setRefreshing(false)
       }
     },
-    [reportRequestParams, token]
+    [token]
   )
 
   useEffect(() => {
-    void loadReports()
-  }, [loadReports])
+    if (hasLoadedInitially.current) return
+    hasLoadedInitially.current = true
+    void loadReports(customRange)
+  }, [customRange, loadReports])
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
   const metric = useMemo(() => data?.metrics.find((item) => item.id === resolvedMetricId) || null, [data?.metrics, resolvedMetricId])
@@ -218,13 +221,15 @@ export default function ReportMetricDetailScreen() {
       }
 
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
-      setCustomRange((current) => ({
-        start: activeRangePicker === "start" ? safeDate : current.start,
-        end: activeRangePicker === "end" ? safeDate : current.end,
-      }))
+      const nextRange = {
+        start: activeRangePicker === "start" ? safeDate : customRange.start,
+        end: activeRangePicker === "end" ? safeDate : customRange.end,
+      }
+      setCustomRange(nextRange)
       closeRangePicker()
+      void loadReports(nextRange)
     },
-    [activeRangePicker, closeRangePicker]
+    [activeRangePicker, closeRangePicker, customRange.end, customRange.start, loadReports]
   )
 
   const handleRangePickerChange = useCallback(
@@ -257,7 +262,7 @@ export default function ReportMetricDetailScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadReports(true)} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadReports(customRange, true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Metric Detail</Text>

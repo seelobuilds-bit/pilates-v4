@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
@@ -122,10 +122,7 @@ export default function HomeScreen() {
 
   const roleMetricPriority = useMemo(() => buildMetricPriority(user?.role), [user?.role])
   const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
-  const reportRequestParams = useMemo(
-    () => buildReportRequestParams("CUSTOM", customRange.start, customRange.end),
-    [customRange.end, customRange.start]
-  )
+  const hasLoadedInitially = useRef(false)
 
   const displayedTrendMetrics = useMemo(() => {
     if (!reportsData) return []
@@ -138,7 +135,7 @@ export default function HomeScreen() {
   }, [reportsData, roleMetricPriority])
 
   const loadHomeData = useCallback(
-    async (isRefresh = false) => {
+    async (range: { start: Date; end: Date }, isRefresh = false) => {
       if (isRefresh) {
         setRefreshing(true)
       }
@@ -149,7 +146,7 @@ export default function HomeScreen() {
       try {
         await refreshBootstrap()
         if (token) {
-          const response = await mobileApi.reports(token, reportRequestParams)
+          const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
           setReportsData(response)
         } else {
           setReportsData(null)
@@ -162,12 +159,14 @@ export default function HomeScreen() {
         setRefreshing(false)
       }
     },
-    [refreshBootstrap, reportRequestParams, token]
+    [refreshBootstrap, token]
   )
 
   useEffect(() => {
-    void loadHomeData()
-  }, [loadHomeData])
+    if (hasLoadedInitially.current) return
+    hasLoadedInitially.current = true
+    void loadHomeData(customRange)
+  }, [customRange, loadHomeData])
 
   const handleOpenAction = useCallback(
     async (action: WorkspaceFeature) => {
@@ -204,13 +203,15 @@ export default function HomeScreen() {
   const applyPickedDate = useCallback(
     (selectedDate: Date) => {
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
-      setCustomRange((current) => ({
-        start: activeRangePicker === "start" ? safeDate : current.start,
-        end: activeRangePicker === "end" ? safeDate : current.end,
-      }))
+      const nextRange = {
+        start: activeRangePicker === "start" ? safeDate : customRange.start,
+        end: activeRangePicker === "end" ? safeDate : customRange.end,
+      }
+      setCustomRange(nextRange)
       closeRangePicker()
+      void loadHomeData(nextRange)
     },
-    [activeRangePicker, closeRangePicker]
+    [activeRangePicker, closeRangePicker, customRange.end, customRange.start, loadHomeData]
   )
 
   const handleRangePickerChange = useCallback(
@@ -243,7 +244,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={() => void loadHomeData(true)} />}
+      refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={() => void loadHomeData(customRange, true)} />}
     >
       <View style={[styles.heroCard, { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.heroTitle}>Hello {user?.firstName ?? "there"}</Text>

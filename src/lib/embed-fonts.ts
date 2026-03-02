@@ -129,6 +129,12 @@ export const EMBED_FONT_OPTIONS = [
     googleHref: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap",
   },
   {
+    key: "instrument-serif",
+    label: "Instrument Serif (Google)",
+    fontFamily: "'Instrument Serif', Georgia, serif",
+    googleHref: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap",
+  },
+  {
     key: "nunito-sans",
     label: "Nunito Sans (Google)",
     fontFamily: "'Nunito Sans', ui-sans-serif, system-ui, sans-serif",
