@@ -146,6 +146,7 @@ export default function ScheduleScreen() {
   const [windowFilter, setWindowFilter] = useState<"ALL" | "TODAY" | "WEEK">("ALL")
   const [selectedDateKey, setSelectedDateKey] = useState<string>("ALL")
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("")
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -490,7 +491,24 @@ export default function ScheduleScreen() {
             ))}
           </ScrollView>
 
-          {monthCalendarCells.length > 0 ? (
+          <Pressable
+            style={[
+              styles.jumpToggleButton,
+              showMonthPicker && [styles.jumpToggleButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+            ]}
+            onPress={() => setShowMonthPicker((current) => !current)}
+          >
+            <Text
+              style={[
+                styles.jumpToggleButtonText,
+                showMonthPicker && [styles.jumpToggleButtonTextActive, { color: primaryColor }],
+              ]}
+            >
+              {showMonthPicker ? "Hide day picker" : "Jump to day"}
+            </Text>
+          </Pressable>
+
+          {showMonthPicker && monthCalendarCells.length > 0 ? (
             <View style={styles.monthCard}>
               <Text style={styles.monthCardTitle}>Jump to day</Text>
               <View style={styles.weekdayRow}>
@@ -511,7 +529,10 @@ export default function ScheduleScreen() {
                         cell.available ? styles.calendarDayAvailable : styles.calendarDayUnavailable,
                         selectedDateKey === cell.key && [styles.calendarDaySelected, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
                       ]}
-                      onPress={() => setSelectedDateKey(cell.key)}
+                      onPress={() => {
+                        setSelectedDateKey(cell.key)
+                        setShowMonthPicker(false)
+                      }}
                     >
                       <Text
                         style={[
@@ -610,6 +631,7 @@ export default function ScheduleScreen() {
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => `${item.bookingId || "session"}-${item.id}`}
+        style={styles.list}
         renderItem={({ item }) => (
           <ScheduleCard
             item={item}
@@ -718,6 +740,27 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     padding: 12,
     gap: 8,
+  },
+  jumpToggleButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  jumpToggleButtonActive: {
+    borderWidth: 1,
+  },
+  jumpToggleButtonText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  jumpToggleButtonTextActive: {
+    fontWeight: "700",
   },
   monthCardTitle: {
     color: mobileTheme.colors.text,
@@ -831,6 +874,9 @@ const styles = StyleSheet.create({
   listContent: {
     gap: 10,
     paddingBottom: 24,
+  },
+  list: {
+    flex: 1,
   },
   card: {
     backgroundColor: mobileTheme.colors.surface,
