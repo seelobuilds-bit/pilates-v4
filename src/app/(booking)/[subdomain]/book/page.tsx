@@ -914,6 +914,12 @@ export default function BookingPage() {
   const primaryColor = resolveStudioPrimaryColor(studioData.primaryColor)
   const studioCurrency = (studioData.stripeCurrency || "usd").toLowerCase()
   const formatPrice = (amount: number) => formatCurrency(amount, studioCurrency)
+  const accentBadgeStyle = {
+    backgroundColor: primaryColor,
+    color: "#ffffff",
+    borderColor: primaryColor,
+  }
+  const accentTextStyle = { color: primaryColor }
   const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
@@ -1031,7 +1037,7 @@ export default function BookingPage() {
                             <Clock className="w-4 h-4" />
                             {ct.duration} min
                           </span>
-                          <span className="font-medium text-gray-900">${ct.price}</span>
+                          <span className="font-medium text-gray-900">{formatPrice(ct.price)}</span>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
@@ -1227,7 +1233,7 @@ export default function BookingPage() {
                           <div className="text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">Weekly Subscription</p>
-                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Save 15%</Badge>
+                              <Badge className="border-0" style={accentBadgeStyle}>Save 15%</Badge>
                             </div>
                             <p className="text-sm text-gray-500">Same class, same time, every week</p>
                           </div>
@@ -1256,7 +1262,7 @@ export default function BookingPage() {
                           <div className="text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">Class Pack</p>
-                              <Badge className="bg-emerald-100 text-emerald-700 border-0">Up to 25% off</Badge>
+                              <Badge className="border-0" style={accentBadgeStyle}>Up to 25% off</Badge>
                             </div>
                             <p className="text-sm text-gray-500">Buy classes in bulk & save</p>
                           </div>
@@ -1311,7 +1317,7 @@ export default function BookingPage() {
                           >
                             <p className="font-bold text-gray-900">{size}</p>
                             <p className="text-xs text-gray-500">classes</p>
-                            <p className="text-xs text-emerald-600">{discount}% off</p>
+                            <p className="text-xs" style={accentTextStyle}>{discount}% off</p>
                           </button>
                         )
                       })}
@@ -1371,7 +1377,7 @@ export default function BookingPage() {
                         {autoRenew && (
                           <div className="flex justify-between">
                             <span className="text-gray-500">Auto-renew</span>
-                            <span className="text-emerald-600">Enabled</span>
+                            <span style={accentTextStyle}>Enabled</span>
                           </div>
                         )}
                       </>
@@ -1386,11 +1392,16 @@ export default function BookingPage() {
                         {bookingType === "recurring" && (
                           <span className="text-gray-400 line-through">{formatPrice(selectedClass?.price ?? 0)}</span>
                         )}
-                        <span className={`text-lg font-semibold ${bookingType === "recurring" ? "text-emerald-600" : "text-violet-600"}`}>{formatPrice(totalPrice)}</span>
+                        <span
+                          className="text-lg font-semibold"
+                          style={bookingType === "recurring" ? accentTextStyle : undefined}
+                        >
+                          {formatPrice(totalPrice)}
+                        </span>
                       </span>
                     </div>
                     {bookingType === "single" && useCredit && (
-                      <p className="text-xs text-emerald-600">Using 1 class credit for this booking.</p>
+                      <p className="text-xs" style={accentTextStyle}>Using 1 class credit for this booking.</p>
                     )}
                   </div>
                 </div>
