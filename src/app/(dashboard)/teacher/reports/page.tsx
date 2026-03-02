@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, TrendingUp, Users, Star, Calendar, DollarSign, BarChart3 } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 
 interface TeacherReportStats {
+  currency: string
   totalClasses: number
   totalStudents: number
   avgRating: number | null
@@ -17,6 +19,7 @@ interface TeacherReportStats {
 }
 
 const emptyStats: TeacherReportStats = {
+  currency: "usd",
   totalClasses: 0,
   totalStudents: 0,
   avgRating: null,
@@ -42,6 +45,7 @@ export default function TeacherReportsPage() {
         }
         const data = await response.json()
         setStats({
+          currency: data.currency ?? "usd",
           totalClasses: data.totalClasses ?? 0,
           totalStudents: data.totalStudents ?? 0,
           avgRating: typeof data.avgRating === "number" ? data.avgRating : null,
@@ -79,6 +83,7 @@ export default function TeacherReportsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
         <p className="text-gray-500 mt-1">Track your performance and growth</p>
+        <p className="text-xs text-gray-400 mt-2">Month-to-date performance for your classes and clients.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -131,7 +136,7 @@ export default function TeacherReportsPage() {
                 <DollarSign className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">${stats.revenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.revenue, stats.currency)}</p>
                 <p className="text-sm text-gray-500">Revenue Generated</p>
               </div>
             </div>
@@ -211,7 +216,8 @@ export default function TeacherReportsPage() {
           </CardHeader>
           <CardContent>
             {stats.monthlyClasses.length > 0 ? (
-              <div className="flex items-end justify-between h-32 gap-2 sm:gap-4">
+              <div className="app-scrollbar overflow-x-auto pb-1">
+                <div className="flex min-w-[320px] items-end justify-between h-32 gap-2 sm:gap-4">
                 {stats.monthlyClasses.map((month, i) => {
                   const height = (month.count / maxMonthlyCount) * 100
                   return (
@@ -222,6 +228,7 @@ export default function TeacherReportsPage() {
                     </div>
                   )
                 })}
+                </div>
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">

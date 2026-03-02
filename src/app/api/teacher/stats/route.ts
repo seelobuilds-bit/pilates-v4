@@ -25,7 +25,13 @@ export async function GET() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const sixMonthWindowStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-    const [upcomingClassesRaw, recentClasses, monthClasses, monthBookings, sixMonthClasses] = await Promise.all([
+    const [studio, upcomingClassesRaw, recentClasses, monthClasses, monthBookings, sixMonthClasses] = await Promise.all([
+      db.studio.findUnique({
+        where: { id: studioId },
+        select: {
+          stripeCurrency: true,
+        },
+      }),
       db.classSession.findMany({
         where: {
           teacherId,
@@ -220,6 +226,7 @@ export async function GET() {
       .slice(0, 5)
 
     return NextResponse.json({
+      currency: (studio?.stripeCurrency || "usd").toLowerCase(),
       totalClasses: monthClasses.length,
       totalStudents: uniqueStudents.size,
       avgRating: null,
@@ -240,7 +247,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

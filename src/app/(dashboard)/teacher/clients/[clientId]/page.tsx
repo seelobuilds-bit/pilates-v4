@@ -67,7 +67,7 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
   const [savingStaffNotes, setSavingStaffNotes] = useState(false)
   
   // Message compose
-  const [messageType, setMessageType] = useState<"email" | "sms">("email")
+  const [messageType, setMessageType] = useState<"chat" | "email" | "sms">("chat")
   const [emailSubject, setEmailSubject] = useState("")
   const [messageBody, setMessageBody] = useState("")
   const [sending, setSending] = useState(false)
@@ -320,7 +320,16 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
           {/* Message Type Toggle */}
           <div className="p-4 bg-white border-b flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
             <span className="text-sm font-medium text-gray-700">Send via:</span>
-            <div className="flex gap-2">
+            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
+              <Button
+                size="sm"
+                variant={messageType === "chat" ? "default" : "outline"}
+                onClick={() => setMessageType("chat")}
+                className={messageType === "chat" ? "bg-violet-600 hover:bg-violet-700" : ""}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Chat
+              </Button>
               <Button
                 size="sm"
                 variant={messageType === "email" ? "default" : "outline"}
@@ -434,7 +443,13 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
             )}
             <div className="flex items-end gap-3">
               <Textarea
-                placeholder={messageType === "email" ? "Write your email..." : "Write your SMS..."}
+                placeholder={
+                  messageType === "chat"
+                    ? "Write a chat message..."
+                    : messageType === "email"
+                      ? "Write your email..."
+                      : "Write your SMS..."
+                }
                 value={messageBody}
                 onChange={(e) => setMessageBody(e.target.value)}
                 rows={3}
@@ -443,7 +458,13 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               <Button
                 onClick={sendMessage}
                 disabled={sending || !messageBody.trim() || (messageType === "email" && !emailSubject.trim())}
-                className={`shrink-0 ${messageType === "email" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}
+                className={`shrink-0 ${
+                  messageType === "chat"
+                    ? "bg-violet-600 hover:bg-violet-700"
+                    : messageType === "email"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
                 {sending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -453,7 +474,9 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
               </Button>
             </div>
             <p className="text-xs text-gray-400">
-              💡 All messages are shared - HQ and other teachers can see this conversation
+              {messageType === "chat"
+                ? "Chat stays inside the shared inbox thread. Email and SMS also appear here after sending."
+                : "All messages are shared - HQ and other teachers can see this conversation"}
             </p>
           </div>
         </div>
@@ -623,7 +646,6 @@ export default function TeacherClientDetailPage({ params }: { params: Promise<{ 
     </div>
   )
 }
-
 
 
 

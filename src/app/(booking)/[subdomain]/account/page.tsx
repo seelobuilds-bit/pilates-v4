@@ -1450,7 +1450,7 @@ export default function AccountPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border shadow-sm p-1 flex w-full flex-wrap gap-1">
+          <TabsList className="app-scrollbar bg-white border shadow-sm p-1 flex w-full flex-nowrap gap-1 overflow-x-auto justify-start">
             <TabsTrigger value="bookings" className="gap-2 shrink-0">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Bookings</span>

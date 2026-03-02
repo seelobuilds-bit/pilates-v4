@@ -8,13 +8,17 @@ import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobi
 
 const PERIOD_OPTIONS = [7, 30, 90] as const
 
+function formatAsCurrency(value: number, currency = "usd") {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: Math.abs(value % 1) > 0 ? 2 : 0,
+  }).format(value)
+}
+
 function formatMetricValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(metric.value)
+    return formatAsCurrency(metric.value, currency)
   }
 
   if (metric.format === "percent") {
@@ -34,6 +38,18 @@ function formatDate(value: string) {
   }).format(date)
 }
 
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date)
+}
+
 function changeBadge(metric: MobileReportMetric) {
   if (metric.changePct > 0) {
     return { label: `+${metric.changePct}%`, backgroundColor: "#dcfce7", color: "#166534" }
@@ -47,11 +63,7 @@ function changeBadge(metric: MobileReportMetric) {
 function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = "usd") {
   const sign = delta > 0 ? "+" : delta < 0 ? "-" : ""
   if (metric.format === "currency") {
-    const formatted = new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(Math.abs(delta))
+    const formatted = formatAsCurrency(Math.abs(delta), currency)
     return `${sign}${formatted}`
   }
   if (metric.format === "percent") {
@@ -150,6 +162,14 @@ export default function ReportMetricDetailScreen() {
       { label: "Low", value: low },
     ]
   }, [metric, metricSeries])
+  const detailSummary = useMemo(() => {
+    if (!data || !metric) return []
+    return [
+      { label: "Window", value: `${data.periodDays} days` },
+      { label: "Metric", value: metric.label },
+      { label: "Updated", value: new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) },
+    ]
+  }, [data, metric])
 
   return (
     <ScrollView
@@ -159,6 +179,18 @@ export default function ReportMetricDetailScreen() {
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Metric Detail</Text>
         <Text style={styles.subtitle}>Current performance for selected period</Text>
+        {detailSummary.length > 0 ? (
+          <View style={styles.summaryRow}>
+            {detailSummary.map((item) => (
+              <View key={item.label} style={styles.summaryPill}>
+                <Text style={styles.summaryLabel}>{item.label}</Text>
+                <Text style={[styles.summaryValue, { color: primaryColor }]} numberOfLines={1}>
+                  {item.value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         <View style={styles.periodRow}>
           {PERIOD_OPTIONS.map((option) => {
             const selected = option === days
@@ -198,7 +230,7 @@ export default function ReportMetricDetailScreen() {
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Period Context</Text>
             <Text style={styles.metaText}>Window: {formatDate(data.range.start)} - {formatDate(data.range.end)}</Text>
-            <Text style={styles.metaText}>Generated: {formatDate(data.generatedAt)}</Text>
+            <Text style={styles.metaText}>Generated: {formatDateTime(data.generatedAt)}</Text>
             <Text style={styles.metaText}>Role: {data.role}</Text>
           </View>
 
@@ -315,6 +347,32 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: mobileTheme.colors.textMuted,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
+  },
+  summaryPill: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  summaryLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  summaryValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    maxWidth: 140,
   },
   periodRow: {
     flexDirection: "row",

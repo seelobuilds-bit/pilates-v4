@@ -32,6 +32,25 @@ function formatDateTime(value: string) {
   }).format(date)
 }
 
+function formatTimeRange(startValue: string, endValue: string) {
+  const start = new Date(startValue)
+  const end = new Date(endValue)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "-"
+  const date = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(start)
+  const time = `${start.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  })} - ${end.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  })}`
+  return `${date} • ${time}`
+}
+
 function formatStatus(status: string) {
   return status.replaceAll("_", " ")
 }
@@ -55,6 +74,18 @@ export default function ScheduleSessionDetailScreen() {
   const currency = normalizeCurrencyCode(data?.studio.currency || bootstrap?.studio.currency || user?.studio.currency)
   const isClient = data?.role === "CLIENT"
   const isPaidClass = (data?.session.classType.price || 0) > 0
+  const locationSummary = useMemo(() => {
+    if (!data?.session) return null
+    return [
+      data.session.location.name,
+      data.session.location.address,
+      data.session.location.city,
+      data.session.location.state,
+      data.session.location.zipCode,
+    ]
+      .filter((value) => typeof value === "string" && value.trim().length > 0)
+      .join(", ")
+  }, [data?.session])
 
   const loadDetail = useCallback(
     async (isRefresh = false) => {
@@ -136,14 +167,24 @@ export default function ScheduleSessionDetailScreen() {
         {data?.session ? (
           <>
             <Text style={styles.nameText}>{data.session.classType.name}</Text>
-            <Text style={styles.metaText}>{formatDateTime(data.session.startTime)} - {formatDateTime(data.session.endTime)}</Text>
+            <Text style={styles.metaText}>{formatTimeRange(data.session.startTime, data.session.endTime)}</Text>
             <Text style={styles.metaText}>{data.session.teacher.firstName} {data.session.teacher.lastName} - {data.session.location.name}</Text>
-            <Text style={styles.metaText}>
-              {data.session.bookedCount}/{data.session.capacity} booked • {data.session.remainingSpots} spots left
-            </Text>
-            <Text style={styles.metaText}>
-              {data.session.classType.price > 0 ? formatCurrency(data.session.classType.price, currency) : "Free class"}
-            </Text>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryChip}>
+                <Text style={styles.summaryLabel}>Booked</Text>
+                <Text style={[styles.summaryValue, { color: primaryColor }]}>{data.session.bookedCount}/{data.session.capacity}</Text>
+              </View>
+              <View style={styles.summaryChip}>
+                <Text style={styles.summaryLabel}>Open</Text>
+                <Text style={[styles.summaryValue, { color: primaryColor }]}>{data.session.remainingSpots}</Text>
+              </View>
+              <View style={styles.summaryChip}>
+                <Text style={styles.summaryLabel}>Price</Text>
+                <Text style={[styles.summaryValue, { color: primaryColor }]}>
+                  {data.session.classType.price > 0 ? formatCurrency(data.session.classType.price, currency) : "Free"}
+                </Text>
+              </View>
+            </View>
           </>
         ) : null}
       </View>
@@ -160,9 +201,7 @@ export default function ScheduleSessionDetailScreen() {
             <Text style={styles.sectionTitle}>Class Info</Text>
             <Text style={styles.metaText}>Duration: {data.session.classType.duration} mins</Text>
             {data.session.classType.description ? <Text style={styles.metaText}>{data.session.classType.description}</Text> : null}
-            <Text style={styles.metaText}>
-              Location: {data.session.location.name}, {data.session.location.address}, {data.session.location.city}, {data.session.location.state} {data.session.location.zipCode}
-            </Text>
+            {locationSummary ? <Text style={styles.metaText}>Location: {locationSummary}</Text> : null}
             {data.session.notes ? <Text style={styles.metaText}>Notes: {data.session.notes}</Text> : null}
             <Text style={styles.metaText}>Waitlist: {data.session.waitlistCount}</Text>
           </View>
@@ -256,6 +295,31 @@ const styles = StyleSheet.create({
   metaText: {
     color: mobileTheme.colors.textSubtle,
     fontSize: 12,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  summaryChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  summaryLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  summaryValue: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   sectionCard: {
     borderWidth: 1,
