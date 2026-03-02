@@ -28,10 +28,12 @@ function normalizeHexColor(value: string) {
 
 function formatPlanPrice(amount?: number | null, currency?: string | null) {
   if (typeof amount !== "number") return null
-  return new Intl.NumberFormat("en-US", {
+  const normalizedCurrency = String(currency || "USD").trim().toUpperCase()
+  return new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency: (currency || "USD").toUpperCase(),
-    minimumFractionDigits: 2,
+    currency: normalizedCurrency,
+    minimumFractionDigits: Math.abs(amount % 1) > 0 ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(amount)
 }
 

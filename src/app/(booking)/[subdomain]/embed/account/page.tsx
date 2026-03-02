@@ -62,6 +62,16 @@ interface Client {
   token?: string
 }
 
+interface ClientInboxMessage {
+  id: string
+  channel: "CHAT" | "EMAIL" | "SMS"
+  direction: "INBOUND" | "OUTBOUND"
+  subject?: string | null
+  body: string
+  fromName?: string | null
+  createdAt: string
+}
+
 export default function EmbedAccountPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -74,6 +84,11 @@ export default function EmbedAccountPage() {
   const [client, setClient] = useState<Client | null>(null)
   const [embedClientToken, setEmbedClientToken] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [inboxMessages, setInboxMessages] = useState<ClientInboxMessage[]>([])
+  const [newInboxMessage, setNewInboxMessage] = useState("")
+  const [inboxLoading, setInboxLoading] = useState(false)
+  const [sendingInbox, setSendingInbox] = useState(false)
+  const [inboxError, setInboxError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
@@ -162,9 +177,45 @@ export default function EmbedAccountPage() {
     }
   }, [embedAuthHeaders, subdomain])
 
+  const fetchInbox = useCallback(async () => {
+    if (!embedClientToken) {
+      setInboxMessages([])
+      setInboxError(null)
+      return
+    }
+
+    setInboxLoading(true)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/inbox`, {
+        headers: embedAuthHeaders,
+      })
+      if (!res.ok) {
+        throw new Error("Failed to load inbox")
+      }
+      const data = await res.json()
+      setInboxMessages(data.messages || [])
+      setInboxError(null)
+    } catch (error) {
+      console.error("Failed to fetch embed inbox:", error)
+      setInboxError("Failed to load inbox")
+    } finally {
+      setInboxLoading(false)
+    }
+  }, [embedAuthHeaders, embedClientToken, subdomain])
+
   useEffect(() => {
     void fetchClientAndBookings()
   }, [fetchClientAndBookings])
+
+  useEffect(() => {
+    if (!client) return
+    void fetchInbox()
+    const interval = window.setInterval(() => {
+      void fetchInbox()
+    }, 5000)
+
+    return () => window.clearInterval(interval)
+  }, [client, fetchInbox])
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault()
@@ -241,6 +292,38 @@ export default function EmbedAccountPage() {
     setEmbedClientToken(null)
     setClient(null)
     setBookings([])
+    setInboxMessages([])
+  }
+
+  async function handleSendInboxMessage(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newInboxMessage.trim() || sendingInbox) return
+
+    setSendingInbox(true)
+    try {
+      const res = await fetch(`/api/booking/${subdomain}/inbox`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...embedAuthHeaders,
+        },
+        body: JSON.stringify({
+          message: newInboxMessage.trim(),
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to send message")
+      }
+
+      setNewInboxMessage("")
+      await fetchInbox()
+    } catch (error) {
+      console.error("Failed to send embed inbox message:", error)
+      setInboxError("Failed to send message")
+    } finally {
+      setSendingInbox(false)
+    }
   }
 
   const upcomingBookings = bookings.filter(
@@ -403,6 +486,74 @@ export default function EmbedAccountPage() {
             <p className="text-sm text-gray-500">Signed in as</p>
             <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
             <p className="text-sm" style={{ color: primaryColor }}>{client.email}</p>
+            <p className="text-xs text-gray-500 mt-2">Credits available: {client.credits ?? 0}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Inbox</h2>
+                <p className="text-xs text-gray-500">Message the studio directly here.</p>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                Chat only
+              </Badge>
+            </div>
+
+            <div className="rounded-xl border bg-gray-50 p-3 space-y-3 max-h-[320px] overflow-y-auto">
+              {inboxLoading && inboxMessages.length === 0 ? (
+                <div className="py-6 text-center text-sm text-gray-500">Loading inbox...</div>
+              ) : inboxMessages.length === 0 ? (
+                <div className="py-6 text-center text-sm text-gray-500">No messages yet. Start the conversation.</div>
+              ) : (
+                inboxMessages.map((message) => (
+                  <div key={message.id} className={`flex ${message.direction === "INBOUND" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm ${
+                        message.direction === "INBOUND" ? "text-white rounded-br-md" : "bg-white border rounded-bl-md"
+                      }`}
+                      style={message.direction === "INBOUND" ? { backgroundColor: primaryColor } : undefined}
+                    >
+                      <div className={`flex items-center gap-2 mb-1 text-[11px] ${message.direction === "INBOUND" ? "text-white/75" : "text-gray-500"}`}>
+                        <span>{message.direction === "INBOUND" ? "You" : message.fromName || "Studio"}</span>
+                        <span>{message.channel === "CHAT" ? "Chat" : message.channel}</span>
+                      </div>
+                      {message.subject ? <p className="font-medium mb-1">{message.subject}</p> : null}
+                      <p className="whitespace-pre-wrap">{message.body}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {inboxError ? <p className="text-xs text-red-600">{inboxError}</p> : null}
+
+            <form onSubmit={handleSendInboxMessage} className="space-y-3">
+              <Textarea
+                value={newInboxMessage}
+                onChange={(e) => setNewInboxMessage(e.target.value)}
+                rows={3}
+                className="text-sm"
+                placeholder="Write a message..."
+              />
+              <Button
+                type="submit"
+                className="w-full h-10"
+                style={{ backgroundColor: primaryColor }}
+                disabled={sendingInbox || !newInboxMessage.trim()}
+              >
+                {sendingInbox ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Message"
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 

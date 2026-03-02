@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
@@ -130,6 +130,7 @@ export default function ScheduleScreen() {
   const [items, setItems] = useState<MobileScheduleItem[]>([])
   const [search, setSearch] = useState("")
   const [windowFilter, setWindowFilter] = useState<"ALL" | "TODAY" | "WEEK">("ALL")
+  const [selectedDateKey, setSelectedDateKey] = useState<string>("ALL")
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -292,7 +293,7 @@ export default function ScheduleScreen() {
     } as const
   }, [searchScopedItems])
 
-  const filteredItems = useMemo(() => {
+  const windowScopedItems = useMemo(() => {
     const now = new Date()
     const todayStart = new Date(now)
     todayStart.setHours(0, 0, 0, 0)
@@ -312,6 +313,38 @@ export default function ScheduleScreen() {
       return true
     })
   }, [searchScopedItems, windowFilter])
+
+  const dateOptions = useMemo(() => {
+    const seen = new Set<string>()
+    return windowScopedItems
+      .map((item) => {
+        const date = new Date(item.startTime)
+        const key = date.toISOString().slice(0, 10)
+        if (seen.has(key)) return null
+        seen.add(key)
+        return {
+          key,
+          label: date.toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          }),
+        }
+      })
+      .filter((value): value is { key: string; label: string } => Boolean(value))
+  }, [windowScopedItems])
+
+  useEffect(() => {
+    if (selectedDateKey === "ALL") return
+    if (!dateOptions.some((option) => option.key === selectedDateKey)) {
+      setSelectedDateKey("ALL")
+    }
+  }, [dateOptions, selectedDateKey])
+
+  const filteredItems = useMemo(() => {
+    if (selectedDateKey === "ALL") return windowScopedItems
+    return windowScopedItems.filter((item) => item.startTime.slice(0, 10) === selectedDateKey)
+  }, [selectedDateKey, windowScopedItems])
 
   return (
     <View style={styles.container}>
@@ -360,6 +393,39 @@ export default function ScheduleScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {dateOptions.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateStrip}>
+          <Pressable
+            style={[
+              styles.dateChip,
+              selectedDateKey === "ALL" && [styles.dateChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+            ]}
+            onPress={() => setSelectedDateKey("ALL")}
+          >
+            <Text style={[styles.dateChipText, selectedDateKey === "ALL" && [styles.dateChipTextActive, { color: primaryColor }]]}>All dates</Text>
+          </Pressable>
+          {dateOptions.map((option) => (
+            <Pressable
+              key={option.key}
+              style={[
+                styles.dateChip,
+                selectedDateKey === option.key && [styles.dateChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+              ]}
+              onPress={() => setSelectedDateKey(option.key)}
+            >
+              <Text
+                style={[
+                  styles.dateChipText,
+                  selectedDateKey === option.key && [styles.dateChipTextActive, { color: primaryColor }],
+                ]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
 
       {isClient ? (
         <View style={styles.modeRow}>
@@ -473,6 +539,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   filterButtonTextActive: {
+    fontWeight: "700",
+  },
+  dateStrip: {
+    gap: 8,
+    paddingBottom: 2,
+  },
+  dateChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  dateChipActive: {
+    borderWidth: 1,
+  },
+  dateChipText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  dateChipTextActive: {
     fontWeight: "700",
   },
   modeRow: {

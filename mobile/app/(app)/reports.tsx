@@ -17,13 +17,25 @@ const METRIC_TREND_FILTER_OPTIONS = [
   { id: "declining", label: "Declining" },
 ] as const
 
+function formatRangeDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function formatAsCurrency(value: number, currency = "usd") {
+  const rounded = Math.abs(value % 1) > 0 ? value : Math.round(value)
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: Math.abs(value % 1) > 0 ? 2 : 0,
+  }).format(rounded)
+}
+
 function formatMetricValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(metric.value)
+    return formatAsCurrency(metric.value, currency)
   }
 
   if (metric.format === "percent") {
@@ -35,11 +47,7 @@ function formatMetricValue(metric: MobileReportMetric, currency = "usd") {
 
 function formatPreviousValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(metric.previousValue)
+    return formatAsCurrency(metric.previousValue, currency)
   }
 
   if (metric.format === "percent") {
@@ -63,11 +71,7 @@ function trendDirectionLabel(startValue: number, endValue: number, metric: Mobil
   const delta = endValue - startValue
   const sign = delta > 0 ? "+" : delta < 0 ? "-" : ""
   if (metric.format === "currency") {
-    const formattedAbs = new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(Math.abs(delta))
+    const formattedAbs = formatAsCurrency(Math.abs(delta), currency)
     return `${sign}${formattedAbs}`
   }
   if (metric.format === "percent") {
@@ -127,6 +131,20 @@ export default function ReportsScreen() {
   }, [user?.role])
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
+  const reportSummary = useMemo(() => {
+    if (!data) return null
+    return [
+      { label: "Window", value: `${data.periodDays} days` },
+      { label: "Range", value: `${formatRangeDate(data.range.start)} - ${formatRangeDate(data.range.end)}` },
+      {
+        label: "Updated",
+        value: new Date(data.generatedAt).toLocaleTimeString(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      },
+    ]
+  }, [data])
   const metricFilterCounts = useMemo(() => {
     const metrics = data?.metrics ?? []
     return {
@@ -145,6 +163,7 @@ export default function ReportsScreen() {
     if (metricOrder === "default") return filtered
     return [...filtered].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
   }, [data?.metrics, metricOrder, metricTrendFilter])
+  const topMetric = visibleMetrics[0] || data?.metrics?.[0] || null
   const hasCustomView = metricOrder !== "default" || metricTrendFilter !== "all"
 
   return (
@@ -156,6 +175,16 @@ export default function ReportsScreen() {
         <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.26), backgroundColor: withOpacity(primaryColor, 0.1) }]}>
           <Text style={styles.title}>Reports</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
+          {reportSummary ? (
+            <View style={styles.summaryRow}>
+              {reportSummary.map((item) => (
+                <View key={item.label} style={styles.summaryPill}>
+                  <Text style={styles.summaryLabel}>{item.label}</Text>
+                  <Text style={[styles.summaryValue, { color: primaryColor }]}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           <View style={styles.periodRow}>
             {PERIOD_OPTIONS.map((option) => {
               const selected = option === days
@@ -307,7 +336,12 @@ export default function ReportsScreen() {
             </View>
 
             <View style={styles.sectionCard}>
-              <Text style={styles.emptyText}>Mobile reports are fully available in-app for these key metrics.</Text>
+              <Text style={styles.sectionTitle}>Snapshot</Text>
+              <Text style={styles.emptyText}>
+                {topMetric
+                  ? `Leading metric: ${topMetric.label} at ${formatMetricValue(topMetric, currency)}. Tap any metric card for the detailed trend view.`
+                  : "Tap any metric card for the detailed trend view."}
+              </Text>
             </View>
           </>
         ) : (
@@ -344,6 +378,31 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: mobileTheme.colors.textMuted,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
+  },
+  summaryPill: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  summaryLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  summaryValue: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   periodRow: {
     flexDirection: "row",
