@@ -8,7 +8,6 @@ import {
   buildReportRequestParams,
   defaultCustomRange,
   formatDateInput,
-  MOBILE_REPORT_RANGE_PRESETS,
   parseDateInput,
   resolveReportRange,
   type MobileReportRangePreset,
@@ -83,6 +82,12 @@ function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = 
 function isValidPreset(value: string | undefined): value is MobileReportRangePreset {
   return value === "TODAY" || value === "THIS_MONTH" || value === "LAST_30" || value === "CUSTOM"
 }
+
+const RANGE_SHORTCUTS: { id: Exclude<MobileReportRangePreset, "CUSTOM">; label: string }[] = [
+  { id: "TODAY", label: "Today" },
+  { id: "THIS_MONTH", label: "This month" },
+  { id: "LAST_30", label: "Last 30d" },
+]
 
 export default function ReportMetricDetailScreen() {
   const { token, user } = useAuth()
@@ -214,6 +219,7 @@ export default function ReportMetricDetailScreen() {
         start: activeRangePicker === "start" ? safeDate : current.start,
         end: activeRangePicker === "end" ? safeDate : current.end,
       }))
+      setRangePreset("CUSTOM")
       setActiveRangePicker(null)
     },
     [activeRangePicker]
@@ -239,35 +245,53 @@ export default function ReportMetricDetailScreen() {
             ))}
           </View>
         ) : null}
-        <View style={styles.periodRow}>
-          {MOBILE_REPORT_RANGE_PRESETS.map((option) => {
+        <View style={styles.shortcutRow}>
+          {RANGE_SHORTCUTS.map((option) => {
             const selected = option.id === rangePreset
             return (
               <Pressable
                 key={option.id}
                 style={[
-                  styles.periodButton,
+                  styles.shortcutButton,
                   selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.16) } : null,
                 ]}
                 onPress={() => setRangePreset(option.id)}
               >
-                <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+                <Text style={[styles.shortcutButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
               </Pressable>
             )
           })}
         </View>
-        {rangePreset === "CUSTOM" ? (
-          <View style={styles.customRangeRow}>
-            <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
-              <Text style={styles.customDateLabel}>From</Text>
-              <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
-            </Pressable>
-            <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
-              <Text style={styles.customDateLabel}>To</Text>
-              <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
-            </Pressable>
-          </View>
-        ) : null}
+        <View style={styles.customRangeRow}>
+          <Pressable
+            style={styles.customDateButton}
+            onPress={() => {
+              if (rangePreset !== "CUSTOM") {
+                setCustomRange({ start: activeRange.start, end: activeRange.end })
+              }
+              setActiveRangePicker("start")
+            }}
+          >
+            <Text style={styles.customDateLabel}>From</Text>
+            <Text style={styles.customDateValue}>
+              {(rangePreset === "CUSTOM" ? customRange.start : activeRange.start).toLocaleDateString()}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.customDateButton}
+            onPress={() => {
+              if (rangePreset !== "CUSTOM") {
+                setCustomRange({ start: activeRange.start, end: activeRange.end })
+              }
+              setActiveRangePicker("end")
+            }}
+          >
+            <Text style={styles.customDateLabel}>To</Text>
+            <Text style={styles.customDateValue}>
+              {(rangePreset === "CUSTOM" ? customRange.end : activeRange.end).toLocaleDateString()}
+            </Text>
+          </Pressable>
+        </View>
         {activeRangePicker ? (
           <DateTimePicker
             value={activeRangePicker === "start" ? customRange.start : customRange.end}
@@ -412,24 +436,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  periodRow: {
+  shortcutRow: {
     flexDirection: "row",
     gap: 8,
-    flexWrap: "wrap",
     marginTop: 2,
   },
-  periodButton: {
+  shortcutButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     backgroundColor: mobileTheme.colors.surface,
     borderRadius: 999,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
+    flex: 1,
+    alignItems: "center",
   },
-  periodButtonText: {
+  shortcutButtonText: {
     color: mobileTheme.colors.textSubtle,
     fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11,
+    textAlign: "center",
   },
   customRangeRow: {
     flexDirection: "row",

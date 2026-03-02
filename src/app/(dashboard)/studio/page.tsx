@@ -47,6 +47,8 @@ function resolveDashboardRange(
   const customStartDate = parseDateInput(Array.isArray(customStartRaw) ? customStartRaw[0] : customStartRaw)
   const customEndDate = parseDateInput(Array.isArray(customEndRaw) ? customEndRaw[0] : customEndRaw)
 
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+
   if (periodKey === "custom" && customStartDate && customEndDate && customStartDate <= customEndDate) {
     const startDate = new Date(customStartDate)
     const endDate = new Date(customEndDate)
@@ -69,7 +71,7 @@ function resolveDashboardRange(
       label: "Today",
       compareLabel: "yesterday",
       startDate,
-      endDate: now,
+      endDate: startOfTomorrow,
       startDateISO: dateOnlyISO(startDate),
       endDateISO: dateOnlyISO(now),
     }
@@ -82,7 +84,7 @@ function resolveDashboardRange(
       label: "This month",
       compareLabel: "same period last month",
       startDate,
-      endDate: now,
+      endDate: startOfTomorrow,
       startDateISO: dateOnlyISO(startDate),
       endDateISO: dateOnlyISO(now),
     }
@@ -90,13 +92,13 @@ function resolveDashboardRange(
 
   const days = Number.parseInt(periodKey, 10)
   const resolvedDays = Number.isFinite(days) && days > 0 ? days : 30
-  const startDate = new Date(now.getTime() - resolvedDays * DAY_IN_MS)
+  const startDate = new Date(startOfTomorrow.getTime() - resolvedDays * DAY_IN_MS)
   return {
     key: periodKey,
     label: `Last ${resolvedDays} days`,
     compareLabel: `previous ${resolvedDays} days`,
     startDate,
-    endDate: now,
+    endDate: startOfTomorrow,
     startDateISO: dateOnlyISO(startDate),
     endDateISO: dateOnlyISO(now),
   }

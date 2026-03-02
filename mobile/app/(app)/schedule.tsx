@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
-import { FlatList, Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
@@ -341,7 +341,7 @@ export default function ScheduleScreen() {
   }, [selectedDateKey, windowScopedItems])
 
   const selectedDateLabel = useMemo(() => {
-    if (selectedDateKey === "ALL") return "All dates"
+    if (selectedDateKey === "ALL") return "Any date"
     const parsed = parseDateKey(selectedDateKey)
     if (!parsed) return selectedDateKey
     return parsed.toLocaleDateString(undefined, {
@@ -377,7 +377,7 @@ export default function ScheduleScreen() {
         style={styles.searchInput}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
+      <View style={styles.segmentRow}>
         {[
           { id: "ALL" as const, label: `All (${windowCounts.ALL})` },
           { id: "TODAY" as const, label: `Today (${windowCounts.TODAY})` },
@@ -388,19 +388,21 @@ export default function ScheduleScreen() {
             <Pressable
               key={option.id}
               style={[
-                styles.chipButton,
+                styles.segmentButton,
                 selected ? { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) } : null,
               ]}
               onPress={() => setWindowFilter(option.id)}
             >
-              <Text style={[styles.chipButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+              <Text style={[styles.segmentButtonText, selected ? { color: primaryColor } : null]} numberOfLines={1}>
+                {option.label}
+              </Text>
             </Pressable>
           )
         })}
-      </ScrollView>
+      </View>
 
       {isClient ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
+        <View style={styles.modeRow}>
           {[
             { id: "booked" as const, label: "My Bookings" },
             { id: "all" as const, label: "Browse Classes" },
@@ -410,22 +412,30 @@ export default function ScheduleScreen() {
               <Pressable
                 key={option.id}
                 style={[
-                  styles.chipButton,
+                  styles.modeButton,
                   selected ? { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) } : null,
                 ]}
                 onPress={() => setClientMode(option.id)}
               >
-                <Text style={[styles.chipButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
+                <Text style={[styles.modeButtonText, selected ? { color: primaryColor } : null]} numberOfLines={1}>
+                  {option.label}
+                </Text>
               </Pressable>
             )
           })}
-        </ScrollView>
+        </View>
       ) : null}
 
       <View style={styles.dateRow}>
         <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-          <Text style={styles.dateLabel}>Date</Text>
+          <Text style={styles.dateLabel}>Select date</Text>
           <Text style={styles.dateValue}>{selectedDateLabel}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.quickDateButton}
+          onPress={() => setSelectedDateKey(formatDateKey(startOfToday()))}
+        >
+          <Text style={[styles.quickDateButtonText, { color: primaryColor }]}>Today</Text>
         </Pressable>
         {selectedDateKey !== "ALL" ? (
           <Pressable style={styles.clearDateButton} onPress={() => setSelectedDateKey("ALL")}>
@@ -507,24 +517,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  chipStrip: {
+  segmentRow: {
+    flexDirection: "row",
     gap: 8,
-    paddingRight: 12,
   },
-  chipButton: {
+  segmentButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 999,
     backgroundColor: mobileTheme.colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  chipButtonText: {
+  segmentButtonText: {
     color: mobileTheme.colors.textMuted,
     fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11,
+    textAlign: "center",
+  },
+  modeRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  modeButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modeButtonText: {
+    color: mobileTheme.colors.textMuted,
+    fontWeight: "700",
+    fontSize: 11,
     textAlign: "center",
   },
   dateRow: {
@@ -560,6 +592,18 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  quickDateButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  quickDateButtonText: {
+    fontWeight: "700",
+    fontSize: 12,
   },
   clearDateButtonText: {
     fontWeight: "700",
