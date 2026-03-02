@@ -160,13 +160,6 @@ export default function SchedulePage() {
   const [reassignTeacherId, setReassignTeacherId] = useState<string>("")
   const [updatingSwapRequestId, setUpdatingSwapRequestId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (window.matchMedia("(max-width: 767px)").matches) {
-      setViewMode("list")
-    }
-  }, [])
-
   const weekDates = getWeekDates(weekOffset)
   
   // Toggle selection for a class

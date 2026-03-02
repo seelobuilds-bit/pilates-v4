@@ -830,10 +830,10 @@ export default function InboxPage() {
             {/* Compose Area */}
             <div className="shrink-0 border-t border-gray-200 bg-white p-3 pb-20 sm:p-4 sm:pb-4 lg:pr-28">
               {/* Message Type Toggle */}
-              <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-3">
+              <div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-100 p-1 mb-3">
                 <button
                   onClick={() => setComposeType("chat")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                  className={`flex items-center justify-center gap-1 py-2 rounded-md text-xs sm:text-sm transition-colors ${
                     composeType === "chat" 
                       ? "bg-white text-violet-600 shadow-sm font-medium" 
                       : "text-gray-500 hover:text-gray-900"
@@ -844,7 +844,7 @@ export default function InboxPage() {
                 </button>
                 <button
                   onClick={() => setComposeType("email")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                  className={`flex items-center justify-center gap-1 py-2 rounded-md text-xs sm:text-sm transition-colors ${
                     composeType === "email" 
                       ? "bg-white text-blue-600 shadow-sm font-medium" 
                       : "text-gray-500 hover:text-gray-900"
@@ -856,7 +856,7 @@ export default function InboxPage() {
                 <button
                   onClick={() => setComposeType("sms")}
                   disabled={!!(selectedClient && !selectedClient.phone)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                  className={`flex items-center justify-center gap-1 py-2 rounded-md text-xs sm:text-sm transition-colors ${
                     composeType === "sms" 
                       ? "bg-white text-green-600 shadow-sm font-medium" 
                       : "text-gray-500 hover:text-gray-900"

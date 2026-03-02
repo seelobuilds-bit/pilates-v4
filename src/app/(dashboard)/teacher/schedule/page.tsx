@@ -528,7 +528,8 @@ export default function TeacherSchedulePage() {
               )}
 
               {viewMode === "calendar" && (
-                <div className="hidden md:grid grid-cols-7 gap-3">
+                <div className="app-scrollbar overflow-x-auto pb-2">
+                <div className="grid min-w-[840px] grid-cols-7 gap-3">
               {/* Day Headers */}
               {weekDates.map((date, i) => {
                 const isToday = new Date().toDateString() === date.toDateString()
@@ -628,6 +629,7 @@ export default function TeacherSchedulePage() {
                   ) : null}
                 </div>
               ))}
+                </div>
                 </div>
               )}
             </>
@@ -819,7 +821,6 @@ export default function TeacherSchedulePage() {
     </div>
   )
 }
-
 
 
 
