@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
+import {
+  buildReportRequestParams,
+  defaultCustomRange,
+  formatDateInput,
+  MOBILE_REPORT_RANGE_PRESETS,
+  parseDateInput,
+  resolveReportRange,
+  type MobileReportRangePreset,
+} from "@/src/lib/report-range"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
 
-const PERIOD_OPTIONS = [7, 30, 90] as const
 function formatRangeDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
@@ -76,12 +85,20 @@ export default function ReportsScreen() {
   const { width } = useWindowDimensions()
   const primaryColor = getStudioPrimaryColor()
   const isNarrowScreen = width <= 360
-  const [days, setDays] = useState<7 | 30 | 90>(30)
+
+  const [rangePreset, setRangePreset] = useState<MobileReportRangePreset>("THIS_MONTH")
+  const [customRange, setCustomRange] = useState(() => defaultCustomRange())
+  const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const activeRange = useMemo(
+    () => resolveReportRange(rangePreset, customRange.start, customRange.end),
+    [customRange.end, customRange.start, rangePreset]
+  )
 
   const loadReports = useCallback(
     async (isRefresh = false) => {
@@ -97,7 +114,7 @@ export default function ReportsScreen() {
       setReportLoading(true)
       setError(null)
       try {
-        const response = await mobileApi.reports(token, { days })
+        const response = await mobileApi.reports(token, buildReportRequestParams(rangePreset, customRange.start, customRange.end))
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load reports"
@@ -108,7 +125,7 @@ export default function ReportsScreen() {
         setRefreshing(false)
       }
     },
-    [days, token]
+    [customRange.end, customRange.start, rangePreset, token]
   )
 
   useEffect(() => {
@@ -125,21 +142,40 @@ export default function ReportsScreen() {
   const reportSummary = useMemo(() => {
     if (!data) return null
     return [
-      { label: "Window", value: `${data.periodDays} days` },
+      { label: "Window", value: activeRange.label },
       { label: "Range", value: `${formatRangeDate(data.range.start)} - ${formatRangeDate(data.range.end)}` },
       {
         label: "Updated",
         value: reportLoading
           ? "Updating..."
           : new Date(data.generatedAt).toLocaleTimeString(undefined, {
-          hour: "numeric",
-          minute: "2-digit",
+              hour: "numeric",
+              minute: "2-digit",
             }),
       },
     ]
-  }, [data, reportLoading])
+  }, [activeRange.label, data, reportLoading])
   const visibleMetrics = data?.metrics ?? []
   const topMetric = visibleMetrics[0] || data?.metrics?.[0] || null
+
+  const handleRangePickerChange = useCallback(
+    (event: DateTimePickerEvent, selectedDate?: Date) => {
+      if (event.type === "dismissed" || !selectedDate || !activeRangePicker) {
+        setActiveRangePicker(null)
+        return
+      }
+
+      const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
+      setCustomRange((current) => ({
+        start: activeRangePicker === "start" ? safeDate : current.start,
+        end: activeRangePicker === "end" ? safeDate : current.end,
+      }))
+      setActiveRangePicker(null)
+    },
+    [activeRangePicker]
+  )
+
+  const currentRangeParams = useMemo(() => buildReportRequestParams(rangePreset, customRange.start, customRange.end), [customRange.end, customRange.start, rangePreset])
 
   return (
     <View style={styles.screen}>
@@ -161,24 +197,46 @@ export default function ReportsScreen() {
             </View>
           ) : null}
           <View style={styles.periodRow}>
-            {PERIOD_OPTIONS.map((option) => {
-              const selected = option === days
+            {MOBILE_REPORT_RANGE_PRESETS.map((option) => {
+              const selected = option.id === rangePreset
               return (
                 <Pressable
-                  key={option}
+                  key={option.id}
                   style={[
                     styles.periodButton,
                     selected
                       ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.16) }
                       : null,
                   ]}
-                  onPress={() => setDays(option)}
+                  onPress={() => setRangePreset(option.id)}
                 >
-                  <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option}d</Text>
+                  <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
                 </Pressable>
               )
             })}
           </View>
+          {rangePreset === "CUSTOM" ? (
+            <View style={styles.customRangeRow}>
+              <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
+                <Text style={styles.customDateLabel}>From</Text>
+                <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
+              </Pressable>
+              <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
+                <Text style={styles.customDateLabel}>To</Text>
+                <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {activeRangePicker ? (
+            <DateTimePicker
+              value={activeRangePicker === "start" ? customRange.start : customRange.end}
+              mode="date"
+              display={Platform.OS === "ios" ? "compact" : "default"}
+              maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
+              minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
+              onChange={handleRangePickerChange}
+            />
+          ) : null}
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -204,7 +262,11 @@ export default function ReportsScreen() {
                   <Pressable
                     key={metric.id}
                     style={[styles.metricCard, isNarrowScreen ? styles.metricCardNarrow : null]}
-                    onPress={() => router.push(`/(app)/reports/${metric.id}?days=${days}` as never)}
+                    onPress={() =>
+                      router.push(
+                        `/(app)/reports/${metric.id}?preset=${rangePreset}&startDate=${encodeURIComponent(currentRangeParams.startDate)}&endDate=${encodeURIComponent(currentRangeParams.endDate)}` as never
+                      )
+                    }
                   >
                     <View style={styles.metricHeader}>
                       <Text style={styles.metricLabel}>{metric.label}</Text>
@@ -213,9 +275,7 @@ export default function ReportsScreen() {
                     <Text style={styles.metricValue}>{formatMetricValue(metric, currency)}</Text>
                     <Text style={styles.metricPrevious}>Prev {formatPreviousValue(metric, currency)}</Text>
                     {hasTrend ? (
-                      <Text style={styles.metricTrend}>
-                        Trend {trendDirectionLabel(trendStart, trendEnd, metric, currency)}
-                      </Text>
+                      <Text style={styles.metricTrend}>Trend {trendDirectionLabel(trendStart, trendEnd, metric, currency)}</Text>
                     ) : null}
                     {sparklineValues.length > 1 ? (
                       <View style={styles.sparklineRow}>
@@ -251,7 +311,7 @@ export default function ReportsScreen() {
             ) : null}
 
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Highlights ({days}d)</Text>
+              <Text style={styles.sectionTitle}>Highlights</Text>
               {data.highlights.length === 0 ? (
                 <Text style={styles.emptyText}>No highlights yet for this period.</Text>
               ) : (
@@ -336,17 +396,7 @@ const styles = StyleSheet.create({
   periodRow: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 2,
-  },
-  orderRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 2,
-  },
-  filterRow: {
-    flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
     marginTop: 2,
   },
   periodButton: {
@@ -362,45 +412,31 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
-  orderButton: {
+  customRangeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  customDateButton: {
+    flex: 1,
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 999,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    gap: 2,
   },
-  orderButtonText: {
+  customDateLabel: {
     color: mobileTheme.colors.textSubtle,
-    fontWeight: "700",
     fontSize: 11,
-  },
-  filterButton: {
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  filterButtonText: {
-    color: mobileTheme.colors.textSubtle,
     fontWeight: "700",
-    fontSize: 11,
+    textTransform: "uppercase",
   },
-  resetViewButton: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 2,
-    backgroundColor: mobileTheme.colors.surface,
-  },
-  resetViewButtonText: {
-    fontWeight: "700",
-    fontSize: 11,
+  customDateValue: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "600",
   },
   metricGrid: {
     flexDirection: "row",
@@ -504,32 +540,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 13,
   },
-  actionButton: {
-    borderRadius: mobileTheme.radius.lg,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonText: {
-    color: "white",
-    fontWeight: "700",
-  },
   errorText: {
     color: mobileTheme.colors.danger,
   },
   emptyCard: {
-    backgroundColor: mobileTheme.colors.surface,
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
     borderRadius: mobileTheme.radius.lg,
-    padding: 12,
-    gap: 3,
+    backgroundColor: mobileTheme.colors.surface,
+    padding: 14,
+    gap: 4,
   },
   emptyTitle: {
     color: mobileTheme.colors.text,
     fontWeight: "700",
   },
   emptyText: {
-    color: mobileTheme.colors.textSubtle,
+    color: mobileTheme.colors.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
   },
 })

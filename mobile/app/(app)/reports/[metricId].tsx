@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocalSearchParams } from "expo-router"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
+import {
+  buildReportRequestParams,
+  defaultCustomRange,
+  formatDateInput,
+  MOBILE_REPORT_RANGE_PRESETS,
+  parseDateInput,
+  resolveReportRange,
+  type MobileReportRangePreset,
+} from "@/src/lib/report-range"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
-
-const PERIOD_OPTIONS = [7, 30, 90] as const
 
 function formatAsCurrency(value: number, currency = "usd") {
   return new Intl.NumberFormat(undefined, {
@@ -72,24 +80,44 @@ function formatDeltaValue(delta: number, metric: MobileReportMetric, currency = 
   return `${sign}${Math.abs(Math.round(delta))}`
 }
 
+function isValidPreset(value: string | undefined): value is MobileReportRangePreset {
+  return value === "TODAY" || value === "THIS_MONTH" || value === "LAST_30" || value === "CUSTOM"
+}
+
 export default function ReportMetricDetailScreen() {
   const { token, user } = useAuth()
   const { width } = useWindowDimensions()
-  const { metricId, days: daysParam } = useLocalSearchParams<{ metricId?: string; days?: string }>()
+  const {
+    metricId,
+    preset: presetParam,
+    startDate: startDateParam,
+    endDate: endDateParam,
+  } = useLocalSearchParams<{ metricId?: string; preset?: string; startDate?: string; endDate?: string }>()
   const primaryColor = getStudioPrimaryColor()
   const isNarrowScreen = width <= 360
 
-  const initialDays = useMemo(() => {
-    const parsed = Number(daysParam || 30)
-    return parsed === 7 || parsed === 90 ? parsed : 30
-  }, [daysParam])
+  const initialCustomRange = useMemo(() => {
+    const fallback = defaultCustomRange()
+    return {
+      start: parseDateInput(startDateParam) || fallback.start,
+      end: parseDateInput(endDateParam) || fallback.end,
+    }
+  }, [endDateParam, startDateParam])
 
-  const [days, setDays] = useState<7 | 30 | 90>(initialDays)
+  const [rangePreset, setRangePreset] = useState<MobileReportRangePreset>(isValidPreset(presetParam) ? presetParam : "THIS_MONTH")
+  const [customRange, setCustomRange] = useState(initialCustomRange)
+  const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [showAllTrendPoints, setShowAllTrendPoints] = useState(false)
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const activeRange = useMemo(
+    () => resolveReportRange(rangePreset, customRange.start, customRange.end),
+    [customRange.end, customRange.start, rangePreset]
+  )
 
   const resolvedMetricId = useMemo(() => String(metricId || "").trim(), [metricId])
 
@@ -104,19 +132,21 @@ export default function ReportMetricDetailScreen() {
       if (isRefresh) setRefreshing(true)
       else setLoading(true)
 
+      setReportLoading(true)
       setError(null)
       try {
-        const response = await mobileApi.reports(token, { days })
+        const response = await mobileApi.reports(token, buildReportRequestParams(rangePreset, customRange.start, customRange.end))
         setData(response)
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load metric detail"
         setError(message)
       } finally {
+        setReportLoading(false)
         setLoading(false)
         setRefreshing(false)
       }
     },
-    [days, token]
+    [customRange.end, customRange.start, rangePreset, token]
   )
 
   useEffect(() => {
@@ -136,10 +166,6 @@ export default function ReportMetricDetailScreen() {
       }
     })
   }, [data, metric])
-  const metricSeriesMax = useMemo(
-    () => Math.max(1, ...metricSeries.map((point) => Math.abs(point.value))),
-    [metricSeries]
-  )
   const visibleMetricSeries = useMemo(() => {
     if (showAllTrendPoints || metricSeries.length <= 8) return metricSeries
     return metricSeries.slice(-8)
@@ -165,11 +191,33 @@ export default function ReportMetricDetailScreen() {
   const detailSummary = useMemo(() => {
     if (!data || !metric) return []
     return [
-      { label: "Window", value: `${data.periodDays} days` },
+      { label: "Window", value: activeRange.label },
       { label: "Metric", value: metric.label },
-      { label: "Updated", value: new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) },
+      {
+        label: "Updated",
+        value: reportLoading
+          ? "Updating..."
+          : new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
+      },
     ]
-  }, [data, metric])
+  }, [activeRange.label, data, metric, reportLoading])
+
+  const handleRangePickerChange = useCallback(
+    (event: DateTimePickerEvent, selectedDate?: Date) => {
+      if (event.type === "dismissed" || !selectedDate || !activeRangePicker) {
+        setActiveRangePicker(null)
+        return
+      }
+
+      const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
+      setCustomRange((current) => ({
+        start: activeRangePicker === "start" ? safeDate : current.start,
+        end: activeRangePicker === "end" ? safeDate : current.end,
+      }))
+      setActiveRangePicker(null)
+    },
+    [activeRangePicker]
+  )
 
   return (
     <ScrollView
@@ -178,7 +226,7 @@ export default function ReportMetricDetailScreen() {
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Metric Detail</Text>
-        <Text style={styles.subtitle}>Current performance for selected period</Text>
+        <Text style={styles.subtitle}>Current performance for the selected range</Text>
         {detailSummary.length > 0 ? (
           <View style={styles.summaryRow}>
             {detailSummary.map((item) => (
@@ -192,22 +240,44 @@ export default function ReportMetricDetailScreen() {
           </View>
         ) : null}
         <View style={styles.periodRow}>
-          {PERIOD_OPTIONS.map((option) => {
-            const selected = option === days
+          {MOBILE_REPORT_RANGE_PRESETS.map((option) => {
+            const selected = option.id === rangePreset
             return (
               <Pressable
-                key={option}
+                key={option.id}
                 style={[
                   styles.periodButton,
                   selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.16) } : null,
                 ]}
-                onPress={() => setDays(option)}
+                onPress={() => setRangePreset(option.id)}
               >
-                <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option}d</Text>
+                <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
               </Pressable>
             )
           })}
         </View>
+        {rangePreset === "CUSTOM" ? (
+          <View style={styles.customRangeRow}>
+            <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
+              <Text style={styles.customDateLabel}>From</Text>
+              <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
+            </Pressable>
+            <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
+              <Text style={styles.customDateLabel}>To</Text>
+              <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {activeRangePicker ? (
+          <DateTimePicker
+            value={activeRangePicker === "start" ? customRange.start : customRange.end}
+            mode="date"
+            display={Platform.OS === "ios" ? "compact" : "default"}
+            maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
+            minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
+            onChange={handleRangePickerChange}
+          />
+        ) : null}
       </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -258,69 +328,37 @@ export default function ReportMetricDetailScreen() {
                 {visibleMetricSeries.map((point, index) => {
                   const previousValue = index === 0 ? null : visibleMetricSeries[index - 1]?.value ?? null
                   const delta = previousValue === null ? null : point.value - previousValue
-                  const deltaTone = delta === null ? "muted" : delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral"
-                  const normalizedWidth = Math.round((Math.abs(point.value) / metricSeriesMax) * 100)
-                  const trendWidth = point.value === 0 ? 0 : Math.max(4, normalizedWidth)
-
                   return (
                     <View key={`${point.label}-${index}`} style={styles.trendRow}>
-                      <Text style={styles.trendLabel}>{point.label}</Text>
-                      <View style={styles.trendTrack}>
+                      <View style={styles.trendRowHeader}>
+                        <Text style={styles.trendLabel}>{point.label}</Text>
+                        <Text style={styles.trendValue}>{formatMetricValue({ ...metric, value: point.value }, currency)}</Text>
+                      </View>
+                      <View style={[styles.trendBarTrack, { backgroundColor: withOpacity(primaryColor, 0.12) }]}>
                         <View
                           style={[
-                            styles.trendFill,
+                            styles.trendBarFill,
                             {
-                              width: `${trendWidth}%`,
+                              backgroundColor: withOpacity(primaryColor, 0.76),
+                              width: `${Math.max(6, Math.round((Math.abs(point.value) / Math.max(1, ...metricSeries.map((seriesPoint) => Math.abs(seriesPoint.value)))) * 100))}%`,
                             },
                           ]}
                         />
                       </View>
-                      <View style={styles.trendValueGroup}>
-                        <Text style={styles.trendValue}>
-                          {formatMetricValue({ ...metric, value: point.value }, currency)}
-                        </Text>
-                        {delta === null ? (
-                          <Text style={[styles.trendDeltaText, styles.trendDeltaTextMuted]}>Start</Text>
-                        ) : (
-                          <Text
-                            style={[
-                              styles.trendDeltaText,
-                              deltaTone === "positive"
-                                ? styles.trendDeltaTextPositive
-                                : deltaTone === "negative"
-                                  ? styles.trendDeltaTextNegative
-                                  : styles.trendDeltaTextNeutral,
-                            ]}
-                          >
-                            {formatDeltaValue(delta, metric, currency)}
-                          </Text>
-                        )}
-                      </View>
+                      <Text style={styles.trendMeta}>
+                        {delta === null ? "Starting point" : `vs previous ${formatDeltaValue(delta, metric, currency)}`}
+                      </Text>
                     </View>
                   )
                 })}
               </>
             )}
           </View>
-
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Highlights</Text>
-            {data.highlights.length === 0 ? (
-              <Text style={styles.metaText}>No highlights yet for this period.</Text>
-            ) : (
-              data.highlights.map((item, index) => (
-                <View key={`${item.label}-${index}`} style={styles.highlightRow}>
-                  <Text style={styles.highlightLabel}>{item.label}</Text>
-                  <Text style={styles.highlightValue}>{item.value}</Text>
-                </View>
-              ))
-            )}
-          </View>
         </>
       ) : (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Metric not found</Text>
-          <Text style={styles.metaText}>This metric is not available for the selected period.</Text>
+          <Text style={styles.emptyTitle}>Metric unavailable</Text>
+          <Text style={styles.emptyText}>The selected metric could not be found for this range.</Text>
         </View>
       )}
     </ScrollView>
@@ -330,9 +368,9 @@ export default function ReportMetricDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    gap: 10,
-    backgroundColor: mobileTheme.colors.canvas,
+    gap: 12,
     paddingBottom: 24,
+    backgroundColor: mobileTheme.colors.canvas,
   },
   headerCard: {
     borderRadius: mobileTheme.radius.xl,
@@ -342,7 +380,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: mobileTheme.colors.text,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
   },
   subtitle: {
@@ -362,6 +400,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 2,
+    maxWidth: "48%",
   },
   summaryLabel: {
     color: mobileTheme.colors.textSubtle,
@@ -372,11 +411,11 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 12,
     fontWeight: "700",
-    maxWidth: 140,
   },
   periodRow: {
     flexDirection: "row",
     gap: 8,
+    flexWrap: "wrap",
     marginTop: 2,
   },
   periodButton: {
@@ -392,23 +431,49 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
+  customRangeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  customDateButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  customDateLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  customDateValue: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
   metricCard: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
-    borderRadius: mobileTheme.radius.lg,
+    borderRadius: mobileTheme.radius.xl,
     backgroundColor: mobileTheme.colors.surface,
-    padding: 12,
-    gap: 6,
+    padding: 14,
+    gap: 4,
   },
   metricHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 6,
+    gap: 8,
   },
   metricLabel: {
     color: mobileTheme.colors.textSubtle,
-    fontSize: 13,
+    fontSize: 12,
     flex: 1,
   },
   changeBadge: {
@@ -416,8 +481,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     borderRadius: 999,
     overflow: "hidden",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   metricValue: {
     color: mobileTheme.colors.text,
@@ -431,143 +496,118 @@ const styles = StyleSheet.create({
   sectionCard: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
-    borderRadius: mobileTheme.radius.lg,
+    borderRadius: mobileTheme.radius.xl,
     backgroundColor: mobileTheme.colors.surface,
-    padding: 12,
-    gap: 8,
+    padding: 14,
+    gap: 10,
   },
   sectionTitle: {
     color: mobileTheme.colors.text,
-    fontWeight: "700",
     fontSize: 14,
+    fontWeight: "700",
   },
-  highlightRow: {
-    borderTopWidth: 1,
-    borderTopColor: mobileTheme.colors.borderMuted,
-    paddingTop: 8,
-    gap: 2,
-  },
-  highlightLabel: {
+  metaText: {
     color: mobileTheme.colors.textMuted,
-    fontSize: 12,
-  },
-  highlightValue: {
-    color: mobileTheme.colors.text,
-    fontWeight: "600",
     fontSize: 13,
-  },
-  trendRow: {
-    borderTopWidth: 1,
-    borderTopColor: mobileTheme.colors.borderMuted,
-    paddingTop: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  trendLabel: {
-    color: mobileTheme.colors.textMuted,
-    fontSize: 12,
-    width: 58,
-  },
-  trendSummaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 2,
   },
   trendToggleButton: {
     alignSelf: "flex-start",
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   trendToggleButtonText: {
     fontSize: 11,
     fontWeight: "700",
   },
+  trendSummaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   trendSummaryChip: {
     width: "48%",
-    minWidth: 132,
+    minWidth: 140,
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
-    borderRadius: mobileTheme.radius.md,
+    borderRadius: 12,
+    backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 2,
-    backgroundColor: mobileTheme.colors.canvas,
   },
   trendSummaryChipNarrow: {
     width: "100%",
     minWidth: 0,
   },
   trendSummaryLabel: {
-    color: mobileTheme.colors.textMuted,
-    fontSize: 11,
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   trendSummaryValue: {
     color: mobileTheme.colors.text,
     fontSize: 13,
     fontWeight: "700",
   },
-  trendTrack: {
-    flex: 1,
-    height: 8,
-    borderRadius: 999,
-    overflow: "hidden",
-    backgroundColor: "#e2e8f0",
+  trendRow: {
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: mobileTheme.colors.borderMuted,
+    paddingTop: 10,
   },
-  trendFill: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#0f766e",
+  trendRowHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  trendLabel: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
   },
   trendValue: {
     color: mobileTheme.colors.text,
-    fontWeight: "700",
-    fontSize: 12,
-    minWidth: 76,
-    textAlign: "right",
-  },
-  trendValueGroup: {
-    minWidth: 76,
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  trendDeltaText: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: "700",
   },
-  trendDeltaTextPositive: {
-    color: "#166534",
+  trendBarTrack: {
+    height: 8,
+    borderRadius: 999,
+    overflow: "hidden",
   },
-  trendDeltaTextNegative: {
-    color: "#991b1b",
+  trendBarFill: {
+    height: "100%",
+    borderRadius: 999,
   },
-  trendDeltaTextNeutral: {
-    color: "#334155",
-  },
-  trendDeltaTextMuted: {
-    color: mobileTheme.colors.textMuted,
-  },
-  metaText: {
+  trendMeta: {
     color: mobileTheme.colors.textSubtle,
-    fontSize: 12,
+    fontSize: 11,
+  },
+  errorText: {
+    color: mobileTheme.colors.danger,
   },
   emptyCard: {
-    backgroundColor: mobileTheme.colors.surface,
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
-    borderRadius: mobileTheme.radius.lg,
-    padding: 12,
-    gap: 3,
+    borderRadius: mobileTheme.radius.xl,
+    backgroundColor: mobileTheme.colors.surface,
+    padding: 14,
+    gap: 4,
   },
   emptyTitle: {
     color: mobileTheme.colors.text,
     fontWeight: "700",
   },
-  errorText: {
-    color: mobileTheme.colors.danger,
+  emptyText: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
   },
 })

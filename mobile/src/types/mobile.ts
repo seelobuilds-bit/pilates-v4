@@ -99,7 +99,7 @@ export interface MobileReportSeriesPoint {
 export interface MobileReportsResponse {
   role: MobileRole
   studio: StudioSummary
-  periodDays: 7 | 30 | 90
+  periodDays: number
   generatedAt: string
   range: {
     start: string

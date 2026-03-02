@@ -7,6 +7,7 @@ import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 const ALLOWED_DAYS = new Set([7, 30, 90])
 const ATTENDED_STATUSES = new Set<BookingStatus>(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
+const DAY_IN_MS = 1000 * 60 * 60 * 24
 
 type MobileMetricFormat = "number" | "currency" | "percent"
 
@@ -28,6 +29,55 @@ function subtractDays(date: Date, days: number) {
   const clone = new Date(date)
   clone.setDate(clone.getDate() - days)
   return clone
+}
+
+function parseDateInput(value: string | null) {
+  if (!value) return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
+}
+
+function resolveReportRange(searchParams: URLSearchParams) {
+  const requestedStartDate = parseDateInput(searchParams.get("startDate"))
+  const requestedEndDate = parseDateInput(searchParams.get("endDate"))
+
+  if (
+    requestedStartDate &&
+    requestedEndDate &&
+    requestedStartDate.getTime() <= requestedEndDate.getTime()
+  ) {
+    const currentStart = new Date(requestedStartDate)
+    const requestedEnd = new Date(requestedEndDate)
+    const periodEnd = new Date(requestedEnd)
+    periodEnd.setUTCDate(periodEnd.getUTCDate() + 1)
+    const periodDays = Math.max(1, Math.round((periodEnd.getTime() - currentStart.getTime()) / DAY_IN_MS))
+    const previousStart = new Date(currentStart)
+    previousStart.setUTCDate(previousStart.getUTCDate() - periodDays)
+
+    return {
+      periodDays,
+      currentStart,
+      previousStart,
+      periodEnd,
+      responseEnd: requestedEnd,
+    }
+  }
+
+  const periodDays = parseDays(searchParams.get("days"))
+  const responseEnd = new Date()
+  const periodEnd = new Date(responseEnd)
+  const currentStart = subtractDays(periodEnd, periodDays)
+  const previousStart = subtractDays(currentStart, periodDays)
+
+  return {
+    periodDays,
+    currentStart,
+    previousStart,
+    periodEnd,
+    responseEnd,
+  }
 }
 
 function calcChange(current: number, previous: number) {
@@ -148,10 +198,7 @@ export async function GET(request: NextRequest) {
       currency: studio.stripeCurrency,
     }
 
-    const periodDays = parseDays(request.nextUrl.searchParams.get("days"))
-    const periodEnd = new Date()
-    const currentStart = subtractDays(periodEnd, periodDays)
-    const previousStart = subtractDays(currentStart, periodDays)
+    const { periodDays, periodEnd, currentStart, previousStart, responseEnd } = resolveReportRange(request.nextUrl.searchParams)
 
     if (decoded.role === "OWNER") {
       const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([
@@ -306,7 +353,7 @@ export async function GET(request: NextRequest) {
         generatedAt: periodEnd.toISOString(),
         range: {
           start: currentStart.toISOString(),
-          end: periodEnd.toISOString(),
+          end: responseEnd.toISOString(),
         },
         metrics: [
           metric("revenue", "Revenue", "currency", currentRevenue, previousRevenue),
@@ -468,7 +515,7 @@ export async function GET(request: NextRequest) {
         generatedAt: periodEnd.toISOString(),
         range: {
           start: currentStart.toISOString(),
-          end: periodEnd.toISOString(),
+          end: responseEnd.toISOString(),
         },
         metrics: [
           metric("revenue", "Revenue", "currency", currentRevenue, previousRevenue),
@@ -596,7 +643,7 @@ export async function GET(request: NextRequest) {
       generatedAt: periodEnd.toISOString(),
       range: {
         start: currentStart.toISOString(),
-        end: periodEnd.toISOString(),
+        end: responseEnd.toISOString(),
       },
       metrics: [
         metric("booked", "Booked Classes", "number", currentNonCancelled.length, previousNonCancelled.length),
