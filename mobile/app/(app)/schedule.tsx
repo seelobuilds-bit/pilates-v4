@@ -152,6 +152,7 @@ export default function ScheduleScreen() {
   const [windowFilter, setWindowFilter] = useState<"ALL" | "TODAY" | "WEEK">("ALL")
   const [selectedDateKey, setSelectedDateKey] = useState<string>("ALL")
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [pickerDraftDate, setPickerDraftDate] = useState<Date | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -353,17 +354,41 @@ export default function ScheduleScreen() {
 
   const pickerValue = useMemo(() => parseDateKey(selectedDateKey) || dateRange.minDate, [dateRange.minDate, selectedDateKey])
 
+  const openDatePicker = useCallback(() => {
+    setPickerDraftDate(parseDateKey(selectedDateKey) || dateRange.minDate)
+    setShowDatePicker(true)
+  }, [dateRange.minDate, selectedDateKey])
+
+  const closeDatePicker = useCallback(() => {
+    setPickerDraftDate(null)
+    setShowDatePicker(false)
+  }, [])
+
+  const applyPickedDate = useCallback(
+    (selectedDate: Date) => {
+      setSelectedDateKey(formatDateKey(selectedDate))
+      closeDatePicker()
+    },
+    [closeDatePicker]
+  )
+
   const handleDatePickerChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {
       if (event.type === "dismissed" || !selectedDate) {
-        setShowDatePicker(false)
+        if (Platform.OS !== "ios") {
+          closeDatePicker()
+        }
         return
       }
 
-      setSelectedDateKey(formatDateKey(selectedDate))
-      setShowDatePicker(false)
+      if (Platform.OS === "ios") {
+        setPickerDraftDate(selectedDate)
+        return
+      }
+
+      applyPickedDate(selectedDate)
     },
-    []
+    [applyPickedDate, closeDatePicker]
   )
 
   return (
@@ -427,7 +452,7 @@ export default function ScheduleScreen() {
       ) : null}
 
       <View style={styles.dateRow}>
-        <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <Pressable style={styles.dateButton} onPress={openDatePicker}>
           <Text style={styles.dateLabel}>Select date</Text>
           <Text style={styles.dateValue}>{selectedDateLabel}</Text>
         </Pressable>
@@ -447,13 +472,26 @@ export default function ScheduleScreen() {
       {showDatePicker ? (
         <View style={styles.datePickerWrap}>
           <DateTimePicker
-            value={pickerValue}
+            value={pickerDraftDate || pickerValue}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             minimumDate={dateRange.minDate}
             maximumDate={dateRange.maxDate}
             onChange={handleDatePickerChange}
           />
+          {Platform.OS === "ios" ? (
+            <View style={styles.pickerActions}>
+              <Pressable style={styles.pickerSecondaryButton} onPress={closeDatePicker}>
+                <Text style={styles.pickerSecondaryButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]}
+                onPress={() => applyPickedDate(pickerDraftDate || pickerValue)}
+              >
+                <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -610,8 +648,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   datePickerWrap: {
-    alignSelf: "flex-start",
-    marginTop: -2,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    padding: 8,
+    gap: 8,
+  },
+  pickerActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  pickerSecondaryButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.canvas,
+  },
+  pickerSecondaryButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  pickerPrimaryButton: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  pickerPrimaryButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 12,
   },
   list: {
     flex: 1,

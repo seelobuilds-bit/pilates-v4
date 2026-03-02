@@ -111,6 +111,7 @@ export default function HomeScreen() {
   const [reportsData, setReportsData] = useState<MobileReportsResponse | null>(null)
   const [customRange, setCustomRange] = useState(() => buildInitialRange())
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
+  const [pickerDraftDate, setPickerDraftDate] = useState<Date | null>(null)
   const [reportError, setReportError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
@@ -187,22 +188,57 @@ export default function HomeScreen() {
   const fallbackBootstrapMetrics = Object.entries(bootstrap?.metrics || {}).slice(0, 4)
   const currency = reportsData?.studio.currency || bootstrap?.studio.currency || user?.studio.currency || "usd"
 
-  const handleRangePickerChange = useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
-      if (event.type === "dismissed" || !selectedDate || !activeRangePicker) {
-        setActiveRangePicker(null)
-        return
-      }
+  const openRangePicker = useCallback(
+    (field: "start" | "end") => {
+      setPickerDraftDate(field === "start" ? customRange.start : customRange.end)
+      setActiveRangePicker(field)
+    },
+    [customRange.end, customRange.start]
+  )
 
+  const closeRangePicker = useCallback(() => {
+    setPickerDraftDate(null)
+    setActiveRangePicker(null)
+  }, [])
+
+  const applyPickedDate = useCallback(
+    (selectedDate: Date) => {
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
       setCustomRange((current) => ({
         start: activeRangePicker === "start" ? safeDate : current.start,
         end: activeRangePicker === "end" ? safeDate : current.end,
       }))
-      setActiveRangePicker(null)
+      closeRangePicker()
     },
-    [activeRangePicker]
+    [activeRangePicker, closeRangePicker]
   )
+
+  const handleRangePickerChange = useCallback(
+    (event: DateTimePickerEvent, selectedDate?: Date) => {
+      if (!activeRangePicker) {
+        closeRangePicker()
+        return
+      }
+
+      if (event.type === "dismissed" || !selectedDate) {
+        if (Platform.OS !== "ios") {
+          closeRangePicker()
+        }
+        return
+      }
+
+      const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
+      if (Platform.OS === "ios") {
+        setPickerDraftDate(safeDate)
+        return
+      }
+
+      applyPickedDate(safeDate)
+    },
+    [activeRangePicker, applyPickedDate, closeRangePicker]
+  )
+
+  const pickerValue = pickerDraftDate || (activeRangePicker === "start" ? customRange.start : customRange.end)
 
   return (
     <ScrollView
@@ -216,25 +252,37 @@ export default function HomeScreen() {
         </Text>
 
         <View style={styles.customRangeRow}>
-          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("start")}>
+          <Pressable style={styles.customDateButton} onPress={() => openRangePicker("start")}>
             <Text style={styles.customDateLabel}>From</Text>
             <Text style={styles.customDateValue}>{customRange.start.toLocaleDateString()}</Text>
           </Pressable>
-          <Pressable style={styles.customDateButton} onPress={() => setActiveRangePicker("end")}>
+          <Pressable style={styles.customDateButton} onPress={() => openRangePicker("end")}>
             <Text style={styles.customDateLabel}>To</Text>
             <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
           </Pressable>
         </View>
 
         {activeRangePicker ? (
-          <DateTimePicker
-            value={activeRangePicker === "start" ? customRange.start : customRange.end}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
-            minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
-            onChange={handleRangePickerChange}
-          />
+          <View style={styles.pickerCard}>
+            <DateTimePicker
+              value={pickerValue}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
+              minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
+              onChange={handleRangePickerChange}
+            />
+            {Platform.OS === "ios" ? (
+              <View style={styles.pickerActions}>
+                <Pressable style={styles.pickerSecondaryButton} onPress={closeRangePicker}>
+                  <Text style={styles.pickerSecondaryButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]} onPress={() => applyPickedDate(pickerValue)}>
+                  <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         ) : null}
       </View>
 
@@ -318,6 +366,15 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  pickerCard: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 12,
+    padding: 8,
+    gap: 8,
+  },
   customDateButton: {
     flex: 1,
     borderWidth: 1,
@@ -338,6 +395,34 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
     fontSize: 13,
     fontWeight: "600",
+  },
+  pickerActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  pickerSecondaryButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: mobileTheme.colors.canvas,
+  },
+  pickerSecondaryButtonText: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  pickerPrimaryButton: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  pickerPrimaryButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 12,
   },
   snapshotHeader: {
     flexDirection: "row",
