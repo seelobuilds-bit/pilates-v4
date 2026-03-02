@@ -365,6 +365,18 @@ export default function ScheduleScreen() {
       .filter((value): value is { key: string; label: string } => Boolean(value))
   }, [dateOptions])
 
+  const selectedMonthLabel = useMemo(() => {
+    if (!selectedMonthKey) {
+      return monthOptions[0]?.label || "This month"
+    }
+    return monthOptions.find((option) => option.key === selectedMonthKey)?.label || monthLabelFromKey(selectedMonthKey)
+  }, [monthOptions, selectedMonthKey])
+
+  const selectedDateLabel = useMemo(() => {
+    if (selectedDateKey === "ALL") return "All dates"
+    return dateOptions.find((option) => option.key === selectedDateKey)?.label || selectedDateKey
+  }, [dateOptions, selectedDateKey])
+
   useEffect(() => {
     if (selectedDateKey === "ALL") return
     if (!dateOptions.some((option) => option.key === selectedDateKey)) {
@@ -468,49 +480,61 @@ export default function ScheduleScreen() {
 
       {monthOptions.length > 0 ? (
         <>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthStrip}>
-            {monthOptions.map((option) => (
-              <Pressable
-                key={option.key}
-                style={[
-                  styles.monthChip,
-                  selectedMonthKey === option.key && [styles.monthChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-                ]}
-                onPress={() => {
-                  setSelectedMonthKey(option.key)
-                  const firstAvailable = dateOptions.find((dateOption) => monthKeyForDate(dateOption.key) === option.key)
-                  if (firstAvailable && selectedDateKey !== "ALL" && monthKeyForDate(selectedDateKey) !== option.key) {
-                    setSelectedDateKey(firstAvailable.key)
-                  }
-                }}
-              >
-                <Text style={[styles.monthChipText, selectedMonthKey === option.key && [styles.monthChipTextActive, { color: primaryColor }]]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <View style={styles.dateSummaryRow}>
+            <View style={styles.dateSummaryCard}>
+              <Text style={styles.dateSummaryLabel}>{selectedMonthLabel}</Text>
+              <Text style={styles.dateSummaryValue}>{selectedDateLabel}</Text>
+            </View>
 
-          <Pressable
-            style={[
-              styles.jumpToggleButton,
-              showMonthPicker && [styles.jumpToggleButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-            ]}
-            onPress={() => setShowMonthPicker((current) => !current)}
-          >
-            <Text
+            {selectedDateKey !== "ALL" ? (
+              <Pressable style={styles.clearDateButton} onPress={() => setSelectedDateKey("ALL")}>
+                <Text style={[styles.clearDateButtonText, { color: primaryColor }]}>Clear</Text>
+              </Pressable>
+            ) : null}
+
+            <Pressable
               style={[
-                styles.jumpToggleButtonText,
-                showMonthPicker && [styles.jumpToggleButtonTextActive, { color: primaryColor }],
+                styles.jumpToggleButton,
+                showMonthPicker && [styles.jumpToggleButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
               ]}
+              onPress={() => setShowMonthPicker((current) => !current)}
             >
-              {showMonthPicker ? "Hide day picker" : "Jump to day"}
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.jumpToggleButtonText,
+                  showMonthPicker && [styles.jumpToggleButtonTextActive, { color: primaryColor }],
+                ]}
+              >
+                {showMonthPicker ? "Hide" : "Jump to day"}
+              </Text>
+            </Pressable>
+          </View>
 
           {showMonthPicker && monthCalendarCells.length > 0 ? (
             <View style={styles.monthCard}>
               <Text style={styles.monthCardTitle}>Jump to day</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthStrip}>
+                {monthOptions.map((option) => (
+                  <Pressable
+                    key={option.key}
+                    style={[
+                      styles.monthChip,
+                      selectedMonthKey === option.key && [styles.monthChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
+                    ]}
+                    onPress={() => {
+                      setSelectedMonthKey(option.key)
+                      const firstAvailable = dateOptions.find((dateOption) => monthKeyForDate(dateOption.key) === option.key)
+                      if (firstAvailable && selectedDateKey !== "ALL" && monthKeyForDate(selectedDateKey) !== option.key) {
+                        setSelectedDateKey(firstAvailable.key)
+                      }
+                    }}
+                  >
+                    <Text style={[styles.monthChipText, selectedMonthKey === option.key && [styles.monthChipTextActive, { color: primaryColor }]]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
               <View style={styles.weekdayRow}>
                 {["M", "T", "W", "T", "F", "S", "S"].map((label, index) => (
                   <Text key={`${label}-${index}`} style={styles.weekdayCell}>
@@ -552,39 +576,6 @@ export default function ScheduleScreen() {
             </View>
           ) : null}
         </>
-      ) : null}
-
-      {dateOptions.length > 1 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateStrip}>
-          <Pressable
-            style={[
-              styles.dateChip,
-              selectedDateKey === "ALL" && [styles.dateChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-            ]}
-            onPress={() => setSelectedDateKey("ALL")}
-          >
-            <Text style={[styles.dateChipText, selectedDateKey === "ALL" && [styles.dateChipTextActive, { color: primaryColor }]]}>All dates</Text>
-          </Pressable>
-          {dateOptions.map((option) => (
-            <Pressable
-              key={option.key}
-              style={[
-                styles.dateChip,
-                selectedDateKey === option.key && [styles.dateChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }],
-              ]}
-              onPress={() => setSelectedDateKey(option.key)}
-            >
-              <Text
-                style={[
-                  styles.dateChipText,
-                  selectedDateKey === option.key && [styles.dateChipTextActive, { color: primaryColor }],
-                ]}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
       ) : null}
 
       {isClient ? (
@@ -755,13 +746,52 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
+  dateSummaryRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+  },
+  dateSummaryCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.border,
+    borderRadius: 12,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 2,
+  },
+  dateSummaryLabel: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  dateSummaryValue: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  clearDateButton: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    borderRadius: 10,
+    backgroundColor: mobileTheme.colors.surface,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearDateButtonText: {
+    fontWeight: "700",
+    fontSize: 12,
+  },
   jumpToggleButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 10,
     backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    minWidth: 96,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -830,34 +860,6 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textFaint,
   },
   calendarDayTextSelected: {
-    fontWeight: "700",
-  },
-  dateStrip: {
-    gap: 8,
-    paddingBottom: 2,
-    paddingRight: 12,
-  },
-  dateChip: {
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    borderRadius: 999,
-    backgroundColor: mobileTheme.colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dateChipActive: {
-    borderWidth: 1,
-  },
-  dateChipText: {
-    color: mobileTheme.colors.textMuted,
-    fontWeight: "600",
-    fontSize: 11,
-    textAlign: "center",
-  },
-  dateChipTextActive: {
     fontWeight: "700",
   },
   modeRow: {

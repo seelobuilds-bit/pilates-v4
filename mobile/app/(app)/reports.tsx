@@ -7,16 +7,6 @@ import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
 
 const PERIOD_OPTIONS = [7, 30, 90] as const
-const METRIC_ORDER_OPTIONS = [
-  { id: "default", label: "Default" },
-  { id: "movers", label: "Top Movers" },
-] as const
-const METRIC_TREND_FILTER_OPTIONS = [
-  { id: "all", label: "All" },
-  { id: "improving", label: "Improving" },
-  { id: "declining", label: "Declining" },
-] as const
-
 function formatRangeDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
@@ -87,11 +77,10 @@ export default function ReportsScreen() {
   const primaryColor = getStudioPrimaryColor()
   const isNarrowScreen = width <= 360
   const [days, setDays] = useState<7 | 30 | 90>(30)
-  const [metricOrder, setMetricOrder] = useState<(typeof METRIC_ORDER_OPTIONS)[number]["id"]>("default")
-  const [metricTrendFilter, setMetricTrendFilter] = useState<(typeof METRIC_TREND_FILTER_OPTIONS)[number]["id"]>("all")
   const [data, setData] = useState<MobileReportsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const loadReports = useCallback(
@@ -105,6 +94,7 @@ export default function ReportsScreen() {
       if (isRefresh) setRefreshing(true)
       else setLoading(true)
 
+      setReportLoading(true)
       setError(null)
       try {
         const response = await mobileApi.reports(token, { days })
@@ -113,6 +103,7 @@ export default function ReportsScreen() {
         const message = err instanceof Error ? err.message : "Failed to load reports"
         setError(message)
       } finally {
+        setReportLoading(false)
         setLoading(false)
         setRefreshing(false)
       }
@@ -138,33 +129,17 @@ export default function ReportsScreen() {
       { label: "Range", value: `${formatRangeDate(data.range.start)} - ${formatRangeDate(data.range.end)}` },
       {
         label: "Updated",
-        value: new Date(data.generatedAt).toLocaleTimeString(undefined, {
+        value: reportLoading
+          ? "Updating..."
+          : new Date(data.generatedAt).toLocaleTimeString(undefined, {
           hour: "numeric",
           minute: "2-digit",
-        }),
+            }),
       },
     ]
-  }, [data])
-  const metricFilterCounts = useMemo(() => {
-    const metrics = data?.metrics ?? []
-    return {
-      all: metrics.length,
-      improving: metrics.filter((metric) => metric.changePct > 0).length,
-      declining: metrics.filter((metric) => metric.changePct < 0).length,
-    }
-  }, [data?.metrics])
-  const visibleMetrics = useMemo(() => {
-    if (!data?.metrics) return []
-    const filtered = data.metrics.filter((metric) => {
-      if (metricTrendFilter === "improving") return metric.changePct > 0
-      if (metricTrendFilter === "declining") return metric.changePct < 0
-      return true
-    })
-    if (metricOrder === "default") return filtered
-    return [...filtered].sort((left, right) => Math.abs(right.changePct) - Math.abs(left.changePct))
-  }, [data?.metrics, metricOrder, metricTrendFilter])
+  }, [data, reportLoading])
+  const visibleMetrics = data?.metrics ?? []
   const topMetric = visibleMetrics[0] || data?.metrics?.[0] || null
-  const hasCustomView = metricOrder !== "default" || metricTrendFilter !== "all"
 
   return (
     <View style={styles.screen}>
@@ -204,52 +179,6 @@ export default function ReportsScreen() {
               )
             })}
           </View>
-          <View style={styles.orderRow}>
-            {METRIC_ORDER_OPTIONS.map((option) => {
-              const selected = option.id === metricOrder
-              return (
-                <Pressable
-                  key={option.id}
-                  style={[
-                    styles.orderButton,
-                    selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.14) } : null,
-                  ]}
-                  onPress={() => setMetricOrder(option.id)}
-                >
-                  <Text style={[styles.orderButtonText, selected ? { color: primaryColor } : null]}>{option.label}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
-          <View style={styles.filterRow}>
-            {METRIC_TREND_FILTER_OPTIONS.map((option) => {
-              const selected = option.id === metricTrendFilter
-              const count = metricFilterCounts[option.id]
-              return (
-                <Pressable
-                  key={option.id}
-                  style={[
-                    styles.filterButton,
-                    selected ? { borderColor: withOpacity(primaryColor, 0.5), backgroundColor: withOpacity(primaryColor, 0.14) } : null,
-                  ]}
-                  onPress={() => setMetricTrendFilter(option.id)}
-                >
-                  <Text style={[styles.filterButtonText, selected ? { color: primaryColor } : null]}>{`${option.label} (${count})`}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
-          {hasCustomView ? (
-            <Pressable
-              style={styles.resetViewButton}
-              onPress={() => {
-                setMetricOrder("default")
-                setMetricTrendFilter("all")
-              }}
-            >
-              <Text style={[styles.resetViewButtonText, { color: primaryColor }]}>Reset view</Text>
-            </Pressable>
-          ) : null}
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -316,8 +245,8 @@ export default function ReportsScreen() {
             </View>
             {visibleMetrics.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No metrics match this filter</Text>
-                <Text style={styles.emptyText}>Try switching to a different trend filter.</Text>
+                <Text style={styles.emptyTitle}>No metrics available</Text>
+                <Text style={styles.emptyText}>Metrics will appear here once there is enough data in the selected range.</Text>
               </View>
             ) : null}
 

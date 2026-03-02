@@ -97,6 +97,7 @@ export default function HomeScreen() {
   const [reportPeriod, setReportPeriod] = useState<7 | 30 | 90>(7)
   const [reportError, setReportError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
 
   const subdomain = (bootstrap?.studio?.subdomain || user?.studio?.subdomain || "").trim().toLowerCase()
   const roleFeatures = useMemo(() => getWorkspaceFeatures(user?.role, subdomain), [subdomain, user?.role])
@@ -120,6 +121,7 @@ export default function HomeScreen() {
         setRefreshing(true)
       }
 
+      setReportLoading(true)
       setReportError(null)
 
       try {
@@ -134,6 +136,7 @@ export default function HomeScreen() {
         const message = error instanceof Error ? error.message : "Failed to load dashboard trends"
         setReportError(message)
       } finally {
+        setReportLoading(false)
         setRefreshing(false)
       }
     },
@@ -186,7 +189,9 @@ export default function HomeScreen() {
                     ? { borderColor: withOpacity(primaryColor, 0.56), backgroundColor: withOpacity(primaryColor, 0.18) }
                     : null,
                 ]}
-                onPress={() => setReportPeriod(option)}
+                onPress={() => {
+                  setReportPeriod(option)
+                }}
               >
                 <Text style={[styles.periodButtonText, selected ? { color: primaryColor } : null]}>{option}d</Text>
               </Pressable>
@@ -197,7 +202,7 @@ export default function HomeScreen() {
 
       <View style={styles.snapshotHeader}>
         <Text style={styles.sectionTitle}>Performance Snapshot</Text>
-        <Text style={styles.snapshotHint}>Period: last {reportPeriod} days</Text>
+        <Text style={styles.snapshotHint}>{reportLoading ? "Updating..." : `Period: last ${reportPeriod} days`}</Text>
       </View>
 
       <View style={styles.metricsGrid}>
