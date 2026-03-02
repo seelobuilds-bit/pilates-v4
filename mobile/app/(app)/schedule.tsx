@@ -430,7 +430,7 @@ export default function ScheduleScreen() {
         style={styles.searchInput}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterStrip}>
+      <View style={styles.filterControlRow}>
         <Pressable
           style={[
             styles.filterButton,
@@ -464,7 +464,7 @@ export default function ScheduleScreen() {
             {`7d (${windowCounts.WEEK})`}
           </Text>
         </Pressable>
-      </ScrollView>
+      </View>
 
       {monthOptions.length > 0 ? (
         <>
@@ -588,7 +588,7 @@ export default function ScheduleScreen() {
       ) : null}
 
       {isClient ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modeStrip}>
+        <View style={styles.modeControlRow}>
           <Pressable
             style={[
               styles.modeButton,
@@ -611,7 +611,7 @@ export default function ScheduleScreen() {
               Browse Classes
             </Text>
           </Pressable>
-        </ScrollView>
+        </View>
       ) : null}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -688,6 +688,11 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     paddingRight: 12,
   },
+  filterControlRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   filterButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
@@ -695,7 +700,11 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    flexShrink: 0,
+    flexGrow: 1,
+    flexBasis: "30%",
+    minWidth: 92,
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterButtonActive: {
     borderWidth: 1,
@@ -704,6 +713,7 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 11,
+    textAlign: "center",
   },
   filterButtonTextActive: {
     fontWeight: "700",
@@ -721,6 +731,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     flexShrink: 0,
+    minWidth: 120,
+    alignItems: "center",
+    justifyContent: "center",
   },
   monthChipActive: {
     borderWidth: 1,
@@ -729,6 +742,7 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 11,
+    textAlign: "center",
   },
   monthChipTextActive: {
     fontWeight: "700",
@@ -758,6 +772,7 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 12,
+    textAlign: "center",
   },
   jumpToggleButtonTextActive: {
     fontWeight: "700",
@@ -829,6 +844,9 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dateChipActive: {
     borderWidth: 1,
@@ -837,6 +855,7 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 11,
+    textAlign: "center",
   },
   dateChipTextActive: {
     fontWeight: "700",
@@ -851,6 +870,10 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     paddingRight: 12,
   },
+  modeControlRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
   modeButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
@@ -858,7 +881,10 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    flexShrink: 0,
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
   modeButtonActive: {
     borderWidth: 1,
@@ -867,6 +893,7 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.textMuted,
     fontWeight: "600",
     fontSize: 12,
+    textAlign: "center",
   },
   modeButtonTextActive: {
     fontWeight: "700",

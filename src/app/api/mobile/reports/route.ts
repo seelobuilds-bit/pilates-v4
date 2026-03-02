@@ -158,24 +158,37 @@ export async function GET(request: NextRequest) {
         db.booking.findMany({
           where: {
             studioId: studio.id,
-            createdAt: { gte: currentStart, lt: periodEnd },
+            classSession: {
+              startTime: { gte: currentStart, lt: periodEnd },
+            },
           },
           select: {
-            createdAt: true,
             status: true,
             paidAmount: true,
-            classSession: { select: { classType: { select: { price: true } } } },
+            classSession: {
+              select: {
+                startTime: true,
+                classType: { select: { price: true } },
+              },
+            },
           },
         }),
         db.booking.findMany({
           where: {
             studioId: studio.id,
-            createdAt: { gte: previousStart, lt: currentStart },
+            classSession: {
+              startTime: { gte: previousStart, lt: currentStart },
+            },
           },
           select: {
             status: true,
             paidAmount: true,
-            classSession: { select: { classType: { select: { price: true } } } },
+            classSession: {
+              select: {
+                startTime: true,
+                classType: { select: { price: true } },
+              },
+            },
           },
         }),
         db.classSession.findMany({
@@ -262,7 +275,7 @@ export async function GET(request: NextRequest) {
 
       for (const booking of currentBookings) {
         if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
-        const index = bucketIndexForDate(booking.createdAt, ownerBuckets)
+        const index = bucketIndexForDate(booking.classSession.startTime, ownerBuckets)
         if (index < 0) continue
         ownerSeries[index].metrics.bookings += 1
         ownerSeries[index].metrics.revenue = roundCurrency(ownerSeries[index].metrics.revenue + bookingRevenue(booking))
@@ -316,28 +329,41 @@ export async function GET(request: NextRequest) {
         db.booking.findMany({
           where: {
             studioId: studio.id,
-            createdAt: { gte: currentStart, lt: periodEnd },
-            classSession: { teacherId: decoded.teacherId },
+            classSession: {
+              teacherId: decoded.teacherId,
+              startTime: { gte: currentStart, lt: periodEnd },
+            },
           },
           select: {
-            createdAt: true,
             status: true,
             clientId: true,
             paidAmount: true,
-            classSession: { select: { classType: { select: { price: true } } } },
+            classSession: {
+              select: {
+                startTime: true,
+                classType: { select: { price: true } },
+              },
+            },
           },
         }),
         db.booking.findMany({
           where: {
             studioId: studio.id,
-            createdAt: { gte: previousStart, lt: currentStart },
-            classSession: { teacherId: decoded.teacherId },
+            classSession: {
+              teacherId: decoded.teacherId,
+              startTime: { gte: previousStart, lt: currentStart },
+            },
           },
           select: {
             status: true,
             clientId: true,
             paidAmount: true,
-            classSession: { select: { classType: { select: { price: true } } } },
+            classSession: {
+              select: {
+                startTime: true,
+                classType: { select: { price: true } },
+              },
+            },
           },
         }),
         db.classSession.findMany({
@@ -411,7 +437,7 @@ export async function GET(request: NextRequest) {
 
       for (const booking of currentBookings) {
         if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
-        const index = bucketIndexForDate(booking.createdAt, teacherBuckets)
+        const index = bucketIndexForDate(booking.classSession.startTime, teacherBuckets)
         if (index < 0) continue
         teacherNonCancelledByBucket[index] += 1
         teacherSeries[index].metrics.revenue = roundCurrency(teacherSeries[index].metrics.revenue + bookingRevenue(booking))
