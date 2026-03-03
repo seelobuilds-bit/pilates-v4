@@ -119,7 +119,7 @@ function ScheduleCard({
               onPress={() => onCancel(item.bookingId!)}
               disabled={actionLoading}
             >
-              <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Cancel Booking"}</Text>
+              <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Cancel"}</Text>
             </Pressable>
           ) : isPaidClass ? (
             <Pressable
@@ -127,7 +127,7 @@ function ScheduleCard({
               onPress={() => onOpenWebBooking(item.id)}
               disabled={actionLoading}
             >
-              <Text style={styles.actionButtonText}>{actionLoading ? "Opening..." : "Book on Web Checkout"}</Text>
+              <Text style={styles.actionButtonText}>{actionLoading ? "Opening..." : "Pay on web"}</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -135,7 +135,7 @@ function ScheduleCard({
               onPress={() => onBook(item.id)}
               disabled={actionLoading}
             >
-              <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Book Class"}</Text>
+              <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Book now"}</Text>
             </Pressable>
           )
         ) : null}
@@ -369,11 +369,12 @@ export default function ScheduleScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Schedule</Text>
+      <Text style={styles.subtitle}>Find classes quickly and jump to the right day.</Text>
 
       <TextInput
         value={search}
         onChangeText={setSearch}
-        placeholder="Search class, teacher, or location..."
+        placeholder="Search classes, teachers or locations..."
         style={styles.searchInput}
       />
 
@@ -437,12 +438,12 @@ export default function ScheduleScreen() {
       ) : null}
 
       <Text style={styles.resultsHint}>
-        {filteredItems.length} shown{windowFilter !== "ALL" ? ` in ${windowFilter === "TODAY" ? "today" : "the next 7 days"}` : ""}
+        Showing {filteredItems.length}{windowFilter !== "ALL" ? ` for ${windowFilter === "TODAY" ? "today" : "the next 7 days"}` : ""}
       </Text>
 
       <View style={styles.dateRow}>
         <Pressable style={styles.dateButton} onPress={openDatePicker}>
-          <Text style={styles.dateLabel}>Select date</Text>
+          <Text style={styles.dateLabel}>Jump to date</Text>
           <Text style={styles.dateValue}>{selectedDateLabel}</Text>
         </Pressable>
         <Pressable
@@ -500,10 +501,10 @@ export default function ScheduleScreen() {
       {!loading && filteredItems.length === 0 && !error ? (
         <Text style={styles.empty}>
           {searchNormalized && windowFilter !== "ALL"
-            ? "No schedule items matched your search and range."
+            ? "Nothing matches your search and date filters."
             : searchNormalized
-              ? "No schedule items matched your search."
-              : "No schedule items in this range."}
+              ? "Nothing matches your search."
+              : "Nothing is scheduled in this view."}
         </Text>
       ) : null}
 
@@ -543,6 +544,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: mobileTheme.colors.text,
+  },
+  subtitle: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 13,
   },
   searchInput: {
     borderWidth: 1,

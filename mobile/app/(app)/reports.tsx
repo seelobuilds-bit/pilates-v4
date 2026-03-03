@@ -144,9 +144,9 @@ export default function ReportsScreen() {
   }, [customRange, loadReports])
 
   const subtitle = useMemo(() => {
-    if (user?.role === "OWNER") return "Track studio performance, growth, and operations."
-    if (user?.role === "TEACHER") return "Track classes, clients, and teaching performance."
-    return "Track your class activity and attendance trends."
+    if (user?.role === "OWNER") return "Choose dates to refresh your studio numbers."
+    if (user?.role === "TEACHER") return "Choose dates to refresh your teaching numbers."
+    return "Choose dates to refresh your activity."
   }, [user?.role])
 
   const currency = data?.studio.currency || user?.studio.currency || "usd"
@@ -235,7 +235,7 @@ export default function ReportsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadReports(customRange, true)} />}
       >
         <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.26), backgroundColor: withOpacity(primaryColor, 0.1) }]}>
-          <Text style={styles.title}>Reports</Text>
+          <Text style={styles.title}>Reports & Trends</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
           {reportSummary ? (
             <View style={styles.summaryRow}>
@@ -297,7 +297,7 @@ export default function ReportsScreen() {
 
         {loading && !data ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Loading reports...</Text>
+            <Text style={styles.emptyTitle}>Loading your reports...</Text>
           </View>
         ) : data ? (
           <>
@@ -352,15 +352,15 @@ export default function ReportsScreen() {
                         })}
                       </View>
                     ) : null}
-                    <Text style={styles.metricHint}>View detail</Text>
+                    <Text style={styles.metricHint}>Open trend</Text>
                   </Pressable>
                 )
               })}
             </View>
             {visibleMetrics.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No metrics available</Text>
-                <Text style={styles.emptyText}>Metrics will appear here once there is enough data in the selected range.</Text>
+                <Text style={styles.emptyTitle}>No numbers yet</Text>
+                <Text style={styles.emptyText}>Try a wider date range or wait for more activity.</Text>
               </View>
             ) : null}
 
@@ -379,18 +379,18 @@ export default function ReportsScreen() {
             </View>
 
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Snapshot</Text>
+              <Text style={styles.sectionTitle}>What Stands Out</Text>
               <Text style={styles.emptyText}>
                 {topMetric
-                  ? `Leading metric: ${topMetric.label} at ${formatMetricValue(topMetric, currency)}. Tap any metric card for the detailed trend view.`
-                  : "Tap any metric card for the detailed trend view."}
+                  ? `${topMetric.label} is currently ${formatMetricValue(topMetric, currency)}. Tap any card for the trend view.`
+                  : "Tap any card to open the trend view."}
               </Text>
             </View>
           </>
         ) : (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No report data yet</Text>
-            <Text style={styles.emptyText}>As bookings and class activity come in, your metrics will appear here.</Text>
+            <Text style={styles.emptyText}>Once classes and bookings come in, your numbers will show here.</Text>
           </View>
         )}
       </ScrollView>

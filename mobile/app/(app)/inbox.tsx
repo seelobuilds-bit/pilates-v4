@@ -33,7 +33,7 @@ function ConversationCard({
       </View>
       <Text style={styles.cardMeta}>{item.clientEmail}</Text>
       <View style={styles.cardMetaRow}>
-        <Text style={styles.cardMeta}>Messages: {item.messageCount}</Text>
+      <Text style={styles.cardMeta}>{item.messageCount} messages</Text>
         {item.lastMessage ? (
           <Text style={[styles.inlinePill, { color: primaryColor, borderColor: withOpacity(primaryColor, 0.2) }]}>
             {item.lastMessage.channel}
@@ -48,7 +48,7 @@ function ConversationCard({
           </Text>
         </>
       ) : (
-        <Text style={styles.emptyHint}>No messages yet</Text>
+        <Text style={styles.emptyHint}>Start the conversation</Text>
       )}
     </Pressable>
   )
@@ -331,7 +331,7 @@ export default function InboxScreen() {
           {threadLoading && threadMessages.length === 0 ? (
             <View style={styles.threadLoadingWrap}>
               <ActivityIndicator size="small" />
-              <Text style={styles.loading}>Loading conversation...</Text>
+              <Text style={styles.loading}>Loading chat...</Text>
             </View>
           ) : null}
 
@@ -416,7 +416,10 @@ export default function InboxScreen() {
     >
       <View style={styles.container}>
         <Text style={styles.title}>Inbox</Text>
-        <Text style={styles.subtitle}>{isClient ? "Message the studio" : "Conversations"}</Text>
+        <Text style={styles.subtitle}>{isClient ? "Chat with the studio" : "Client conversations"}</Text>
+        <Text style={styles.helperText}>
+          {isClient ? "Messages here stay inside the app." : "Chat stays in the app. Email and SMS also send to the client."}
+        </Text>
         <View style={styles.overviewRow}>
           {inboxSummary.map((item) => (
             <View key={item.label} style={styles.overviewPill}>
@@ -430,7 +433,7 @@ export default function InboxScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder={isClient ? "Search messages..." : "Search clients/messages..."}
+            placeholder={isClient ? "Search messages..." : "Search clients or messages..."}
             style={styles.searchInput}
           />
           {isClient ? (
@@ -443,7 +446,7 @@ export default function InboxScreen() {
                 onPress={() => setClientChannelFilter("ALL")}
               >
                 <Text style={[styles.channelButtonText, clientChannelFilter === "ALL" && [styles.channelButtonTextActive, { color: primaryColor }]]}>
-                  {`All (${clientChannelCounts.ALL})`}
+                  {`All ${clientChannelCounts.ALL}`}
                 </Text>
               </Pressable>
               <Pressable
@@ -456,7 +459,7 @@ export default function InboxScreen() {
                 <Text
                   style={[styles.channelButtonText, clientChannelFilter === "CHAT" && [styles.channelButtonTextActive, { color: primaryColor }]]}
                 >
-                  {`Chat (${clientChannelCounts.CHAT})`}
+                  {`Chat ${clientChannelCounts.CHAT}`}
                 </Text>
               </Pressable>
               <Pressable
@@ -469,7 +472,7 @@ export default function InboxScreen() {
                 <Text
                   style={[styles.channelButtonText, clientChannelFilter === "EMAIL" && [styles.channelButtonTextActive, { color: primaryColor }]]}
                 >
-                  {`Email (${clientChannelCounts.EMAIL})`}
+                  {`Email ${clientChannelCounts.EMAIL}`}
                 </Text>
               </Pressable>
               <Pressable
@@ -482,7 +485,7 @@ export default function InboxScreen() {
                 <Text
                   style={[styles.channelButtonText, clientChannelFilter === "SMS" && [styles.channelButtonTextActive, { color: primaryColor }]]}
                 >
-                  {`SMS (${clientChannelCounts.SMS})`}
+                  {`SMS ${clientChannelCounts.SMS}`}
                 </Text>
               </Pressable>
             </View>
@@ -512,10 +515,10 @@ export default function InboxScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {loading && !hasData ? <Text style={styles.loading}>Loading inbox...</Text> : null}
+        {loading && !hasData ? <Text style={styles.loading}>Loading messages...</Text> : null}
 
         {!loading && !hasData && !error ? (
-          <Text style={styles.empty}>{searchNormalized ? "No results for current filters." : "No inbox activity yet."}</Text>
+          <Text style={styles.empty}>{searchNormalized ? "Nothing matches these filters." : "No messages yet."}</Text>
         ) : null}
 
         {isClient ? (
@@ -599,6 +602,11 @@ const styles = StyleSheet.create({
   subtitle: {
     color: mobileTheme.colors.textMuted,
     marginBottom: 4,
+  },
+  helperText: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
+    marginBottom: 2,
   },
   overviewRow: {
     flexDirection: "row",

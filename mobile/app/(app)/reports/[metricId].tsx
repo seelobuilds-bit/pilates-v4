@@ -265,8 +265,8 @@ export default function ReportMetricDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadReports(customRange, true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Metric Detail</Text>
-        <Text style={styles.subtitle}>Current performance for the selected range</Text>
+        <Text style={styles.title}>Trend Detail</Text>
+        <Text style={styles.subtitle}>Use the same date range here to inspect one number closely.</Text>
         {detailSummary.length > 0 ? (
           <View style={styles.summaryRow}>
             {detailSummary.map((item) => (
@@ -329,7 +329,7 @@ export default function ReportMetricDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading metric...</Text>
+          <Text style={styles.emptyTitle}>Loading trend...</Text>
         </View>
       ) : metric && data ? (
         <>
@@ -343,7 +343,7 @@ export default function ReportMetricDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Period Context</Text>
+            <Text style={styles.sectionTitle}>Date Context</Text>
             <Text style={styles.metaText}>Window: {formatDate(reportRequestParams.startDate)} - {formatDate(reportRequestParams.endDate)}</Text>
             <Text style={styles.metaText}>Generated: {formatDateTime(data.generatedAt)}</Text>
             <Text style={styles.metaText}>Role: {data.role}</Text>
@@ -352,7 +352,7 @@ export default function ReportMetricDetailScreen() {
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Trend</Text>
             {metricSeries.length === 0 ? (
-              <Text style={styles.metaText}>No trend points available for this period.</Text>
+              <Text style={styles.metaText}>No trend points for this date range yet.</Text>
             ) : (
               <>
                 {metricSeries.length > 8 ? (
@@ -402,8 +402,8 @@ export default function ReportMetricDetailScreen() {
         </>
       ) : (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Metric unavailable</Text>
-          <Text style={styles.emptyText}>The selected metric could not be found for this range.</Text>
+          <Text style={styles.emptyTitle}>Trend unavailable</Text>
+          <Text style={styles.emptyText}>This number could not be loaded for the selected dates.</Text>
         </View>
       )}
     </ScrollView>

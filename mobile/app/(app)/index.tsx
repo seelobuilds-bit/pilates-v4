@@ -53,6 +53,13 @@ function buildInitialRange() {
   }
 }
 
+function roleLabel(role: string | undefined) {
+  if (role === "OWNER") return "Owner overview"
+  if (role === "TEACHER") return "Teacher overview"
+  if (role === "CLIENT") return "Client overview"
+  return "Overview"
+}
+
 function formatTrendValue(metric: MobileReportMetric, currency = "usd") {
   if (metric.format === "currency") {
     return new Intl.NumberFormat(undefined, {
@@ -247,10 +254,8 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={() => void loadHomeData(customRange, true)} />}
     >
       <View style={[styles.heroCard, { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.heroTitle}>Hello {user?.firstName ?? "there"}</Text>
-        <Text style={styles.heroSubtitle}>
-          {bootstrap?.studio?.name ?? user?.studio?.name ?? "Studio"} - {user?.role ?? "-"}
-        </Text>
+        <Text style={styles.heroTitle}>{bootstrap?.studio?.name ?? user?.studio?.name ?? "Studio"}</Text>
+        <Text style={styles.heroSubtitle}>{roleLabel(user?.role)}</Text>
 
         <View style={styles.customRangeRow}>
           <Pressable style={styles.customDateButton} onPress={() => openRangePicker("start")}>
@@ -262,6 +267,7 @@ export default function HomeScreen() {
             <Text style={styles.customDateValue}>{customRange.end.toLocaleDateString()}</Text>
           </Pressable>
         </View>
+        <Text style={styles.rangeHint}>Numbers below refresh for the dates you pick.</Text>
 
       </View>
 
@@ -300,7 +306,7 @@ export default function HomeScreen() {
       </Modal>
 
       <View style={styles.snapshotHeader}>
-        <Text style={styles.sectionTitle}>Performance Snapshot</Text>
+        <Text style={styles.sectionTitle}>Key Numbers</Text>
         <Text style={styles.snapshotHint}>{reportLoading ? "Updating..." : activeRange.label}</Text>
       </View>
 
@@ -328,7 +334,7 @@ export default function HomeScreen() {
 
       {quickActions.length > 0 ? (
         <View style={styles.actionSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>Jump To</Text>
           <View style={styles.actionGrid}>
             {quickActions.map((action) => (
               <Pressable
@@ -345,11 +351,11 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </View>
-          <Text style={styles.hintText}>Need more? Open the `Workspace` tab for full feature access.</Text>
+          <Text style={styles.hintText}>Open Workspace for the full toolset.</Text>
         </View>
       ) : null}
 
-      {!bootstrap ? <Text style={styles.note}>No bootstrap data yet. Pull to refresh.</Text> : null}
+      {!bootstrap ? <Text style={styles.note}>Pull to refresh to load your latest data.</Text> : null}
     </ScrollView>
   )
 }
@@ -378,6 +384,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginTop: 4,
+  },
+  rangeHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
+    marginTop: 2,
   },
   customDateButton: {
     flex: 1,
@@ -537,6 +548,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   actionButton: {
@@ -546,6 +559,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 11,
     paddingHorizontal: 12,
+    width: "48%",
+    minWidth: 140,
   },
   actionButtonDisabled: {
     opacity: 0.6,
