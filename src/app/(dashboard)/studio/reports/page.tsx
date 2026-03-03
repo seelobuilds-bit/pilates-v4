@@ -577,7 +577,7 @@ export default function ReportsPage() {
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-2 z-20 mb-6 flex flex-col gap-3 rounded-2xl bg-gray-50/95 pb-2 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
           <p className="text-gray-500 mt-1">
@@ -669,7 +669,7 @@ export default function ReportsPage() {
                           />
                         </div>
                       </div>
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                         <Button 
                           variant="outline" 
                           className="flex-1"
@@ -759,35 +759,35 @@ export default function ReportsPage() {
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="overview" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="revenue" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="revenue" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <DollarSign className="h-4 w-4 mr-2" />
             Revenue
           </TabsTrigger>
-          <TabsTrigger value="utilisation" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="utilisation" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <PieChart className="h-4 w-4 mr-2" />
             Utilisation
           </TabsTrigger>
-          <TabsTrigger value="instructors" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="instructors" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <GraduationCap className="h-4 w-4 mr-2" />
             Instructors
           </TabsTrigger>
-          <TabsTrigger value="retention" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="retention" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Users className="h-4 w-4 mr-2" />
             Retention
           </TabsTrigger>
-          <TabsTrigger value="marketing" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="marketing" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Mail className="h-4 w-4 mr-2" />
             Marketing
           </TabsTrigger>
-          <TabsTrigger value="website" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="website" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Globe className="h-4 w-4 mr-2" />
             Website
           </TabsTrigger>
-          <TabsTrigger value="social" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
+          <TabsTrigger value="social" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Instagram className="h-4 w-4 mr-2" />
             Social Media
           </TabsTrigger>

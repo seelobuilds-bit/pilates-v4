@@ -494,7 +494,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
       case "quickActions":
         return (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Link href={`${linkPrefix}/inbox`} className="block min-w-0">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 flex items-center gap-3">
@@ -881,7 +881,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
         </div>
 
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+          <div className="grid min-w-0 grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:justify-end">
             <Link href={`${linkPrefix}/clients/new`} className="min-w-0">
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -894,7 +894,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                 Add Class
               </Button>
             </Link>
-            <Link href={`${linkPrefix}/schedule`} className="min-w-0">
+            <Link href={`${linkPrefix}/schedule`} className="min-w-0 col-span-2 lg:col-span-1">
               <Button className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto" size="sm">
                 <Calendar className="h-4 w-4 mr-2" />
                 View Schedule
@@ -904,6 +904,9 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
 
           {supportsRangeFiltering && (
             <div className="w-full sm:w-auto">
+              <p className="mb-2 text-xs text-gray-500 sm:hidden">
+                Dashboard totals update for <span className="font-medium text-gray-700">{pendingRangeLabel ?? selectedRange.label}</span>.
+              </p>
               <div className="app-scrollbar flex w-full gap-2 overflow-x-auto pb-1 sm:hidden">
                 {quickRangeOptions.map((option) => (
                   <Button
@@ -1009,7 +1012,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
             onClick={() => setShowLayoutControls((prev) => !prev)}
           >
             <Settings2 className="h-4 w-4 mr-2" />
-            Customize dashboard
+            Customize
           </Button>
         </div>
       </div>

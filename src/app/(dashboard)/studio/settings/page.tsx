@@ -441,7 +441,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-3xl space-y-6">
         {/* Stripe Payments */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-4">
@@ -489,7 +489,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Status details */}
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="grid grid-cols-1 gap-3 pt-3 border-t sm:grid-cols-2">
                     <div className="flex items-center gap-2">
                       {stripeStatus.chargesEnabled ? (
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -523,12 +523,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {!stripeStatus.onboardingComplete && (
                     <Button 
                       onClick={handleContinueOnboarding}
                       disabled={connectingStripe}
-                      className="bg-violet-600 hover:bg-violet-700"
+                      className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                     >
                       {connectingStripe ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -538,7 +538,7 @@ export default function SettingsPage() {
                       Complete Setup
                     </Button>
                   )}
-                  <Button variant="outline" onClick={fetchStripeStatus}>
+                  <Button variant="outline" onClick={fetchStripeStatus} className="w-full sm:w-auto">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh Status
                   </Button>
@@ -547,7 +547,7 @@ export default function SettingsPage() {
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
-                    <Button variant="outline">
+                    <Button variant="outline" className="w-full sm:w-auto">
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Stripe Dashboard
                     </Button>
