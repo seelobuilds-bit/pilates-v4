@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { summarizeVaultEnrollments } from "@/lib/vault/analytics"
 
 // GET - Fetch enrollments
 export async function GET(request: NextRequest) {
@@ -89,12 +90,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Get stats
-    const stats = {
-      total: enrollments.length,
-      active: enrollments.filter(e => e.status === "ACTIVE").length,
-      completed: enrollments.filter(e => e.status === "COMPLETED").length,
-      totalRevenue: enrollments.reduce((sum, e) => sum + (e.paidAmount || 0), 0)
-    }
+    const stats = summarizeVaultEnrollments(enrollments)
 
     return NextResponse.json({ enrollments, stats })
   } catch (error) {
@@ -351,7 +347,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update enrollment" }, { status: 500 })
   }
 }
-
 
 
 

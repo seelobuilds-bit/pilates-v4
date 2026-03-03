@@ -2,12 +2,7 @@ import { Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
-
-function ratioPercentage(numerator: number, denominator: number, precision = 1) {
-  if (denominator <= 0) return 0
-  const factor = Math.pow(10, precision)
-  return Math.round((numerator / denominator) * 100 * factor) / factor
-}
+import { summarizeVaultCourseEnrollments } from "@/lib/vault/analytics"
 
 export async function GET(
   request: NextRequest,
@@ -212,15 +207,7 @@ export async function GET(
       return NextResponse.json({ error: "Vault course not found" }, { status: 404 })
     }
 
-    const totalEnrollments = course.enrollments.length
-    const activeEnrollments = course.enrollments.filter((enrollment) => enrollment.status === "ACTIVE").length
-    const completedEnrollments = course.enrollments.filter((enrollment) => enrollment.status === "COMPLETED").length
-    const averageProgress =
-      totalEnrollments > 0
-        ? Math.round(
-            (course.enrollments.reduce((sum, enrollment) => sum + (enrollment.progressPercent || 0), 0) / totalEnrollments) * 10
-          ) / 10
-        : 0
+    const enrollmentStats = summarizeVaultCourseEnrollments(course.enrollments)
 
     const totalLessons = course.modules.reduce((sum, module) => sum + module._count.lessons, 0)
     const publishedModules = course.modules.filter((module) => module.isPublished).length
@@ -279,11 +266,11 @@ export async function GET(
           : null,
       },
       stats: {
-        totalEnrollments,
-        activeEnrollments,
-        completedEnrollments,
-        completionRate: ratioPercentage(completedEnrollments, totalEnrollments, 1),
-        averageProgress,
+        totalEnrollments: enrollmentStats.totalEnrollments,
+        activeEnrollments: enrollmentStats.activeEnrollments,
+        completedEnrollments: enrollmentStats.completedEnrollments,
+        completionRate: enrollmentStats.completionRate,
+        averageProgress: enrollmentStats.averageProgress,
         totalModules: course.modules.length,
         publishedModules,
         totalLessons,

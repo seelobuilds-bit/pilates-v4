@@ -97,6 +97,9 @@ jobs:
       - name: Leaderboard presentation regression
         run: pnpm test:leaderboards:presentation
 
+      - name: Vault analytics regression
+        run: pnpm test:vault:analytics
+
       - name: Reporting smoke
         run: pnpm test:smoke:reporting
 

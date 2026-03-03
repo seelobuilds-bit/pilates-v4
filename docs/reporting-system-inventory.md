@@ -18,6 +18,7 @@ Supporting shared helpers already in use:
 
 - `/Users/charlie/Development/pilates-v4/src/lib/reporting/metrics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/db-query-mode.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts`
 
 Current mobile reporting service:
 
@@ -255,6 +256,7 @@ Surface:
 Current note:
 
 - Vault analytics UI exists, but some of it still appears placeholder-like and needs an explicit audit before unification.
+- Low-risk summary math is now being centralized in `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts` before any deeper route consolidation.
 
 ### H. Marketing / Email / SMS / Social
 

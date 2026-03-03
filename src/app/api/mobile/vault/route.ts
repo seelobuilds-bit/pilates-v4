@@ -2,6 +2,7 @@ import { Prisma, VaultAudience } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { summarizeVaultCourses } from "@/lib/vault/analytics"
 
 const VALID_AUDIENCE_FILTERS = new Set(["all", "STUDIO_OWNERS", "TEACHERS", "CLIENTS", "ALL"])
 const VALID_STATUS_FILTERS = new Set(["all", "published", "draft"])
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       ...(buildSearchWhere(search) || {}),
     }
 
-    const [courses, categories, totalCourses, publishedCourses, featuredCourses, enrollmentTotals] = await Promise.all([
+    const [courses, categories] = await Promise.all([
       db.vaultCourse.findMany({
         where,
         select: {
@@ -147,14 +148,8 @@ export async function GET(request: NextRequest) {
         select: { category: true },
         distinct: ["category"],
       }),
-      db.vaultCourse.count({ where }),
-      db.vaultCourse.count({ where: { ...where, isPublished: true } }),
-      db.vaultCourse.count({ where: { ...where, isFeatured: true } }),
-      db.vaultCourse.aggregate({
-        where,
-        _sum: { enrollmentCount: true },
-      }),
     ])
+    const courseStats = summarizeVaultCourses(courses)
 
     return NextResponse.json({
       role: decoded.role,
@@ -194,10 +189,10 @@ export async function GET(request: NextRequest) {
           : null,
       })),
       stats: {
-        totalCourses,
-        publishedCourses,
-        featuredCourses,
-        totalEnrollments: enrollmentTotals._sum.enrollmentCount || 0,
+        totalCourses: courseStats.totalCourses,
+        publishedCourses: courseStats.publishedCourses,
+        featuredCourses: courseStats.featuredCourses,
+        totalEnrollments: courseStats.totalEnrollments,
       },
     })
   } catch (error) {
