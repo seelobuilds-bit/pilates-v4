@@ -8,6 +8,7 @@ import {
   buildReportRequestParams,
   defaultCustomRange,
   formatDateInput,
+  normalizeCustomRange,
   parseDateInput,
   resolveReportRange,
 } from "@/src/lib/report-range"
@@ -99,6 +100,7 @@ export default function ReportMetricDetailScreen() {
   const isNarrowScreen = width <= 360
 
   const [customRange, setCustomRange] = useState(() => buildInitialRange(startDateParam, endDateParam))
+  const [appliedRange, setAppliedRange] = useState(() => buildInitialRange(startDateParam, endDateParam))
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [pickerDraftDate, setPickerDraftDate] = useState<Date | null>(null)
   const [showAllTrendPoints, setShowAllTrendPoints] = useState(false)
@@ -108,11 +110,15 @@ export default function ReportMetricDetailScreen() {
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const hasLoadedInitially = useRef(false)
+  const latestRequestIdRef = useRef(0)
 
-  const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
+  const appliedRangeLabel = useMemo(
+    () => `${appliedRange.start.toLocaleDateString()} - ${appliedRange.end.toLocaleDateString()}`,
+    [appliedRange.end, appliedRange.start]
+  )
   const reportRequestParams = useMemo(
-    () => buildReportRequestParams("CUSTOM", customRange.start, customRange.end),
-    [customRange.end, customRange.start]
+    () => buildReportRequestParams("CUSTOM", appliedRange.start, appliedRange.end),
+    [appliedRange.end, appliedRange.start]
   )
 
   const resolvedMetricId = useMemo(() => String(metricId || "").trim(), [metricId])
@@ -128,15 +134,21 @@ export default function ReportMetricDetailScreen() {
       if (isRefresh) setRefreshing(true)
       else setLoading(true)
 
+      const requestId = latestRequestIdRef.current + 1
+      latestRequestIdRef.current = requestId
       setReportLoading(true)
       setError(null)
       try {
         const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
+        if (requestId !== latestRequestIdRef.current) return
         setData(response)
+        setAppliedRange(normalizeCustomRange(range.start, range.end))
       } catch (err) {
+        if (requestId !== latestRequestIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load metric detail"
         setError(message)
       } finally {
+        if (requestId !== latestRequestIdRef.current) return
         setReportLoading(false)
         setLoading(false)
         setRefreshing(false)
@@ -189,7 +201,7 @@ export default function ReportMetricDetailScreen() {
   const detailSummary = useMemo(() => {
     if (!data || !metric) return []
     return [
-      { label: "Window", value: activeRange.label },
+      { label: "Window", value: appliedRangeLabel },
       { label: "Metric", value: metric.label },
       {
         label: "Updated",
@@ -198,7 +210,7 @@ export default function ReportMetricDetailScreen() {
           : new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
       },
     ]
-  }, [activeRange.label, data, metric, reportLoading])
+  }, [appliedRangeLabel, data, metric, reportLoading])
 
   const openRangePicker = useCallback(
     (field: "start" | "end") => {
@@ -221,10 +233,10 @@ export default function ReportMetricDetailScreen() {
       }
 
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
-      const nextRange = {
-        start: activeRangePicker === "start" ? safeDate : customRange.start,
-        end: activeRangePicker === "end" ? safeDate : customRange.end,
-      }
+      const nextRange = normalizeCustomRange(
+        activeRangePicker === "start" ? safeDate : customRange.start,
+        activeRangePicker === "end" ? safeDate : customRange.end
+      )
       setCustomRange(nextRange)
       closeRangePicker()
       void loadReports(nextRange)

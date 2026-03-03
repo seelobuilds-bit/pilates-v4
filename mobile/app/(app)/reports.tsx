@@ -4,22 +4,9 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import { Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
-import {
-  buildReportRequestParams,
-  defaultCustomRange,
-  formatDateInput,
-  parseDateInput,
-  resolveReportRange,
-} from "@/src/lib/report-range"
+import { buildReportRequestParams, defaultCustomRange, formatDateInput, normalizeCustomRange, parseDateInput, resolveReportRange } from "@/src/lib/report-range"
 import { getStudioPrimaryColor, mobileTheme, withOpacity } from "@/src/lib/theme"
 import type { MobileReportMetric, MobileReportsResponse } from "@/src/types/mobile"
-
-function formatRangeDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  })
-}
 
 function formatAsCurrency(value: number, currency = "usd") {
   const rounded = Math.abs(value % 1) > 0 ? value : Math.round(value)
@@ -94,6 +81,7 @@ export default function ReportsScreen() {
   const isNarrowScreen = width <= 360
 
   const [customRange, setCustomRange] = useState(() => buildInitialRange())
+  const [appliedRange, setAppliedRange] = useState(() => buildInitialRange())
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [pickerDraftDate, setPickerDraftDate] = useState<Date | null>(null)
   const [data, setData] = useState<MobileReportsResponse | null>(null)
@@ -102,11 +90,19 @@ export default function ReportsScreen() {
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const hasLoadedInitially = useRef(false)
+  const latestRequestIdRef = useRef(0)
 
-  const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
+  const appliedRangeLabel = useMemo(
+    () => `${appliedRange.start.toLocaleDateString()} - ${appliedRange.end.toLocaleDateString()}`,
+    [appliedRange.end, appliedRange.start]
+  )
+  const appliedRangeDays = useMemo(() => {
+    const diff = appliedRange.end.getTime() - appliedRange.start.getTime()
+    return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)) + 1)
+  }, [appliedRange.end, appliedRange.start])
   const reportRequestParams = useMemo(
-    () => buildReportRequestParams("CUSTOM", customRange.start, customRange.end),
-    [customRange.end, customRange.start]
+    () => buildReportRequestParams("CUSTOM", appliedRange.start, appliedRange.end),
+    [appliedRange.end, appliedRange.start]
   )
 
   const loadReports = useCallback(
@@ -120,15 +116,21 @@ export default function ReportsScreen() {
       if (isRefresh) setRefreshing(true)
       else setLoading(true)
 
+      const requestId = latestRequestIdRef.current + 1
+      latestRequestIdRef.current = requestId
       setReportLoading(true)
       setError(null)
       try {
         const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
+        if (requestId !== latestRequestIdRef.current) return
         setData(response)
+        setAppliedRange(normalizeCustomRange(range.start, range.end))
       } catch (err) {
+        if (requestId !== latestRequestIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load reports"
         setError(message)
       } finally {
+        if (requestId !== latestRequestIdRef.current) return
         setReportLoading(false)
         setLoading(false)
         setRefreshing(false)
@@ -153,8 +155,8 @@ export default function ReportsScreen() {
   const reportSummary = useMemo(() => {
     if (!data) return null
     return [
-      { label: "Window", value: activeRange.label },
-      { label: "Range", value: `${formatRangeDate(reportRequestParams.startDate)} - ${formatRangeDate(reportRequestParams.endDate)}` },
+      { label: "Window", value: `${appliedRangeDays} day${appliedRangeDays === 1 ? "" : "s"}` },
+      { label: "Range", value: appliedRangeLabel },
       {
         label: "Updated",
         value: reportLoading
@@ -165,7 +167,7 @@ export default function ReportsScreen() {
             }),
       },
     ]
-  }, [activeRange.label, data, reportLoading, reportRequestParams.endDate, reportRequestParams.startDate])
+  }, [appliedRangeDays, appliedRangeLabel, data, reportLoading])
   const visibleMetrics = data?.metrics ?? []
   const topMetric = visibleMetrics[0] || data?.metrics?.[0] || null
 
@@ -190,10 +192,10 @@ export default function ReportsScreen() {
       }
 
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
-      const nextRange = {
-        start: activeRangePicker === "start" ? safeDate : customRange.start,
-        end: activeRangePicker === "end" ? safeDate : customRange.end,
-      }
+      const nextRange = normalizeCustomRange(
+        activeRangePicker === "start" ? safeDate : customRange.start,
+        activeRangePicker === "end" ? safeDate : customRange.end
+      )
       setCustomRange(nextRange)
       closeRangePicker()
       void loadReports(nextRange)

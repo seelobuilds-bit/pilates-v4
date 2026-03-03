@@ -37,6 +37,16 @@ function formatPlanPrice(amount?: number | null, currency?: string | null) {
   }).format(amount)
 }
 
+function planCadenceLabel(plan: MobileClientPlan) {
+  if (plan.kind === "WEEKLY") {
+    return "Renews every week"
+  }
+  if (plan.autoRenew) {
+    return "Auto-renews when credits run out"
+  }
+  return "One-off class pack"
+}
+
 export default function ProfileScreen() {
   const {
     user,
@@ -289,6 +299,7 @@ export default function ProfileScreen() {
       {isClient ? (
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Class plans</Text>
+          <Text style={styles.row}>Manage renewals and see how each plan works.</Text>
           {loadingClientPlans ? <Text style={styles.row}>Loading class plans...</Text> : null}
           {!loadingClientPlans && clientPlans.length === 0 ? (
             <Text style={styles.row}>No recurring plans yet.</Text>
@@ -314,16 +325,17 @@ export default function ProfileScreen() {
                   </View>
                   {priceLabel ? <Text style={styles.planPrice}>{priceLabel}{plan.kind === "WEEKLY" ? "/week" : ""}</Text> : null}
                 </View>
+                <Text style={styles.planMeta}>{planCadenceLabel(plan)}</Text>
                 {plan.description ? <Text style={styles.planMeta}>{plan.description}</Text> : null}
                 {plan.classTypeName ? <Text style={styles.planMeta}>Class: {plan.classTypeName}</Text> : null}
                 {plan.teacherName ? <Text style={styles.planMeta}>Teacher: {plan.teacherName}</Text> : null}
                 {plan.locationName ? <Text style={styles.planMeta}>Location: {plan.locationName}</Text> : null}
                 {typeof plan.creditsPerRenewal === "number" ? (
-                  <Text style={styles.planMeta}>Credits per renew: {plan.creditsPerRenewal}</Text>
+                  <Text style={styles.planMeta}>Credits added: {plan.creditsPerRenewal}</Text>
                 ) : null}
                 {plan.nextChargeAt ? (
                   <Text style={styles.planMeta}>
-                    {plan.status === "active" ? "Next renewal" : "Ends"}: {new Date(plan.nextChargeAt).toLocaleString()}
+                    {plan.status === "active" ? "Next charge" : "Ends"}: {new Date(plan.nextChargeAt).toLocaleString()}
                   </Text>
                 ) : null}
                 {plan.status === "active" ? (

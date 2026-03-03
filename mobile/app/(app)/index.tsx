@@ -8,6 +8,7 @@ import {
   buildReportRequestParams,
   defaultCustomRange,
   formatDateInput,
+  normalizeCustomRange,
   parseDateInput,
   resolveReportRange,
 } from "@/src/lib/report-range"
@@ -117,6 +118,7 @@ export default function HomeScreen() {
   const [openingActionId, setOpeningActionId] = useState<string | null>(null)
   const [reportsData, setReportsData] = useState<MobileReportsResponse | null>(null)
   const [customRange, setCustomRange] = useState(() => buildInitialRange())
+  const [appliedRange, setAppliedRange] = useState(() => buildInitialRange())
   const [activeRangePicker, setActiveRangePicker] = useState<"start" | "end" | null>(null)
   const [pickerDraftDate, setPickerDraftDate] = useState<Date | null>(null)
   const [reportError, setReportError] = useState<string | null>(null)
@@ -128,8 +130,12 @@ export default function HomeScreen() {
   const quickActions = useMemo(() => buildQuickActions(roleFeatures), [roleFeatures])
 
   const roleMetricPriority = useMemo(() => buildMetricPriority(user?.role), [user?.role])
-  const activeRange = useMemo(() => resolveReportRange("CUSTOM", customRange.start, customRange.end), [customRange.end, customRange.start])
+  const appliedRangeLabel = useMemo(
+    () => `${appliedRange.start.toLocaleDateString()} - ${appliedRange.end.toLocaleDateString()}`,
+    [appliedRange.end, appliedRange.start]
+  )
   const hasLoadedInitially = useRef(false)
+  const latestRequestIdRef = useRef(0)
 
   const displayedTrendMetrics = useMemo(() => {
     if (!reportsData) return []
@@ -147,6 +153,8 @@ export default function HomeScreen() {
         setRefreshing(true)
       }
 
+      const requestId = latestRequestIdRef.current + 1
+      latestRequestIdRef.current = requestId
       setReportLoading(true)
       setReportError(null)
 
@@ -154,14 +162,20 @@ export default function HomeScreen() {
         await refreshBootstrap()
         if (token) {
           const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
+          if (requestId !== latestRequestIdRef.current) return
           setReportsData(response)
+          setAppliedRange(normalizeCustomRange(range.start, range.end))
         } else {
+          if (requestId !== latestRequestIdRef.current) return
           setReportsData(null)
+          setAppliedRange(normalizeCustomRange(range.start, range.end))
         }
       } catch (error) {
+        if (requestId !== latestRequestIdRef.current) return
         const message = error instanceof Error ? error.message : "Failed to load dashboard trends"
         setReportError(message)
       } finally {
+        if (requestId !== latestRequestIdRef.current) return
         setReportLoading(false)
         setRefreshing(false)
       }
@@ -210,10 +224,10 @@ export default function HomeScreen() {
   const applyPickedDate = useCallback(
     (selectedDate: Date) => {
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
-      const nextRange = {
-        start: activeRangePicker === "start" ? safeDate : customRange.start,
-        end: activeRangePicker === "end" ? safeDate : customRange.end,
-      }
+      const nextRange = normalizeCustomRange(
+        activeRangePicker === "start" ? safeDate : customRange.start,
+        activeRangePicker === "end" ? safeDate : customRange.end
+      )
       setCustomRange(nextRange)
       closeRangePicker()
       void loadHomeData(nextRange)
@@ -307,7 +321,7 @@ export default function HomeScreen() {
 
       <View style={styles.snapshotHeader}>
         <Text style={styles.sectionTitle}>Key Numbers</Text>
-        <Text style={styles.snapshotHint}>{reportLoading ? "Updating..." : activeRange.label}</Text>
+        <Text style={styles.snapshotHint}>{reportLoading ? "Updating..." : appliedRangeLabel}</Text>
       </View>
 
       <View style={styles.metricsGrid}>

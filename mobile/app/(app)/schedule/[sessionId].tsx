@@ -163,7 +163,7 @@ export default function ScheduleSessionDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadDetail(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Session Detail</Text>
+        <Text style={styles.title}>Class overview</Text>
         {data?.session ? (
           <>
             <Text style={styles.nameText}>{data.session.classType.name}</Text>
@@ -198,7 +198,7 @@ export default function ScheduleSessionDetailScreen() {
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Class Info</Text>
+            <Text style={styles.sectionTitle}>Class details</Text>
             <Text style={styles.metaText}>Duration: {data.session.classType.duration} mins</Text>
             {data.session.classType.description ? <Text style={styles.metaText}>{data.session.classType.description}</Text> : null}
             {locationSummary ? <Text style={styles.metaText}>Location: {locationSummary}</Text> : null}
@@ -231,11 +231,11 @@ export default function ScheduleSessionDetailScreen() {
               <View style={styles.clientActions}>
                 {data.clientBooking && data.clientBooking.status !== "CANCELLED" && data.clientBooking.status !== "NO_SHOW" ? (
                   <Pressable style={[styles.actionButton, styles.cancelButton, actionLoading && styles.actionButtonDisabled]} onPress={() => void handleCancel()} disabled={actionLoading}>
-                    <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Cancel Booking"}</Text>
+                    <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : "Cancel"}</Text>
                   </Pressable>
                 ) : data.canBook || data.canCheckoutOnWeb ? (
                   <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }, actionLoading && styles.actionButtonDisabled]} onPress={() => void handleBook()} disabled={actionLoading}>
-                    <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : isPaidClass ? "Book on Web Checkout" : "Book Class"}</Text>
+                    <Text style={styles.actionButtonText}>{actionLoading ? "Working..." : isPaidClass ? "Pay on web" : "Book now"}</Text>
                   </Pressable>
                 ) : (
                   <Text style={styles.metaText}>Booking unavailable for this class right now.</Text>

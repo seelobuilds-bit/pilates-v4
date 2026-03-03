@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { FlatList, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
@@ -95,21 +95,34 @@ function ScheduleCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.className}>{item.classType.name}</Text>
-      <Text style={styles.metaText}>{date}</Text>
-      <Text style={styles.metaText}>{time}</Text>
-      <Text style={styles.metaText}>Teacher: {teacher}</Text>
-      <Text style={styles.metaText}>Location: {item.location.name}</Text>
-      <Text style={styles.metaText}>
-        Spots: {item.bookedCount}/{item.capacity}
-      </Text>
-      <Text style={styles.metaText}>Price: {item.classType.price > 0 ? formatCurrency(item.classType.price, currencyCode) : "Free"}</Text>
-
-      {item.bookingStatus ? <Text style={[styles.bookingStatus, { color: primaryColor }]}>Booking: {item.bookingStatus}</Text> : null}
+      <View style={styles.cardHeader}>
+        <Text style={styles.className}>{item.classType.name}</Text>
+        {item.bookingStatus ? (
+          <Text style={[styles.bookingStatus, { color: primaryColor, backgroundColor: withOpacity(primaryColor, 0.1) }]}>
+            {item.bookingStatus}
+          </Text>
+        ) : null}
+      </View>
+      <Text style={styles.cardPrimaryMeta}>{date}</Text>
+      <Text style={styles.cardPrimaryMeta}>{time}</Text>
+      <Text style={styles.metaText}>{teacher}</Text>
+      <Text style={styles.metaText}>{item.location.name}</Text>
+      <View style={styles.metaChipRow}>
+        <View style={styles.metaChip}>
+          <Text style={styles.metaChipText}>
+            {item.bookedCount}/{item.capacity} booked
+          </Text>
+        </View>
+        <View style={styles.metaChip}>
+          <Text style={styles.metaChipText}>
+            {item.classType.price > 0 ? formatCurrency(item.classType.price, currencyCode) : "Free"}
+          </Text>
+        </View>
+      </View>
 
       <View style={styles.cardActions}>
         <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-          <Text style={styles.detailsButtonText}>View Details</Text>
+          <Text style={styles.detailsButtonText}>Open</Text>
         </Pressable>
 
         {isClient && browsingMode ? (
@@ -157,6 +170,7 @@ export default function ScheduleScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
+  const latestScheduleRequestIdRef = useRef(0)
 
   const isClient = user?.role === "CLIENT"
   const [clientMode, setClientMode] = useState<"booked" | "all">("booked")
@@ -193,6 +207,8 @@ export default function ScheduleScreen() {
         setLoading(true)
       }
 
+      const requestId = latestScheduleRequestIdRef.current + 1
+      latestScheduleRequestIdRef.current = requestId
       setError(null)
       try {
         const response = await mobileApi.schedule(token, {
@@ -200,12 +216,15 @@ export default function ScheduleScreen() {
           to: dateRange.to,
           mode: isClient ? clientMode : undefined,
         })
+        if (requestId !== latestScheduleRequestIdRef.current) return
         setItems(response.items)
         setCurrencyCode(normalizeCurrencyCode(response.studio?.currency))
       } catch (err) {
+        if (requestId !== latestScheduleRequestIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load schedule"
         setError(message)
       } finally {
+        if (requestId !== latestScheduleRequestIdRef.current) return
         setLoading(false)
         setRefreshing(false)
       }
@@ -367,9 +386,11 @@ export default function ScheduleScreen() {
   )
 
   return (
-    <View style={styles.container}>
+      <View style={styles.container}>
       <Text style={styles.title}>Schedule</Text>
-      <Text style={styles.subtitle}>Find classes quickly and jump to the right day.</Text>
+      <Text style={styles.subtitle}>
+        {isClient ? "See upcoming classes and book quickly." : "See what is running and jump to the right day."}
+      </Text>
 
       <TextInput
         value={search}
@@ -414,10 +435,10 @@ export default function ScheduleScreen() {
           style={styles.segmentScroll}
           contentContainerStyle={styles.segmentScrollContent}
         >
-          {[
-            { id: "booked" as const, label: "Booked" },
-            { id: "all" as const, label: "Browse Classes" },
-          ].map((option) => {
+            {[
+              { id: "booked" as const, label: "Booked" },
+              { id: "all" as const, label: "Browse" },
+            ].map((option) => {
             const selected = option.id === clientMode
             return (
               <Pressable
@@ -438,12 +459,13 @@ export default function ScheduleScreen() {
       ) : null}
 
       <Text style={styles.resultsHint}>
-        Showing {filteredItems.length}{windowFilter !== "ALL" ? ` for ${windowFilter === "TODAY" ? "today" : "the next 7 days"}` : ""}
+        Showing {filteredItems.length} class{filteredItems.length === 1 ? "" : "es"}
+        {windowFilter !== "ALL" ? ` for ${windowFilter === "TODAY" ? "today" : "the next 7 days"}` : ""}
       </Text>
 
       <View style={styles.dateRow}>
         <Pressable style={styles.dateButton} onPress={openDatePicker}>
-          <Text style={styles.dateLabel}>Jump to date</Text>
+          <Text style={styles.dateLabel}>Date</Text>
           <Text style={styles.dateValue}>{selectedDateLabel}</Text>
         </Pressable>
         <Pressable
@@ -718,19 +740,55 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: mobileTheme.colors.border,
-    gap: 4,
+    gap: 6,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
   },
   className: {
     fontSize: 16,
     fontWeight: "700",
     color: mobileTheme.colors.text,
+    flex: 1,
+  },
+  cardPrimaryMeta: {
+    color: mobileTheme.colors.text,
+    fontSize: 13,
+    fontWeight: "600",
   },
   metaText: {
     color: mobileTheme.colors.textMuted,
     fontSize: 13,
   },
   bookingStatus: {
-    marginTop: 4,
+    fontWeight: "700",
+    fontSize: 11,
+    textTransform: "capitalize",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  metaChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
+  },
+  metaChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.canvas,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  metaChipText: {
+    color: mobileTheme.colors.textMuted,
+    fontSize: 11,
     fontWeight: "700",
   },
   cardActions: {
