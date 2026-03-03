@@ -7,6 +7,11 @@ import {
   Prisma,
 } from "@prisma/client"
 import { db } from "../db"
+import {
+  calculateLeaderboardDerivedMetrics,
+  normalizeLeaderboardScore,
+  roundLeaderboardValue,
+} from "./metrics"
 import { compareLeaderboardEntries } from "./presentation"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
@@ -28,16 +33,6 @@ type ScoreEntry = {
   metricsBreakdown: Prisma.JsonObject
 }
 
-function roundTo(value: number, precision = 2) {
-  const factor = 10 ** precision
-  return Math.round(value * factor) / factor
-}
-
-function ratioPercentage(numerator: number, denominator: number, precision = 2) {
-  if (denominator <= 0) return 0
-  return roundTo((numerator / denominator) * 100, precision)
-}
-
 function incrementMap(map: Map<string, number>, key: string | null | undefined, amount = 1) {
   if (!key) return
   map.set(key, (map.get(key) || 0) + amount)
@@ -52,12 +47,6 @@ function addToSetMap(map: Map<string, Set<string>>, key: string | null | undefin
 
 function toDayKey(input: Date) {
   return input.toISOString().slice(0, 10)
-}
-
-function normalizeScore(rawScore: number) {
-  if (!Number.isFinite(rawScore)) return 0
-  if (rawScore < 0) return 0
-  return roundTo(rawScore, 4)
 }
 
 export async function populateLeaderboardPeriodEntries(params: {
@@ -477,16 +466,10 @@ export async function populateLeaderboardPeriodEntries(params: {
     const capacity = isStudio
       ? byStudio(capacityByStudio, participantId)
       : byTeacher(capacityByTeacher, participantId)
-    const attendanceRate = ratioPercentage(attendance, capacity, 4)
     const newClients = isStudio ? byStudio(newClientsByStudio, participantId) : 0
     const previousNewClients = isStudio ? byStudio(previousNewClientsByStudio, participantId) : 0
-    const retention = isStudio
-      ? ratioPercentage(
-          byStudio(activeBookedClientsByStudio, participantId),
-          byStudio(activeClientsByStudio, participantId),
-          4
-        )
-      : 0
+    const activeBookedClients = isStudio ? byStudio(activeBookedClientsByStudio, participantId) : 0
+    const activeClients = isStudio ? byStudio(activeClientsByStudio, participantId) : 0
     const socialTriggered = isStudio
       ? byStudio(socialTriggeredByStudio, participantId)
       : byTeacher(socialTriggeredByTeacher, participantId)
@@ -502,7 +485,6 @@ export async function populateLeaderboardPeriodEntries(params: {
     const contentConsistencyDays = isStudio
       ? byStudioSetSize(socialActiveDaysByStudio, participantId)
       : byTeacherSetSize(socialActiveDaysByTeacher, participantId)
-    const socialEngagementRate = ratioPercentage(socialResponded + socialBooked, socialTriggered, 4)
     const coursesCreated = isStudio
       ? byStudio(coursesCreatedByStudio, participantId)
       : byTeacher(coursesCreatedByTeacher, participantId)
@@ -518,7 +500,6 @@ export async function populateLeaderboardPeriodEntries(params: {
     const reviewRatingSum = isStudio
       ? byStudio(reviewRatingSumByStudio, participantId)
       : byTeacher(reviewRatingSumByTeacher, participantId)
-    const averageRating = reviewCount > 0 ? reviewRatingSum / reviewCount : 0
     const mostActiveCommunity = isStudio
       ? byStudio(communityMessagesByStudio, participantId)
       : byTeacher(communityMessagesByTeacher, participantId)
@@ -526,45 +507,51 @@ export async function populateLeaderboardPeriodEntries(params: {
     const referrals = isStudio
       ? byStudio(referralsByStudio, participantId)
       : byTeacher(referralsByTeacher, participantId)
-    const newcomerScore = createdAt >= newcomerThreshold ? bookingsCurrentCount + newClients * 2 : 0
-    const comebackScore = Math.max(0, bookingsCurrentCount - bookingsPreviousCount)
-    const growthPercent = ratioPercentage(
-      bookingsCurrentCount - bookingsPreviousCount,
-      Math.max(1, bookingsPreviousCount),
-      4
-    )
-    const clientGrowthPercent = ratioPercentage(
-      newClients - previousNewClients,
-      Math.max(1, previousNewClients),
-      4
-    )
-    const allRounder = bookingsCurrentCount + revenue / 100 + newClients * 10 + socialBooked * 8 + courseEnrollments * 3
+    const derived = calculateLeaderboardDerivedMetrics({
+      bookingsCurrentCount,
+      bookingsPreviousCount,
+      revenue,
+      newClients,
+      previousNewClients,
+      activeBookedClients,
+      activeClients,
+      attendance,
+      capacity,
+      socialTriggered,
+      socialResponded,
+      socialBooked,
+      reviewCount,
+      reviewRatingSum,
+      createdAt,
+      newcomerThreshold,
+      courseEnrollments,
+    })
 
     const metricByCategory: Record<LeaderboardCategory, number> = {
       MOST_CONTENT_POSTED: socialPosts,
       MOST_SOCIAL_VIEWS: socialTriggered * 3 + socialResponded,
       MOST_SOCIAL_LIKES: socialResponded,
-      MOST_SOCIAL_ENGAGEMENT: socialEngagementRate,
+      MOST_SOCIAL_ENGAGEMENT: derived.socialEngagementRate,
       CONTENT_CONSISTENCY: contentConsistencyDays,
-      FASTEST_GROWING: isStudio ? clientGrowthPercent : growthPercent,
-      BIGGEST_GROWTH_MONTHLY: growthPercent,
-      BIGGEST_GROWTH_QUARTERLY: growthPercent,
+      FASTEST_GROWING: isStudio ? derived.clientGrowthPercent : derived.growthPercent,
+      BIGGEST_GROWTH_MONTHLY: derived.growthPercent,
+      BIGGEST_GROWTH_QUARTERLY: derived.growthPercent,
       MOST_NEW_CLIENTS: newClients,
-      HIGHEST_RETENTION: retention,
+      HIGHEST_RETENTION: isStudio ? derived.retention : 0,
       MOST_COURSES_COMPLETED: coursesCompleted,
       MOST_COURSE_ENROLLMENTS: courseEnrollments,
       TOP_COURSE_CREATOR: coursesCreated,
-      BEST_COURSE_RATINGS: averageRating,
+      BEST_COURSE_RATINGS: derived.averageRating,
       MOST_BOOKINGS: bookingsCurrentCount,
-      HIGHEST_ATTENDANCE_RATE: attendanceRate,
+      HIGHEST_ATTENDANCE_RATE: derived.attendanceRate,
       MOST_CLASSES_TAUGHT: classesCount,
       TOP_REVENUE: revenue,
       MOST_ACTIVE_COMMUNITY: mostActiveCommunity,
       TOP_REVIEWER: topReviewer,
       MOST_REFERRALS: referrals,
-      NEWCOMER_OF_MONTH: newcomerScore,
-      COMEBACK_CHAMPION: comebackScore,
-      ALL_ROUNDER: allRounder,
+      NEWCOMER_OF_MONTH: derived.newcomerScore,
+      COMEBACK_CHAMPION: derived.comebackScore,
+      ALL_ROUNDER: derived.allRounder,
     }
 
     const fallbackMetricName = leaderboard.metricName.toLowerCase()
@@ -577,7 +564,7 @@ export async function populateLeaderboardPeriodEntries(params: {
           : fallbackMetricName.includes("client")
             ? newClients
             : fallbackMetricName.includes("engage")
-              ? socialEngagementRate
+              ? derived.socialEngagementRate
               : fallbackMetricName.includes("social")
                 ? socialTriggered
                 : 0
@@ -585,30 +572,30 @@ export async function populateLeaderboardPeriodEntries(params: {
     const score = metricByCategory[leaderboard.category] ?? fallbackScore
 
     return {
-      score: normalizeScore(score),
+      score: normalizeLeaderboardScore(score),
       previousScore: null,
       metricsBreakdown: {
         bookingsCurrent: bookingsCurrentCount,
         bookingsPrevious: bookingsPreviousCount,
-        revenue: roundTo(revenue, 2),
+        revenue: roundLeaderboardValue(revenue, 2),
         classes: classesCount,
-        attendanceRate: roundTo(attendanceRate, 2),
+        attendanceRate: roundLeaderboardValue(derived.attendanceRate, 2),
         newClients,
-        retention: roundTo(retention, 2),
+        retention: roundLeaderboardValue(isStudio ? derived.retention : 0, 2),
         socialTriggered,
         socialResponded,
         socialBooked,
-        socialEngagementRate: roundTo(socialEngagementRate, 2),
+        socialEngagementRate: roundLeaderboardValue(derived.socialEngagementRate, 2),
         contentConsistencyDays,
         coursesCreated,
         courseEnrollments,
         coursesCompleted,
-        averageRating: roundTo(averageRating, 2),
+        averageRating: roundLeaderboardValue(derived.averageRating, 2),
         communityMessages: mostActiveCommunity,
         topReviewer,
         referrals,
-        newcomerScore,
-        comebackScore,
+        newcomerScore: derived.newcomerScore,
+        comebackScore: derived.comebackScore,
       } satisfies Prisma.JsonObject,
     }
   }

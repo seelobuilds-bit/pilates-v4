@@ -97,6 +97,9 @@ jobs:
       - name: Leaderboard presentation regression
         run: pnpm test:leaderboards:presentation
 
+      - name: Leaderboard score regression
+        run: pnpm test:leaderboards:score
+
       - name: Vault analytics regression
         run: pnpm test:vault:analytics
 

@@ -41,6 +41,7 @@ Leaderboard scoring engine:
 
 - `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/scoring.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/cycle.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/metrics.ts`
 - `/Users/charlie/Development/pilates-v4/src/app/api/leaderboards/route.ts`
 
 ## Canonical Business Event Model (Draft)
@@ -223,6 +224,10 @@ Dependencies already visible in scoring:
 - vault enrollments / reviews / chat / affiliate sales
 
 This is a major cross-module dependency surface and cannot be refactored casually.
+
+Current note:
+
+- Low-risk score sub-calculations are now being centralized in `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/metrics.ts` while the existing scoring route remains the source of truth.
 
 ### F. Class Flows
 
