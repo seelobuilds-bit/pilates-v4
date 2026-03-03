@@ -20,7 +20,10 @@ export default function BrandPreviewPage() {
     <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
         .brand-preview-shell {
-          background: #faf8f5;
+          background:
+            radial-gradient(circle at 12% 18%, rgba(212, 206, 196, 0.4), transparent 26%),
+            radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.1), transparent 22%),
+            linear-gradient(180deg, #faf8f5 0%, #f5f2ed 44%, #efebe4 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
         }
@@ -55,7 +58,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-gray-100,
         .brand-preview-shell .bg-zinc-50,
         .brand-preview-shell .bg-zinc-100 {
-          background-color: #f5f2ed !important;
+          background-color: rgba(245, 242, 237, 0.92) !important;
         }
 
         .brand-preview-shell [class*="bg-white/"],
@@ -63,6 +66,13 @@ export default function BrandPreviewPage() {
         .brand-preview-shell [class*="bg-zinc-50/"] {
           background-color: rgba(250, 248, 245, 0.95) !important;
           backdrop-filter: blur(18px);
+        }
+
+        .brand-preview-shell .bg-gray-900\\/50,
+        .brand-preview-shell .bg-black\\/50,
+        .brand-preview-shell .bg-zinc-900\\/50 {
+          background-color: rgba(250, 248, 245, 0.82) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell .text-gray-400,
@@ -93,7 +103,9 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .shadow-xl,
         .brand-preview-shell .shadow-2xl,
         .brand-preview-shell .shadow-sm {
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.06) !important;
+          box-shadow:
+            0 24px 70px rgba(0, 0, 0, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
         }
 
         .brand-preview-shell button,
@@ -105,27 +117,37 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell .bg-black,
         .brand-preview-shell .bg-zinc-900,
-        .brand-preview-shell .bg-gray-900,
-        .brand-preview-shell .bg-violet-600,
-        .brand-preview-shell .bg-pink-500 {
-          background-color: #0d0d0d !important;
+        .brand-preview-shell .bg-gray-900 {
+          background-color: #1a1a1a !important;
           background-image: none !important;
           color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell .bg-violet-600,
+        .brand-preview-shell .bg-pink-500,
+        .brand-preview-shell .bg-blue-600,
+        .brand-preview-shell .bg-emerald-600,
+        .brand-preview-shell .bg-amber-500,
+        .brand-preview-shell .bg-violet-500,
+        .brand-preview-shell .bg-pink-600 {
+          background-color: rgba(212, 206, 196, 0.9) !important;
+          background-image: none !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell .from-pink-500,
         .brand-preview-shell .to-violet-600,
         .brand-preview-shell .from-violet-600,
         .brand-preview-shell .to-pink-500 {
-          --tw-gradient-from: #0d0d0d !important;
-          --tw-gradient-to: #1a1a1a !important;
+          --tw-gradient-from: rgba(212, 206, 196, 0.92) !important;
+          --tw-gradient-to: rgba(245, 242, 237, 0.96) !important;
           --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
         }
 
         .brand-preview-shell .bg-gradient-to-r,
         .brand-preview-shell .bg-gradient-to-br,
         .brand-preview-shell .bg-gradient-to-b {
-          background-image: linear-gradient(135deg, rgba(13, 13, 13, 0.95), rgba(26, 26, 26, 0.92)) !important;
+          background-image: linear-gradient(135deg, rgba(212, 206, 196, 0.92), rgba(245, 242, 237, 0.96)) !important;
         }
 
         .brand-preview-shell .bg-violet-50,
@@ -133,7 +155,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-emerald-50,
         .brand-preview-shell .bg-blue-50,
         .brand-preview-shell .bg-amber-50 {
-          background-color: #efebe4 !important;
+          background-color: rgba(212, 206, 196, 0.28) !important;
+          border-color: rgba(212, 206, 196, 0.7) !important;
         }
 
         .brand-preview-shell .text-violet-600,
@@ -150,6 +173,51 @@ export default function BrandPreviewPage() {
           --tw-ring-color: rgba(212, 206, 196, 0.6) !important;
         }
 
+        .brand-preview-shell .bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: #1a1a1a !important;
+          -webkit-text-fill-color: #1a1a1a !important;
+          font-family: var(--font-brand-preview-display), serif !important;
+          font-style: italic !important;
+          font-weight: 400 !important;
+          letter-spacing: -0.04em !important;
+          text-transform: uppercase;
+        }
+
+        .brand-preview-shell header .text-2xl.font-bold,
+        .brand-preview-shell header .text-2xl.font-bold span {
+          font-family: var(--font-brand-preview-display), serif !important;
+          font-style: italic !important;
+          font-weight: 400 !important;
+          letter-spacing: -0.05em !important;
+          color: #1a1a1a !important;
+          -webkit-text-fill-color: #1a1a1a !important;
+        }
+
+        .brand-preview-shell .text-white,
+        .brand-preview-shell .text-gray-50,
+        .brand-preview-shell .text-zinc-50 {
+          color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell .bg-violet-100,
+        .brand-preview-shell .bg-pink-100,
+        .brand-preview-shell .bg-blue-100,
+        .brand-preview-shell .bg-emerald-100,
+        .brand-preview-shell .bg-amber-100 {
+          background-color: rgba(212, 206, 196, 0.38) !important;
+          color: #1a1a1a !important;
+          border-color: rgba(212, 206, 196, 0.65) !important;
+        }
+
+        .brand-preview-shell .hover\\:bg-violet-700:hover,
+        .brand-preview-shell .hover\\:bg-pink-600:hover,
+        .brand-preview-shell .hover\\:bg-black:hover,
+        .brand-preview-shell .hover\\:bg-gray-900:hover {
+          background-color: #0d0d0d !important;
+          color: #faf8f5 !important;
+        }
+
         .brand-preview-shell input,
         .brand-preview-shell textarea {
           background: rgba(250, 248, 245, 0.95) !important;
@@ -160,6 +228,10 @@ export default function BrandPreviewPage() {
         .brand-preview-shell input::placeholder,
         .brand-preview-shell textarea::placeholder {
           color: #8a8580 !important;
+        }
+
+        .brand-preview-shell svg {
+          color: currentColor;
         }
       `}</style>
       <MarketingHomePage />
