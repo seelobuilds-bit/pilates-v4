@@ -18,7 +18,7 @@
     "test:smoke:mobile:auth-routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-auth-routing-smoke.ts",
     "test:smoke:mobile:routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-push-routing-smoke.ts",
     "test:smoke:studio-content": "node scripts/tests/studio-content-surface-smoke.mjs",
-    "test:smoke:reporting": "node scripts/tests/reporting-regression-smoke.mjs",
+    "test:smoke:reporting": "pnpm test:reporting:date-range && node scripts/tests/reporting-regression-smoke.mjs",
     "test:baseline:reporting": "node scripts/tests/reporting-baseline-capture.mjs",
     "test:baseline:reporting:compare": "node scripts/tests/reporting-baseline-compare.mjs",
     "test:employees:timeoff": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/employees-timeoff-logic.ts",
@@ -29,7 +29,8 @@
     "demo:sync": "node scripts/sync-demo-mirrors.mjs",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:reporting:date-range": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-date-range-logic.ts"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
