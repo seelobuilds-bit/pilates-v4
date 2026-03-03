@@ -94,6 +94,9 @@ jobs:
       - name: Reporting retention regression
         run: pnpm test:reporting:retention
 
+      - name: Reporting marketing regression
+        run: pnpm test:reporting:marketing
+
       - name: Leaderboard presentation regression
         run: pnpm test:leaderboards:presentation
 

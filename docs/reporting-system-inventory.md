@@ -425,6 +425,8 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/teacher/stats/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/teachers/[teacherId]/route.ts`
+- Studio report marketing composition:
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Leaderboard presentation / participant counts:
   - `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/scoring.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/leaderboards/route.ts`
