@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
@@ -85,7 +86,7 @@ export async function GET(
 
   const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
   const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = booking.paidAmount ?? classType.price ?? 0
+    const amount = resolveBookingRevenue(booking.paidAmount, classType.price)
     return sum + amount
   }, 0)
 

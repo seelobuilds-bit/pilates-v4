@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 
@@ -161,7 +162,7 @@ export async function GET() {
     const completedBookings = nonCancelledBookings.filter((booking) => booking.status === "COMPLETED").length
 
     const revenue = nonCancelledBookings.reduce((sum, booking) => {
-      const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+      const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
       return sum + amount
     }, 0)
 
@@ -247,7 +248,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

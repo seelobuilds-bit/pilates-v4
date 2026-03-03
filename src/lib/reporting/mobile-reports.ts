@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const ALLOWED_DAYS = new Set([7, 30, 90])
@@ -64,7 +65,7 @@ function calcChange(current: number, previous: number) {
 }
 
 function bookingRevenue(booking: { paidAmount: number | null; classSession: { classType: { price: number } } }) {
-  return booking.paidAmount ?? booking.classSession.classType.price ?? 0
+  return resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
 }
 
 function metric(id: string, label: string, format: MobileMetricFormat, value: number, previousValue: number): MobileReportMetric {

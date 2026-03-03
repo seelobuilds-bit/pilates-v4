@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { resolveReportRange } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
@@ -426,7 +427,7 @@ export async function GET(request: NextRequest) {
 
   for (const booking of bookings) {
     if (booking.status === "CANCELLED") continue
-    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
     totalRevenue += amount
 
     const locationName = booking.classSession.location.name
@@ -438,7 +439,7 @@ export async function GET(request: NextRequest) {
 
   const previousTotalRevenue = previousBookings.reduce((sum, booking) => {
     if (booking.status === "CANCELLED") return sum
-    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
     return sum + amount
   }, 0)
 
@@ -459,7 +460,7 @@ export async function GET(request: NextRequest) {
     const key = `${date.getFullYear()}-${date.getMonth()}`
     const bucket = monthlyRevenueMap.get(key)
     if (!bucket) continue
-    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
     bucket.amount += amount
   }
   for (const bucket of monthlyRevenueMap.values()) {
@@ -804,7 +805,7 @@ export async function GET(request: NextRequest) {
 
     for (const booking of session.bookings) {
       if (booking.status !== "CANCELLED") {
-        const amount = booking.paidAmount ?? session.classType.price ?? 0
+        const amount = resolveBookingRevenue(booking.paidAmount, session.classType.price)
         bucket.revenue += amount
       }
       if (!ATTENDED_BOOKING_STATUSES.has(booking.status)) continue
