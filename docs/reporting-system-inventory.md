@@ -359,6 +359,10 @@ Current baseline coverage:
 - entity summaries (client / teacher / class type / location) when IDs are provided
 - website analytics (`7d`, `30d`)
 - leaderboards (`STUDIO`, `TEACHER`)
+- content surfaces:
+  - class flows
+  - social training / Growth Academy
+  - vault courses
 
 This script is intentionally read-only. It captures the current trusted output shape and summary values so future refactors can be compared against a concrete baseline before any route is switched.
 

@@ -186,6 +186,43 @@ function extractIntegritySummary(payload) {
   }
 }
 
+function extractContentSurfaceSummary(payload, kind) {
+  if (kind === "classFlows") {
+    const categories = Array.isArray(payload?.categories) ? payload.categories : []
+    return {
+      categoryCount: categories.length,
+      featuredCount: Array.isArray(payload?.featured) ? payload.featured.length : 0,
+      totalContentCount: categories.reduce((sum, category) => sum + (category?._count?.contents || 0), 0),
+      progressCount: payload?.progress && typeof payload.progress === "object" ? Object.keys(payload.progress).length : 0,
+    }
+  }
+
+  if (kind === "socialTraining") {
+    const categories = Array.isArray(payload?.categories) ? payload.categories : []
+    return {
+      categoryCount: categories.length,
+      moduleCount: categories.reduce(
+        (sum, category) => sum + (Array.isArray(category?.modules) ? category.modules.length : 0),
+        0
+      ),
+      contentIdeaCount: Array.isArray(payload?.contentIdeas) ? payload.contentIdeas.length : 0,
+      upcomingEventCount: Array.isArray(payload?.upcomingEvents) ? payload.upcomingEvents.length : 0,
+    }
+  }
+
+  if (kind === "vaultCourses") {
+    const courses = Array.isArray(payload?.courses) ? payload.courses : []
+    return {
+      courseCount: courses.length,
+      categoryCount: Array.isArray(payload?.categories) ? payload.categories.length : 0,
+      publishedCount: courses.filter((course) => course?.isPublished).length,
+      featuredCount: courses.filter((course) => course?.isFeatured).length,
+    }
+  }
+
+  return {}
+}
+
 async function loadBaseline() {
   if (!INPUT_PATH) {
     return null
@@ -247,6 +284,14 @@ async function main() {
     if (!entry?.route || !entry?.summary) continue
     const payload = await fetchJson(entry.route, TEST_OWNER_COOKIE)
     failures.push(...collectDiffs(entry.summary, extractLeaderboardSummary(payload), `leaderboards.${label}`))
+  }
+
+  for (const [label, entry] of Object.entries(baseline.contentSurfaces || {})) {
+    if (!entry?.route || !entry?.summary) continue
+    const payload = await fetchJson(entry.route, TEST_OWNER_COOKIE)
+    failures.push(
+      ...collectDiffs(entry.summary, extractContentSurfaceSummary(payload, label), `contentSurfaces.${label}`)
+    )
   }
 
   if (baseline.integrity?.route && baseline.integrity?.summary) {

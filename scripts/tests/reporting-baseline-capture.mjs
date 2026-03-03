@@ -169,6 +169,43 @@ function extractIntegritySummary(payload) {
   }
 }
 
+function extractContentSurfaceSummary(payload, kind) {
+  if (kind === "classFlows") {
+    const categories = Array.isArray(payload?.categories) ? payload.categories : []
+    return {
+      categoryCount: categories.length,
+      featuredCount: Array.isArray(payload?.featured) ? payload.featured.length : 0,
+      totalContentCount: categories.reduce((sum, category) => sum + (category?._count?.contents || 0), 0),
+      progressCount: payload?.progress && typeof payload.progress === "object" ? Object.keys(payload.progress).length : 0,
+    }
+  }
+
+  if (kind === "socialTraining") {
+    const categories = Array.isArray(payload?.categories) ? payload.categories : []
+    return {
+      categoryCount: categories.length,
+      moduleCount: categories.reduce(
+        (sum, category) => sum + (Array.isArray(category?.modules) ? category.modules.length : 0),
+        0
+      ),
+      contentIdeaCount: Array.isArray(payload?.contentIdeas) ? payload.contentIdeas.length : 0,
+      upcomingEventCount: Array.isArray(payload?.upcomingEvents) ? payload.upcomingEvents.length : 0,
+    }
+  }
+
+  if (kind === "vaultCourses") {
+    const courses = Array.isArray(payload?.courses) ? payload.courses : []
+    return {
+      courseCount: courses.length,
+      categoryCount: Array.isArray(payload?.categories) ? payload.categories.length : 0,
+      publishedCount: courses.filter((course) => course?.isPublished).length,
+      featuredCount: courses.filter((course) => course?.isFeatured).length,
+    }
+  }
+
+  return {}
+}
+
 async function maybeCaptureEntity(result, key, id, routeFactory, summaryKind) {
   if (!id) {
     result[key] = { skipped: true, reason: `Missing ${key} id` }
@@ -217,6 +254,7 @@ async function main() {
     websiteAnalytics: {},
     leaderboards: {},
     integrity: null,
+    contentSurfaces: {},
   }
 
   if (!TEST_OWNER_COOKIE) {
@@ -238,6 +276,22 @@ async function main() {
       ? {
           route: response.path,
           summary: extractStudioSummary(response.payload),
+        }
+      : response
+  }
+
+  const contentSurfaceRoutes = {
+    classFlows: "/api/class-flows",
+    socialTraining: "/api/social-media/training",
+    vaultCourses: "/api/vault/courses",
+  }
+
+  for (const [label, route] of Object.entries(contentSurfaceRoutes)) {
+    const response = await fetchJson(route, TEST_OWNER_COOKIE)
+    baseline.contentSurfaces[label] = response.ok
+      ? {
+          route: response.path,
+          summary: extractContentSurfaceSummary(response.payload, label),
         }
       : response
   }
