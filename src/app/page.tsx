@@ -29,7 +29,6 @@ import {
   Gift,
   Zap,
   Shield,
-  Headphones,
   Menu,
   X,
   ChevronRight,
@@ -436,10 +435,10 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <Badge className="bg-pink-100 text-pink-700 mb-4 px-4 py-1">Why CURRENT</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Built for studios. <br className="sm:hidden" />Not for software companies.
+              Built for studios that refuse to stay still.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We&apos;ve talked to hundreds of studio owners. The problem isn&apos;t finding software — it&apos;s finding software that doesn&apos;t create more work.
+              We&apos;ve talked to hundreds of studio owners. The problem isn&apos;t finding software — it&apos;s finding software that actually grows your business.
             </p>
           </div>
 
@@ -449,9 +448,9 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                 <Zap className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Done-for-you setup</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Booking that feels like you</h3>
               <p className="text-gray-600 leading-relaxed">
-                We migrate your data, configure your schedule, and set up your automations. You review. We launch. Live in 48 hours.
+                Your booking lives inside your site. Same fonts. Same colours. Same vibe. Clients book seamlessly without ever knowing we&apos;re behind it. Because the best technology is invisible.
               </p>
             </div>
 
@@ -460,9 +459,9 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Retention on autopilot</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Reporting that actually makes sense</h3>
               <p className="text-gray-600 leading-relaxed">
-                Win-back emails. Class reminders. Birthday messages. No-show recovery. All automated. All personalized. All working while you sleep.
+                Clean, visual and built for studio owners — not accountants. See what&apos;s working, act on it immediately, and spend less time decoding spreadsheets.
               </p>
             </div>
 
@@ -471,9 +470,9 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
                 <Target className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Insights that matter</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Your software, your way</h3>
               <p className="text-gray-600 leading-relaxed">
-                Not dashboards full of numbers. Real recommendations: &ldquo;12 clients at risk — send a win-back offer now.&rdquo; Actionable, not overwhelming.
+                Want to strip it back to bare essentials? Done. Want every metric front and centre? Also done. Current molds around how you work — not the other way around.
               </p>
             </div>
           </div>
@@ -499,12 +498,12 @@ export default function HomePage() {
           {/* Core Features */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
-              { icon: Calendar, title: "Class scheduling", desc: "Manage your entire schedule. Capacity limits. Waitlists. Recurring classes." },
-              { icon: CreditCard, title: "Memberships & packages", desc: "Subscriptions, class packs, drop-ins. Automatic billing. No headaches." },
-              { icon: Users, title: "Client profiles", desc: "Full history. Preferences. Attendance. Lifetime value. Know your people." },
-              { icon: BarChart3, title: "Studio dashboard", desc: "Revenue. Churn. Retention. Teacher performance. All in one view." },
-              { icon: Mail, title: "Marketing automation", desc: "Email + SMS flows. Win-back. Reminders. Birthday messages. All automatic." },
-              { icon: MessageSquare, title: "Communication hub", desc: "Every client conversation in one inbox. Email. SMS. All organized." },
+              { icon: Calendar, title: "Clean Embed Booking", desc: "Seamless booking inside your site. No redirects. No third-party feel. Fully branded to you." },
+              { icon: CreditCard, title: "Invoicing on Autopilot", desc: "Teachers pick a date range. Current generates a perfect itemised invoice. You approve. You pay. Done." },
+              { icon: Users, title: "Custom App", desc: "A fully custom app for your studio on the App Store and Google Play. Your name. Your brand. Your clients connected to everything." },
+              { icon: BarChart3, title: "Easy Reporting", desc: "Revenue. Retention. Teacher performance. All in one clean, readable view built for studio owners." },
+              { icon: Mail, title: "Email & SMS Marketing", desc: "Simple flows. Real engagement. Clients who come back. Or let us manage it completely for you." },
+              { icon: MessageSquare, title: "24/7 Support", desc: "Not “24/7” with an asterisk. Actually 24/7. We’re always on because your studio never really stops." },
             ].map((feature, i) => (
               <Card key={i} className="border-0 shadow-sm hover:shadow-lg transition-all bg-gray-50/50 hover:bg-white group">
                 <CardContent className="p-6">
@@ -524,22 +523,11 @@ export default function HomePage() {
               <Sparkles className="w-5 h-5 text-violet-600" />
               <span className="text-sm font-semibold text-violet-700">Coming soon</span>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { icon: Trophy, title: "Points & rewards", desc: "Gamify attendance" },
-                { icon: Gift, title: "Referral program", desc: "Clients bring clients" },
-                { icon: BarChart3, title: "Teacher dashboards", desc: "Performance insights" },
-                { icon: Headphones, title: "24/7 support chat", desc: "Always here to help" },
-              ].map((feature, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-sm">
-                    <feature.icon className="w-5 h-5 text-violet-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{feature.title}</p>
-                    <p className="text-xs text-gray-500">{feature.desc}</p>
-                  </div>
-                </div>
+            <div className="flex flex-wrap gap-3">
+              {["Growth Academy", "The Vault", "Leaderboards", "Store & Fulfilment"].map((item) => (
+                <span key={item} className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm">
+                  {item}
+                </span>
               ))}
             </div>
           </div>
@@ -555,21 +543,20 @@ export default function HomePage() {
             <div>
               <Badge className="bg-emerald-100 text-emerald-700 mb-4 px-4 py-1">Marketing</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-                Marketing that runs itself. Revenue that keeps growing.
+                Social media. Finally figured out.
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                Most studios lose 20-30% of clients each year to simple neglect. 
-                Not anymore. CURRENT brings them back automatically.
+                TikTok and Instagram are the most powerful tools your studio has right now — most studios just don&apos;t know how to use them yet. Current changes that.
               </p>
 
               <div className="space-y-4">
                 {[
-                  { title: "Win-back campaigns", desc: "Auto-email clients who haven't booked in 30 days" },
-                  { title: "No-show recovery", desc: "Reschedule missed classes before they churn" },
-                  { title: "Class reminders", desc: "Reduce no-shows by 40% with SMS + email" },
-                  { title: "Birthday rewards", desc: "Make clients feel special (and book more)" },
-                  { title: "Intro offers", desc: "Convert first-timers with welcome sequences" },
-                  { title: "Referral flows", desc: "Turn happy clients into your marketing team" },
+                  { title: "Growth Academy", desc: "Structured courses teaching you and your teachers to fill classes and grow a real following" },
+                  { title: "Daily Inspiration", desc: "Constantly refreshing trend library and daily hook list so you can plug in and post" },
+                  { title: "Tools & Automation", desc: "Set up TikTok and Instagram campaigns inside Current, linked directly to your studio and teacher accounts" },
+                  { title: "Tracking & Attribution", desc: "Know exactly where every sale came from so you can double down on what works" },
+                  { title: "Teacher Commissions", desc: "Teachers earn on every subscription or product they sell. A win for them. A win for you." },
+                  { title: "Live Weekly Q&As", desc: "With pilates influencers from around the world for tips, tricks and class inspiration" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -587,33 +574,33 @@ export default function HomePage() {
             {/* Visual Card */}
             <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
               <div className="flex items-center justify-between mb-6">
-                <h4 className="font-semibold text-gray-900">This week&apos;s automation results</h4>
+                <h4 className="font-semibold text-gray-900">This month&apos;s growth snapshot</h4>
                 <Badge className="bg-emerald-100 text-emerald-700">Live</Badge>
               </div>
               
               <div className="space-y-4">
                 <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Clients won back</span>
-                    <span className="text-2xl font-bold text-emerald-600">23</span>
+                    <span className="text-sm text-gray-600">Classes filled</span>
+                    <span className="text-2xl font-bold text-emerald-600">+340</span>
                   </div>
-                  <div className="text-sm text-emerald-600 font-medium">$2,760 recovered revenue</div>
+                  <div className="text-sm text-emerald-600 font-medium">This month</div>
                 </div>
                 
                 <div className="bg-violet-50 rounded-xl p-4 border border-violet-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">No-shows prevented</span>
-                    <span className="text-2xl font-bold text-violet-600">41</span>
+                    <span className="text-sm text-gray-600">Teacher posts made</span>
+                    <span className="text-2xl font-bold text-violet-600">186</span>
                   </div>
-                  <div className="text-sm text-violet-600 font-medium">Via SMS reminders</div>
+                  <div className="text-sm text-violet-600 font-medium">Via Growth Academy</div>
                 </div>
                 
                 <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">New referrals</span>
-                    <span className="text-2xl font-bold text-pink-600">8</span>
+                    <span className="text-sm text-gray-600">New followers</span>
+                    <span className="text-2xl font-bold text-pink-600">2.4k</span>
                   </div>
-                  <div className="text-sm text-pink-600 font-medium">From existing clients</div>
+                  <div className="text-sm text-pink-600 font-medium">Across all teachers</div>
                 </div>
               </div>
             </div>
@@ -639,9 +626,9 @@ export default function HomePage() {
                     <Target className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 mb-1">12 clients at risk of churning</p>
+                    <p className="font-medium text-gray-900 mb-1">The Vault has 3 courses ready to publish</p>
                     <p className="text-sm text-gray-600">
-                      Send a win-back offer → <button className="text-violet-600 font-medium hover:underline">Do it now</button>
+                      Start earning → <button className="text-violet-600 font-medium hover:underline">Publish now</button>
                     </p>
                   </div>
                 </div>
@@ -651,7 +638,7 @@ export default function HomePage() {
                     <TrendingUp className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 mb-1">Tuesday 6pm is your most profitable slot</p>
+                    <p className="font-medium text-gray-900 mb-1">Thursday 7am is your most profitable slot</p>
                     <p className="text-sm text-gray-600">
                       Consider adding another class → <button className="text-violet-600 font-medium hover:underline">View schedule</button>
                     </p>
@@ -663,9 +650,9 @@ export default function HomePage() {
                     <Star className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 mb-1">Sarah&apos;s classes have 94% retention</p>
+                    <p className="font-medium text-gray-900 mb-1">Your store made 12 sales this week</p>
                     <p className="text-sm text-gray-600">
-                      Top performer this month → <button className="text-violet-600 font-medium hover:underline">See details</button>
+                      Top seller this month → <button className="text-violet-600 font-medium hover:underline">See details</button>
                     </p>
                   </div>
                 </div>
@@ -687,7 +674,7 @@ export default function HomePage() {
                   "Spot at-risk clients before they churn",
                   "See which classes and teachers drive the most revenue",
                   "Get weekly summaries with specific action items",
-                  "Teacher dashboards so everyone sees their impact",
+                  "Customise your dashboard to only show what matters to you",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center">
@@ -710,10 +697,10 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <Badge className="bg-purple-100 text-purple-700 mb-4 px-4 py-1">For Teachers</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              When teachers thrive, your studio thrives.
+              When teachers grow, your studio grows.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every instructor gets their own dashboard. They see what&apos;s working. They grow. You win.
+              Give your teachers the tools, the motivation and the rewards to show up, grow and perform at their best.
             </p>
           </div>
 
@@ -723,9 +710,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/30">
                   <BarChart3 className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Performance dashboards</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Class Flows</h3>
                 <p className="text-gray-600">
-                  Revenue contribution. Retention rates. Fill rates. Teachers see exactly how they&apos;re doing.
+                  An internal content library packed with new class styles, formats and flows. Fresh inspiration always on hand.
                 </p>
               </CardContent>
             </Card>
@@ -735,9 +722,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/30">
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Leaderboards & goals</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Leaderboards & Prizes</h3>
                 <p className="text-gray-600">
-                  Friendly competition. Monthly recognition. Teachers push each other to be better.
+                  Compete across all studios on Current. Trips to Bali. Cash prizes. Lululemon sets. Real rewards for real growth.
                 </p>
               </CardContent>
             </Card>
@@ -747,12 +734,130 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-amber-500/30">
                   <Heart className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Training library</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Request Training</h3>
                 <p className="text-gray-600">
-                  Upload certification videos, best practices, onboarding materials. Keep everyone aligned.
+                  One-on-one training with expert pilates instructors or growth specialists. Any problem, solved fast.
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================ */}
+      {/* THE VAULT */}
+      {/* ============================================ */}
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <Badge className="bg-emerald-100 text-emerald-700 mb-4 px-4 py-1">The Vault</Badge>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                Your knowledge. Your empire.
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                You&apos;ve spent years building expertise — The Vault turns it into a platform that earns while you sleep.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  "Build courses and sell them individually or as subscriptions",
+                  "Sell to your clients, independent teachers or the wider pilates community",
+                  "Built-in community chat for every tier — clients, teachers and studio owners",
+                  "Your own platform, inside Current, completely under your brand",
+                  "A brand new revenue stream that runs 24/7",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <span className="text-gray-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="font-semibold text-gray-900">Vault growth</h4>
+                <Badge className="bg-emerald-100 text-emerald-700">Live</Badge>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Active subscribers</span>
+                    <span className="text-2xl font-bold text-emerald-600">128</span>
+                  </div>
+                  <div className="text-sm text-emerald-600 font-medium">Growing monthly</div>
+                </div>
+
+                <div className="bg-violet-50 rounded-xl p-4 border border-violet-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Courses published</span>
+                    <span className="text-2xl font-bold text-violet-600">9</span>
+                  </div>
+                  <div className="text-sm text-violet-600 font-medium">Earning passively</div>
+                </div>
+
+                <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Community members</span>
+                    <span className="text-2xl font-bold text-pink-600">460</span>
+                  </div>
+                  <div className="text-sm text-pink-600 font-medium">And counting</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================ */}
+      {/* GROW & EARN */}
+      {/* ============================================ */}
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="bg-pink-100 text-pink-700 mb-4 px-4 py-1">Grow &amp; Earn</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              More revenue streams. Zero extra work.
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Current isn&apos;t just software — it&apos;s an entire ecosystem built to make your studio more profitable from every angle.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
+              <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
+                <Gift className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Your Branded Store</h3>
+              <p className="text-gray-600 leading-relaxed">
+                We source the products — reformers, sets, socks — brand them in your identity and set up your shop on your website and TikTok Shop. Your teachers post. Someone orders. We fulfil from our warehouse. You earn. Zero logistics.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
+              <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
+                <TrendingUp className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">We Run Your Ads</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Want us to run your social media ads too? We&apos;ve got you. And the organic content your teachers create through Growth Academy almost always makes the best ad creative anyway. Less spend. Better results.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Free Custom Website</h3>
+              <p className="text-gray-600 leading-relaxed">
+                When you join Current we build you a full custom website — designed exactly how you want it, matched perfectly to your studio&apos;s vision. No templates. No compromises. Consider it our welcome gift.
+              </p>
+            </div>
           </div>
         </div>
       </section>
