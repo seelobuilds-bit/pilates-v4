@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react"
-import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native"
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileConfig } from "@/src/lib/config"
 import { mobileTheme, withOpacity } from "@/src/lib/theme"
@@ -36,52 +46,82 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.container}>
-        <View style={[styles.brandCard, { borderColor: withOpacity(mobileConfig.primaryColor, 0.32), backgroundColor: withOpacity(mobileConfig.primaryColor, 0.1) }]}>
-          <Text style={styles.kicker}>CURRENT Mobile</Text>
-          <Text style={styles.title}>Welcome to {studioLabel}</Text>
-          <Text style={styles.subtitle}>Sign in as studio owner, teacher, or client.</Text>
-        </View>
-        {!mobileConfig.studioSubdomain ? (
-          <Text style={styles.warning}>Studio subdomain is missing in mobile env config.</Text>
-        ) : null}
-        {mobileConfig.allowSubdomainOverride ? (
-          <Text style={styles.warning}>Subdomain override is enabled for this build.</Text>
-        ) : null}
+      <KeyboardAvoidingView
+        style={styles.keyboardWrap}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            <View
+              style={[
+                styles.brandCard,
+                {
+                  borderColor: withOpacity(mobileConfig.primaryColor, 0.32),
+                  backgroundColor: withOpacity(mobileConfig.primaryColor, 0.1),
+                },
+              ]}
+            >
+              <Text style={styles.kicker}>CURRENT Mobile</Text>
+              <Text style={styles.title}>Sign in to {studioLabel}</Text>
+              <Text style={styles.subtitle}>Use the same login you use on the web.</Text>
+            </View>
+            {!mobileConfig.studioSubdomain ? (
+              <Text style={styles.warning}>This build is missing a studio subdomain in its mobile config.</Text>
+            ) : null}
+            {mobileConfig.allowSubdomainOverride ? (
+              <Text style={styles.warning}>Studio override is enabled for internal testing.</Text>
+            ) : null}
 
-        {showSubdomainInput ? (
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="Studio subdomain"
-            value={studioSubdomain}
-            onChangeText={setStudioSubdomain}
-            style={styles.input}
-          />
-        ) : null}
+            <View style={styles.formCard}>
+              {showSubdomainInput ? (
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Studio subdomain</Text>
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    placeholder="your-studio"
+                    value={studioSubdomain}
+                    onChangeText={setStudioSubdomain}
+                    style={styles.input}
+                  />
+                </View>
+              ) : null}
 
-        <TextInput
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-        />
-        <TextInput
-          secureTextEntry
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-        />
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Email</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  style={styles.input}
+                />
+              </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Password</Text>
+                <TextInput
+                  secureTextEntry
+                  placeholder="Your password"
+                  value={password}
+                  onChangeText={setPassword}
+                  style={styles.input}
+                />
+              </View>
 
-        <Pressable onPress={handleLogin} disabled={!canSubmit} style={[styles.button, !canSubmit && styles.buttonDisabled]}>
-          <Text style={styles.buttonText}>{submitting ? "Signing in..." : "Sign in"}</Text>
-        </Pressable>
-      </View>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <Pressable onPress={handleLogin} disabled={!canSubmit} style={[styles.button, !canSubmit && styles.buttonDisabled]}>
+                <Text style={styles.buttonText}>{submitting ? "Signing in..." : "Sign in"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -91,17 +131,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: mobileTheme.colors.canvas,
   },
-  container: {
+  keyboardWrap: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
-    gap: 12,
+    paddingVertical: 24,
+    gap: 14,
   },
   brandCard: {
     borderRadius: mobileTheme.radius.xl,
     borderWidth: 1,
-    padding: 14,
-    gap: 4,
+    padding: 16,
+    gap: 6,
   },
   kicker: {
     textTransform: "uppercase",
@@ -115,11 +162,25 @@ const styles = StyleSheet.create({
     color: mobileTheme.colors.text,
   },
   subtitle: {
-    marginBottom: 8,
+    color: mobileTheme.colors.textMuted,
+  },
+  formCard: {
+    borderRadius: mobileTheme.radius.xl,
+    backgroundColor: mobileTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.border,
+    padding: 14,
+    gap: 12,
+  },
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
     color: mobileTheme.colors.textMuted,
   },
   warning: {
-    marginBottom: 8,
     color: "#b45309",
     fontSize: 13,
   },
@@ -148,6 +209,5 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#dc2626",
-    marginTop: 2,
   },
 })

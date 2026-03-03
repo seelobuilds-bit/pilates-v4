@@ -166,7 +166,7 @@ export default function InboxScreen() {
       return [
         { label: "Messages", value: String(messages.length) },
         { label: "Chat", value: String(clientChannelCounts.CHAT) },
-        { label: "External", value: String(clientChannelCounts.EMAIL + clientChannelCounts.SMS) },
+        { label: "Email/SMS", value: String(clientChannelCounts.EMAIL + clientChannelCounts.SMS) },
       ]
     }
 
