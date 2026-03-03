@@ -714,7 +714,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="text-gray-500 text-sm font-medium">Revenue Growth</p>
-                <p className="text-gray-900 font-bold text-2xl">{hasOverviewData ? revenueChangeLabel : "No data"}</p>
+                <p className="text-gray-900 font-bold text-xl sm:text-2xl">{hasOverviewData ? revenueChangeLabel : "No data"}</p>
                 <p className="text-gray-400 text-xs">
                   {hasOverviewData ? "vs last period" : "Add classes/bookings to start tracking"}
                 </p>
@@ -732,7 +732,7 @@ export default function ReportsPage() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">At Risk Clients</p>
-                  <p className="text-gray-900 font-bold text-2xl">{reportData.retention.atRiskClients}</p>
+                  <p className="text-gray-900 font-bold text-xl sm:text-2xl">{reportData.retention.atRiskClients}</p>
                   <p className="text-gray-400 text-xs">Need attention</p>
                 </div>
               </div>
@@ -749,7 +749,7 @@ export default function ReportsPage() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-sm font-medium">Peak Time</p>
-                  <p className="text-gray-900 font-bold text-2xl">{peakTimeLabel}</p>
+                  <p className="text-gray-900 font-bold text-xl sm:text-2xl">{peakTimeLabel}</p>
                   <p className="text-gray-400 text-xs">{peakTimeLabel === "No data" ? "No classes tracked yet" : "Most popular slot"}</p>
                 </div>
               </div>
@@ -848,7 +848,7 @@ export default function ReportsPage() {
                     {revenueChangeLabel}
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.revenue.total, currency)}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{formatCurrency(reportData.revenue.total, currency)}</p>
                 <p className="text-sm text-gray-500">Revenue</p>
           </CardContent>
         </Card>
@@ -863,7 +863,7 @@ export default function ReportsPage() {
                     {utilisationChangeLabel}
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{reportData.utilisation.averageFill}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.utilisation.averageFill}%</p>
                 <p className="text-sm text-gray-500">Avg. Class Fill</p>
           </CardContent>
         </Card>
@@ -879,7 +879,7 @@ export default function ReportsPage() {
                       +{reportData.retention.newClients}
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.retention.activeClients}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.retention.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
           </CardContent>
         </Card>
@@ -900,7 +900,7 @@ export default function ReportsPage() {
                     {churnChangeLabel}
                   </Badge>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{reportData.retention.churnRate}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.retention.churnRate}%</p>
                 <p className="text-sm text-gray-500">Churn Rate</p>
                 <p className="text-xs text-gray-400 mt-1">{reportData.retention.churnDefinition}</p>
           </CardContent>
@@ -916,17 +916,17 @@ export default function ReportsPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
                   <p className="text-sm text-gray-500">Total Bookings</p>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.total.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.bookings.total.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">Non-cancelled bookings in selected period</p>
                 </div>
                 <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
                   <p className="text-sm text-gray-500">Booked Clients (Unique)</p>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.uniqueClients.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.bookings.uniqueClients.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">Each client counts once, even with multiple bookings</p>
                 </div>
                 <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
                   <p className="text-sm text-gray-500">Bookings from New Clients</p>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.bookings.newClientBookings.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.bookings.newClientBookings.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Avg {reportData.bookings.averageBookingsPerClient.toFixed(2)} bookings per booked client
                   </p>
@@ -1185,7 +1185,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Average Fill Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{reportData.utilisation.averageFill}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.utilisation.averageFill}%</p>
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 mt-2">
                   {utilisationChangeLabel} vs last period
                 </Badge>
@@ -1196,7 +1196,7 @@ export default function ReportsPage() {
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <p className="text-sm text-gray-500 mb-1">Total Classes</p>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.utilisation.totalClasses}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.utilisation.totalClasses}</p>
                   <p className="text-sm text-gray-500 mt-2">This period</p>
                 </CardContent>
               </Card>
@@ -1324,7 +1324,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Instructors</p>
-                <p className="text-2xl font-bold text-gray-900">{instructorCount}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{instructorCount}</p>
                 <p className="text-sm text-gray-500 mt-2">Active teachers</p>
               </CardContent>
             </Card>
@@ -1338,7 +1338,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">Total Classes</p>
-                <p className="text-2xl font-bold text-gray-900">{instructorTotalClasses}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{instructorTotalClasses}</p>
                 <p className="text-sm text-gray-500 mt-2">This period</p>
               </CardContent>
             </Card>
@@ -1347,7 +1347,7 @@ export default function ReportsPage() {
                 <p className="text-sm text-gray-500 mb-1">Avg. Rating</p>
                 <div className="flex items-center gap-1">
                   <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
-                  <p className="text-2xl font-bold text-gray-900">{instructorAverageRating}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{instructorAverageRating}</p>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
                   {ratedInstructors.length > 0 ? "Client ratings" : "Ratings unavailable"}
@@ -1478,7 +1478,7 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-5 w-5 text-blue-500" />
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.retention.activeClients}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.retention.activeClients}</p>
                   <p className="text-sm text-gray-500">Active Clients</p>
                 </CardContent>
               </Card>
@@ -1689,7 +1689,7 @@ export default function ReportsPage() {
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <p className="text-sm text-gray-500 mb-1">Emails Sent</p>
-                  <p className="text-2xl font-bold text-gray-900">{reportData.marketing.emailsSent.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.marketing.emailsSent.toLocaleString()}</p>
                   <p className="text-sm text-gray-500 mt-2">{reportData.marketing.emailOpenRate}% open rate</p>
                 </CardContent>
               </Card>
@@ -1706,7 +1706,7 @@ export default function ReportsPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm text-gray-500 mb-1">No-Show Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{reportData.marketing.noShowRate}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportData.marketing.noShowRate}%</p>
                 <Badge variant="secondary" className={`mt-2 ${noShowTrendClass}`}>
                   {noShowTrendLabel} {reportData.marketing.previousNoShowRate}%
                 </Badge>
@@ -1933,7 +1933,7 @@ function SocialMediaReportSection({
                 <MessageCircle className="h-5 w-5 text-violet-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{activeFlows}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{activeFlows}</p>
                 <p className="text-sm text-gray-500">Active Flows</p>
                 <p className="text-xs text-gray-400">{totalResponded} responses sent</p>
               </div>
@@ -1947,7 +1947,7 @@ function SocialMediaReportSection({
                 <CheckCircle className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{totalBooked}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{totalBooked}</p>
                 <p className="text-sm text-gray-500">Bookings from Social</p>
               </div>
             </div>
@@ -1960,7 +1960,7 @@ function SocialMediaReportSection({
                 <Target className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{conversionRate}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{conversionRate}%</p>
                 <p className="text-sm text-gray-500">Flow Conversion Rate</p>
               </div>
             </div>
@@ -2427,7 +2427,7 @@ function WebsiteAnalyticsSection() {
                     <Eye className="h-5 w-5 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalPageViews.toLocaleString()}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{analytics.overview.totalPageViews.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">Page Views</p>
               </CardContent>
             </Card>
@@ -2439,7 +2439,7 @@ function WebsiteAnalyticsSection() {
                     <Users className="h-5 w-5 text-violet-600" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.uniqueVisitors.toLocaleString()}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{analytics.overview.uniqueVisitors.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">Unique Visitors</p>
               </CardContent>
             </Card>
@@ -2451,7 +2451,7 @@ function WebsiteAnalyticsSection() {
                     <Zap className="h-5 w-5 text-emerald-600" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalConversions}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{analytics.overview.totalConversions}</p>
                 <p className="text-sm text-gray-500">Conversions</p>
               </CardContent>
             </Card>
@@ -2463,7 +2463,7 @@ function WebsiteAnalyticsSection() {
                     <Percent className="h-5 w-5 text-amber-600" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.conversionRate}%</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{analytics.overview.conversionRate}%</p>
                 <p className="text-sm text-gray-500">Conv. Rate</p>
               </CardContent>
             </Card>
@@ -2475,7 +2475,7 @@ function WebsiteAnalyticsSection() {
                     <Activity className="h-5 w-5 text-pink-600" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.avgPagesPerVisit}</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{analytics.overview.avgPagesPerVisit}</p>
                 <p className="text-sm text-gray-500">Pages/Visit</p>
               </CardContent>
             </Card>

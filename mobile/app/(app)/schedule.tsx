@@ -473,17 +473,19 @@ export default function ScheduleScreen() {
           <Text style={styles.dateLabel}>Date</Text>
           <Text style={styles.dateValue}>{selectedDateLabel}</Text>
         </Pressable>
-        <Pressable
-          style={styles.quickDateButton}
-          onPress={() => setSelectedDateKey(formatDateKey(startOfToday()))}
-        >
-          <Text style={[styles.quickDateButtonText, { color: primaryColor }]}>Today</Text>
-        </Pressable>
-        {selectedDateKey !== "ALL" ? (
-          <Pressable style={styles.clearDateButton} onPress={() => setSelectedDateKey("ALL")}>
-            <Text style={[styles.clearDateButtonText, { color: primaryColor }]}>Clear</Text>
+        <View style={styles.dateActionsRow}>
+          <Pressable
+            style={styles.quickDateButton}
+            onPress={() => setSelectedDateKey(formatDateKey(startOfToday()))}
+          >
+            <Text style={[styles.quickDateButtonText, { color: primaryColor }]}>Today</Text>
           </Pressable>
-        ) : null}
+          {selectedDateKey !== "ALL" ? (
+            <Pressable style={styles.clearDateButton} onPress={() => setSelectedDateKey("ALL")}>
+              <Text style={[styles.clearDateButtonText, { color: primaryColor }]}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <Modal
@@ -631,14 +633,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   dateRow: {
+    gap: 8,
+  },
+  dateActionsRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
     gap: 8,
   },
   dateButton: {
-    minWidth: 180,
-    flexGrow: 1,
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 12,

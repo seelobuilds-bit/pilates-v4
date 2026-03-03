@@ -989,7 +989,7 @@ export default function BookingPage() {
         {/* Location Step */}
         {step === "location" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <MapPin className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Location</h2>
@@ -1016,7 +1016,7 @@ export default function BookingPage() {
         {/* Class Step */}
         {step === "class" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Link2 className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Class Type</h2>
@@ -1052,7 +1052,7 @@ export default function BookingPage() {
         {/* Teacher Step */}
         {step === "teacher" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <User className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Teacher</h2>
@@ -1094,7 +1094,7 @@ export default function BookingPage() {
         {/* Time Step */}
         {step === "time" && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calendar className="w-5 h-5 text-violet-600" />
                 <h2 className="text-lg font-semibold">Select Date & Time</h2>
@@ -1102,7 +1102,7 @@ export default function BookingPage() {
 
               <div className="mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">Select Date</p>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
                     disabled={dateOffset === 0}
@@ -1110,35 +1110,37 @@ export default function BookingPage() {
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-400" />
                   </button>
-                  <div className="flex gap-2 flex-1">
-                    {visibleDates.map((d) => {
-                      const isSelected = selectedDate === d.date
-                      const dateParts = d.label.split(", ")
-                      const weekday = dateParts[0]
-                      const monthDay = dateParts[1] || ""
-                      const month = monthDay.split(" ")[0]
-                      const day = monthDay.split(" ")[1]
-                      return (
-                        <button
-                          key={d.date}
-                          onClick={() => setSelectedDate(d.date)}
-                          className={`flex-1 py-2 px-1 rounded-xl text-center transition-all ${
-                            isSelected
-                              ? "bg-violet-600 text-white"
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {d.isToday || d.isTomorrow ? (
-                            <p className="font-medium text-sm">{d.label}</p>
-                          ) : (
-                            <>
-                              <p className="text-xs font-medium">{weekday}, {month}</p>
-                              <p className="text-sm font-semibold">{day}</p>
-                            </>
-                          )}
-                        </button>
-                      )
-                    })}
+                  <div className="app-scrollbar flex-1 overflow-x-auto">
+                    <div className="flex min-w-max gap-2 pr-1 sm:min-w-0 sm:pr-0">
+                      {visibleDates.map((d) => {
+                        const isSelected = selectedDate === d.date
+                        const dateParts = d.label.split(", ")
+                        const weekday = dateParts[0]
+                        const monthDay = dateParts[1] || ""
+                        const month = monthDay.split(" ")[0]
+                        const day = monthDay.split(" ")[1]
+                        return (
+                          <button
+                            key={d.date}
+                            onClick={() => setSelectedDate(d.date)}
+                            className={`min-w-[84px] rounded-xl px-2 py-2 text-center transition-all sm:min-w-0 sm:flex-1 ${
+                              isSelected
+                                ? "bg-violet-600 text-white"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {d.isToday || d.isTomorrow ? (
+                              <p className="text-sm font-medium whitespace-nowrap">{d.label}</p>
+                            ) : (
+                              <>
+                                <p className="text-xs font-medium">{weekday}, {month}</p>
+                                <p className="text-sm font-semibold">{day}</p>
+                              </>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                   <button
                     onClick={() => setDateOffset(Math.min(maxDateOffset, dateOffset + 1))}
@@ -1182,7 +1184,7 @@ export default function BookingPage() {
         {step === "checkout" && (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="w-5 h-5 text-violet-600" />
                   <h2 className="text-lg font-semibold">Complete Booking</h2>
@@ -1411,7 +1413,7 @@ export default function BookingPage() {
             {/* Auth / Booking */}
             {!client ? (
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <p className="font-medium text-gray-900 mb-4">{authMode === "login" ? "Sign in to complete booking" : "Create an account"}</p>
                   <form onSubmit={handleAuth} className="space-y-4">
                     {authError && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">{authError}</div>}
@@ -1516,7 +1518,7 @@ export default function BookingPage() {
 
                 {/* Payment */}
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CreditCard className="w-5 h-5 text-violet-600" />
                       <p className="font-medium text-gray-900">Payment Details</p>
