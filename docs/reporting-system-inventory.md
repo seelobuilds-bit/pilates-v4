@@ -375,6 +375,16 @@ The compare script re-fetches the same trusted surfaces and fails if the summari
 
 The reporting smoke entrypoint now also runs the shared date-range logic test first, so range semantics are pinned before any route-level checks run.
 
+Current shared date-range primitive adoption:
+
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/mobile/reports/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/integrity/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/teachers/[teacherId]/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/class-types/[classTypeId]/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
+
 ## Non-Negotiable Safety Constraint
 
 No behavior-changing refactor should land until:

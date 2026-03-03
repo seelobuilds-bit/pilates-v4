@@ -1,33 +1,10 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
+import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
 const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
-
-function getReportDateRange(searchParams: URLSearchParams) {
-  const startDateParam = searchParams.get("startDate")
-  const endDateParam = searchParams.get("endDate")
-
-  if (startDateParam && endDateParam) {
-    const start = new Date(`${startDateParam}T00:00:00.000Z`)
-    const end = new Date(`${endDateParam}T23:59:59.999Z`)
-
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= end) {
-      return { startDate: start, endDate: end }
-    }
-  }
-
-  const parsedDays = Number.parseInt(searchParams.get("days") || "", 10)
-  const days = ALLOWED_DAY_PRESETS.has(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
-
-  const endDate = new Date()
-  const startDate = new Date(endDate)
-  startDate.setHours(0, 0, 0, 0)
-  startDate.setDate(startDate.getDate() - (days - 1))
-
-  return { startDate, endDate }
-}
 
 export async function GET(
   request: NextRequest,
@@ -40,7 +17,10 @@ export async function GET(
     }
 
     const { clientId } = await params
-    const { startDate, endDate } = getReportDateRange(request.nextUrl.searchParams)
+    const { startDate, endDate } = resolveEntityReportDateRange(request.nextUrl.searchParams, {
+      defaultDays: DEFAULT_REPORT_PERIOD_DAYS,
+      allowedDays: Array.from(ALLOWED_DAY_PRESETS),
+    })
 
     const client = await db.client.findFirst({
       where: {

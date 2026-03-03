@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
-import { parseReportDays, resolveReportRange } from '../../src/lib/reporting/date-range'
+import {
+  parseReportDays,
+  resolveEntityReportDateRange,
+  resolveReportRange,
+} from '../../src/lib/reporting/date-range'
 
 function sameUtcDate(actual: Date, expected: string) {
   const iso = actual.toISOString().slice(0, 10)
@@ -35,6 +39,22 @@ function run() {
     { defaultDays: 30, allowedDays: [7, 30, 90] }
   )
   assert.equal(missingEnd.days, 7)
+
+  const entityCustom = resolveEntityReportDateRange(
+    new URLSearchParams({ startDate: '2026-03-01', endDate: '2026-03-03' }),
+    { defaultDays: 30, allowedDays: [7, 30, 90] }
+  )
+  assert.equal(entityCustom.days, 3)
+  sameUtcDate(entityCustom.startDate, '2026-03-01')
+  assert.equal(entityCustom.endDate.toISOString(), '2026-03-03T23:59:59.999Z')
+
+  const entityPreset = resolveEntityReportDateRange(
+    new URLSearchParams({ days: '7' }),
+    { defaultDays: 30, allowedDays: [7, 30, 90] }
+  )
+  assert.equal(entityPreset.days, 7)
+  assert.equal(entityPreset.startDate.getHours(), 0)
+  assert.equal(entityPreset.startDate.getMinutes(), 0)
 
   console.log('PASS reporting date-range logic')
 }

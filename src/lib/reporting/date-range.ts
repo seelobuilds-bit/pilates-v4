@@ -14,6 +14,12 @@ export type ResolvedReportRange = {
   responseEndDate: Date
 }
 
+export type EntityReportDateRange = {
+  days: number
+  startDate: Date
+  endDate: Date
+}
+
 type ResolveOptions = {
   defaultDays: number
   maxDays?: number
@@ -88,4 +94,37 @@ export function resolveReportRange(input: ReportRangeInput, options: ResolveOpti
     previousStartDate,
     responseEndDate,
   }
+}
+
+export function resolveEntityReportDateRange(
+  searchParams: URLSearchParams,
+  options: { defaultDays: number; allowedDays: number[] }
+): EntityReportDateRange {
+  const requestedStartDate = parseDateInput(searchParams.get("startDate"))
+  const requestedEndDate = parseDateInput(searchParams.get("endDate"))
+
+  if (
+    requestedStartDate &&
+    requestedEndDate &&
+    requestedStartDate.getTime() <= requestedEndDate.getTime()
+  ) {
+    const startDate = new Date(requestedStartDate)
+    const endDate = new Date(requestedEndDate)
+    endDate.setUTCHours(23, 59, 59, 999)
+    const days =
+      Math.max(1, Math.round((requestedEndDate.getTime() - requestedStartDate.getTime()) / DAY_IN_MS) + 1)
+    return { days, startDate, endDate }
+  }
+
+  const days = parseReportDays(searchParams.get("days"), {
+    defaultDays: options.defaultDays,
+    allowedDays: options.allowedDays,
+  })
+
+  const endDate = new Date()
+  const startDate = new Date(endDate)
+  startDate.setHours(0, 0, 0, 0)
+  startDate.setDate(startDate.getDate() - (days - 1))
+
+  return { days, startDate, endDate }
 }
