@@ -190,6 +190,15 @@ model PublicApiKey {
   @@index([studioId, isActive])
 }
 
+model PlatformSetting {
+  id                   String   @id @default(cuid())
+  singletonKey         String   @unique @default("default")
+  siteLockEnabled      Boolean  @default(true)
+  siteLockPasswordHash String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
 // Email configuration per studio
 model StudioEmailConfig {
   id                String   @id @default(cuid())

@@ -14,6 +14,8 @@ export default function HQSettingsPage() {
   const [platformName, setPlatformName] = useState("Cadence")
   const [supportEmail, setSupportEmail] = useState("support@cadence.com")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [siteLockPassword, setSiteLockPassword] = useState("")
+  const [hasSiteLockPassword, setHasSiteLockPassword] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [require2fa, setRequire2fa] = useState(false)
   const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useState(true)
@@ -44,9 +46,29 @@ export default function HQSettingsPage() {
     } catch {
       // Ignore invalid stored settings and keep defaults.
     }
+
+    void fetch("/api/hq/settings")
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load HQ settings")
+        }
+        return response.json() as Promise<{
+          siteLockEnabled?: boolean
+          hasSiteLockPassword?: boolean
+        }>
+      })
+      .then((data) => {
+        if (typeof data.siteLockEnabled === "boolean") setMaintenanceMode(data.siteLockEnabled)
+        if (typeof data.hasSiteLockPassword === "boolean") setHasSiteLockPassword(data.hasSiteLockPassword)
+      })
+      .catch((error) => {
+        console.error("Failed to load HQ settings:", error)
+      })
   }, [])
 
-  function saveChanges() {
+  async function saveChanges() {
+    setSaveMessage(null)
+
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -60,9 +82,30 @@ export default function HQSettingsPage() {
           weeklyReports
         })
       )
+
+      const response = await fetch("/api/hq/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteLockEnabled: maintenanceMode,
+          siteLockPassword: siteLockPassword.trim() || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save HQ settings")
+      }
+
+      const data = (await response.json()) as {
+        hasSiteLockPassword?: boolean
+      }
+      if (typeof data.hasSiteLockPassword === "boolean") {
+        setHasSiteLockPassword(data.hasSiteLockPassword)
+      }
+      setSiteLockPassword("")
       setSaveMessage("Changes saved.")
     } catch {
-      setSaveMessage("Could not save settings on this device.")
+      setSaveMessage("Could not save settings right now.")
     }
   }
 
@@ -172,13 +215,28 @@ export default function HQSettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-900">Maintenance Mode</p>
-                <p className="text-sm text-gray-500">Temporarily disable public access</p>
+                <p className="font-medium text-gray-900">Website Preview Lock</p>
+                <p className="text-sm text-gray-500">Show the coming soon page on the public homepage until you turn it off</p>
               </div>
               <Switch
                 checked={maintenanceMode}
                 onCheckedChange={setMaintenanceMode}
               />
+            </div>
+            <div className="space-y-2 rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <Label htmlFor="siteLockPassword">Preview Password</Label>
+              <Input
+                id="siteLockPassword"
+                type="password"
+                value={siteLockPassword}
+                onChange={(e) => setSiteLockPassword(e.target.value)}
+                placeholder="Set or change the preview password"
+              />
+              <p className="text-xs text-gray-500">
+                {hasSiteLockPassword
+                  ? "Leave this blank to keep the current password. If you never changed it, the default is CURRENTPreview2026!."
+                  : "No password is saved yet. If you leave this blank, the default password is CURRENTPreview2026!."}
+              </p>
             </div>
             <div className="pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-500 mb-3">Database Actions</p>
