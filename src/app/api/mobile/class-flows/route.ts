@@ -1,6 +1,7 @@
-import { ContentType, DifficultyLevel, Prisma, TrainingRequestStatus } from "@prisma/client"
+import { ContentType, DifficultyLevel, Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { summarizeClassFlowCatalog } from "@/lib/class-flows/analytics"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
 const CONTENT_TYPES = new Set<ContentType>(["VIDEO", "PDF", "ARTICLE", "QUIZ"])
@@ -178,16 +179,6 @@ export async function GET(request: NextRequest) {
       take: 6,
     })
 
-    const pendingTrainingRequests = await db.trainingRequest.count({
-      where: {
-        studioId: studio.id,
-        ...(decoded.role === "TEACHER" ? { requestedById: decoded.teacherId! } : {}),
-        status: {
-          in: [TrainingRequestStatus.PENDING, TrainingRequestStatus.APPROVED, TrainingRequestStatus.SCHEDULED],
-        },
-      },
-    })
-
     const mapContent = (content: (typeof categories)[number]["contents"][number]) => {
       const progress = progressByContentId.get(content.id)
       return {
@@ -227,12 +218,14 @@ export async function GET(request: NextRequest) {
       .filter((category) => category.contents.length > 0)
 
     const mappedFeatured = featured.map((content) => mapContent(content))
-    const totalContent = mappedCategories.reduce((sum, category) => sum + category.contentCount, 0)
-    const featuredContent = mappedCategories.reduce(
-      (sum, category) => sum + category.contents.filter((content) => content.isFeatured).length,
-      0
+    const catalogStats = summarizeClassFlowCatalog(
+      mappedCategories.map((category) => ({
+        contentCount: category.contentCount,
+        featuredContentCount: category.contents.filter((content) => content.isFeatured).length,
+      })),
+      progressRows,
+      recentRequests
     )
-    const completedContent = progressRows.filter((progress) => progress.isCompleted).length
 
     return NextResponse.json({
       role: decoded.role,
@@ -245,11 +238,11 @@ export async function GET(request: NextRequest) {
         search,
       },
       stats: {
-        categories: mappedCategories.length,
-        totalContent,
-        featuredContent,
-        completedContent,
-        pendingTrainingRequests,
+        categories: catalogStats.categories,
+        totalContent: catalogStats.totalContent,
+        featuredContent: catalogStats.featuredContent,
+        completedContent: catalogStats.completedContent,
+        pendingTrainingRequests: catalogStats.pendingTrainingRequests,
       },
       categories: mappedCategories,
       featured: mappedFeatured,

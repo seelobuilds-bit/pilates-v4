@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { summarizeClassFlowAdminOverview } from "@/lib/class-flows/analytics"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 
@@ -73,13 +74,15 @@ export async function GET() {
       })
     ])
 
+    const stats = summarizeClassFlowAdminOverview(
+      progressStats.map((progress) => ({ viewCount: progress._count.id })),
+      completedCount,
+      trainingRequests
+    )
+
     return NextResponse.json({
       categories,
-      stats: {
-        totalViews: progressStats.reduce((sum, p) => sum + p._count.id, 0),
-        completedCount,
-        pendingTrainingRequests: trainingRequests.filter(r => r.status === "PENDING").length
-      },
+      stats,
       trainingRequests,
       teachers: studioTeachers.map((teacher) => ({
         id: teacher.id,
@@ -119,7 +122,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
   }
 }
-
 
 
 

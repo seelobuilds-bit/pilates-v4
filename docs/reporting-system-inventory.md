@@ -18,6 +18,7 @@ Supporting shared helpers already in use:
 
 - `/Users/charlie/Development/pilates-v4/src/lib/reporting/metrics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/db-query-mode.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/class-flows/analytics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts`
 
 Current mobile reporting service:
@@ -236,6 +237,10 @@ Analytics-like surfaces:
 - training requests
 - completion/progress
 - admin summaries
+
+Current note:
+
+- Low-risk summary math is now being centralized in `/Users/charlie/Development/pilates-v4/src/lib/class-flows/analytics.ts` before any deeper route consolidation.
 
 ### G. The Vault
 

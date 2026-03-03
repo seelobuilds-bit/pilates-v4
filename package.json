@@ -18,7 +18,7 @@
     "test:smoke:mobile:auth-routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-auth-routing-smoke.ts",
     "test:smoke:mobile:routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-push-routing-smoke.ts",
     "test:smoke:studio-content": "node scripts/tests/studio-content-surface-smoke.mjs",
-    "test:smoke:reporting": "pnpm test:reporting:date-range && pnpm test:reporting:revenue && pnpm test:reporting:attendance && pnpm test:reporting:retention && pnpm test:leaderboards:presentation && pnpm test:vault:analytics && node scripts/tests/reporting-regression-smoke.mjs",
+    "test:smoke:reporting": "pnpm test:reporting:date-range && pnpm test:reporting:revenue && pnpm test:reporting:attendance && pnpm test:reporting:retention && pnpm test:leaderboards:presentation && pnpm test:vault:analytics && pnpm test:class-flows:analytics && node scripts/tests/reporting-regression-smoke.mjs",
     "test:baseline:reporting": "node scripts/tests/reporting-baseline-capture.mjs",
     "test:baseline:reporting:compare": "node scripts/tests/reporting-baseline-compare.mjs",
     "test:employees:timeoff": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/employees-timeoff-logic.ts",
@@ -35,7 +35,8 @@
     "test:reporting:attendance": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-attendance-logic.ts",
     "test:reporting:retention": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-retention-logic.ts",
     "test:leaderboards:presentation": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/leaderboard-presentation-logic.ts",
-    "test:vault:analytics": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/vault-analytics-logic.ts"
+    "test:vault:analytics": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/vault-analytics-logic.ts",
+    "test:class-flows:analytics": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/class-flow-analytics-logic.ts"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"

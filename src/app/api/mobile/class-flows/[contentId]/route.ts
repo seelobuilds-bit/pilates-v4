@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { summarizeClassFlowDetail } from "@/lib/class-flows/analytics"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
@@ -158,6 +159,8 @@ export async function GET(
     const progressByContentId = new Map(progressRows.map((row) => [row.contentId, row]))
     const currentProgress = progressByContentId.get(content.id)
 
+    const detailStats = summarizeClassFlowDetail(recentRequests, relatedRows.length, categoryContentCount)
+
     return NextResponse.json({
       role: decoded.role,
       studio: {
@@ -228,9 +231,9 @@ export async function GET(
         scheduledDate: request.scheduledDate?.toISOString() || null,
       })),
       stats: {
-        categoryContentCount,
-        relatedContentCount: relatedRows.length,
-        requestCount: recentRequests.length,
+        categoryContentCount: detailStats.categoryContentCount,
+        relatedContentCount: detailStats.relatedContentCount,
+        requestCount: detailStats.requestCount,
       },
       permissions: {
         canUpdateProgress: decoded.role === "TEACHER",
