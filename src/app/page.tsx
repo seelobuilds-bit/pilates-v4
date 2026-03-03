@@ -435,10 +435,10 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <Badge className="bg-pink-100 text-pink-700 mb-4 px-4 py-1">Why CURRENT</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Built for studios that refuse to stay still.
+              Built for studios. <br className="sm:hidden" />Not for software companies.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We&apos;ve talked to hundreds of studio owners. The problem isn&apos;t finding software — it&apos;s finding software that actually grows your business.
+              We&apos;ve talked to hundreds of studio owners. The problem isn&apos;t finding software — it&apos;s finding software that doesn&apos;t create more work.
             </p>
           </div>
 
@@ -517,20 +517,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Coming Soon */}
-          <div className="bg-gradient-to-r from-violet-50 to-pink-50 rounded-2xl p-6 sm:p-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-violet-600" />
-              <span className="text-sm font-semibold text-violet-700">Coming soon</span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {["Growth Academy", "The Vault", "Leaderboards", "Store & Fulfilment"].map((item) => (
-                <span key={item} className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm">
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
