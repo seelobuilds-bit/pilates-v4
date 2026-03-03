@@ -60,6 +60,10 @@ jobs:
 
           exit "$test_exit_code"
 
+      - name: Run studio content smoke tests
+        shell: bash
+        run: pnpm test:smoke:studio-content
+
       - name: Reporting smoke summary
         if: always()
         shell: bash
