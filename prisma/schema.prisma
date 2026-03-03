@@ -168,6 +168,26 @@ model Studio {
 
   // Mobile push devices
   mobilePushDevices MobilePushDevice[]
+  publicApiKeys     PublicApiKey[]
+}
+
+model PublicApiKey {
+  id              String   @id @default(cuid())
+  name            String
+  prefix          String   @unique
+  keyHash         String   @unique
+  scopes          Json
+  isActive        Boolean  @default(true)
+  createdByUserId String?
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studioId String
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+
+  @@index([studioId, isActive])
 }
 
 // Email configuration per studio
