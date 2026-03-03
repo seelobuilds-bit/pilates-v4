@@ -53,10 +53,10 @@ export default function SiteLockScreen() {
           <div className="space-y-5">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-white/60">CURRENT</p>
             <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-6xl">
-              The CURRENT is coming soon
+              The CURRENT App is coming soon
             </h1>
             <p className="max-w-xl text-base leading-7 text-white/75 sm:text-lg">
-              For studio owners wanting to get a early demo please contact us at{" "}
+              For studio owners wanting to get an early demo please contact us at{" "}
               <a href="mailto:admin@thecurrent.app" className="font-semibold text-white underline decoration-white/30 underline-offset-4">
                 admin@thecurrent.app
               </a>
