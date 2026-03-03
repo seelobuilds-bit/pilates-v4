@@ -171,6 +171,7 @@ export default function ScheduleScreen() {
   const [error, setError] = useState<string | null>(null)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const latestScheduleRequestIdRef = useRef(0)
+  const pickerDraftDateRef = useRef<Date | null>(null)
 
   const isClient = user?.role === "CLIENT"
   const [clientMode, setClientMode] = useState<"booked" | "all">("booked")
@@ -349,11 +350,14 @@ export default function ScheduleScreen() {
   const pickerValue = useMemo(() => parseDateKey(selectedDateKey) || dateRange.minDate, [dateRange.minDate, selectedDateKey])
 
   const openDatePicker = useCallback(() => {
-    setPickerDraftDate(parseDateKey(selectedDateKey) || dateRange.minDate)
+    const nextDraft = parseDateKey(selectedDateKey) || dateRange.minDate
+    pickerDraftDateRef.current = nextDraft
+    setPickerDraftDate(nextDraft)
     setShowDatePicker(true)
   }, [dateRange.minDate, selectedDateKey])
 
   const closeDatePicker = useCallback(() => {
+    pickerDraftDateRef.current = null
     setPickerDraftDate(null)
     setShowDatePicker(false)
   }, [])
@@ -376,6 +380,7 @@ export default function ScheduleScreen() {
       }
 
       if (Platform.OS === "ios") {
+        pickerDraftDateRef.current = selectedDate
         setPickerDraftDate(selectedDate)
         return
       }
@@ -506,7 +511,7 @@ export default function ScheduleScreen() {
                 </Pressable>
                 <Pressable
                   style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]}
-                  onPress={() => applyPickedDate(pickerDraftDate || pickerValue)}
+                  onPress={() => applyPickedDate(pickerDraftDateRef.current || pickerValue)}
                 >
                   <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
                 </Pressable>

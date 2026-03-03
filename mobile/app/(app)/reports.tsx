@@ -91,6 +91,7 @@ export default function ReportsScreen() {
   const [error, setError] = useState<string | null>(null)
   const hasLoadedInitially = useRef(false)
   const latestRequestIdRef = useRef(0)
+  const pickerDraftDateRef = useRef<Date | null>(null)
 
   const appliedRangeLabel = useMemo(
     () => `${appliedRange.start.toLocaleDateString()} - ${appliedRange.end.toLocaleDateString()}`,
@@ -173,13 +174,16 @@ export default function ReportsScreen() {
 
   const openRangePicker = useCallback(
     (field: "start" | "end") => {
-      setPickerDraftDate(field === "start" ? customRange.start : customRange.end)
+      const nextDraft = field === "start" ? customRange.start : customRange.end
+      pickerDraftDateRef.current = nextDraft
+      setPickerDraftDate(nextDraft)
       setActiveRangePicker(field)
     },
     [customRange.end, customRange.start]
   )
 
   const closeRangePicker = useCallback(() => {
+    pickerDraftDateRef.current = null
     setPickerDraftDate(null)
     setActiveRangePicker(null)
   }, [])
@@ -219,6 +223,7 @@ export default function ReportsScreen() {
 
       const safeDate = parseDateInput(formatDateInput(selectedDate)) || selectedDate
       if (Platform.OS === "ios") {
+        pickerDraftDateRef.current = safeDate
         setPickerDraftDate(safeDate)
         return
       }
@@ -286,7 +291,10 @@ export default function ReportsScreen() {
                   <Pressable style={styles.pickerSecondaryButton} onPress={closeRangePicker}>
                     <Text style={styles.pickerSecondaryButtonText}>Cancel</Text>
                   </Pressable>
-                  <Pressable style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]} onPress={() => applyPickedDate(pickerValue)}>
+                  <Pressable
+                    style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]}
+                    onPress={() => applyPickedDate(pickerDraftDateRef.current || pickerValue)}
+                  >
                     <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
                   </Pressable>
                 </View>
