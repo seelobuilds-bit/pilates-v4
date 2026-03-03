@@ -154,11 +154,12 @@ export const mobileApi = {
     })
   },
 
-  reports(token: string, params?: { days?: 7 | 30 | 90; startDate?: string; endDate?: string }) {
+  reports(token: string, params?: { days?: number; startDate?: string; endDate?: string }) {
     const search = new URLSearchParams()
     if (params?.days) search.set("days", String(params.days))
     if (params?.startDate) search.set("startDate", params.startDate)
     if (params?.endDate) search.set("endDate", params.endDate)
+    search.set("_ts", String(Date.now()))
     const path = search.size ? `/api/mobile/reports?${search.toString()}` : "/api/mobile/reports"
     return request<MobileReportsResponse>(path, {
       method: "GET",

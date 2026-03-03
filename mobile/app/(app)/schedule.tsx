@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
-import { FlatList, Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import { mobileConfig } from "@/src/lib/config"
@@ -291,31 +291,6 @@ export default function ScheduleScreen() {
     })
   }, [items, searchNormalized])
 
-  const windowCounts = useMemo(() => {
-    const now = new Date()
-    const todayStart = startOfToday()
-    const tomorrowStart = new Date(todayStart)
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
-    const weekEnd = new Date(now)
-    weekEnd.setDate(weekEnd.getDate() + 7)
-
-    const todayCount = searchScopedItems.filter((item) => {
-      const start = new Date(item.startTime)
-      return start >= todayStart && start < tomorrowStart
-    }).length
-
-    const weekCount = searchScopedItems.filter((item) => {
-      const start = new Date(item.startTime)
-      return start >= now && start <= weekEnd
-    }).length
-
-    return {
-      ALL: searchScopedItems.length,
-      TODAY: todayCount,
-      WEEK: weekCount,
-    } as const
-  }, [searchScopedItems])
-
   const windowScopedItems = useMemo(() => {
     const now = new Date()
     const todayStart = startOfToday()
@@ -402,11 +377,16 @@ export default function ScheduleScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.segmentRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.segmentScroll}
+        contentContainerStyle={styles.segmentScrollContent}
+      >
         {[
-          { id: "ALL" as const, label: `All (${windowCounts.ALL})` },
-          { id: "TODAY" as const, label: `Today (${windowCounts.TODAY})` },
-          { id: "WEEK" as const, label: `7d (${windowCounts.WEEK})` },
+          { id: "ALL" as const, label: "All" },
+          { id: "TODAY" as const, label: "Today" },
+          { id: "WEEK" as const, label: "7 Days" },
         ].map((option) => {
           const selected = option.id === windowFilter
           return (
@@ -424,12 +404,17 @@ export default function ScheduleScreen() {
             </Pressable>
           )
         })}
-      </View>
+      </ScrollView>
 
       {isClient ? (
-        <View style={styles.modeRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.segmentScroll}
+          contentContainerStyle={styles.segmentScrollContent}
+        >
           {[
-            { id: "booked" as const, label: "My Bookings" },
+            { id: "booked" as const, label: "Booked" },
             { id: "all" as const, label: "Browse Classes" },
           ].map((option) => {
             const selected = option.id === clientMode
@@ -448,8 +433,12 @@ export default function ScheduleScreen() {
               </Pressable>
             )
           })}
-        </View>
+        </ScrollView>
       ) : null}
+
+      <Text style={styles.resultsHint}>
+        {filteredItems.length} shown{windowFilter !== "ALL" ? ` in ${windowFilter === "TODAY" ? "today" : "the next 7 days"}` : ""}
+      </Text>
 
       <View style={styles.dateRow}>
         <Pressable style={styles.dateButton} onPress={openDatePicker}>
@@ -469,31 +458,40 @@ export default function ScheduleScreen() {
         ) : null}
       </View>
 
-      {showDatePicker ? (
-        <View style={styles.datePickerWrap}>
-          <DateTimePicker
-            value={pickerDraftDate || pickerValue}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            minimumDate={dateRange.minDate}
-            maximumDate={dateRange.maxDate}
-            onChange={handleDatePickerChange}
-          />
-          {Platform.OS === "ios" ? (
-            <View style={styles.pickerActions}>
-              <Pressable style={styles.pickerSecondaryButton} onPress={closeDatePicker}>
-                <Text style={styles.pickerSecondaryButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]}
-                onPress={() => applyPickedDate(pickerDraftDate || pickerValue)}
-              >
-                <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
-              </Pressable>
-            </View>
-          ) : null}
+      <Modal
+        visible={showDatePicker}
+        animationType="fade"
+        transparent
+        onRequestClose={closeDatePicker}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={closeDatePicker} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Select date</Text>
+            <DateTimePicker
+              value={pickerDraftDate || pickerValue}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "calendar"}
+              minimumDate={dateRange.minDate}
+              maximumDate={dateRange.maxDate}
+              onChange={handleDatePickerChange}
+            />
+            {Platform.OS === "ios" ? (
+              <View style={styles.pickerActions}>
+                <Pressable style={styles.pickerSecondaryButton} onPress={closeDatePicker}>
+                  <Text style={styles.pickerSecondaryButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.pickerPrimaryButton, { backgroundColor: primaryColor }]}
+                  onPress={() => applyPickedDate(pickerDraftDate || pickerValue)}
+                >
+                  <Text style={styles.pickerPrimaryButtonText}>Apply</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </View>
-      ) : null}
+      </Modal>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -555,18 +553,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  segmentRow: {
-    flexDirection: "row",
+  segmentScroll: {
+    flexGrow: 0,
+  },
+  segmentScrollContent: {
     gap: 8,
+    paddingRight: 8,
   },
   segmentButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 999,
     backgroundColor: mobileTheme.colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    minWidth: 84,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -576,18 +577,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
   },
-  modeRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
   modeButton: {
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 999,
     backgroundColor: mobileTheme.colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    minWidth: 96,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -597,13 +594,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
   },
+  resultsHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
+  },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
   },
   dateButton: {
-    flex: 1,
+    minWidth: 180,
+    flexGrow: 1,
     borderWidth: 1,
     borderColor: mobileTheme.colors.borderMuted,
     borderRadius: 12,
@@ -647,14 +650,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
-  datePickerWrap: {
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 12,
-    padding: 8,
-    gap: 8,
-  },
   pickerActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -682,6 +677,28 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.3)",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalCard: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+  },
+  modalTitle: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 15,
   },
   list: {
     flex: 1,

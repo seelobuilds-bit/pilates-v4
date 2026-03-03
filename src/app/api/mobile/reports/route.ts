@@ -4,6 +4,9 @@ import { db } from "@/lib/db"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 const ALLOWED_DAYS = new Set([7, 30, 90])
 const ATTENDED_STATUSES = new Set<BookingStatus>(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])

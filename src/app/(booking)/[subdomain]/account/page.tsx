@@ -1450,40 +1450,40 @@ export default function AccountPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="app-scrollbar bg-white border shadow-sm p-1 flex w-full flex-nowrap gap-1 overflow-x-auto justify-start">
-            <TabsTrigger value="bookings" className="gap-2 shrink-0">
+          <TabsList className="app-scrollbar sticky top-2 z-20 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-2xl border bg-white/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/85">
+            <TabsTrigger value="bookings" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Bookings</span>
+              <span>Bookings</span>
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="gap-2 shrink-0">
+            <TabsTrigger value="inbox" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
               <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Inbox</span>
+              <span>Inbox</span>
             </TabsTrigger>
             {studio.hasVault && (
-              <TabsTrigger value="vault" className="gap-2 shrink-0">
+              <TabsTrigger value="vault" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
                 <Video className="h-4 w-4" />
-                <span className="hidden sm:inline">The Vault</span>
+                <span>Vault</span>
               </TabsTrigger>
             )}
             {activeSubscriptions.some(s => s.plan.communityChat?.isEnabled) && (
-              <TabsTrigger value="community" className="gap-2 shrink-0">
+              <TabsTrigger value="community" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Community</span>
+                <span>Community</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="subscriptions" className="gap-2 shrink-0">
+            <TabsTrigger value="subscriptions" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
               <Crown className="h-4 w-4" />
-              <span className="hidden sm:inline">Subscriptions</span>
+              <span>Plans</span>
             </TabsTrigger>
             {studio.hasStore && (
-              <TabsTrigger value="orders" className="gap-2 shrink-0">
+              <TabsTrigger value="orders" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
                 <ShoppingBag className="h-4 w-4" />
-                <span className="hidden sm:inline">Orders</span>
+                <span>Orders</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="profile" className="gap-2 shrink-0">
+            <TabsTrigger value="profile" className="min-h-10 shrink-0 gap-2 px-3 text-xs sm:text-sm">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
+              <span>Profile</span>
             </TabsTrigger>
           </TabsList>
 

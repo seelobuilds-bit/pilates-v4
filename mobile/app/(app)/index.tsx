@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "expo-router"
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker"
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
 import {
@@ -263,12 +263,24 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {activeRangePicker ? (
-          <View style={styles.pickerCard}>
+      </View>
+
+      <Modal
+        visible={Boolean(activeRangePicker)}
+        animationType="fade"
+        transparent
+        onRequestClose={closeRangePicker}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={closeRangePicker} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {activeRangePicker === "start" ? "Select start date" : "Select end date"}
+            </Text>
             <DateTimePicker
               value={pickerValue}
               mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
+              display={Platform.OS === "ios" ? "spinner" : "calendar"}
               maximumDate={activeRangePicker === "start" ? customRange.end : new Date()}
               minimumDate={activeRangePicker === "end" ? customRange.start : undefined}
               onChange={handleRangePickerChange}
@@ -284,8 +296,8 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </View>
-        ) : null}
-      </View>
+        </View>
+      </Modal>
 
       <View style={styles.snapshotHeader}>
         <Text style={styles.sectionTitle}>Performance Snapshot</Text>
@@ -367,15 +379,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-  pickerCard: {
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: mobileTheme.colors.borderMuted,
-    backgroundColor: mobileTheme.colors.surface,
-    borderRadius: 12,
-    padding: 8,
-    gap: 8,
-  },
   customDateButton: {
     flex: 1,
     borderWidth: 1,
@@ -424,6 +427,28 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.3)",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalCard: {
+    borderWidth: 1,
+    borderColor: mobileTheme.colors.borderMuted,
+    backgroundColor: mobileTheme.colors.surface,
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+  },
+  modalTitle: {
+    color: mobileTheme.colors.text,
+    fontWeight: "700",
+    fontSize: 15,
   },
   snapshotHeader: {
     flexDirection: "row",
