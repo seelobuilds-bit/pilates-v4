@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import {
+  calculateAverageClassSize,
+  calculateAverageFillRate,
+  countAttendedBookings,
+} from "@/lib/reporting/attendance"
 import { getSession } from "@/lib/session"
-import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
-
-const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 
 export async function GET() {
   const session = await getSession()
@@ -169,24 +172,13 @@ export async function GET() {
     const totalAttendance = monthClasses.reduce((sum, session) => {
       return (
         sum +
-        session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
+        countAttendedBookings(session.bookings)
       )
     }, 0)
 
-    const avgClassSize = monthClasses.length > 0 ? roundTo(totalAttendance / monthClasses.length, 1) : 0
+    const avgClassSize = calculateAverageClassSize(totalAttendance, monthClasses.length)
 
-    const avgFillRate =
-      monthClasses.length > 0
-        ? roundTo(
-            monthClasses.reduce((sum, session) => {
-              const attendedCount = session.bookings.filter((booking) =>
-                ATTENDED_BOOKING_STATUSES.has(booking.status)
-              ).length
-              return sum + ratioPercentage(attendedCount, session.capacity, 4)
-            }, 0) / monthClasses.length,
-            0
-          )
-        : 0
+    const avgFillRate = calculateAverageFillRate(monthClasses, 0)
 
     const completionRate = ratioPercentage(completedBookings, nonCancelledBookings.length, 0)
 
@@ -248,8 +240,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
-
 
 
 

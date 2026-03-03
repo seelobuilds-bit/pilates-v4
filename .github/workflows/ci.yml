@@ -88,6 +88,9 @@ jobs:
       - name: Reporting revenue regression
         run: pnpm test:reporting:revenue
 
+      - name: Reporting attendance regression
+        run: pnpm test:reporting:attendance
+
       - name: Reporting smoke
         run: pnpm test:smoke:reporting
 

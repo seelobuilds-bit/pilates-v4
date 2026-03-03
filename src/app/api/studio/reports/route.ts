@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { BookingStatus } from "@prisma/client"
+import {
+  calculateAverageFillRate,
+  countAttendedBookings,
+  isAttendedBookingStatus,
+} from "@/lib/reporting/attendance"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { resolveReportRange } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
-
-const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
@@ -492,7 +495,7 @@ export async function GET(request: NextRequest) {
     const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`
     classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
 
-    const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
+    const attendedCount = countAttendedBookings(session.bookings)
     const fill = ratioPercentage(attendedCount, session.capacity, 0)
 
     const slotLabel = new Date(session.startTime).toLocaleTimeString("en-US", {
@@ -523,22 +526,8 @@ export async function GET(request: NextRequest) {
     byClassTypeMap.set(session.classTypeId, classEntry)
   }
   const totalCapacity = classSessions.reduce((sum, session) => sum + session.capacity, 0)
-  const totalAttendance = classSessions.reduce((sum, session) => {
-    return (
-      sum +
-      session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-    )
-  }, 0)
-  const overallAverageFill =
-    classSessions.length > 0
-      ? roundTo(
-          classSessions.reduce((sum, session) => {
-            const attendedCount = session.bookings.filter((booking) => ATTENDED_BOOKING_STATUSES.has(booking.status)).length
-            return sum + ratioPercentage(attendedCount, session.capacity, 4)
-          }, 0) / classSessions.length,
-          0
-        )
-      : 0
+  const totalAttendance = classSessions.reduce((sum, session) => sum + countAttendedBookings(session.bookings), 0)
+  const overallAverageFill = classSessions.length > 0 ? calculateAverageFillRate(classSessions, 0) : 0
 
   const statusCounts: Record<string, number> = {}
   for (const booking of bookings) {
@@ -726,11 +715,9 @@ export async function GET(request: NextRequest) {
 
   const winbackSuccess = winbackRecoveredClients.length
 
-  const attendedBookingsThisPeriod = bookings.filter((booking) =>
-    ATTENDED_BOOKING_STATUSES.has(booking.status)
-  )
+  const attendedBookingsThisPeriod = bookings.filter((booking) => isAttendedBookingStatus(booking.status))
   const attendedBookingsPreviousPeriod = previousBookings.filter((booking) =>
-    ATTENDED_BOOKING_STATUSES.has(booking.status)
+    isAttendedBookingStatus(booking.status)
   )
   const noShowRate = ratioPercentage(
     attendedBookingsThisPeriod.filter((booking) => booking.status === "NO_SHOW").length,
@@ -808,7 +795,7 @@ export async function GET(request: NextRequest) {
         const amount = resolveBookingRevenue(booking.paidAmount, session.classType.price)
         bucket.revenue += amount
       }
-      if (!ATTENDED_BOOKING_STATUSES.has(booking.status)) continue
+      if (!isAttendedBookingStatus(booking.status)) continue
       bucket.attended += 1
       bucket.clientVisits.set(booking.clientId, (bucket.clientVisits.get(booking.clientId) || 0) + 1)
     }

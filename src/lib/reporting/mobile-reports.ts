@@ -1,4 +1,7 @@
 import { BookingStatus } from "@prisma/client"
+import {
+  countAttendedBookings,
+} from "@/lib/reporting/attendance"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
@@ -7,7 +10,6 @@ import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const ALLOWED_DAYS = new Set([7, 30, 90])
-const ATTENDED_STATUSES = new Set<BookingStatus>(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
 
 export type MobileMetricFormat = "number" | "currency" | "percent"
@@ -124,7 +126,7 @@ function classTypeHighlights(
     const current = byType.get(key) || { sessions: 0, capacity: 0, attended: 0 }
     current.sessions += 1
     current.capacity += session.capacity
-    current.attended += session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length
+    current.attended += countAttendedBookings(session.bookings)
     byType.set(key, current)
   }
 
@@ -282,11 +284,11 @@ export async function getMobileReports(
     const currentCapacity = currentSessions.reduce((sum, session) => sum + session.capacity, 0)
     const previousCapacity = previousSessions.reduce((sum, session) => sum + session.capacity, 0)
     const currentAttended = currentSessions.reduce(
-      (sum, session) => sum + session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length,
+      (sum, session) => sum + countAttendedBookings(session.bookings),
       0
     )
     const previousAttended = previousSessions.reduce(
-      (sum, session) => sum + session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length,
+      (sum, session) => sum + countAttendedBookings(session.bookings),
       0
     )
     const currentNewClients = currentNewClientRows.length
@@ -320,7 +322,7 @@ export async function getMobileReports(
       if (index < 0) continue
       ownerSeries[index].metrics.classes += 1
       ownerCapacityByBucket[index] += session.capacity
-      ownerAttendedByBucket[index] += session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length
+      ownerAttendedByBucket[index] += countAttendedBookings(session.bookings)
     }
 
     for (const client of currentNewClientRows) {
@@ -442,11 +444,11 @@ export async function getMobileReports(
     const currentCapacity = currentSessions.reduce((sum, session) => sum + session.capacity, 0)
     const previousCapacity = previousSessions.reduce((sum, session) => sum + session.capacity, 0)
     const currentAttended = currentSessions.reduce(
-      (sum, session) => sum + session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length,
+      (sum, session) => sum + countAttendedBookings(session.bookings),
       0
     )
     const previousAttended = previousSessions.reduce(
-      (sum, session) => sum + session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length,
+      (sum, session) => sum + countAttendedBookings(session.bookings),
       0
     )
 
@@ -486,7 +488,7 @@ export async function getMobileReports(
       if (index < 0) continue
       teacherSeries[index].metrics.classes += 1
       teacherCapacityByBucket[index] += session.capacity
-      teacherAttendedByBucket[index] += session.bookings.filter((booking) => ATTENDED_STATUSES.has(booking.status)).length
+      teacherAttendedByBucket[index] += countAttendedBookings(session.bookings)
     }
 
     teacherSeries.forEach((point, index) => {
