@@ -54,6 +54,7 @@ function SubscriptionPaymentWrapper({
   subdomain,
   paymentId,
   amount,
+  currency,
   planName,
   interval,
   primaryColor,
@@ -65,6 +66,7 @@ function SubscriptionPaymentWrapper({
   subdomain: string
   paymentId: string
   amount: number
+  currency: string
   planName: string
   interval: string
   primaryColor: string
@@ -107,6 +109,7 @@ function SubscriptionPaymentWrapper({
         subdomain={subdomain}
         paymentId={paymentId}
         amount={amount}
+        currency={currency}
         planName={planName}
         interval={interval}
         onSuccess={onSuccess}
@@ -121,6 +124,7 @@ function SubscriptionPaymentForm({
   subdomain,
   paymentId,
   amount,
+  currency,
   planName,
   interval,
   onSuccess,
@@ -129,6 +133,7 @@ function SubscriptionPaymentForm({
   subdomain: string
   paymentId: string
   amount: number
+  currency: string
   planName: string
   interval: string
   onSuccess: () => void
@@ -138,6 +143,18 @@ function SubscriptionPaymentForm({
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const formattedAmount = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: (currency || "usd").toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount / 100)
+    } catch {
+      return `${(amount / 100).toFixed(2)}`
+    }
+  }, [amount, currency])
 
   async function handlePaymentSuccess(paymentIntentId: string) {
     try {
@@ -226,7 +243,7 @@ function SubscriptionPaymentForm({
         <h4 className="font-medium text-gray-900 mb-2">Order Summary</h4>
         <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span className="text-gray-600">{planName} ({interval})</span>
-          <span className="font-semibold text-gray-900">${(amount / 100).toFixed(2)}</span>
+          <span className="font-semibold text-gray-900">{formattedAmount}</span>
         </div>
       </div>
 
@@ -301,7 +318,7 @@ function SubscriptionPaymentForm({
             ) : (
               <>
                 <Lock className="w-4 h-4 mr-2" />
-                Pay ${(amount / 100).toFixed(2)}
+                Pay {formattedAmount}
               </>
             )}
           </Button>
@@ -478,7 +495,7 @@ function ClientInbox({ subdomain, primaryColor }: { subdomain: string; primaryCo
           </div>
         ) : null}
 
-        <form onSubmit={sendMessage} className="flex gap-2">
+        <form onSubmit={sendMessage} className="flex flex-col gap-2 sm:flex-row">
           <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -490,7 +507,7 @@ function ClientInbox({ subdomain, primaryColor }: { subdomain: string; primaryCo
           <Button
             type="submit"
             disabled={!newMessage.trim() || sending}
-            className="self-end"
+            className="w-full sm:w-auto sm:self-end"
             style={{ backgroundColor: primaryColor }}
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -626,7 +643,7 @@ function ClientCommunityChat({ planId, subdomain }: { planId: string; subdomain:
       </div>
 
       {/* Message Input */}
-      <form onSubmit={sendMessage} className="p-3 bg-white border-t flex gap-2">
+      <form onSubmit={sendMessage} className="flex flex-col gap-2 border-t bg-white p-3 sm:flex-row">
         <Input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
@@ -634,7 +651,7 @@ function ClientCommunityChat({ planId, subdomain }: { planId: string; subdomain:
           className="flex-1"
           disabled={sending}
         />
-        <Button type="submit" disabled={!newMessage.trim() || sending} size="sm">
+        <Button type="submit" disabled={!newMessage.trim() || sending} size="sm" className="w-full sm:w-auto">
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
         </Button>
       </form>
@@ -725,6 +742,7 @@ interface Studio {
   id: string
   name: string
   primaryColor: string
+  stripeCurrency?: string
   hasStore?: boolean
   hasVault?: boolean
   stripeEnabled?: boolean
@@ -2260,6 +2278,7 @@ export default function AccountPage() {
                   subdomain={subdomain}
                   paymentId={paymentId!}
                   amount={paymentAmount}
+                  currency={studio.stripeCurrency || "usd"}
                   planName={selectedPlan.name}
                   interval={selectedInterval}
                   primaryColor={primaryColor}
@@ -2277,7 +2296,10 @@ export default function AccountPage() {
                     <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-gray-600">{selectedPlan.name} ({selectedInterval})</span>
                       <span className="font-semibold text-gray-900">
-                        ${selectedInterval === "yearly" ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice}
+                        {new Intl.NumberFormat(undefined, {
+                          style: "currency",
+                          currency: (studio.stripeCurrency || "usd").toUpperCase(),
+                        }).format(selectedInterval === "yearly" ? (selectedPlan.yearlyPrice || 0) : selectedPlan.monthlyPrice)}
                       </span>
                     </div>
                   </div>
