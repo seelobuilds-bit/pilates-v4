@@ -19,6 +19,8 @@
     "test:smoke:mobile:routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-push-routing-smoke.ts",
     "test:smoke:studio-content": "node scripts/tests/studio-content-surface-smoke.mjs",
     "test:smoke:reporting": "node scripts/tests/reporting-regression-smoke.mjs",
+    "test:baseline:reporting": "node scripts/tests/reporting-baseline-capture.mjs",
+    "test:baseline:reporting:compare": "node scripts/tests/reporting-baseline-compare.mjs",
     "test:employees:timeoff": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/employees-timeoff-logic.ts",
     "seed:synthetic:studios": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-synthetic-studios.ts",
     "seed:synthetic:cleanup": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/cleanup-synthetic-studios.ts",

@@ -3,65 +3,13 @@ import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
+import { resolveReportRange } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
-const DAY_IN_MS = 1000 * 60 * 60 * 24
-
-type ReportRange = {
-  days: number
-  startDate: Date
-  reportEndDate: Date
-  previousStartDate: Date
-}
-
-function parseReportDays(value: string | null) {
-  if (!value) return DEFAULT_REPORT_DAYS
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed)) return DEFAULT_REPORT_DAYS
-  return Math.min(MAX_REPORT_DAYS, Math.max(1, parsed))
-}
-
-function parseDateInput(value: string | null) {
-  if (!value) return null
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
-  const parsed = new Date(`${value}T00:00:00.000Z`)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed
-}
-
-function resolveReportRange(searchParams: URLSearchParams): ReportRange {
-  const requestedStartDate = parseDateInput(searchParams.get("startDate"))
-  const requestedEndDate = parseDateInput(searchParams.get("endDate"))
-
-  if (
-    requestedStartDate &&
-    requestedEndDate &&
-    requestedStartDate.getTime() <= requestedEndDate.getTime()
-  ) {
-    const startDate = new Date(requestedStartDate)
-    const reportEndDate = new Date(requestedEndDate)
-    // Use an exclusive upper bound at the start of the day after the selected end date.
-    reportEndDate.setUTCDate(reportEndDate.getUTCDate() + 1)
-    const days = Math.max(1, Math.round((reportEndDate.getTime() - startDate.getTime()) / DAY_IN_MS))
-    const previousStartDate = new Date(startDate)
-    previousStartDate.setUTCDate(previousStartDate.getUTCDate() - days)
-
-    return { days, startDate, reportEndDate, previousStartDate }
-  }
-
-  const days = parseReportDays(searchParams.get("days"))
-  const reportEndDate = new Date()
-  const startDate = new Date(reportEndDate)
-  startDate.setDate(startDate.getDate() - days)
-  const previousStartDate = new Date(startDate)
-  previousStartDate.setDate(previousStartDate.getDate() - days)
-
-  return { days, startDate, reportEndDate, previousStartDate }
-}
 
 export async function GET(request: NextRequest) {
   let session: Awaited<ReturnType<typeof getSession>>
@@ -78,7 +26,17 @@ export async function GET(request: NextRequest) {
 
   const studioId = session.user.studioId
   const searchParams = request.nextUrl.searchParams
-  const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(searchParams)
+  const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(
+    {
+      days: searchParams.get("days"),
+      startDate: searchParams.get("startDate"),
+      endDate: searchParams.get("endDate"),
+    },
+    {
+      defaultDays: DEFAULT_REPORT_DAYS,
+      maxDays: MAX_REPORT_DAYS,
+    }
+  )
 
   try {
     const monthWindowStart = new Date(reportEndDate)

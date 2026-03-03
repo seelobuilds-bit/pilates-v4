@@ -327,6 +327,49 @@ These are the next files to inspect and baseline:
 9. `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/scoring.ts`
 10. `/Users/charlie/Development/pilates-v4/src/components/studio/VaultView.tsx`
 
+## Baseline Capture Harness
+
+Repeatable baseline capture script:
+
+- `/Users/charlie/Development/pilates-v4/scripts/tests/reporting-baseline-capture.mjs`
+
+Package script:
+
+- `pnpm test:baseline:reporting`
+- `pnpm test:baseline:reporting:compare`
+
+Supported env inputs:
+
+- `TEST_BASE_URL`
+- `TEST_OWNER_COOKIE`
+- `TEST_TEACHER_COOKIE`
+- `TEST_STUDIO_CLIENT_ID`
+- `TEST_STUDIO_TEACHER_ID`
+- `TEST_STUDIO_CLASS_ID`
+- `TEST_STUDIO_LOCATION_ID`
+- `REPORTING_BASELINE_OUTPUT`
+
+Current baseline coverage:
+
+- studio reports (`today`, `last7`, `last30`)
+- teacher stats
+- entity summaries (client / teacher / class type / location) when IDs are provided
+- website analytics (`7d`, `30d`)
+- leaderboards (`STUDIO`, `TEACHER`)
+
+This script is intentionally read-only. It captures the current trusted output shape and summary values so future refactors can be compared against a concrete baseline before any route is switched.
+
+Companion compare harness:
+
+- `/Users/charlie/Development/pilates-v4/scripts/tests/reporting-baseline-compare.mjs`
+
+Required env for compare:
+
+- `REPORTING_BASELINE_INPUT`
+- same auth and entity-ID env vars used by baseline capture
+
+The compare script re-fetches the same trusted surfaces and fails if the summarized outputs drift from the recorded baseline beyond a small numeric tolerance.
+
 ## Non-Negotiable Safety Constraint
 
 No behavior-changing refactor should land until:

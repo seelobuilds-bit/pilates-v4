@@ -1,12 +1,13 @@
 import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 
+const DAY_IN_MS = 1000 * 60 * 60 * 24
 const ALLOWED_DAYS = new Set([7, 30, 90])
 const ATTENDED_STATUSES = new Set<BookingStatus>(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
-const DAY_IN_MS = 1000 * 60 * 60 * 24
 
 export type MobileMetricFormat = "number" | "currency" | "percent"
 
@@ -17,12 +18,6 @@ export type MobileReportMetric = {
   previousValue: number
   changePct: number
   format: MobileMetricFormat
-}
-
-export type ReportRangeInput = {
-  days?: string | null
-  startDate?: string | null
-  endDate?: string | null
 }
 
 export type MobileReportsPayload = {
@@ -57,66 +52,6 @@ export class MobileReportsError extends Error {
     super(message)
     this.name = "MobileReportsError"
     this.status = status
-  }
-}
-
-function parseDays(value: string | null) {
-  const parsed = Number(value)
-  return ALLOWED_DAYS.has(parsed) ? parsed : 30
-}
-
-function subtractDays(date: Date, days: number) {
-  const clone = new Date(date)
-  clone.setDate(clone.getDate() - days)
-  return clone
-}
-
-function parseDateInput(value: string | null) {
-  if (!value) return null
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
-  const parsed = new Date(`${value}T00:00:00.000Z`)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed
-}
-
-function resolveReportRange(input: ReportRangeInput) {
-  const requestedStartDate = parseDateInput(input.startDate || null)
-  const requestedEndDate = parseDateInput(input.endDate || null)
-
-  if (
-    requestedStartDate &&
-    requestedEndDate &&
-    requestedStartDate.getTime() <= requestedEndDate.getTime()
-  ) {
-    const currentStart = new Date(requestedStartDate)
-    const requestedEnd = new Date(requestedEndDate)
-    const periodEnd = new Date(requestedEnd)
-    periodEnd.setUTCDate(periodEnd.getUTCDate() + 1)
-    const periodDays = Math.max(1, Math.round((periodEnd.getTime() - currentStart.getTime()) / DAY_IN_MS))
-    const previousStart = new Date(currentStart)
-    previousStart.setUTCDate(previousStart.getUTCDate() - periodDays)
-
-    return {
-      periodDays,
-      currentStart,
-      previousStart,
-      periodEnd,
-      responseEnd: requestedEnd,
-    }
-  }
-
-  const periodDays = parseDays(input.days || null)
-  const responseEnd = new Date()
-  const periodEnd = new Date(responseEnd)
-  const currentStart = subtractDays(periodEnd, periodDays)
-  const previousStart = subtractDays(currentStart, periodDays)
-
-  return {
-    periodDays,
-    currentStart,
-    previousStart,
-    periodEnd,
-    responseEnd,
   }
 }
 
@@ -240,7 +175,16 @@ export async function getMobileReports(
     currency: studio.stripeCurrency,
   }
 
-  const { periodDays, periodEnd, currentStart, previousStart, responseEnd } = resolveReportRange(input)
+  const {
+    days: periodDays,
+    reportEndDate: periodEnd,
+    startDate: currentStart,
+    previousStartDate: previousStart,
+    responseEndDate: responseEnd,
+  } = resolveReportRange(input, {
+    defaultDays: 30,
+    allowedDays: Array.from(ALLOWED_DAYS),
+  })
 
   if (decoded.role === "OWNER") {
     const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([

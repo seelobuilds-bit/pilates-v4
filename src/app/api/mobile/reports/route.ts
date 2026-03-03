@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getMobileReports, MobileReportsError, type ReportRangeInput } from "@/lib/reporting/mobile-reports"
+import { getMobileReports, MobileReportsError } from "@/lib/reporting/mobile-reports"
+import type { ReportRangeInput } from "@/lib/reporting/date-range"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
