@@ -42,9 +42,15 @@ function parseDateInput(value: string | null) {
   return parsed
 }
 
-function resolveReportRange(searchParams: URLSearchParams) {
-  const requestedStartDate = parseDateInput(searchParams.get("startDate"))
-  const requestedEndDate = parseDateInput(searchParams.get("endDate"))
+type ReportRangeInput = {
+  days?: string | null
+  startDate?: string | null
+  endDate?: string | null
+}
+
+function resolveReportRange(input: ReportRangeInput) {
+  const requestedStartDate = parseDateInput(input.startDate || null)
+  const requestedEndDate = parseDateInput(input.endDate || null)
 
   if (
     requestedStartDate &&
@@ -68,7 +74,7 @@ function resolveReportRange(searchParams: URLSearchParams) {
     }
   }
 
-  const periodDays = parseDays(searchParams.get("days"))
+  const periodDays = parseDays(input.days || null)
   const responseEnd = new Date()
   const periodEnd = new Date(responseEnd)
   const currentStart = subtractDays(periodEnd, periodDays)
@@ -166,7 +172,7 @@ function classTypeHighlights(
     .map(({ label, value }) => ({ label, value }))
 }
 
-export async function GET(request: NextRequest) {
+async function handleReportRequest(request: NextRequest, input: ReportRangeInput) {
   try {
     const token = extractBearerToken(request.headers.get("authorization"))
     if (!token) {
@@ -201,7 +207,7 @@ export async function GET(request: NextRequest) {
       currency: studio.stripeCurrency,
     }
 
-    const { periodDays, periodEnd, currentStart, previousStart, responseEnd } = resolveReportRange(request.nextUrl.searchParams)
+    const { periodDays, periodEnd, currentStart, previousStart, responseEnd } = resolveReportRange(input)
 
     if (decoded.role === "OWNER") {
       const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([
@@ -674,4 +680,21 @@ export async function GET(request: NextRequest) {
     console.error("Mobile reports error:", error)
     return NextResponse.json({ error: "Failed to load reports" }, { status: 500 })
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleReportRequest(request, {
+    days: request.nextUrl.searchParams.get("days"),
+    startDate: request.nextUrl.searchParams.get("startDate"),
+    endDate: request.nextUrl.searchParams.get("endDate"),
+  })
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null)
+  return handleReportRequest(request, {
+    days: body?.days != null ? String(body.days) : null,
+    startDate: body?.startDate != null ? String(body.startDate) : null,
+    endDate: body?.endDate != null ? String(body.endDate) : null,
+  })
 }
