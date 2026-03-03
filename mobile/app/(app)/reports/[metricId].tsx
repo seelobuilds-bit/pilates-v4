@@ -138,12 +138,12 @@ export default function ReportMetricDetailScreen() {
       const requestId = latestRequestIdRef.current + 1
       latestRequestIdRef.current = requestId
       setReportLoading(true)
+      setAppliedRange(normalizeCustomRange(range.start, range.end))
       setError(null)
       try {
         const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
         if (requestId !== latestRequestIdRef.current) return
         setData(response)
-        setAppliedRange(normalizeCustomRange(range.start, range.end))
       } catch (err) {
         if (requestId !== latestRequestIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load metric detail"

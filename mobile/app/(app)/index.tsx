@@ -157,6 +157,7 @@ export default function HomeScreen() {
       const requestId = latestRequestIdRef.current + 1
       latestRequestIdRef.current = requestId
       setReportLoading(true)
+      setAppliedRange(normalizeCustomRange(range.start, range.end))
       setReportError(null)
 
       try {
@@ -165,11 +166,9 @@ export default function HomeScreen() {
           const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
           if (requestId !== latestRequestIdRef.current) return
           setReportsData(response)
-          setAppliedRange(normalizeCustomRange(range.start, range.end))
         } else {
           if (requestId !== latestRequestIdRef.current) return
           setReportsData(null)
-          setAppliedRange(normalizeCustomRange(range.start, range.end))
         }
       } catch (error) {
         if (requestId !== latestRequestIdRef.current) return
