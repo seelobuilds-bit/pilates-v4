@@ -82,6 +82,9 @@ jobs:
       - name: Mobile lint
         run: pnpm --dir mobile lint
 
+      - name: Reporting date-range regression
+        run: pnpm test:reporting:date-range
+
       - name: Mobile auth-routing smoke
         run: pnpm test:smoke:mobile:auth-routing
 
