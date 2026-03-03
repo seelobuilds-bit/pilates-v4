@@ -85,6 +85,9 @@ jobs:
       - name: Reporting date-range regression
         run: pnpm test:reporting:date-range
 
+      - name: Reporting smoke
+        run: pnpm test:smoke:reporting
+
       - name: Mobile auth-routing smoke
         run: pnpm test:smoke:mobile:auth-routing
 
