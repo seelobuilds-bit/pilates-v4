@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { hasStopOnBookingMarker, stripAutomationBodyMarkers } from "@/lib/automation-metadata"
 import { db } from "@/lib/db"
+import { summarizeAutomationDeliveryMetrics } from "@/lib/marketing/analytics"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
 type MobileMarketingStatusAction = "activate" | "pause"
-
-function ratioPercentage(numerator: number, denominator: number, precision = 1) {
-  if (denominator <= 0) return 0
-  const factor = Math.pow(10, precision)
-  return Math.round((numerator / denominator) * 100 * factor) / factor
-}
 
 async function resolveOwnerStudio(request: NextRequest) {
   const token = extractBearerToken(request.headers.get("authorization"))
@@ -171,6 +166,14 @@ export async function GET(
     const stopOnBooking = hasStopOnBookingMarker(automation.body)
     const totalMessages = automation.messages.length
     const failedMessages = automation.messages.filter((message) => message.status === "FAILED" || message.status === "BOUNCED").length
+    const stats = summarizeAutomationDeliveryMetrics(
+      automation.totalSent,
+      automation.totalDelivered,
+      automation.totalOpened,
+      automation.totalClicked,
+      failedMessages,
+      totalMessages
+    )
 
     return NextResponse.json({
       role: "OWNER",
@@ -203,12 +206,7 @@ export async function GET(
         location: automation.location,
         template: automation.template,
       },
-      stats: {
-        deliveryRate: ratioPercentage(automation.totalDelivered, automation.totalSent, 1),
-        openRate: ratioPercentage(automation.totalOpened, automation.totalDelivered, 1),
-        clickRate: ratioPercentage(automation.totalClicked, automation.totalDelivered, 1),
-        failureRate: ratioPercentage(failedMessages, totalMessages, 1),
-      },
+      stats,
       steps: automation.steps.map((step) => ({
         id: step.id,
         stepId: step.stepId,

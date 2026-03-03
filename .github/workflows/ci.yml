@@ -103,6 +103,9 @@ jobs:
       - name: Class flow analytics regression
         run: pnpm test:class-flows:analytics
 
+      - name: Website and marketing analytics regression
+        run: pnpm test:website-marketing:analytics
+
       - name: Reporting smoke
         run: pnpm test:smoke:reporting
 

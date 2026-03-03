@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { summarizeDeliveryMetrics } from "@/lib/marketing/analytics"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 
 type MobileCampaignStatusAction = "cancel"
-
-function ratioPercentage(numerator: number, denominator: number, precision = 1) {
-  if (denominator <= 0) return 0
-  const factor = Math.pow(10, precision)
-  return Math.round((numerator / denominator) * 100 * factor) / factor
-}
 
 async function resolveOwnerStudio(request: NextRequest) {
   const token = extractBearerToken(request.headers.get("authorization"))
@@ -150,6 +145,13 @@ export async function GET(
     if (!campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 })
     }
+    const stats = summarizeDeliveryMetrics(
+      campaign.sentCount,
+      campaign.deliveredCount,
+      campaign.openedCount,
+      campaign.clickedCount,
+      campaign.failedCount
+    )
 
     return NextResponse.json({
       role: "OWNER",
@@ -183,12 +185,7 @@ export async function GET(
         location: campaign.location,
         template: campaign.template,
       },
-      stats: {
-        deliveryRate: ratioPercentage(campaign.deliveredCount, campaign.sentCount, 1),
-        openRate: ratioPercentage(campaign.openedCount, campaign.deliveredCount, 1),
-        clickRate: ratioPercentage(campaign.clickedCount, campaign.deliveredCount, 1),
-        failureRate: ratioPercentage(campaign.failedCount, campaign.sentCount, 1),
-      },
+      stats,
       recentMessages: campaign.messages.map((message) => ({
         id: message.id,
         channel: message.channel,

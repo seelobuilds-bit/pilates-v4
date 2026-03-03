@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { getSession } from "@/lib/session"
+import { summarizeWebsiteOverview } from "@/lib/website-analytics/metrics"
 
 function toSafeNumber(value: unknown) {
   if (typeof value === "bigint") return Number(value)
@@ -217,15 +218,7 @@ export async function GET(request: NextRequest) {
       )
     ])
 
-    // Calculate conversion rate
-    const conversionRate = uniqueVisitors > 0 
-      ? ((totalConversions / uniqueVisitors) * 100).toFixed(1)
-      : "0"
-
-    // Calculate avg pages per visit
-    const avgPagesPerVisit = uniqueVisitors > 0
-      ? (totalPageViews / uniqueVisitors).toFixed(1)
-      : "0"
+    const overview = summarizeWebsiteOverview(totalPageViews, uniqueVisitors, totalConversions)
 
     const normalizedVisitorTrend = Array.isArray(visitorTrend)
       ? visitorTrend.map((point: unknown) => {
@@ -251,11 +244,11 @@ export async function GET(request: NextRequest) {
       },
       analytics: {
         overview: {
-          totalPageViews,
-          uniqueVisitors,
-          totalConversions,
-          conversionRate,
-          avgPagesPerVisit
+          totalPageViews: overview.totalPageViews,
+          uniqueVisitors: overview.uniqueVisitors,
+          totalConversions: overview.totalConversions,
+          conversionRate: overview.conversionRate,
+          avgPagesPerVisit: overview.avgPagesPerVisit,
         },
         topPages: topPages.map(p => ({
           path: p.pagePath || "/",
@@ -350,7 +343,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
 
 
 

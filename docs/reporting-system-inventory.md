@@ -19,7 +19,9 @@ Supporting shared helpers already in use:
 - `/Users/charlie/Development/pilates-v4/src/lib/reporting/metrics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/db-query-mode.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/class-flows/analytics.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/marketing/analytics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/website-analytics/metrics.ts`
 
 Current mobile reporting service:
 
@@ -33,6 +35,7 @@ Teacher summary stats (separate from studio reports):
 Website analytics (separate engine):
 
 - `/Users/charlie/Development/pilates-v4/src/app/api/studio/website-analytics/route.ts`
+- `/Users/charlie/Development/pilates-v4/src/app/api/demo/website-analytics/route.ts`
 
 Leaderboard scoring engine:
 
@@ -264,6 +267,11 @@ Current note:
 - Low-risk summary math is now being centralized in `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts` before any deeper route consolidation.
 
 ### H. Marketing / Email / SMS / Social
+
+Low-risk shared summary math is now being centralized for:
+
+- website overview rates in `/Users/charlie/Development/pilates-v4/src/lib/website-analytics/metrics.ts`
+- campaign and automation delivery/open/click/failure rates in `/Users/charlie/Development/pilates-v4/src/lib/marketing/analytics.ts`
 
 Studio marketing routes:
 
