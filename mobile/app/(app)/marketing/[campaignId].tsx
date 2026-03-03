@@ -108,7 +108,7 @@ export default function MarketingCampaignDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadCampaign(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Campaign Detail</Text>
+        <Text style={styles.title}>Campaign overview</Text>
         {data?.campaign ? (
           <>
             <Text style={styles.nameText}>{data.campaign.name}</Text>
@@ -138,12 +138,12 @@ export default function MarketingCampaignDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading campaign details...</Text>
+          <Text style={styles.emptyTitle}>Loading campaign overview...</Text>
         </View>
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.sectionTitle}>At a glance</Text>
             {data.campaign.subject ? <Text style={styles.rowLabel}>{data.campaign.subject}</Text> : null}
             <Text style={styles.metaText}>{data.campaign.body}</Text>
             <Text style={styles.metaText}>Scheduled: {formatDateTime(data.campaign.scheduledAt)}</Text>
@@ -169,7 +169,7 @@ export default function MarketingCampaignDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Messages</Text>
+            <Text style={styles.sectionTitle}>Recent messages</Text>
             {data.recentMessages.length === 0 ? (
               <Text style={styles.metaText}>No message delivery history yet.</Text>
             ) : (

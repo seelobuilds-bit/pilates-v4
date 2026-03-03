@@ -132,12 +132,12 @@ export default function SocialFlowDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadFlow(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Flow Detail</Text>
+        <Text style={styles.title}>Flow overview</Text>
         {data?.flow ? (
           <>
             <Text style={styles.nameText}>{data.flow.name}</Text>
             <Text style={styles.metaText}>{data.flow.account.platform} • @{data.flow.account.username}</Text>
-            <Text style={styles.metaText}>{data.flow.isActive ? "ACTIVE" : "PAUSED"} • Updated {formatDateTime(data.flow.updatedAt)}</Text>
+            <Text style={styles.metaText}>{data.flow.isActive ? "Active" : "Paused"} • Updated {formatDateTime(data.flow.updatedAt)}</Text>
             {statusAction ? (
               <View style={styles.actionWrap}>
                 <Pressable
@@ -160,12 +160,12 @@ export default function SocialFlowDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading flow details...</Text>
+          <Text style={styles.emptyTitle}>Loading flow overview...</Text>
         </View>
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Trigger & Response</Text>
+            <Text style={styles.sectionTitle}>Trigger and response</Text>
             <Text style={styles.metaText}>Trigger: {data.flow.triggerType}</Text>
             <Text style={styles.metaText}>Keywords: {data.flow.triggerKeywords.join(", ") || "None"}</Text>
             <Text style={styles.rowLabel}>Response message</Text>
@@ -187,7 +187,7 @@ export default function SocialFlowDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Follow-up Messages</Text>
+            <Text style={styles.sectionTitle}>Follow-up messages</Text>
             {data.flow.followUpMessages.length === 0 ? (
               <Text style={styles.metaText}>No follow-up messages configured.</Text>
             ) : (
@@ -202,7 +202,7 @@ export default function SocialFlowDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Tracking Links</Text>
+            <Text style={styles.sectionTitle}>Tracking links</Text>
             {data.trackingLinks.length === 0 ? (
               <Text style={styles.metaText}>No flow-specific tracking links yet.</Text>
             ) : (
@@ -217,7 +217,7 @@ export default function SocialFlowDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Events</Text>
+            <Text style={styles.sectionTitle}>Recent events</Text>
             {data.recentEvents.length === 0 ? (
               <Text style={styles.metaText}>No trigger events yet.</Text>
             ) : (

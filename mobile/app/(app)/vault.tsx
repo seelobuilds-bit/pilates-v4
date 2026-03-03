@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -88,13 +88,13 @@ function CourseCard({
           onPress={() => onTogglePublish(item.id, action)}
         >
           <Text style={[styles.inlineActionText, { color: primaryColor }]}>
-            {isUpdating ? "Updating..." : action === "publish" ? "Publish Course" : "Unpublish Course"}
+            {isUpdating ? "Updating..." : action === "publish" ? "Publish" : "Unpublish"}
           </Text>
         </Pressable>
       ) : null}
 
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -235,7 +235,7 @@ export default function VaultScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>The Vault</Text>
-        <Text style={styles.subtitle}>Courses, enrollments, and publishing health</Text>
+        <Text style={styles.subtitle}>Courses, enrollments, and publishing</Text>
         {data ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>Courses {data.stats.totalCourses}</Text>
@@ -248,22 +248,22 @@ export default function VaultScreen() {
 
       <TextInput value={search} onChangeText={setSearch} placeholder="Search courses..." style={styles.searchInput} />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[styles.filterButton, statusFilter === "published" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("published")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "published" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Published (${statusCounts.published})`}</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "published" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Published ${statusCounts.published}`}</Text>
         </Pressable>
         <Pressable
           style={[styles.filterButton, statusFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("all")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All (${statusCounts.all})`}</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All ${statusCounts.all}`}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
-      <View style={styles.filterRowWrap}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRowWrap}>
         {AUDIENCE_OPTIONS.map((option) => {
           const active = audienceFilter === option.value
           return (
@@ -273,12 +273,12 @@ export default function VaultScreen() {
               onPress={() => setAudienceFilter(option.value)}
             >
               <Text style={[styles.filterButtonText, active && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-                {`${option.label} (${audienceCounts[option.value]})`}
+                {`${option.label} ${audienceCounts[option.value]}`}
               </Text>
             </Pressable>
           )
         })}
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -286,7 +286,7 @@ export default function VaultScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -308,7 +308,7 @@ export default function VaultScreen() {
           ListEmptyComponent={!loading ? <View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyText}</Text></View> : null}
           ListFooterComponent={
             <View style={styles.footerSection}>
-              <Text style={styles.metaText}>Vault browsing, course publishing, and detail insights are available in mobile.</Text>
+              <Text style={styles.metaText}>Browse, publish, and review courses in the app.</Text>
             </View>
           }
         />
@@ -366,11 +366,12 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: 8,
+    paddingRight: 8,
   },
   filterRowWrap: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

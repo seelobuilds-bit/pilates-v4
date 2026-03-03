@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -51,7 +51,7 @@ function ProductCard({
         {item.hasCustomLogo ? <Text style={styles.metaPill}>Custom Logo</Text> : null}
       </View>
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -164,7 +164,7 @@ export default function StoreScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Store</Text>
-        <Text style={styles.subtitle}>Products, orders, and store performance</Text>
+        <Text style={styles.subtitle}>Products, orders, and store activity</Text>
         {data ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>Products {data.stats.totalProducts}</Text>
@@ -182,20 +182,20 @@ export default function StoreScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[styles.filterButton, statusFilter === "active" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("active")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Active (${statusCounts.active})`}</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Active ${statusCounts.active}`}</Text>
         </Pressable>
         <Pressable
           style={[styles.filterButton, statusFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("all")}
         >
-          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All (${statusCounts.all})`}</Text>
+          <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All ${statusCounts.all}`}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -203,7 +203,7 @@ export default function StoreScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -223,7 +223,7 @@ export default function StoreScreen() {
           ListFooterComponent={
             data ? (
               <View style={styles.footerSection}>
-                <Text style={styles.sectionTitle}>Recent Orders</Text>
+                <Text style={styles.sectionTitle}>Recent orders</Text>
                 {data.store.orders.length > 0 ? (
                   data.store.orders.map((order) => <OrderRow key={order.id} item={order} currency={currency} />)
                 ) : (
@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

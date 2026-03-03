@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -35,7 +35,7 @@ function LeaderboardCard({
       </Text>
       {myRank ? (
         <Text style={styles.myRankText}>
-          My Rank #{myRank.rank} • {formatScore(myRank.score, leaderboard.metricUnit)}
+          Your rank #{myRank.rank} • {formatScore(myRank.score, leaderboard.metricUnit)}
         </Text>
       ) : (
         <Text style={styles.metaText}>Not ranked yet</Text>
@@ -58,7 +58,7 @@ function LeaderboardCard({
       )}
 
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(leaderboard.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -161,7 +161,7 @@ export default function LeaderboardsScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Leaderboards</Text>
-        <Text style={styles.subtitle}>Track rankings and competition results</Text>
+        <Text style={styles.subtitle}>Track rankings and current results</Text>
       </View>
 
       <TextInput
@@ -171,7 +171,7 @@ export default function LeaderboardsScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[
             styles.filterButton,
@@ -203,7 +203,7 @@ export default function LeaderboardsScreen() {
           onPress={() => setFeaturedOnly(false)}
         >
           <Text style={[styles.filterButtonText, !featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`All (${featuredCounts.all})`}
+            {`All ${featuredCounts.all}`}
           </Text>
         </Pressable>
         <Pressable
@@ -214,10 +214,10 @@ export default function LeaderboardsScreen() {
           onPress={() => setFeaturedOnly(true)}
         >
           <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`Featured (${featuredCounts.featured})`}
+            {`Featured ${featuredCounts.featured}`}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -225,7 +225,7 @@ export default function LeaderboardsScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -282,8 +282,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

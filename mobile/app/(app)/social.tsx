@@ -93,7 +93,7 @@ function FlowCard({
         <Text style={[styles.inlineActionText, { color: primaryColor }]}>{isUpdating ? "Updating..." : actionLabel}</Text>
       </Pressable>
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -251,7 +251,7 @@ export default function SocialScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Social Media</Text>
-        <Text style={styles.subtitle}>Accounts, flows, DMs, and tracking performance</Text>
+        <Text style={styles.subtitle}>Accounts, flows, messages, and tracking</Text>
         {data ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>Accounts {data.stats.totalAccounts}</Text>
@@ -272,7 +272,7 @@ export default function SocialScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -292,8 +292,8 @@ export default function SocialScreen() {
               </View>
 
               <View style={styles.sectionWrap}>
-                <Text style={styles.sectionTitle}>Active Flows</Text>
-                <View style={styles.filterRow}>
+                <Text style={styles.sectionTitle}>Active flows</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                   <Pressable
                     style={[
                       styles.filterChip,
@@ -305,7 +305,7 @@ export default function SocialScreen() {
                     onPress={() => setFlowStatusFilter("ALL")}
                   >
                     <Text style={[styles.filterChipText, flowStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" }]}>
-                      {`All (${flowStatusCounts.ALL})`}
+                      {`All ${flowStatusCounts.ALL}`}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -319,7 +319,7 @@ export default function SocialScreen() {
                     onPress={() => setFlowStatusFilter("ACTIVE")}
                   >
                     <Text style={[styles.filterChipText, flowStatusFilter === "ACTIVE" && { color: primaryColor, fontWeight: "700" }]}>
-                      {`Active (${flowStatusCounts.ACTIVE})`}
+                      {`Active ${flowStatusCounts.ACTIVE}`}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -333,10 +333,10 @@ export default function SocialScreen() {
                     onPress={() => setFlowStatusFilter("PAUSED")}
                   >
                     <Text style={[styles.filterChipText, flowStatusFilter === "PAUSED" && { color: primaryColor, fontWeight: "700" }]}>
-                      {`Paused (${flowStatusCounts.PAUSED})`}
+                      {`Paused ${flowStatusCounts.PAUSED}`}
                     </Text>
                   </Pressable>
-                </View>
+                </ScrollView>
                 {filteredFlows.length > 0 ? (
                   filteredFlows.slice(0, 8).map((flow) => (
                     <FlowCard
@@ -354,7 +354,7 @@ export default function SocialScreen() {
               </View>
 
               <View style={styles.sectionWrap}>
-                <Text style={styles.sectionTitle}>Tracking Links</Text>
+                <Text style={styles.sectionTitle}>Tracking links</Text>
                 {searchScopedTrackingLinks.length > 0 ? (
                   searchScopedTrackingLinks.slice(0, 8).map((link) => <TrackingCard key={link.id} item={link} currency={currency} />)
                 ) : (
@@ -363,7 +363,7 @@ export default function SocialScreen() {
               </View>
 
               <View style={styles.sectionWrap}>
-                <Text style={styles.sectionTitle}>Homework Progress</Text>
+                <Text style={styles.sectionTitle}>Homework progress</Text>
                 {data.homework.active ? (
                   <View style={styles.card}>
                     <Text style={styles.cardTitle}>{data.homework.active.homework.title}</Text>
@@ -392,7 +392,7 @@ export default function SocialScreen() {
           )}
 
           <View style={styles.footerSection}>
-            <Text style={styles.metaText}>Social flow controls, tracking, and homework progress are available in mobile.</Text>
+            <Text style={styles.metaText}>Manage social flows, tracking, and homework in the app.</Text>
           </View>
         </ScrollView>
       )}
@@ -527,8 +527,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
+    paddingRight: 8,
   },
   filterChip: {
     borderWidth: 1,

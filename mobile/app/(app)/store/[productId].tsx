@@ -88,7 +88,7 @@ export default function StoreProductDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadProduct(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Store Product</Text>
+        <Text style={styles.title}>Product overview</Text>
         {data ? (
           <>
             <Text style={styles.nameText}>{title}</Text>
@@ -104,12 +104,12 @@ export default function StoreProductDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading product details...</Text>
+          <Text style={styles.emptyTitle}>Loading product overview...</Text>
         </View>
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.sectionTitle}>At a glance</Text>
             {image ? <Image source={{ uri: image }} style={styles.heroImage} /> : null}
             <Text style={styles.metaText}>Price: {formatCurrency(data.product.price, currency)}</Text>
             {data.product.compareAtPrice ? <Text style={styles.metaText}>Compare at: {formatCurrency(data.product.compareAtPrice, currency)}</Text> : null}
@@ -123,7 +123,7 @@ export default function StoreProductDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Performance</Text>
+            <Text style={styles.sectionTitle}>Sales</Text>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Units Sold</Text><Text style={styles.rowValue}>{data.stats.unitsSold}</Text></View>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Gross Sales</Text><Text style={styles.rowValue}>{formatCurrency(data.stats.grossSales, currency)}</Text></View>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Pending Fulfillment Units</Text><Text style={styles.rowValue}>{data.stats.pendingFulfillmentUnits}</Text></View>
@@ -147,7 +147,7 @@ export default function StoreProductDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Orders</Text>
+            <Text style={styles.sectionTitle}>Recent orders</Text>
             {data.recentOrders.length === 0 ? (
               <Text style={styles.metaText}>No orders for this product yet.</Text>
             ) : (

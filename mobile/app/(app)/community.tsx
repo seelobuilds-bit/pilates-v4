@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -164,7 +164,7 @@ export default function CommunityScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Community</Text>
-        <Text style={styles.subtitle}>Subscription-tier communities and team discussion</Text>
+        <Text style={styles.subtitle}>Community chat and plan-based groups</Text>
         {activePlan ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>{activePlan.name}</Text>
@@ -180,7 +180,7 @@ export default function CommunityScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}> 
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -192,13 +192,13 @@ export default function CommunityScreen() {
             style={styles.searchInput}
           />
 
-          <View style={styles.filterRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             <Pressable
               style={[styles.filterChip, messageFilter === "ALL" && [styles.filterChipActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
               onPress={() => setMessageFilter("ALL")}
             >
               <Text style={[styles.filterChipText, messageFilter === "ALL" && [styles.filterChipTextActive, { color: primaryColor }]]}>
-                {`All (${messageCounts.ALL})`}
+                {`All ${messageCounts.ALL}`}
               </Text>
             </Pressable>
             <Pressable
@@ -206,7 +206,7 @@ export default function CommunityScreen() {
               onPress={() => setMessageFilter("MINE")}
             >
               <Text style={[styles.filterChipText, messageFilter === "MINE" && [styles.filterChipTextActive, { color: primaryColor }]]}>
-                {`Mine (${messageCounts.MINE})`}
+                {`Mine ${messageCounts.MINE}`}
               </Text>
             </Pressable>
             <Pressable
@@ -214,12 +214,12 @@ export default function CommunityScreen() {
               onPress={() => setMessageFilter("TEAM")}
             >
               <Text style={[styles.filterChipText, messageFilter === "TEAM" && [styles.filterChipTextActive, { color: primaryColor }]]}>
-                {`Team (${messageCounts.TEAM})`}
+                {`Team ${messageCounts.TEAM}`}
               </Text>
             </Pressable>
-          </View>
+          </ScrollView>
 
-          <View style={styles.planRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.planRow}>
             {data?.plans.map((plan) => {
               const active = plan.id === (selectedPlanId || data.activePlanId)
               return (
@@ -235,7 +235,7 @@ export default function CommunityScreen() {
                 </Pressable>
               )
             })}
-          </View>
+          </ScrollView>
 
           <FlatList
             data={filteredMessages}
@@ -246,7 +246,7 @@ export default function CommunityScreen() {
             ListEmptyComponent={<View style={styles.emptyWrap}><Text style={styles.emptyText}>{emptyFilteredText}</Text></View>}
             ListFooterComponent={
               <View style={styles.footerSection}>
-                <Text style={styles.metaText}>Community messaging and plan segmentation are available natively in mobile.</Text>
+                <Text style={styles.metaText}>Chat with each plan group directly in the app.</Text>
               </View>
             }
           />
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterChip: {
     borderWidth: 1,
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
   },
   planRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   planChip: {
     borderWidth: 1,

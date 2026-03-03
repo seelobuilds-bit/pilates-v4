@@ -78,7 +78,7 @@ export default function LeaderboardDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadDetail(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Leaderboard Detail</Text>
+        <Text style={styles.title}>Leaderboard overview</Text>
         {data?.leaderboard ? (
           <>
             <Text style={styles.nameText}>{data.leaderboard.name}</Text>
@@ -104,7 +104,7 @@ export default function LeaderboardDetailScreen() {
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>My Standing</Text>
+            <Text style={styles.sectionTitle}>Your standing</Text>
             <View style={styles.rowItem}>
               <Text style={styles.rowLabel}>Rank</Text>
               <Text style={styles.rowValue}>{data.stats.myRank ? `#${data.stats.myRank}` : "Not ranked"}</Text>
@@ -126,7 +126,7 @@ export default function LeaderboardDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Active Period</Text>
+            <Text style={styles.sectionTitle}>Active period</Text>
             {data.activePeriod ? (
               <>
                 <Text style={styles.metaText}>{data.activePeriod.name}</Text>
@@ -152,7 +152,7 @@ export default function LeaderboardDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Periods</Text>
+            <Text style={styles.sectionTitle}>Recent periods</Text>
             {data.recentPeriods.length === 0 ? (
               <Text style={styles.metaText}>No period history yet.</Text>
             ) : (

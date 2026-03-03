@@ -95,12 +95,12 @@ export default function VaultCourseDetailScreen() {
     return data.course.isPublished
       ? ({
           action: "unpublish" as const,
-          label: "Unpublish Course",
+          label: "Unpublish",
           hint: "Hides this course from published listings until you republish it.",
         })
       : ({
           action: "publish" as const,
-          label: "Publish Course",
+          label: "Publish",
           hint: "Makes this course available in published listings.",
         })
   }, [data?.course, user?.role])
@@ -140,7 +140,7 @@ export default function VaultCourseDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadCourse(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Vault Course</Text>
+        <Text style={styles.title}>Course overview</Text>
         {data ? (
           <>
             <Text style={styles.nameText}>{data.course.title}</Text>
@@ -168,12 +168,12 @@ export default function VaultCourseDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading course details...</Text>
+          <Text style={styles.emptyTitle}>Loading course overview...</Text>
         </View>
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.sectionTitle}>At a glance</Text>
             {data.course.thumbnailUrl ? <Image source={{ uri: data.course.thumbnailUrl }} style={styles.heroImage} /> : null}
             {data.course.subtitle ? <Text style={styles.metaText}>{data.course.subtitle}</Text> : null}
             <Text style={styles.metaText}>{data.course.description}</Text>
@@ -234,7 +234,7 @@ export default function VaultCourseDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Enrollments</Text>
+            <Text style={styles.sectionTitle}>Recent enrollments</Text>
             {data.recentEnrollments.length === 0 ? (
               <Text style={styles.metaText}>No enrollments yet.</Text>
             ) : (

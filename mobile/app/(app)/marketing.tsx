@@ -81,7 +81,7 @@ function CampaignCard({
         </Pressable>
       ) : null}
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -131,7 +131,7 @@ function AutomationCard({
         </Pressable>
       ) : null}
       <Pressable style={styles.detailsButton} onPress={() => onViewDetails(item.id)}>
-        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Text style={styles.detailsButtonText}>Open</Text>
       </Pressable>
     </View>
   )
@@ -391,7 +391,7 @@ export default function MarketingScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Marketing</Text>
-        <Text style={styles.subtitle}>Campaign and automation performance overview</Text>
+        <Text style={styles.subtitle}>Campaigns, automations, and results</Text>
         {data ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>Campaigns {data.stats.campaignsTotal}</Text>
@@ -412,7 +412,7 @@ export default function MarketingScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -423,8 +423,8 @@ export default function MarketingScreen() {
           {loading ? null : data && (data.campaigns.length > 0 || data.automations.length > 0) ? (
             <>
               <View style={styles.filterSection}>
-                <Text style={styles.filterLabel}>Campaign Filters</Text>
-                <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Campaign filters</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                   <Pressable
                     style={[
                       styles.filterChip,
@@ -441,7 +441,7 @@ export default function MarketingScreen() {
                         campaignStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" },
                       ]}
                     >
-                      {`All (${campaignStatusCounts.ALL ?? 0})`}
+                      {`All ${campaignStatusCounts.ALL ?? 0}`}
                     </Text>
                   </Pressable>
                   {CAMPAIGN_STATUS_OPTIONS.map((status) => (
@@ -462,16 +462,16 @@ export default function MarketingScreen() {
                           campaignStatusFilter === status && { color: primaryColor, fontWeight: "700" },
                         ]}
                       >
-                        {`${status} (${campaignStatusCounts[status] ?? 0})`}
+                        {`${status} ${campaignStatusCounts[status] ?? 0}`}
                       </Text>
                     </Pressable>
                   ))}
-                </View>
+                </ScrollView>
               </View>
 
               <View style={styles.filterSection}>
-                <Text style={styles.filterLabel}>Automation Filters</Text>
-                <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Automation filters</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                   <Pressable
                     style={[
                       styles.filterChip,
@@ -488,7 +488,7 @@ export default function MarketingScreen() {
                         automationStatusFilter === "ALL" && { color: primaryColor, fontWeight: "700" },
                       ]}
                     >
-                      {`All (${automationStatusCounts.ALL ?? 0})`}
+                      {`All ${automationStatusCounts.ALL ?? 0}`}
                     </Text>
                   </Pressable>
                   {AUTOMATION_STATUS_OPTIONS.map((status) => (
@@ -509,16 +509,16 @@ export default function MarketingScreen() {
                           automationStatusFilter === status && { color: primaryColor, fontWeight: "700" },
                         ]}
                       >
-                        {`${status} (${automationStatusCounts[status] ?? 0})`}
+                        {`${status} ${automationStatusCounts[status] ?? 0}`}
                       </Text>
                     </Pressable>
                   ))}
-                </View>
+                </ScrollView>
               </View>
 
               <View style={styles.footerSection}>
-                <Text style={styles.sectionTitle}>Create In App</Text>
-                <View style={styles.filterRow}>
+                <Text style={styles.sectionTitle}>Create in app</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                   <Pressable
                     style={[
                       styles.filterChip,
@@ -557,7 +557,7 @@ export default function MarketingScreen() {
                       New Automation
                     </Text>
                   </Pressable>
-                </View>
+                </ScrollView>
 
                 {createMode === "campaign" ? (
                   <View style={styles.formWrap}>
@@ -567,7 +567,7 @@ export default function MarketingScreen() {
                       placeholder="Campaign name"
                       style={styles.searchInput}
                     />
-                    <View style={styles.filterRow}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                       {CHANNEL_OPTIONS.map((option) => (
                         <Pressable
                           key={`campaign-${option}`}
@@ -590,7 +590,7 @@ export default function MarketingScreen() {
                           </Text>
                         </Pressable>
                       ))}
-                    </View>
+                    </ScrollView>
                     {campaignDraft.channel === "EMAIL" ? (
                       <TextInput
                         value={campaignDraft.subject}
@@ -615,7 +615,7 @@ export default function MarketingScreen() {
                         onPress={() => void handleCreateCampaign()}
                         disabled={creating}
                       >
-                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save Campaign Draft"}</Text>
+                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save campaign draft"}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -629,7 +629,7 @@ export default function MarketingScreen() {
                       placeholder="Automation name"
                       style={styles.searchInput}
                     />
-                    <View style={styles.filterRow}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                       {TRIGGER_OPTIONS.map((option) => (
                         <Pressable
                           key={option.value}
@@ -652,8 +652,8 @@ export default function MarketingScreen() {
                           </Text>
                         </Pressable>
                       ))}
-                    </View>
-                    <View style={styles.filterRow}>
+                    </ScrollView>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                       {CHANNEL_OPTIONS.map((option) => (
                         <Pressable
                           key={`automation-${option}`}
@@ -695,7 +695,7 @@ export default function MarketingScreen() {
                           Stop On Booking
                         </Text>
                       </Pressable>
-                    </View>
+                    </ScrollView>
                     {automationDraft.channel === "EMAIL" ? (
                       <TextInput
                         value={automationDraft.subject}
@@ -727,7 +727,7 @@ export default function MarketingScreen() {
                         onPress={() => void handleCreateAutomation()}
                         disabled={creating}
                       >
-                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save Automation Draft"}</Text>
+                        <Text style={styles.actionButtonText}>{creating ? "Saving..." : "Save automation draft"}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -845,8 +845,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
+    paddingRight: 8,
   },
   filterChip: {
     borderWidth: 1,

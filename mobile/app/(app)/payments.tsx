@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
+import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -213,7 +213,7 @@ export default function PaymentsScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Payments</Text>
-        <Text style={styles.subtitle}>Track transactions and payment outcomes</Text>
+        <Text style={styles.subtitle}>Track payments, refunds, and outcomes</Text>
       </View>
 
       {isAllowedRole ? <StatsCards stats={stats} currency={currency} isNarrowScreen={isNarrowScreen} /> : null}
@@ -225,7 +225,7 @@ export default function PaymentsScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         {(["all", "SUCCEEDED", "PENDING", "PROCESSING", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] as PaymentFilter[]).map((filter) => (
           <Pressable
             key={filter}
@@ -236,11 +236,11 @@ export default function PaymentsScreen() {
             onPress={() => setStatusFilter(filter)}
           >
             <Text style={[styles.filterButtonText, statusFilter === filter && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {`${filter === "all" ? "All" : statusLabel(filter)} (${statusCounts[filter]})`}
+              {`${filter === "all" ? "All" : statusLabel(filter)} ${statusCounts[filter]}`}
             </Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -248,7 +248,7 @@ export default function PaymentsScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -262,7 +262,7 @@ export default function PaymentsScreen() {
                 style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
                 onPress={() => handleViewPayment(item.id)}
               >
-                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>Open</Text>
               </Pressable>
             </View>
           )}
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

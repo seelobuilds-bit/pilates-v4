@@ -84,7 +84,7 @@ export default function PaymentDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadPayment(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Payment Detail</Text>
+        <Text style={styles.title}>Payment overview</Text>
         {data?.payment ? (
           <>
             <Text style={styles.amountText}>{formatCurrency(data.payment.amount, currency)}</Text>
@@ -103,7 +103,7 @@ export default function PaymentDetailScreen() {
       ) : data?.payment ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Settlement</Text>
+            <Text style={styles.sectionTitle}>At a glance</Text>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Amount</Text><Text style={styles.rowValue}>{formatCurrency(data.payment.amount, currency)}</Text></View>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Net Amount</Text><Text style={styles.rowValue}>{formatCurrency(data.payment.netAmount || 0, currency)}</Text></View>
             <View style={styles.rowItem}><Text style={styles.rowLabel}>Stripe Fee</Text><Text style={styles.rowValue}>{formatCurrency(data.payment.stripeFee || 0, currency)}</Text></View>
@@ -121,7 +121,7 @@ export default function PaymentDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Linked Bookings</Text>
+            <Text style={styles.sectionTitle}>Linked bookings</Text>
             {data.payment.bookings.length === 0 ? (
               <Text style={styles.emptyText}>No bookings linked.</Text>
             ) : (
@@ -136,7 +136,7 @@ export default function PaymentDetailScreen() {
 
           {data.payment.receiptUrl ? (
             <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => void Linking.openURL(data.payment.receiptUrl!)}>
-              <Text style={styles.actionButtonText}>Open Receipt</Text>
+              <Text style={styles.actionButtonText}>Open receipt</Text>
             </Pressable>
           ) : null}
 
