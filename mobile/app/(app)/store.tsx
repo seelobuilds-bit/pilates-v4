@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
@@ -83,6 +83,7 @@ export default function StoreScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const latestLoadIdRef = useRef(0)
 
   const isAllowedRole = user?.role === "OWNER"
   const trimmedSearch = search.trim()
@@ -99,16 +100,21 @@ export default function StoreScreen() {
       if (isRefresh) setRefreshing(true)
       else setLoading(true)
 
+      const requestId = latestLoadIdRef.current + 1
+      latestLoadIdRef.current = requestId
       setError(null)
       try {
         const response = await mobileApi.store(token, {
           status: "all",
         })
+        if (requestId !== latestLoadIdRef.current) return
         setData(response)
       } catch (err) {
+        if (requestId !== latestLoadIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load store"
         setError(message)
       } finally {
+        if (requestId !== latestLoadIdRef.current) return
         setLoading(false)
         setRefreshing(false)
       }
