@@ -170,6 +170,22 @@ function extractLeaderboardSummary(payload) {
   }
 }
 
+function extractIntegritySummary(payload) {
+  return {
+    ok: Boolean(payload?.ok),
+    checkCount: toNumber(payload?.summary?.checkCount),
+    failedCheckCount: toNumber(payload?.summary?.failedCheckCount),
+    reminderSent: toNumber(payload?.source?.marketing?.remindersSent),
+    winbackSuccess: toNumber(payload?.source?.marketing?.winbackSuccess),
+    socialTriggered: toNumber(payload?.source?.social?.totalTriggered),
+    socialResponded: toNumber(payload?.source?.social?.totalResponded),
+    socialBooked: toNumber(payload?.source?.social?.totalBooked),
+    failedChecks: Array.isArray(payload?.checks)
+      ? payload.checks.filter((check) => check && check.pass === false).map((check) => check.name)
+      : [],
+  }
+}
+
 async function loadBaseline() {
   if (!INPUT_PATH) {
     return null
@@ -231,6 +247,11 @@ async function main() {
     if (!entry?.route || !entry?.summary) continue
     const payload = await fetchJson(entry.route, TEST_OWNER_COOKIE)
     failures.push(...collectDiffs(entry.summary, extractLeaderboardSummary(payload), `leaderboards.${label}`))
+  }
+
+  if (baseline.integrity?.route && baseline.integrity?.summary) {
+    const payload = await fetchJson(baseline.integrity.route, TEST_OWNER_COOKIE)
+    failures.push(...collectDiffs(baseline.integrity.summary, extractIntegritySummary(payload), "integrity"))
   }
 
   if (failures.length > 0) {

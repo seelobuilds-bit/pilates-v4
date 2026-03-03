@@ -153,6 +153,22 @@ function extractLeaderboardSummary(payload) {
   }
 }
 
+function extractIntegritySummary(payload) {
+  return {
+    ok: Boolean(payload?.ok),
+    checkCount: toNumber(payload?.summary?.checkCount),
+    failedCheckCount: toNumber(payload?.summary?.failedCheckCount),
+    reminderSent: toNumber(payload?.source?.marketing?.remindersSent),
+    winbackSuccess: toNumber(payload?.source?.marketing?.winbackSuccess),
+    socialTriggered: toNumber(payload?.source?.social?.totalTriggered),
+    socialResponded: toNumber(payload?.source?.social?.totalResponded),
+    socialBooked: toNumber(payload?.source?.social?.totalBooked),
+    failedChecks: Array.isArray(payload?.checks)
+      ? payload.checks.filter((check) => check && check.pass === false).map((check) => check.name)
+      : [],
+  }
+}
+
 async function maybeCaptureEntity(result, key, id, routeFactory, summaryKind) {
   if (!id) {
     result[key] = { skipped: true, reason: `Missing ${key} id` }
@@ -200,6 +216,7 @@ async function main() {
     entities: {},
     websiteAnalytics: {},
     leaderboards: {},
+    integrity: null,
   }
 
   if (!TEST_OWNER_COOKIE) {
@@ -224,6 +241,14 @@ async function main() {
         }
       : response
   }
+
+  const integrityResponse = await fetchJson("/api/studio/reports/integrity?days=30", TEST_OWNER_COOKIE)
+  baseline.integrity = integrityResponse.ok
+    ? {
+        route: integrityResponse.path,
+        summary: extractIntegritySummary(integrityResponse.payload),
+      }
+    : integrityResponse
 
   const teacherStatsResponse = await fetchJson("/api/teacher/stats", TEST_TEACHER_COOKIE)
   baseline.teacherStats = teacherStatsResponse.ok

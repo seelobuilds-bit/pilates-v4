@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MessageStatus } from "@prisma/client"
 import { db } from "@/lib/db"
+import { parseReportDays } from "@/lib/reporting/date-range"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_DAYS = 30
@@ -14,15 +15,8 @@ type IntegrityCheck = {
   details: string
 }
 
-function parseDays(value: string | null) {
-  if (!value) return DEFAULT_DAYS
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed)) return DEFAULT_DAYS
-  return Math.min(MAX_DAYS, Math.max(1, parsed))
-}
-
 function buildRange(searchParams: URLSearchParams) {
-  const days = parseDays(searchParams.get("days"))
+  const days = parseReportDays(searchParams.get("days"), { defaultDays: DEFAULT_DAYS, maxDays: MAX_DAYS })
   const endDate = new Date()
   const startDate = new Date(endDate.getTime() - days * DAY_MS)
   return { days, startDate, endDate }
@@ -395,4 +389,3 @@ export async function GET(request: NextRequest) {
     },
   })
 }
-

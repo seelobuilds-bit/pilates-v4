@@ -337,6 +337,8 @@ Package script:
 
 - `pnpm test:baseline:reporting`
 - `pnpm test:baseline:reporting:compare`
+- `pnpm test:reporting:date-range`
+- `pnpm test:smoke:reporting`
 
 Supported env inputs:
 
@@ -352,6 +354,7 @@ Supported env inputs:
 Current baseline coverage:
 
 - studio reports (`today`, `last7`, `last30`)
+- reporting integrity (`30d`)
 - teacher stats
 - entity summaries (client / teacher / class type / location) when IDs are provided
 - website analytics (`7d`, `30d`)
@@ -369,6 +372,8 @@ Required env for compare:
 - same auth and entity-ID env vars used by baseline capture
 
 The compare script re-fetches the same trusted surfaces and fails if the summarized outputs drift from the recorded baseline beyond a small numeric tolerance.
+
+The reporting smoke entrypoint now also runs the shared date-range logic test first, so range semantics are pinned before any route-level checks run.
 
 ## Non-Negotiable Safety Constraint
 
