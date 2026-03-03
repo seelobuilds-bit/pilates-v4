@@ -121,6 +121,9 @@ export default function ReportsScreen() {
       latestRequestIdRef.current = requestId
       setReportLoading(true)
       setAppliedRange(normalizeCustomRange(range.start, range.end))
+      if (!isRefresh) {
+        setData(null)
+      }
       setError(null)
       try {
         const response = await mobileApi.reports(token, buildReportRequestParams("CUSTOM", range.start, range.end))
@@ -305,7 +308,7 @@ export default function ReportsScreen() {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {loading && !data ? (
+        {loading ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Loading your reports...</Text>
           </View>

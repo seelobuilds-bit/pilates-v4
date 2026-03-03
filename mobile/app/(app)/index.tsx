@@ -110,6 +110,15 @@ function BootstrapMetricCard({ label, value }: { label: string; value: number })
   )
 }
 
+function LoadingMetricCard() {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricLabel}>Updating</Text>
+      <Text style={styles.metricValue}>...</Text>
+    </View>
+  )
+}
+
 export default function HomeScreen() {
   const { user, token, bootstrap, refreshBootstrap, loading } = useAuth()
   const router = useRouter()
@@ -158,6 +167,7 @@ export default function HomeScreen() {
       latestRequestIdRef.current = requestId
       setReportLoading(true)
       setAppliedRange(normalizeCustomRange(range.start, range.end))
+      setReportsData(null)
       setReportError(null)
 
       try {
@@ -332,7 +342,9 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.metricsGrid}>
-        {displayedTrendMetrics.length > 0
+        {reportLoading
+          ? Array.from({ length: 4 }).map((_, index) => <LoadingMetricCard key={`loading-${index}`} />)
+          : displayedTrendMetrics.length > 0
           ? displayedTrendMetrics.map((metric) => <TrendMetricCard key={metric.id} metric={metric} currency={currency} />)
           : fallbackBootstrapMetrics.map(([key, value]) => (
               <BootstrapMetricCard key={key} label={formatMetricLabel(key)} value={Number(value) || 0} />
