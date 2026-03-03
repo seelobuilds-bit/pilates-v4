@@ -351,15 +351,15 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                 </div>
                 <div className="grid w-full grid-cols-3 gap-2 lg:w-auto lg:flex lg:items-center lg:gap-4">
                   <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
-                    <p className="text-3xl font-bold text-white">{data.todayOverview.classCount}</p>
+                    <p className="text-2xl font-bold text-white sm:text-3xl">{data.todayOverview.classCount}</p>
                     <p className="text-xs text-violet-200">Classes</p>
                   </div>
                   <div className="text-center px-2 py-2 lg:px-4 border-r border-white/20">
-                    <p className="text-3xl font-bold text-white">{data.todayOverview.bookingsCount}</p>
+                    <p className="text-2xl font-bold text-white sm:text-3xl">{data.todayOverview.bookingsCount}</p>
                     <p className="text-xs text-violet-200">Bookings</p>
                   </div>
                   <div className="text-center px-2 py-2 lg:px-4">
-                    <p className="text-3xl font-bold text-white">{data.todayOverview.fillRate}%</p>
+                    <p className="text-2xl font-bold text-white sm:text-3xl">{data.todayOverview.fillRate}%</p>
                     <p className="text-xs text-violet-200">Fill Rate</p>
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">{statCardMeta[cardId]?.title ?? "Revenue in Period"}</p>
-                            <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.stats.monthlyRevenue, data.currency)}</p>
+                            <p className="text-xl font-bold text-gray-900 sm:text-2xl">{formatCurrency(data.stats.monthlyRevenue, data.currency)}</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                               <span className="text-emerald-500 font-medium">
@@ -405,7 +405,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">Active Clients</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.stats.activeClients}</p>
+                            <p className="text-xl font-bold text-gray-900 sm:text-2xl">{data.stats.activeClients}</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <UserPlus className="h-3.5 w-3.5 text-blue-500" />
                               <span className="text-blue-500 font-medium">+{data.stats.newClientsThisWeek}</span>
@@ -429,7 +429,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">{statCardMeta[cardId]?.title ?? "Bookings in Period"}</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.stats.weekBookings} bookings</p>
+                            <p className="text-xl font-bold text-gray-900 sm:text-2xl">{data.stats.weekBookings} bookings</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <Calendar className="h-3.5 w-3.5 text-violet-500" />
                               <span className="text-violet-500 font-medium">{data.stats.todayBookings}</span>
@@ -451,7 +451,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">At Risk</p>
-                            <p className="text-2xl font-bold text-gray-900">{data.stats.atRiskClientsCount} clients</p>
+                            <p className="text-xl font-bold text-gray-900 sm:text-2xl">{data.stats.atRiskClientsCount} clients</p>
                             <p className="text-sm mt-1.5 flex items-center gap-1">
                               <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
                               <span className="text-amber-500 font-medium">{data.stats.churnRate}%</span>
@@ -476,7 +476,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm text-gray-500 mb-1">{reportDatapoint.title}</p>
-                            <p className="text-2xl font-bold text-gray-900">{reportDatapoint.value}</p>
+                            <p className="text-xl font-bold text-gray-900 sm:text-2xl">{reportDatapoint.value}</p>
                             <p className="text-sm mt-1.5 text-gray-400">{reportDatapoint.description ?? "Report datapoint"}</p>
                           </div>
                           <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
