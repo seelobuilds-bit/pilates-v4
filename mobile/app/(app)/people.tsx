@@ -48,6 +48,7 @@ export default function PeopleScreen() {
   const [error, setError] = useState<string | null>(null)
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
+  const roleLabel = user?.role === "OWNER" ? "Studio owner" : user?.role === "TEACHER" ? "Teacher" : "Account"
   const trimmedSearch = search.trim()
   const searchNormalized = trimmedSearch.toLowerCase()
 
@@ -111,7 +112,7 @@ export default function PeopleScreen() {
   }, [searchScopedClients, statusFilter])
 
   const emptyText = useMemo(() => {
-    if (!isAllowedRole) return "People view is available for studio owner and teacher accounts."
+    if (!isAllowedRole) return "Clients are available for studio owner and teacher accounts."
     if (trimmedSearch) return "No clients matched your search."
     if (statusFilter === "ACTIVE") return "No active clients matched this view."
     if (statusFilter === "INACTIVE") return "No inactive clients matched this view."
@@ -132,8 +133,8 @@ export default function PeopleScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>People</Text>
-        <Text style={styles.subtitle}>Clients for {user?.role?.toLowerCase() || "account"} view</Text>
+        <Text style={styles.title}>Clients</Text>
+        <Text style={styles.subtitle}>{roleLabel} view</Text>
       </View>
 
       <TextInput
@@ -149,7 +150,7 @@ export default function PeopleScreen() {
           onPress={() => setStatusFilter("ALL")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "ALL" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`All (${statusCounts.ALL})`}
+            {`All ${statusCounts.ALL}`}
           </Text>
         </Pressable>
         <Pressable
@@ -157,7 +158,7 @@ export default function PeopleScreen() {
           onPress={() => setStatusFilter("ACTIVE")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "ACTIVE" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`Active (${statusCounts.ACTIVE})`}
+            {`Active ${statusCounts.ACTIVE}`}
           </Text>
         </Pressable>
         <Pressable
@@ -165,7 +166,7 @@ export default function PeopleScreen() {
           onPress={() => setStatusFilter("INACTIVE")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "INACTIVE" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`Inactive (${statusCounts.INACTIVE})`}
+            {`Inactive ${statusCounts.INACTIVE}`}
           </Text>
         </Pressable>
       </View>
@@ -176,7 +177,7 @@ export default function PeopleScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (

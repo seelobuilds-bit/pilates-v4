@@ -26,6 +26,7 @@ export default function WorkspaceScreen() {
   const [openingFeatureId, setOpeningFeatureId] = useState<string | null>(null)
   const studioSubdomain = (bootstrap?.studio?.subdomain || user?.studio?.subdomain || "").trim().toLowerCase()
   const searchNormalized = search.trim().toLowerCase()
+  const roleLabel = user?.role ? `${user.role.charAt(0)}${user.role.slice(1).toLowerCase()} view` : "Studio tools"
 
   const groupedFeatures = useMemo(() => {
     const allFeatures = getWorkspaceFeatures(user?.role, studioSubdomain)
@@ -59,11 +60,10 @@ export default function WorkspaceScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerCard}>
-        <Text style={styles.title}>Workspace</Text>
-        <Text style={styles.subtitle}>Open any studio feature from mobile.</Text>
-        <Text style={styles.metaText}>
-          {bootstrap?.studio?.name || user?.studio?.name || "Studio"} {user?.role ? `- ${user.role}` : ""}
-        </Text>
+        <Text style={styles.title}>More</Text>
+        <Text style={styles.subtitle}>Open the rest of your studio tools from one place.</Text>
+        <Text style={styles.metaText}>{bootstrap?.studio?.name || user?.studio?.name || "Studio"}</Text>
+        <Text style={styles.metaDetail}>{roleLabel}</Text>
       </View>
 
       <TextInput
@@ -76,7 +76,7 @@ export default function WorkspaceScreen() {
       {groupedFeatures.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>No features found</Text>
-          <Text style={styles.emptySubtitle}>Try a broader keyword.</Text>
+          <Text style={styles.emptySubtitle}>Try a simpler search.</Text>
         </View>
       ) : null}
 
@@ -100,7 +100,7 @@ export default function WorkspaceScreen() {
                     <Ionicons name={feature.icon as never} size={18} color={primaryColor} />
                   </View>
                   <Text style={styles.cardTitle}>{feature.label}</Text>
-                  <Text style={styles.targetBadge}>{feature.target === "native" ? "In app" : "Web"}</Text>
+                  <Text style={styles.targetBadge}>{feature.target === "native" ? "App" : "Web"}</Text>
                   <Text style={styles.cardDescription}>{opening ? "Opening..." : feature.description}</Text>
                 </Pressable>
               )
@@ -138,6 +138,11 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: mobileTheme.colors.textSubtle,
     fontSize: 12,
+    fontWeight: "600",
+  },
+  metaDetail: {
+    color: mobileTheme.colors.textFaint,
+    fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },

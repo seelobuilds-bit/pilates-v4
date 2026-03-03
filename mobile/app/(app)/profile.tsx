@@ -195,6 +195,7 @@ export default function ProfileScreen() {
   const isOwner = user?.role === "OWNER"
   const isClient = user?.role === "CLIENT"
   const storedStudioColor = bootstrap?.studio?.primaryColor || user?.studio?.primaryColor || null
+  const roleLabel = user?.role ? `${user.role.charAt(0)}${user.role.slice(1).toLowerCase()}` : "Account"
 
   useEffect(() => {
     const normalized = normalizeHexColor(storedStudioColor || "")
@@ -270,13 +271,14 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { borderColor: withOpacity(primaryColor, 0.28), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>My Account</Text>
         <Text style={styles.heroText}>{displayName}</Text>
-        <Text style={styles.heroMeta}>{studioName} {user?.role ? `- ${user.role}` : ""}</Text>
+        <Text style={styles.heroMeta}>{studioName}</Text>
+        <Text style={styles.heroSubMeta}>{roleLabel}</Text>
       </View>
 
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>Your details</Text>
         <Text style={styles.row}>Name: {displayName}</Text>
         <Text style={styles.row}>Email: {user?.email || "-"}</Text>
         <Text style={styles.row}>Role: {user?.role || "-"}</Text>
@@ -286,10 +288,10 @@ export default function ProfileScreen() {
 
       {isClient ? (
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Class Plans</Text>
+          <Text style={styles.sectionTitle}>Class plans</Text>
           {loadingClientPlans ? <Text style={styles.row}>Loading class plans...</Text> : null}
           {!loadingClientPlans && clientPlans.length === 0 ? (
-            <Text style={styles.row}>No weekly subscriptions or pack auto-renew plans yet.</Text>
+            <Text style={styles.row}>No recurring plans yet.</Text>
           ) : null}
           {clientPlans.map((plan) => {
             const priceLabel = formatPlanPrice(plan.pricePerCycle, plan.currency || bootstrap?.studio?.currency || user?.studio?.currency || null)
@@ -348,8 +350,8 @@ export default function ProfileScreen() {
 
       {isOwner ? (
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Brand Accent</Text>
-          <Text style={styles.row}>Choose a studio accent color for mobile surfaces.</Text>
+          <Text style={styles.sectionTitle}>App color</Text>
+          <Text style={styles.row}>Choose the accent color used across the app.</Text>
           <View style={styles.swatchRow}>
             {BRAND_SWATCHES.map((swatch) => {
               const selected = normalizeHexColor(brandColorInput) === swatch
@@ -376,14 +378,14 @@ export default function ProfileScreen() {
             disabled={updatingBrandColor}
           >
             <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
-              {updatingBrandColor ? "Saving color..." : "Save Brand Color"}
+              {updatingBrandColor ? "Saving color..." : "Save app color"}
             </Text>
           </Pressable>
         </View>
       ) : null}
 
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Push Summary</Text>
+        <Text style={styles.sectionTitle}>Notifications</Text>
         <Text style={styles.row}>Device preference: {pushEnabled ? "Enabled" : "Paused"}</Text>
         <Text style={styles.row}>
           Categories: {pushCategories.length > 0 ? pushCategories.join(", ") : "None (all muted)"}
@@ -399,7 +401,7 @@ export default function ProfileScreen() {
 
       <View style={styles.actionsCard}>
         <View style={styles.categorySection}>
-          <Text style={styles.sectionTitle}>Notification categories</Text>
+          <Text style={styles.sectionTitle}>Alert types</Text>
           {PUSH_CATEGORY_OPTIONS.map((option) => {
             const isEnabled = pushCategories.includes(option.key)
             const isUpdating = updatingPushCategory === option.key
@@ -425,7 +427,7 @@ export default function ProfileScreen() {
               </Pressable>
             )
           })}
-          {!pushEnabled ? <Text style={styles.categoryHint}>Enable device notifications first to update server delivery settings.</Text> : null}
+          {!pushEnabled ? <Text style={styles.categoryHint}>Turn on device notifications first to change alert types.</Text> : null}
         </View>
 
         <Pressable
@@ -434,7 +436,7 @@ export default function ProfileScreen() {
           disabled={openingDeletionRequest}
         >
           <Text style={styles.secondaryButtonText}>
-            {openingDeletionRequest ? "Opening..." : "Account deletion request"}
+            {openingDeletionRequest ? "Opening..." : "Delete account"}
           </Text>
         </Pressable>
 
@@ -444,7 +446,7 @@ export default function ProfileScreen() {
           disabled={sendingTestPush}
         >
           <Text style={styles.secondaryButtonText}>
-            {sendingTestPush ? "Sending test..." : "Send test notification"}
+            {sendingTestPush ? "Sending test..." : "Send test alert"}
           </Text>
         </Pressable>
 
@@ -455,10 +457,10 @@ export default function ProfileScreen() {
         >
           <Text style={styles.secondaryButtonText}>
             {updatingPushPreference
-              ? "Updating push setting..."
+              ? "Updating notifications..."
               : pushEnabled
                 ? "Pause notifications on this device"
-                : "Enable notifications on this device"}
+                : "Turn on notifications on this device"}
           </Text>
         </Pressable>
 
@@ -492,6 +494,11 @@ const styles = StyleSheet.create({
   heroMeta: {
     color: mobileTheme.colors.textSubtle,
     fontSize: 12,
+    fontWeight: "600",
+  },
+  heroSubMeta: {
+    color: mobileTheme.colors.textFaint,
+    fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },

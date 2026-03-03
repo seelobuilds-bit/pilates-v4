@@ -76,7 +76,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="workspace"
         options={{
-          title: "Workspace",
+          title: "More",
           tabBarIcon: ({ color, size }) => <Ionicons name="grid" color={color} size={size} />,
         }}
       />
@@ -98,7 +98,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="people"
         options={{
-          title: "People",
+          title: "Clients",
           href: null,
           tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} />,
         }}
