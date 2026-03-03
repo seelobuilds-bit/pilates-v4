@@ -79,65 +79,65 @@ export default function TeacherReportsPage() {
   const hasRatingData = typeof stats.avgRating === "number" && stats.avgRating > 0
 
   return (
-    <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
-        <p className="text-gray-500 mt-1">Track your performance and growth</p>
-        <p className="text-xs text-gray-400 mt-2">Month-to-date performance for your classes and clients.</p>
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-4 sm:py-5 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">My Numbers</h1>
+        <p className="mt-1 text-gray-500">A simple month-to-date view of your teaching performance.</p>
+        <p className="mt-2 text-xs text-gray-400">Classes, revenue and client retention for the current month.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:gap-4 lg:grid-cols-4">
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-violet-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 sm:h-12 sm:w-12">
+                <Calendar className="h-5 w-5 text-violet-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalClasses}</p>
-                <p className="text-sm text-gray-500">Classes This Month</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{stats.totalClasses}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Classes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 sm:h-12 sm:w-12">
+                <Users className="h-5 w-5 text-blue-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
-                <p className="text-sm text-gray-500">Students Taught</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{stats.totalStudents}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Students</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                <Star className="h-6 w-6 text-amber-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 sm:h-12 sm:w-12">
+                <Star className="h-5 w-5 text-amber-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{hasRatingData ? stats.avgRating!.toFixed(1) : "N/A"}</p>
-                <p className="text-sm text-gray-500">Average Rating</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{hasRatingData ? stats.avgRating!.toFixed(1) : "N/A"}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Rating</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-emerald-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 sm:h-12 sm:w-12">
+                <DollarSign className="h-5 w-5 text-emerald-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.revenue, stats.currency)}</p>
-                <p className="text-sm text-gray-500">Revenue Generated</p>
+                <p className="text-base font-bold text-gray-900 sm:text-xl lg:text-2xl">{formatCurrency(stats.revenue, stats.currency)}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Revenue</p>
               </div>
             </div>
           </CardContent>
@@ -147,10 +147,10 @@ export default function TeacherReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-gray-400" />
-              Performance Metrics
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="h-5 w-5 text-gray-400" />
+                Performance
+              </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -179,10 +179,10 @@ export default function TeacherReportsPage() {
 
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-gray-400" />
-              Top Classes
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BarChart3 className="h-5 w-5 text-gray-400" />
+                Top Classes
+              </CardTitle>
           </CardHeader>
           <CardContent>
             {stats.topClasses.length > 0 ? (
@@ -209,15 +209,15 @@ export default function TeacherReportsPage() {
 
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-400" />
-              Classes Over Time
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calendar className="h-5 w-5 text-gray-400" />
+                Monthly Trend
+              </CardTitle>
           </CardHeader>
           <CardContent>
             {stats.monthlyClasses.length > 0 ? (
               <div className="app-scrollbar overflow-x-auto pb-1">
-                <div className="flex min-w-[320px] items-end justify-between h-32 gap-2 sm:gap-4">
+                <div className="flex min-w-[320px] items-end justify-between gap-2 sm:gap-4 h-32">
                 {stats.monthlyClasses.map((month, i) => {
                   const height = (month.count / maxMonthlyCount) * 100
                   return (
@@ -240,10 +240,10 @@ export default function TeacherReportsPage() {
 
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Star className="h-5 w-5 text-gray-400" />
-              Recent Reviews
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Star className="h-5 w-5 text-gray-400" />
+                Recent Reviews
+              </CardTitle>
           </CardHeader>
           <CardContent>
             {stats.recentReviews.length > 0 ? (

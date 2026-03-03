@@ -343,8 +343,8 @@ export default function EmbedAccountPage() {
 
   if (!client) {
     return (
-      <div className="p-4 bg-transparent" style={{ fontFamily: embedFontFamily }}>
-        <div className="max-w-md mx-auto space-y-4">
+      <div className="bg-transparent p-4" style={{ fontFamily: embedFontFamily }}>
+        <div className="mx-auto max-w-lg space-y-4">
           <div className="text-center pt-2">
             <p className="text-sm text-gray-500">{studio?.name || "Studio Account"}</p>
             <h1 className="text-xl font-semibold text-gray-900 mt-1">
@@ -352,7 +352,7 @@ export default function EmbedAccountPage() {
             </h1>
           </div>
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
+            <CardContent className="p-4 sm:p-5">
               <form onSubmit={handleAuth} className="space-y-3">
                 {authError && (
                   <div className="p-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded">
@@ -466,7 +466,7 @@ export default function EmbedAccountPage() {
 
   return (
     <div className="bg-transparent p-4" style={{ fontFamily: embedFontFamily }}>
-      <div className="max-w-md mx-auto space-y-4">
+      <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <Link href={`/${subdomain}/embed`} className="flex items-center gap-1 text-gray-600 hover:text-gray-900">
             <ChevronLeft className="h-5 w-5" />
@@ -483,10 +483,16 @@ export default function EmbedAccountPage() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Signed in as</p>
-            <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
-            <p className="text-sm" style={{ color: primaryColor }}>{client.email}</p>
-            <p className="text-xs text-gray-500 mt-2">Credits available: {client.credits ?? 0}</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Signed in as</p>
+                <p className="font-medium text-gray-900">{client.firstName} {client.lastName}</p>
+                <p className="text-sm break-all" style={{ color: primaryColor }}>{client.email}</p>
+              </div>
+              <Badge variant="outline" className="w-fit text-xs">
+                {client.credits ?? 0} credit{(client.credits ?? 0) === 1 ? "" : "s"}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
 
@@ -502,7 +508,7 @@ export default function EmbedAccountPage() {
               </Badge>
             </div>
 
-            <div className="rounded-xl border bg-gray-50 p-3 space-y-3 max-h-[320px] overflow-y-auto">
+            <div className="max-h-[320px] space-y-3 overflow-y-auto rounded-xl border bg-gray-50 p-3">
               {inboxLoading && inboxMessages.length === 0 ? (
                 <div className="py-6 text-center text-sm text-gray-500">Loading inbox...</div>
               ) : inboxMessages.length === 0 ? (
@@ -536,7 +542,7 @@ export default function EmbedAccountPage() {
                 onChange={(e) => setNewInboxMessage(e.target.value)}
                 rows={3}
                 className="text-sm"
-                placeholder="Write a message..."
+                placeholder="Send the studio a message..."
               />
               <Button
                 type="submit"
@@ -550,7 +556,7 @@ export default function EmbedAccountPage() {
                     Sending...
                   </>
                 ) : (
-                  "Send Message"
+                  "Send"
                 )}
               </Button>
             </form>
@@ -558,7 +564,7 @@ export default function EmbedAccountPage() {
         </Card>
 
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Upcoming Classes</h2>
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Upcoming Classes</h2>
           {upcomingBookings.length === 0 ? (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6 text-center">

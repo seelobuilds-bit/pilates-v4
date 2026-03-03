@@ -17,6 +17,7 @@ import {
   AlertTriangle
 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { formatCurrency } from "@/lib/utils"
 
 interface ClassSession {
   id: string
@@ -30,6 +31,7 @@ interface ClassSession {
 }
 
 interface TeacherStats {
+  currency?: string
   totalClasses: number
   totalStudents: number
   avgRating: number | null
@@ -65,6 +67,7 @@ export default function TeacherDashboardPage() {
 
   // Default empty stats if API is unavailable
   const displayStats = stats || {
+    currency: "usd",
     totalClasses: 0,
     totalStudents: 0,
     avgRating: null,
@@ -78,72 +81,77 @@ export default function TeacherDashboardPage() {
   const hasRatingData = typeof displayStats.avgRating === "number" && displayStats.avgRating > 0
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50/50 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
           Welcome back, {session?.user?.firstName || "Teacher"}!
         </h1>
         <p className="text-gray-500 mt-1">
           {session?.user?.studioName || "Your Studio"} • Teacher Portal
         </p>
+        <p className="mt-2 text-xs text-gray-400 sm:text-sm">
+          Your month-to-date teaching snapshot.
+        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:gap-4 xl:grid-cols-4">
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-violet-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 sm:h-12 sm:w-12">
+                <Calendar className="h-5 w-5 text-violet-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{displayStats.totalClasses}</p>
-                <p className="text-sm text-gray-500">Classes This Month</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{displayStats.totalClasses}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Classes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 sm:h-12 sm:w-12">
+                <Users className="h-5 w-5 text-blue-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{displayStats.totalStudents}</p>
-                <p className="text-sm text-gray-500">Students Taught</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{displayStats.totalStudents}</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Students</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                <Star className="h-6 w-6 text-amber-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 sm:h-12 sm:w-12">
+                <Star className="h-5 w-5 text-amber-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                   {hasRatingData ? displayStats.avgRating!.toFixed(1) : "N/A"}
                 </p>
-                <p className="text-sm text-gray-500">Average Rating</p>
+                <p className="text-xs text-gray-500 sm:text-sm">Rating</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-emerald-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 sm:h-12 sm:w-12">
+                <DollarSign className="h-5 w-5 text-emerald-600 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">${displayStats.revenue.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">Revenue Generated</p>
+                <p className="text-base font-bold text-gray-900 sm:text-xl lg:text-2xl">
+                  {formatCurrency(displayStats.revenue, displayStats.currency || "usd")}
+                </p>
+                <p className="text-xs text-gray-500 sm:text-sm">Revenue</p>
               </div>
             </div>
           </CardContent>
@@ -157,11 +165,11 @@ export default function TeacherDashboardPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Clock className="h-5 w-5 text-gray-400" />
-                Today&apos;s Schedule
+                Today
               </CardTitle>
               <Link href="/teacher/schedule">
                 <Button variant="ghost" size="sm">
-                  View All <ChevronRight className="h-4 w-4 ml-1" />
+                  View schedule <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
             </div>
@@ -272,31 +280,31 @@ export default function TeacherDashboardPage() {
         {/* Quick Actions */}
         <Card className="border-0 shadow-sm lg:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
+              <CardTitle className="text-lg">Jump To</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               <Link href="/teacher/schedule">
-                <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                  <Calendar className="h-6 w-6" />
+                <Button variant="outline" className="h-16 w-full flex-col gap-1 text-xs sm:h-20 sm:gap-2 sm:text-sm">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
                   <span>My Schedule</span>
                 </Button>
               </Link>
               <Link href="/teacher/clients">
-                <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                  <Users className="h-6 w-6" />
-                  <span>My Clients</span>
+                <Button variant="outline" className="h-16 w-full flex-col gap-1 text-xs sm:h-20 sm:gap-2 sm:text-sm">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span>Clients</span>
                 </Button>
               </Link>
               <Link href="/teacher/reports">
-                <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                  <TrendingUp className="h-6 w-6" />
+                <Button variant="outline" className="h-16 w-full flex-col gap-1 text-xs sm:h-20 sm:gap-2 sm:text-sm">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
                   <span>Reports</span>
                 </Button>
               </Link>
               <Link href="/teacher/settings">
-                <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                  <Star className="h-6 w-6" />
+                <Button variant="outline" className="h-16 w-full flex-col gap-1 text-xs sm:h-20 sm:gap-2 sm:text-sm">
+                  <Star className="h-5 w-5 sm:h-6 sm:w-6" />
                   <span>Settings</span>
                 </Button>
               </Link>
@@ -307,7 +315,6 @@ export default function TeacherDashboardPage() {
     </div>
   )
 }
-
 
 
 

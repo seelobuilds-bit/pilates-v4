@@ -214,8 +214,8 @@ export default function TeacherClassDetailPage({
       {/* Message All Modal */}
       {showMessageModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-[500px] shadow-xl">
-            <CardContent className="p-6">
+          <Card className="max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto shadow-xl">
+            <CardContent className="p-4 sm:p-6">
               <div className="mb-6 flex items-start justify-between gap-3 sm:items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
@@ -246,10 +246,10 @@ export default function TeacherClassDetailPage({
               ) : (
                 <>
                   {/* Message Type Toggle */}
-                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg mb-4">
+                  <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
                     <button
                       onClick={() => setMessageType("email")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                      className={`flex items-center justify-center gap-2 rounded-md py-2 transition-colors ${
                         messageType === "email" 
                           ? "bg-white text-blue-600 shadow-sm font-medium" 
                           : "text-gray-500 hover:text-gray-900"
@@ -260,7 +260,7 @@ export default function TeacherClassDetailPage({
                     </button>
                     <button
                       onClick={() => setMessageType("sms")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-colors ${
+                      className={`flex items-center justify-center gap-2 rounded-md py-2 transition-colors ${
                         messageType === "sms" 
                           ? "bg-white text-green-600 shadow-sm font-medium" 
                           : "text-gray-500 hover:text-gray-900"
@@ -319,7 +319,7 @@ export default function TeacherClassDetailPage({
                   {/* Shared inbox note */}
                   <div className="p-3 bg-blue-50 rounded-lg mb-4">
                     <p className="text-sm text-blue-700">
-                      💬 Messages will appear in each client&apos;s shared conversation thread
+                      Messages also show in each client&apos;s shared inbox thread.
                     </p>
                   </div>
 
@@ -342,7 +342,7 @@ export default function TeacherClassDetailPage({
                       ) : (
                         <>
                           <Send className="h-4 w-4 mr-2" />
-                          Send to All
+                          Send update
                         </>
                       )}
                     </Button>
@@ -616,7 +616,6 @@ export default function TeacherClassDetailPage({
     </div>
   )
 }
-
 
 
 
