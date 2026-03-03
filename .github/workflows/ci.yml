@@ -94,6 +94,9 @@ jobs:
       - name: Reporting retention regression
         run: pnpm test:reporting:retention
 
+      - name: Leaderboard presentation regression
+        run: pnpm test:leaderboards:presentation
+
       - name: Reporting smoke
         run: pnpm test:smoke:reporting
 

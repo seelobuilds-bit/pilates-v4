@@ -7,6 +7,7 @@ import {
   Prisma,
 } from "@prisma/client"
 import { db } from "../db"
+import { compareLeaderboardEntries } from "./presentation"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NEWCOMER_WINDOW_DAYS = 120
@@ -57,19 +58,6 @@ function normalizeScore(rawScore: number) {
   if (!Number.isFinite(rawScore)) return 0
   if (rawScore < 0) return 0
   return roundTo(rawScore, 4)
-}
-
-function compareForRanking(
-  left: { id: string; score: number },
-  right: { id: string; score: number },
-  higherIsBetter: boolean
-) {
-  if (higherIsBetter) {
-    if (left.score !== right.score) return right.score - left.score
-  } else if (left.score !== right.score) {
-    return left.score - right.score
-  }
-  return left.id.localeCompare(right.id)
 }
 
 export async function populateLeaderboardPeriodEntries(params: {
@@ -635,7 +623,7 @@ export async function populateLeaderboardPeriodEntries(params: {
     }
   })
 
-  rankingBase.sort((left, right) => compareForRanking(left, right, leaderboard.higherIsBetter))
+  rankingBase.sort((left, right) => compareLeaderboardEntries(left, right, leaderboard.higherIsBetter))
 
   const entries: ScoreEntry[] = rankingBase.map((row, index) => ({
     studioId:

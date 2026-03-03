@@ -3,6 +3,12 @@ import { LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
+import {
+  attachParticipantsToEntries,
+  createStudioParticipantMap,
+  createTeacherParticipantMap,
+  resolveExpectedParticipantCount,
+} from "@/lib/leaderboards/presentation"
 
 export async function GET(
   request: NextRequest,
@@ -190,17 +196,23 @@ export async function GET(
         : Promise.resolve([]),
     ])
 
-    const studioById = new Map(studios.map((item) => [item.id, { id: item.id, name: item.name, subdomain: item.subdomain }]))
-    const teacherById = new Map(
-      teachers.map((item) => [
-        item.id,
-        {
-          id: item.id,
-          name: `${item.user.firstName} ${item.user.lastName}`,
-          studioId: item.studioId,
-        },
-      ])
+    const studioById = createStudioParticipantMap(studios)
+    const teacherById = createTeacherParticipantMap(
+      teachers.map((item) => ({
+        id: item.id,
+        name: `${item.user.firstName} ${item.user.lastName}`,
+        studioId: item.studioId,
+      }))
     )
+
+    const [studioCount, teacherCount] = await Promise.all([
+      db.studio.count(),
+      db.teacher.count({ where: { isActive: true } }),
+    ])
+    const expectedParticipantCount = resolveExpectedParticipantCount(leaderboard.participantType, {
+      studioCount,
+      teacherCount,
+    })
 
     const enrichEntry = (entry: {
       id: string
@@ -210,20 +222,24 @@ export async function GET(
       rank: number | null
       previousRank: number | null
       lastUpdated: Date
-    }) => ({
-      id: entry.id,
-      studioId: entry.studioId,
-      teacherId: entry.teacherId,
-      score: entry.score,
-      rank: entry.rank,
-      previousRank: entry.previousRank,
-      lastUpdated: entry.lastUpdated.toISOString(),
-      participant: entry.studioId
-        ? (studioById.get(entry.studioId) ?? null)
-        : entry.teacherId
-          ? (teacherById.get(entry.teacherId) ?? null)
-          : null,
-    })
+    }) =>
+      attachParticipantsToEntries(
+        [
+          {
+            id: entry.id,
+            studioId: entry.studioId,
+            teacherId: entry.teacherId,
+            score: entry.score,
+            rank: entry.rank,
+            previousRank: entry.previousRank,
+            lastUpdated: entry.lastUpdated.toISOString(),
+          },
+        ],
+        {
+          studioById,
+          teacherById,
+        }
+      )[0] || null
 
     const myEntry =
       activePeriod &&
@@ -309,8 +325,8 @@ export async function GET(
             status: activePeriod.status,
             startDate: activePeriod.startDate.toISOString(),
             endDate: activePeriod.endDate.toISOString(),
-            totalEntries: activePeriod._count.entries,
-            entries: activePeriod.entries.map(enrichEntry),
+            totalEntries: expectedParticipantCount,
+            entries: activePeriod.entries.map(enrichEntry).filter(Boolean),
           }
         : null,
       myEntry: myEntry ? enrichEntry(myEntry) : null,
@@ -320,8 +336,8 @@ export async function GET(
         status: period.status,
         startDate: period.startDate.toISOString(),
         endDate: period.endDate.toISOString(),
-        totalEntries: period._count.entries,
-        entries: period.entries.map(enrichEntry),
+        totalEntries: expectedParticipantCount,
+        entries: period.entries.map(enrichEntry).filter(Boolean),
       })),
       stats: {
         trackedPeriods: recentPeriods.length,

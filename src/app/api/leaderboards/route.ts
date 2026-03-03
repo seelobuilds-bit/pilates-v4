@@ -3,6 +3,12 @@ import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
+import {
+  attachParticipantsToEntries,
+  createStudioParticipantMap,
+  createTeacherParticipantMap,
+  resolveExpectedParticipantCount,
+} from "@/lib/leaderboards/presentation"
 
 // GET - Fetch leaderboards for studios/teachers
 export async function GET(request: NextRequest) {
@@ -32,10 +38,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const expectedParticipantCount =
-      participantType === "STUDIO"
-        ? await db.studio.count()
-        : await db.teacher.count({ where: { isActive: true } })
+    const [studioCount, teacherCount] = await Promise.all([
+      db.studio.count(),
+      db.teacher.count({ where: { isActive: true } }),
+    ])
+    const expectedParticipantCount = resolveExpectedParticipantCount(participantType, {
+      studioCount,
+      teacherCount,
+    })
 
     // Get active leaderboards
     const leaderboards = await db.leaderboard.findMany({
@@ -110,18 +120,13 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([])
     ])
 
-    const studioParticipantById = new Map(
-      studios.map((studio) => [studio.id, { id: studio.id, name: studio.name, subdomain: studio.subdomain }])
-    )
-    const teacherParticipantById = new Map(
-      teachers.map((teacher) => [
-        teacher.id,
-        {
-          id: teacher.id,
-          name: `${teacher.user.firstName} ${teacher.user.lastName}`,
-          studioId: teacher.studioId
-        }
-      ])
+    const studioParticipantById = createStudioParticipantMap(studios)
+    const teacherParticipantById = createTeacherParticipantMap(
+      teachers.map((teacher) => ({
+        id: teacher.id,
+        name: `${teacher.user.firstName} ${teacher.user.lastName}`,
+        studioId: teacher.studioId,
+      }))
     )
 
     const enrichedLeaderboards = leaderboards.map((lb) => {
@@ -130,15 +135,10 @@ export async function GET(request: NextRequest) {
         return { ...lb, currentPeriod: null }
       }
 
-      const mappedEntries = currentPeriod.entries.map((entry) => {
-        const participant = entry.studioId
-          ? (studioParticipantById.get(entry.studioId) ?? null)
-          : entry.teacherId
-            ? (teacherParticipantById.get(entry.teacherId) ?? null)
-            : null
-        return { ...entry, participant }
+      const entries = attachParticipantsToEntries(currentPeriod.entries, {
+        studioById: studioParticipantById,
+        teacherById: teacherParticipantById,
       })
-      const entries = mappedEntries.filter((entry) => Boolean(entry.participant))
 
       return {
         ...lb,
@@ -273,5 +273,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-
 

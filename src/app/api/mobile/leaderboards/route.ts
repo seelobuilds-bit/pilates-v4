@@ -3,6 +3,12 @@ import { LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
+import {
+  attachParticipantsToEntries,
+  createStudioParticipantMap,
+  createTeacherParticipantMap,
+  resolveExpectedParticipantCount,
+} from "@/lib/leaderboards/presentation"
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,10 +62,14 @@ export async function GET(request: NextRequest) {
         : decoded.role === "TEACHER"
           ? "TEACHER"
           : "STUDIO"
-    const expectedParticipantCount =
-      participantType === "STUDIO"
-        ? await db.studio.count()
-        : await db.teacher.count({ where: { isActive: true } })
+    const [studioCount, teacherCount] = await Promise.all([
+      db.studio.count(),
+      db.teacher.count({ where: { isActive: true } }),
+    ])
+    const expectedParticipantCount = resolveExpectedParticipantCount(participantType, {
+      studioCount,
+      teacherCount,
+    })
 
     const leaderboards = await db.leaderboard.findMany({
       where: {
@@ -133,16 +143,13 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([]),
     ])
 
-    const studioById = new Map(studios.map((item) => [item.id, { id: item.id, name: item.name, subdomain: item.subdomain }]))
-    const teacherById = new Map(
-      teachers.map((item) => [
-        item.id,
-        {
-          id: item.id,
-          name: `${item.user.firstName} ${item.user.lastName}`,
-          studioId: item.studioId,
-        },
-      ])
+    const studioById = createStudioParticipantMap(studios)
+    const teacherById = createTeacherParticipantMap(
+      teachers.map((item) => ({
+        id: item.id,
+        name: `${item.user.firstName} ${item.user.lastName}`,
+        studioId: item.studioId,
+      }))
     )
 
     const enriched = leaderboards.map((leaderboard) => {
@@ -162,16 +169,10 @@ export async function GET(request: NextRequest) {
           startDate: currentPeriod.startDate,
           endDate: currentPeriod.endDate,
           totalEntries: expectedParticipantCount,
-          entries: currentPeriod.entries
-            .map((entry) => ({
-              ...entry,
-              participant: entry.studioId
-                ? (studioById.get(entry.studioId) ?? null)
-                : entry.teacherId
-                  ? (teacherById.get(entry.teacherId) ?? null)
-                  : null,
-            }))
-            .filter((entry) => Boolean(entry.participant)),
+          entries: attachParticipantsToEntries(currentPeriod.entries, {
+            studioById,
+            teacherById,
+          }),
         },
       }
     })
