@@ -194,8 +194,9 @@ export default function HomeScreen() {
   )
 
   useEffect(() => {
-    if (hasLoadedInitially.current) return
-    hasLoadedInitially.current = true
+    if (!hasLoadedInitially.current) {
+      hasLoadedInitially.current = true
+    }
     void loadHomeData(customRange)
   }, [customRange, loadHomeData])
 
@@ -243,9 +244,8 @@ export default function HomeScreen() {
       )
       setCustomRange(nextRange)
       closeRangePicker()
-      void loadHomeData(nextRange)
     },
-    [activeRangePicker, closeRangePicker, customRange.end, customRange.start, loadHomeData]
+    [activeRangePicker, closeRangePicker, customRange.end, customRange.start]
   )
 
   const handleRangePickerChange = useCallback(

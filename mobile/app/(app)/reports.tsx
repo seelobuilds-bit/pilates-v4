@@ -144,8 +144,9 @@ export default function ReportsScreen() {
   )
 
   useEffect(() => {
-    if (hasLoadedInitially.current) return
-    hasLoadedInitially.current = true
+    if (!hasLoadedInitially.current) {
+      hasLoadedInitially.current = true
+    }
     void loadReports(customRange)
   }, [customRange, loadReports])
 
@@ -205,9 +206,8 @@ export default function ReportsScreen() {
       )
       setCustomRange(nextRange)
       closeRangePicker()
-      void loadReports(nextRange)
     },
-    [activeRangePicker, closeRangePicker, customRange.end, customRange.start, loadReports]
+    [activeRangePicker, closeRangePicker, customRange.end, customRange.start]
   )
 
   const handleRangePickerChange = useCallback(
