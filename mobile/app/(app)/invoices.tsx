@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -202,7 +202,7 @@ export default function InvoicesScreen() {
   }, [invoices, statusFilter])
 
   const emptyText = useMemo(() => {
-    if (!isAllowedRole) return "Invoices view is available for studio owner and teacher accounts."
+    if (!isAllowedRole) return "Invoices are available for studio owner and teacher accounts."
     if (trimmedSearch) {
       if (statusFilter !== "all") return `No ${statusLabel(statusFilter).toLowerCase()} invoices matched your search.`
       return "No invoices matched your search."
@@ -222,7 +222,7 @@ export default function InvoicesScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Invoices</Text>
-        <Text style={styles.subtitle}>Track invoice status and payouts</Text>
+        <Text style={styles.subtitle}>Track invoice status, totals, and payouts</Text>
       </View>
 
       {isAllowedRole ? <StatsCards stats={stats} currency={currency} isNarrowScreen={isNarrowScreen} /> : null}
@@ -234,7 +234,7 @@ export default function InvoicesScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         {(["all", "PENDING", "SENT", "PAID", "DRAFT", "CANCELLED"] as InvoiceFilter[]).map((filter) => (
           <Pressable
             key={filter}
@@ -245,11 +245,11 @@ export default function InvoicesScreen() {
             onPress={() => setStatusFilter(filter)}
           >
             <Text style={[styles.filterButtonText, statusFilter === filter && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {`${filter === "all" ? "All" : statusLabel(filter)} (${statusCounts[filter]})`}
+              {`${filter === "all" ? "All" : statusLabel(filter)} ${statusCounts[filter]}`}
             </Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -257,7 +257,7 @@ export default function InvoicesScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -271,7 +271,7 @@ export default function InvoicesScreen() {
                 style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
                 onPress={() => handleViewInvoice(item.id)}
               >
-                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>Open</Text>
               </Pressable>
             </View>
           )}
@@ -360,8 +360,8 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

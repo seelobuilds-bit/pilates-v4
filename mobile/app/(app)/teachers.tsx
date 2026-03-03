@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -136,7 +136,7 @@ export default function TeachersScreen() {
   }, [searchScopedTeachers, statusFilter])
 
   const emptyText = useMemo(() => {
-    if (!isAllowedRole) return "Teachers view is available for studio owner and teacher accounts."
+    if (!isAllowedRole) return "Teachers are available for studio owner and teacher accounts."
     if (trimmedSearch) return statusFilter === "active" ? "No active teachers matched your search." : "No teachers matched your search."
     return statusFilter === "active" ? "No active teachers yet." : "No teachers available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
@@ -152,7 +152,7 @@ export default function TeachersScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Teachers</Text>
-        <Text style={styles.subtitle}>Team and teaching activity</Text>
+        <Text style={styles.subtitle}>Team, specialties, and teaching load</Text>
       </View>
 
       <TextInput
@@ -162,7 +162,7 @@ export default function TeachersScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[
             styles.filterButton,
@@ -171,7 +171,7 @@ export default function TeachersScreen() {
           onPress={() => setStatusFilter("active")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`Active (${statusCounts.active})`}
+            {`Active ${statusCounts.active}`}
           </Text>
         </Pressable>
         <Pressable
@@ -182,10 +182,10 @@ export default function TeachersScreen() {
           onPress={() => setStatusFilter("all")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`All (${statusCounts.all})`}
+            {`All ${statusCounts.all}`}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -193,7 +193,7 @@ export default function TeachersScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -207,7 +207,7 @@ export default function TeachersScreen() {
                 style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
                 onPress={() => handleViewTeacher(item.id)}
               >
-                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>Open</Text>
               </Pressable>
             </View>
           )}
@@ -259,6 +259,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

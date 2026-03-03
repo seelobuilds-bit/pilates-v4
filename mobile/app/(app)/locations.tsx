@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -113,7 +113,7 @@ export default function LocationsScreen() {
   }, [searchScopedLocations, statusFilter])
 
   const emptyText = useMemo(() => {
-    if (!isAllowedRole) return "Locations view is available for studio owner and teacher accounts."
+    if (!isAllowedRole) return "Locations are available for studio owner and teacher accounts."
     if (trimmedSearch) return statusFilter === "active" ? "No active locations matched your search." : "No locations matched your search."
     return statusFilter === "active" ? "No active locations yet." : "No locations available yet."
   }, [isAllowedRole, statusFilter, trimmedSearch])
@@ -129,7 +129,7 @@ export default function LocationsScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Locations</Text>
-        <Text style={styles.subtitle}>Rooms and session activity</Text>
+        <Text style={styles.subtitle}>Studios, addresses, and upcoming sessions</Text>
       </View>
 
       <TextInput
@@ -139,7 +139,7 @@ export default function LocationsScreen() {
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[
             styles.filterButton,
@@ -148,7 +148,7 @@ export default function LocationsScreen() {
           onPress={() => setStatusFilter("active")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "active" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`Active (${statusCounts.active})`}
+            {`Active ${statusCounts.active}`}
           </Text>
         </Pressable>
         <Pressable
@@ -159,10 +159,10 @@ export default function LocationsScreen() {
           onPress={() => setStatusFilter("all")}
         >
           <Text style={[styles.filterButtonText, statusFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-            {`All (${statusCounts.all})`}
+            {`All ${statusCounts.all}`}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -170,7 +170,7 @@ export default function LocationsScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButton, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonText}>Go to workspace</Text>
+            <Text style={styles.actionButtonText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -184,7 +184,7 @@ export default function LocationsScreen() {
                 style={[styles.viewButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.1) }]}
                 onPress={() => handleViewLocation(item.id)}
               >
-                <Text style={[styles.viewButtonText, { color: primaryColor }]}>View Details</Text>
+                <Text style={[styles.viewButtonText, { color: primaryColor }]}>Open</Text>
               </Pressable>
             </View>
           )}
@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,

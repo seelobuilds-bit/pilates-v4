@@ -84,7 +84,7 @@ export default function InvoiceDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadInvoice(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Invoice Detail</Text>
+        <Text style={styles.title}>Invoice overview</Text>
         {data?.invoice ? (
           <>
             <Text style={styles.invoiceNumber}>{data.invoice.invoiceNumber}</Text>
@@ -115,7 +115,7 @@ export default function InvoiceDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Line Items</Text>
+            <Text style={styles.sectionTitle}>Line items</Text>
             {data.invoice.lineItems.length === 0 ? (
               <Text style={styles.emptyText}>No line items available.</Text>
             ) : (

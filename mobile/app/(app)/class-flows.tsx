@@ -96,7 +96,7 @@ function ContentCard({
           onPress={() => onMarkComplete(item.id)}
           disabled={busy}
         >
-          <Text style={[styles.actionButtonText, { color: primaryColor }]}>{busy ? "Saving..." : "Mark complete"}</Text>
+          <Text style={[styles.actionButtonText, { color: primaryColor }]}>{busy ? "Saving..." : "Mark done"}</Text>
         </Pressable>
       ) : null}
 
@@ -104,7 +104,7 @@ function ContentCard({
         style={[styles.detailButton, { borderColor: withOpacity(primaryColor, 0.45) }]}
         onPress={() => onOpenDetails(item.id)}
       >
-        <Text style={[styles.detailButtonText, { color: primaryColor }]}>View details</Text>
+        <Text style={[styles.detailButtonText, { color: primaryColor }]}>Open</Text>
       </Pressable>
     </View>
   )
@@ -266,12 +266,12 @@ export default function ClassFlowsScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Class Flows</Text>
-        <Text style={styles.subtitle}>Training library and completion progress</Text>
+        <Text style={styles.subtitle}>Training library, requests, and progress</Text>
         {data ? (
           <View style={styles.statsRow}>
             <Text style={styles.statPill}>Categories {data.stats.categories}</Text>
-            <Text style={styles.statPill}>Content {data.stats.totalContent}</Text>
-            {isTeacher ? <Text style={styles.statPill}>Completed {data.stats.completedContent}</Text> : null}
+            <Text style={styles.statPill}>Items {data.stats.totalContent}</Text>
+            {isTeacher ? <Text style={styles.statPill}>Done {data.stats.completedContent}</Text> : null}
             <Text style={styles.statPill}>Requests {data.stats.pendingTrainingRequests}</Text>
           </View>
         ) : null}
@@ -280,7 +280,7 @@ export default function ClassFlowsScreen() {
       <TextInput
         value={search}
         onChangeText={setSearch}
-        placeholder="Search class flows..."
+        placeholder="Search training..."
         style={styles.searchInput}
       />
 
@@ -289,7 +289,7 @@ export default function ClassFlowsScreen() {
           style={[styles.filterButton, featuredOnly && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setFeaturedOnly((value) => !value)}
         >
-          <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Featured (${featuredCount})`}</Text>
+          <Text style={[styles.filterButtonText, featuredOnly && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Featured ${featuredCount}`}</Text>
         </Pressable>
         {FLOW_TYPE_OPTIONS.map((type) => (
           <Pressable
@@ -298,7 +298,7 @@ export default function ClassFlowsScreen() {
             onPress={() => setTypeFilter(type)}
           >
             <Text style={[styles.filterButtonText, typeFilter === type && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {type === "all" ? `Type: All (${typeCounts.all})` : `${type} (${typeCounts[type]})`}
+              {type === "all" ? `All types ${typeCounts.all}` : `${type} ${typeCounts[type]}`}
             </Text>
           </Pressable>
         ))}
@@ -309,7 +309,7 @@ export default function ClassFlowsScreen() {
             onPress={() => setDifficultyFilter(difficulty)}
           >
             <Text style={[styles.filterButtonText, difficultyFilter === difficulty && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-              {difficulty === "all" ? `Level: All (${difficultyCounts.all})` : `${difficulty} (${difficultyCounts[difficulty]})`}
+              {difficulty === "all" ? `All levels ${difficultyCounts.all}` : `${difficulty} ${difficultyCounts[difficulty]}`}
             </Text>
           </Pressable>
         ))}
@@ -321,7 +321,7 @@ export default function ClassFlowsScreen() {
             style={[styles.filterButton, categoryFilter === "all" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
             onPress={() => setCategoryFilter("all")}
           >
-            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`Category: All (${searchScopedRows.length})`}</Text>
+            <Text style={[styles.filterButtonText, categoryFilter === "all" && [styles.filterButtonTextActive, { color: primaryColor }]]}>{`All categories ${searchScopedRows.length}`}</Text>
           </Pressable>
           {data.categories.map((category) => (
             <Pressable
@@ -330,7 +330,7 @@ export default function ClassFlowsScreen() {
               onPress={() => setCategoryFilter(category.id)}
             >
               <Text style={[styles.filterButtonText, categoryFilter === category.id && [styles.filterButtonTextActive, { color: primaryColor }]]}>
-                {(category.icon ? `${category.icon} ` : "") + `${category.name} (${categoryCounts.get(category.id) || 0})`}
+                {(category.icon ? `${category.icon} ` : "") + `${category.name} ${categoryCounts.get(category.id) || 0}`}
               </Text>
             </Pressable>
           ))}
@@ -343,7 +343,7 @@ export default function ClassFlowsScreen() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>{emptyText}</Text>
           <Pressable style={[styles.actionButtonSolid, { backgroundColor: primaryColor }]} onPress={() => router.push("/(app)/workspace")}>
-            <Text style={styles.actionButtonSolidText}>Go to workspace</Text>
+            <Text style={styles.actionButtonSolidText}>Open more tools</Text>
           </Pressable>
         </View>
       ) : (
@@ -374,7 +374,7 @@ export default function ClassFlowsScreen() {
           ListFooterComponent={
             data?.recentRequests?.length ? (
               <View style={styles.requestsWrap}>
-                <Text style={styles.requestsTitle}>Recent Training Requests</Text>
+                <Text style={styles.requestsTitle}>Recent requests</Text>
                 {data.recentRequests.map((request) => (
                   <View key={request.id} style={styles.requestRow}>
                     <Text style={styles.requestTitle}>{request.title}</Text>

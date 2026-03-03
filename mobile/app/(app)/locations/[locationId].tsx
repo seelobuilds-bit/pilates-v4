@@ -86,7 +86,7 @@ export default function LocationDetailScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadLocation(true)} />}
     >
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
-        <Text style={styles.title}>Location Detail</Text>
+        <Text style={styles.title}>Location overview</Text>
         {data?.location ? (
           <>
             <Text style={styles.nameText}>{data.location.name}</Text>
@@ -103,12 +103,12 @@ export default function LocationDetailScreen() {
 
       {loading && !data ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading location details...</Text>
+          <Text style={styles.emptyTitle}>Loading location overview...</Text>
         </View>
       ) : data ? (
         <>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Performance</Text>
+            <Text style={styles.sectionTitle}>At a glance</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Total Sessions</Text>
@@ -137,13 +137,13 @@ export default function LocationDetailScreen() {
               <View style={styles.statItemWide}>
                 <Text style={styles.statLabel}>Revenue</Text>
                 <Text style={styles.statValue}>{formatCurrency(data.stats.totalRevenue, currency)}</Text>
-                <Text style={styles.metaText}>Avg/session {formatCurrency(data.stats.averageRevenuePerSession, currency)}</Text>
+                <Text style={styles.metaText}>Avg per session {formatCurrency(data.stats.averageRevenuePerSession, currency)}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Top Class Types</Text>
+            <Text style={styles.sectionTitle}>Top classes</Text>
             {data.topClassTypes.length === 0 ? (
               <Text style={styles.emptyText}>No class type history yet.</Text>
             ) : (
@@ -157,7 +157,7 @@ export default function LocationDetailScreen() {
           </View>
 
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Recent Sessions</Text>
+            <Text style={styles.sectionTitle}>Recent sessions</Text>
             {data.recentSessions.length === 0 ? (
               <Text style={styles.emptyText}>No sessions yet.</Text>
             ) : (
