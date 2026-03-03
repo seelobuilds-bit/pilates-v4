@@ -8,6 +8,7 @@ import {
 import { getSession } from "@/lib/session"
 import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
 
 export async function GET() {
   const session = await getSession()
@@ -186,8 +187,7 @@ export async function GET() {
     for (const booking of nonCancelledBookings) {
       clientBookingCounts.set(booking.clientId, (clientBookingCounts.get(booking.clientId) || 0) + 1)
     }
-    const repeatClientCount = Array.from(clientBookingCounts.values()).filter((count) => count > 1).length
-    const retentionRate = ratioPercentage(repeatClientCount, clientBookingCounts.size, 0)
+    const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
 
     const classCounts = new Map<string, number>()
     for (const session of monthClasses) {
@@ -240,7 +240,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

@@ -18,7 +18,7 @@
     "test:smoke:mobile:auth-routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-auth-routing-smoke.ts",
     "test:smoke:mobile:routing": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/mobile-push-routing-smoke.ts",
     "test:smoke:studio-content": "node scripts/tests/studio-content-surface-smoke.mjs",
-    "test:smoke:reporting": "pnpm test:reporting:date-range && pnpm test:reporting:revenue && pnpm test:reporting:attendance && node scripts/tests/reporting-regression-smoke.mjs",
+    "test:smoke:reporting": "pnpm test:reporting:date-range && pnpm test:reporting:revenue && pnpm test:reporting:attendance && pnpm test:reporting:retention && node scripts/tests/reporting-regression-smoke.mjs",
     "test:baseline:reporting": "node scripts/tests/reporting-baseline-capture.mjs",
     "test:baseline:reporting:compare": "node scripts/tests/reporting-baseline-compare.mjs",
     "test:employees:timeoff": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/employees-timeoff-logic.ts",
@@ -32,7 +32,8 @@
     "lint": "eslint",
     "test:reporting:date-range": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-date-range-logic.ts",
     "test:reporting:revenue": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-revenue-logic.ts",
-    "test:reporting:attendance": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-attendance-logic.ts"
+    "test:reporting:attendance": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-attendance-logic.ts",
+    "test:reporting:retention": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/reporting-retention-logic.ts"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"

@@ -11,6 +11,11 @@ import { runDbQueries } from "@/lib/db-query-mode"
 import { resolveReportRange } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import {
+  calculateChurnRate,
+  calculateRepeatClientRetentionRate,
+  getClientRiskStatus,
+} from "@/lib/reporting/retention"
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
 const MAX_REPORT_DAYS = 365
@@ -822,10 +827,8 @@ export async function GET(request: NextRequest) {
 
   const instructorRows = Array.from(instructorBuckets.values())
     .map((bucket) => {
-      const uniqueClients = bucket.clientVisits.size
-      const repeatClients = Array.from(bucket.clientVisits.values()).filter((count) => count > 1).length
       const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
-      const retention = ratioPercentage(repeatClients, uniqueClients, 1)
+      const retention = calculateRepeatClientRetentionRate(bucket.clientVisits, 1)
       const trend =
         bucket.classes > bucket.previousClasses
           ? "up"
@@ -848,10 +851,6 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.classes - a.classes || a.name.localeCompare(b.name))
 
   const activeClientsList = studioClients.filter((client) => client.isActive)
-  const riskCutoff = new Date(reportEndDate)
-  riskCutoff.setDate(riskCutoff.getDate() - 14)
-  const highRiskCutoff = new Date(reportEndDate)
-  highRiskCutoff.setDate(highRiskCutoff.getDate() - 30)
   const recentActivityCutoff = new Date(reportEndDate)
   recentActivityCutoff.setDate(recentActivityCutoff.getDate() - 30)
 
@@ -872,8 +871,7 @@ export async function GET(request: NextRequest) {
     .map((client) => {
       const lastVisit = lastVisitByClientId.get(client.id) || null
       const visits = visitCountByClientId.get(client.id) || 0
-      const isAtRisk = !lastVisit || lastVisit < riskCutoff
-      const status = !lastVisit || lastVisit < highRiskCutoff ? "high-risk" : "medium-risk"
+      const { isAtRisk, status } = getClientRiskStatus(lastVisit, reportEndDate)
       return {
         id: client.id,
         name: `${client.firstName} ${client.lastName}`,
@@ -1040,7 +1038,7 @@ export async function GET(request: NextRequest) {
       membershipBreakdown,
       churnReasons,
       cohortRetention,
-      churnRate: ratioPercentage(churnedClients, totalClients, 1),
+      churnRate: calculateChurnRate(churnedClients, totalClients, 1),
       churnDefinition: "inactive clients / total clients"
     },
     classes: {

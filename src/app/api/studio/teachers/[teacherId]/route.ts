@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
@@ -135,9 +136,7 @@ export async function GET(
       clientBookingCounts.set(name, (clientBookingCounts.get(name) || 0) + 1)
     }
 
-    const repeatClientCount = Array.from(clientBookingCounts.values()).filter((count) => count > 1).length
-    const retentionRate =
-      clientBookingCounts.size > 0 ? Math.round((repeatClientCount / clientBookingCounts.size) * 100) : 0
+    const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
 
     const classCounts = new Map<string, number>()
     const locationCounts = new Map<string, number>()
