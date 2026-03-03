@@ -112,6 +112,8 @@ export default function InboxScreen() {
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [clientChannelFilter, setClientChannelFilter] = useState<"ALL" | "CHAT" | "EMAIL" | "SMS">("ALL")
   const handledRouteClientIdRef = useRef<string | null>(null)
+  const latestInboxLoadIdRef = useRef(0)
+  const latestThreadLoadIdRef = useRef(0)
 
   const isClient = useMemo(() => user?.role === "CLIENT", [user?.role])
   const searchNormalized = search.trim().toLowerCase()
@@ -188,9 +190,12 @@ export default function InboxScreen() {
         setLoading(true)
       }
 
+      const requestId = latestInboxLoadIdRef.current + 1
+      latestInboxLoadIdRef.current = requestId
       setError(null)
       try {
         const response = await mobileApi.inbox(token)
+        if (requestId !== latestInboxLoadIdRef.current) return
         setConversations(response.conversations || [])
         setMessages(
           (response.messages || []).slice().sort((a, b) => {
@@ -198,9 +203,11 @@ export default function InboxScreen() {
           })
         )
       } catch (err) {
+        if (requestId !== latestInboxLoadIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load inbox"
         setError(message)
       } finally {
+        if (requestId !== latestInboxLoadIdRef.current) return
         setLoading(false)
         setRefreshing(false)
       }
@@ -212,15 +219,20 @@ export default function InboxScreen() {
     async (clientId: string) => {
       if (!token) return
 
+      const requestId = latestThreadLoadIdRef.current + 1
+      latestThreadLoadIdRef.current = requestId
       setThreadLoading(true)
       setThreadError(null)
       try {
         const response = await mobileApi.inboxThread(token, clientId)
+        if (requestId !== latestThreadLoadIdRef.current) return
         setThreadMessages(response.messages)
       } catch (err) {
+        if (requestId !== latestThreadLoadIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load conversation"
         setThreadError(message)
       } finally {
+        if (requestId !== latestThreadLoadIdRef.current) return
         setThreadLoading(false)
       }
     },
@@ -418,7 +430,9 @@ export default function InboxScreen() {
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.subtitle}>{isClient ? "Chat with the studio" : "Client conversations"}</Text>
         <Text style={styles.helperText}>
-          {isClient ? "Messages here stay inside the app." : "Chat stays in the app. Email and SMS also send to the client."}
+          {isClient
+            ? "Messages stay in the app. The studio can also send email or SMS in the same thread."
+            : "Chat stays in the app. Email and SMS send out, then still appear in this same thread."}
         </Text>
         <View style={styles.overviewRow}>
           {inboxSummary.map((item) => (

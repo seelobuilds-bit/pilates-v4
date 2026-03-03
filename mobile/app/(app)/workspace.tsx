@@ -60,8 +60,8 @@ export default function WorkspaceScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerCard}>
-        <Text style={styles.title}>More</Text>
-        <Text style={styles.subtitle}>Open the rest of your studio tools from one place.</Text>
+        <Text style={styles.title}>More tools</Text>
+        <Text style={styles.subtitle}>Open the rest of your studio tools in one place.</Text>
         <Text style={styles.metaText}>{bootstrap?.studio?.name || user?.studio?.name || "Studio"}</Text>
         <Text style={styles.metaDetail}>{roleLabel}</Text>
       </View>
@@ -69,7 +69,7 @@ export default function WorkspaceScreen() {
       <TextInput
         value={search}
         onChangeText={setSearch}
-        placeholder="Search features..."
+        placeholder="Search tools..."
         style={[styles.searchInput, { borderColor: mobileTheme.colors.borderMuted }]}
       />
 

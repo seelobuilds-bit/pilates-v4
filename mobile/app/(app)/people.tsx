@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useAuth } from "@/src/context/auth-context"
 import { mobileApi } from "@/src/lib/api"
@@ -46,6 +46,7 @@ export default function PeopleScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const latestLoadIdRef = useRef(0)
 
   const isAllowedRole = user?.role === "OWNER" || user?.role === "TEACHER"
   const roleLabel = user?.role === "OWNER" ? "Studio owner" : user?.role === "TEACHER" ? "Teacher" : "Account"
@@ -66,14 +67,19 @@ export default function PeopleScreen() {
         setLoading(true)
       }
 
+      const requestId = latestLoadIdRef.current + 1
+      latestLoadIdRef.current = requestId
       setError(null)
       try {
         const response = await mobileApi.clients(token, {})
+        if (requestId !== latestLoadIdRef.current) return
         setClients(response.clients || [])
       } catch (err) {
+        if (requestId !== latestLoadIdRef.current) return
         const message = err instanceof Error ? err.message : "Failed to load clients"
         setError(message)
       } finally {
+        if (requestId !== latestLoadIdRef.current) return
         setLoading(false)
         setRefreshing(false)
       }
@@ -134,17 +140,17 @@ export default function PeopleScreen() {
     <View style={styles.container}>
       <View style={[styles.headerCard, { borderColor: withOpacity(primaryColor, 0.25), backgroundColor: withOpacity(primaryColor, 0.09) }]}>
         <Text style={styles.title}>Clients</Text>
-        <Text style={styles.subtitle}>{roleLabel} view</Text>
+        <Text style={styles.subtitle}>{isAllowedRole ? "Open client cards, details, and messages." : `${roleLabel} view`}</Text>
       </View>
 
       <TextInput
         value={search}
         onChangeText={setSearch}
-        placeholder="Search clients..."
+        placeholder="Search by name, email or phone..."
         style={styles.searchInput}
       />
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         <Pressable
           style={[styles.filterButton, statusFilter === "ALL" && [styles.filterButtonActive, { borderColor: primaryColor, backgroundColor: withOpacity(primaryColor, 0.14) }]]}
           onPress={() => setStatusFilter("ALL")}
@@ -169,7 +175,13 @@ export default function PeopleScreen() {
             {`Inactive ${statusCounts.INACTIVE}`}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
+
+      {isAllowedRole ? (
+        <Text style={styles.resultsHint}>
+          Showing {filteredClients.length} client{filteredClients.length === 1 ? "" : "s"}
+        </Text>
+      ) : null}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -192,7 +204,7 @@ export default function PeopleScreen() {
                   style={[styles.secondaryButton, { borderColor: withOpacity(primaryColor, 0.35), backgroundColor: withOpacity(primaryColor, 0.08) }]}
                   onPress={() => handleViewClient(item.id)}
                 >
-                  <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>View</Text>
+                  <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Open</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.primaryButton, { borderColor: withOpacity(primaryColor, 0.45), backgroundColor: withOpacity(primaryColor, 0.11) }]}
@@ -249,9 +261,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    paddingRight: 8,
   },
   filterButton: {
     borderWidth: 1,
@@ -275,6 +286,10 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
     gap: 8,
+  },
+  resultsHint: {
+    color: mobileTheme.colors.textSubtle,
+    fontSize: 12,
   },
   clientRowWrap: {
     gap: 6,
