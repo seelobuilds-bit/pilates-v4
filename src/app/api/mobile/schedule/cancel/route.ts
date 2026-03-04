@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { sendMobilePushNotification } from "@/lib/mobile-push"
 
 function formatStartTime(value: Date) {
@@ -14,26 +14,29 @@ function formatStartTime(value: Date) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role !== "CLIENT") {
       return NextResponse.json({ error: "Only clients can cancel bookings" }, { status: 403 })
     }
 
     const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
+      where: { id: auth.studio.id },
       select: { id: true, subdomain: true, ownerId: true },
     })
 
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+    if (!studio || studio.subdomain !== auth.studio.subdomain) {
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
