@@ -20,12 +20,25 @@ export default function BrandPreviewPage() {
     <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
         .brand-preview-shell {
+          --brand-accent: #9d7350;
+          --brand-accent-strong: #6f4d34;
+          --brand-ink: #1a1a1a;
+          --brand-cream: #faf8f5;
           background:
             radial-gradient(circle at 12% 18%, rgba(212, 206, 196, 0.4), transparent 26%),
             radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.1), transparent 22%),
             linear-gradient(180deg, #faf8f5 0%, #f5f2ed 44%, #efebe4 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
+        }
+
+        .brand-preview-shell header {
+          background: rgba(250, 248, 245, 0.94) !important;
+          border-bottom-color: rgba(212, 206, 196, 0.75) !important;
+        }
+
+        .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
+          display: none !important;
         }
 
         .brand-preview-shell * {
@@ -172,6 +185,91 @@ export default function BrandPreviewPage() {
           text-transform: uppercase;
         }
 
+        .brand-preview-shell section:first-of-type .inline-flex span.bg-clip-text.text-transparent {
+          background-image: linear-gradient(90deg, var(--brand-accent), var(--brand-accent-strong)) !important;
+          color: transparent !important;
+          -webkit-text-fill-color: transparent !important;
+          letter-spacing: 0 !important;
+          text-transform: uppercase;
+        }
+
+        .brand-preview-shell section:first-of-type .inline-flex .text-pink-500 {
+          color: var(--brand-accent) !important;
+        }
+
+        .brand-preview-shell #videos {
+          background: transparent !important;
+        }
+
+        .brand-preview-shell #videos .text-pink-600 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .brand-preview-shell #features .w-12.h-12 {
+          background-image: none !important;
+          background-color: rgba(212, 206, 196, 0.42) !important;
+          border: 1px solid rgba(212, 206, 196, 0.75) !important;
+        }
+
+        .brand-preview-shell #features .w-6.h-6 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
+          background: linear-gradient(150deg, #111111 0%, #1a1a1a 52%, #131313 100%) !important;
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-purple-100 {
+          background-color: rgba(157, 115, 80, 0.25) !important;
+          border: 1px solid rgba(157, 115, 80, 0.4) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-purple-700 {
+          color: #dec6ad !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-white {
+          background-color: rgba(250, 248, 245, 0.05) !important;
+          border: 1px solid rgba(250, 248, 245, 0.14) !important;
+          box-shadow: none !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-gray-900 {
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-gray-600 {
+          color: rgba(250, 248, 245, 0.8) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-purple-500,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-pink-500,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-amber-500 {
+          --tw-gradient-from: var(--brand-accent) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .to-violet-600,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .to-rose-500,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .to-orange-500 {
+          --tw-gradient-to: var(--brand-accent-strong) !important;
+        }
+
+        .brand-preview-shell section[class*="via-violet-950"] a[href="/demo"] button {
+          background-color: rgba(250, 248, 245, 0.9) !important;
+          border-color: rgba(250, 248, 245, 0.95) !important;
+          color: var(--brand-ink) !important;
+        }
+
+        .brand-preview-shell section[class*="via-violet-950"] a[href="/demo"] button:hover {
+          background-color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
+        }
+
+        .brand-preview-shell section[class*="via-violet-950"] a[href="/demo"] button svg {
+          color: var(--brand-ink) !important;
+        }
+
         .brand-preview-shell header .text-2xl.font-bold,
         .brand-preview-shell header .text-2xl.font-bold span {
           font-family: var(--font-brand-preview-display), serif !important;
@@ -301,6 +399,48 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell .hover\\:bg-white\\/30:hover {
           background-color: rgba(250, 248, 245, 0.24) !important;
+        }
+
+        .brand-preview-shell footer {
+          background-color: #121212 !important;
+          border-top: 1px solid rgba(212, 206, 196, 0.16) !important;
+        }
+
+        .brand-preview-shell footer h1,
+        .brand-preview-shell footer h2,
+        .brand-preview-shell footer h3,
+        .brand-preview-shell footer h4,
+        .brand-preview-shell footer h5,
+        .brand-preview-shell footer h6 {
+          color: var(--brand-cream) !important;
+          -webkit-text-fill-color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell footer .bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: var(--brand-cream) !important;
+          -webkit-text-fill-color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell footer .text-gray-400,
+        .brand-preview-shell footer .text-gray-500 {
+          color: rgba(250, 248, 245, 0.72) !important;
+        }
+
+        .brand-preview-shell footer .border-gray-800 {
+          border-color: rgba(250, 248, 245, 0.16) !important;
+        }
+
+        .brand-preview-shell footer button {
+          background-color: var(--brand-cream) !important;
+          background-image: none !important;
+          color: var(--brand-ink) !important;
+          border: 1px solid rgba(250, 248, 245, 0.8) !important;
+        }
+
+        .brand-preview-shell footer button:hover {
+          background-color: #f2ede6 !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell input,
