@@ -1,33 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
+import {
+  addRevenueToMonthlyBuckets,
+  buildMonthlyBucketLookup,
+  buildMonthlyRevenueBuckets,
+} from "@/lib/reporting/monthly"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
 const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
-
-function getReportDateRange(searchParams: URLSearchParams) {
-  const startDateParam = searchParams.get("startDate")
-  const endDateParam = searchParams.get("endDate")
-
-  if (startDateParam && endDateParam) {
-    const start = new Date(`${startDateParam}T00:00:00.000Z`)
-    const end = new Date(`${endDateParam}T23:59:59.999Z`)
-
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= end) {
-      return { startDate: start, endDate: end }
-    }
-  }
-
-  const parsedDays = Number.parseInt(searchParams.get("days") || "", 10)
-  const days = ALLOWED_DAY_PRESETS.has(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
-
-  const endDate = new Date()
-  const startDate = new Date(endDate)
-  startDate.setHours(0, 0, 0, 0)
-  startDate.setDate(startDate.getDate() - (days - 1))
-
-  return { startDate, endDate }
-}
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +22,10 @@ export async function GET(
   }
 
   const { locationId } = await params
-  const { startDate, endDate } = getReportDateRange(request.nextUrl.searchParams)
+  const { startDate, endDate } = resolveEntityReportDateRange(request.nextUrl.searchParams, {
+    defaultDays: DEFAULT_REPORT_PERIOD_DAYS,
+    allowedDays: Array.from(ALLOWED_DAY_PRESETS),
+  })
   const location = await db.location.findFirst({
     where: {
       id: locationId,
@@ -109,7 +95,7 @@ export async function GET(
 
   const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
   const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
     return sum + amount
   }, 0)
 
@@ -142,24 +128,13 @@ export async function GET(
     teacherCounts.set(teacherName, (teacherCounts.get(teacherName) || 0) + 1)
   }
 
-  const bucketEndDate = new Date(endDate)
-  const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
-    return {
-      key: `${date.getFullYear()}-${date.getMonth()}`,
-      month: date.toLocaleDateString("en-US", { month: "short" }),
-      revenue: 0,
-    }
-  })
-  const monthlyLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+  const monthlyBuckets = buildMonthlyRevenueBuckets(endDate, 6)
+  const monthlyLookup = buildMonthlyBucketLookup(monthlyBuckets)
 
   for (const booking of nonCancelledBookings) {
     const date = new Date(booking.classSession.startTime)
-    const key = `${date.getFullYear()}-${date.getMonth()}`
-    const bucket = monthlyLookup.get(key)
-    if (bucket) {
-      bucket.revenue += booking.paidAmount ?? booking.classSession.classType.price ?? 0
-    }
+    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
+    addRevenueToMonthlyBuckets(monthlyLookup, date, amount)
   }
 
   const stats = {
