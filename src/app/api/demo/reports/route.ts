@@ -3,7 +3,8 @@ import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { getDemoStudioId } from "@/lib/demo-studio"
-import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { ratioPercentage, roundTo } from "@/lib/reporting/metrics"
+import { buildInstructorRows } from "@/lib/reporting/instructors"
 import {
   buildActiveClientVisitIndex,
   buildAtRiskCandidates,
@@ -754,108 +755,11 @@ export async function GET(request: NextRequest) {
       return [row.teacherId, count] as const
     })
   )
-  const teacherMetaById = new Map(
-    studioTeachers.map((teacher) => [
-      teacher.id,
-      {
-        name: `${teacher.user.firstName} ${teacher.user.lastName}`,
-        specialties: teacher.specialties,
-        isActive: teacher.isActive
-      }
-    ])
-  )
-  const instructorBuckets = new Map<
-    string,
-    {
-      id: string
-      name: string
-      specialties: string[]
-      classes: number
-      totalCapacity: number
-      attended: number
-      revenue: number
-      rating: number | null
-      previousClasses: number
-      clientVisits: Map<string, number>
-    }
-  >()
-
-  for (const session of classSessions) {
-    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`
-    const teacherSpecialties = teacherMetaById.get(session.teacherId)?.specialties || []
-    const bucket =
-      instructorBuckets.get(session.teacherId) || {
-        id: session.teacherId,
-        name: teacherName,
-        specialties: teacherSpecialties,
-        classes: 0,
-        totalCapacity: 0,
-        attended: 0,
-        revenue: 0,
-        rating: null,
-        previousClasses: previousClassCountByTeacherId.get(session.teacherId) || 0,
-        clientVisits: new Map<string, number>()
-      }
-
-    bucket.classes += 1
-    bucket.totalCapacity += session.capacity
-
-    for (const booking of session.bookings) {
-      if (booking.status !== "CANCELLED") {
-        const amount = booking.paidAmount ?? session.classType.price ?? 0
-        bucket.revenue += amount
-      }
-      if (!ATTENDED_BOOKING_STATUSES.has(booking.status)) continue
-      bucket.attended += 1
-      bucket.clientVisits.set(booking.clientId, (bucket.clientVisits.get(booking.clientId) || 0) + 1)
-    }
-
-    instructorBuckets.set(session.teacherId, bucket)
-  }
-
-  for (const teacher of studioTeachers) {
-    if (!teacher.isActive || instructorBuckets.has(teacher.id)) continue
-    const name = `${teacher.user.firstName} ${teacher.user.lastName}`
-    instructorBuckets.set(teacher.id, {
-      id: teacher.id,
-      name,
-      specialties: teacher.specialties,
-      classes: 0,
-      totalCapacity: 0,
-      attended: 0,
-      revenue: 0,
-      rating: null,
-      previousClasses: previousClassCountByTeacherId.get(teacher.id) || 0,
-      clientVisits: new Map<string, number>()
-    })
-  }
-
-  const instructorRows = Array.from(instructorBuckets.values())
-    .map((bucket) => {
-      const uniqueClients = bucket.clientVisits.size
-      const repeatClients = Array.from(bucket.clientVisits.values()).filter((count) => count > 1).length
-      const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
-      const retention = ratioPercentage(repeatClients, uniqueClients, 1)
-      const trend =
-        bucket.classes > bucket.previousClasses
-          ? "up"
-          : bucket.classes < bucket.previousClasses
-            ? "down"
-            : "stable"
-
-      return {
-        id: bucket.id,
-        name: bucket.name,
-        classes: bucket.classes,
-        avgFill,
-        revenue: roundCurrency(bucket.revenue),
-        rating: bucket.rating,
-        retention,
-        trend,
-        specialties: bucket.specialties
-      }
-    })
-    .sort((a, b) => b.classes - a.classes || a.name.localeCompare(b.name))
+  const instructorRows = buildInstructorRows({
+    classSessions,
+    studioTeachers,
+    previousClassCountByTeacherId,
+  })
 
   const {
     visitCountByClientId,
