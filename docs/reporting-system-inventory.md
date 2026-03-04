@@ -465,6 +465,10 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/location-entity.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/locations/[locationId]/route.ts`
+- Client entity profile summary composition:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/client-entity.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/clients/[clientId]/route.ts`
 - Studio report marketing composition:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Leaderboard presentation / participant counts:
