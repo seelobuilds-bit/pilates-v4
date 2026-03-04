@@ -9,6 +9,7 @@ import {
   buildAtRiskCandidates,
   buildClientSummary,
 } from "@/lib/reporting/retention"
+import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
@@ -912,70 +913,15 @@ export async function GET(request: NextRequest) {
     reportEndDate
   )
 
-  const atRiskList = atRiskCandidates.slice(0, 10).map((client) => ({
-    id: client.id,
-    name: client.name,
-    email: client.email,
-    lastVisit: client.lastVisit
-      ? client.lastVisit.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-      : "Never",
-    visits: client.visits,
-    status: client.status
-  }))
-
-  const cohortRanges = [
-    { label: "0-30 days", min: 0, max: 30 },
-    { label: "31-90 days", min: 31, max: 90 },
-    { label: "91-180 days", min: 91, max: 180 },
-    { label: "181+ days", min: 181, max: Number.POSITIVE_INFINITY }
-  ]
-
-  const cohortBuckets = cohortRanges.map((range) => ({
-    cohort: range.label,
-    total: 0,
-    retained: 0
-  }))
-  for (const client of activeClientsList) {
-    const ageInDays = Math.floor((reportEndDate.getTime() - client.createdAt.getTime()) / (1000 * 60 * 60 * 24))
-    const bucketIndex = cohortRanges.findIndex((range) => ageInDays >= range.min && ageInDays <= range.max)
-    if (bucketIndex < 0) continue
-    cohortBuckets[bucketIndex].total += 1
-    if (recentlyActiveClientIds.has(client.id)) {
-      cohortBuckets[bucketIndex].retained += 1
-    }
-  }
-  const cohortRetention = cohortBuckets.map((bucket) => ({
-    cohort: bucket.cohort,
-    retained: ratioPercentage(bucket.retained, bucket.total, 1)
-  }))
-
-  const cancellationReasonCounts = new Map<string, number>()
-  for (const booking of cancelledBookingsInPeriod) {
-    const reason = booking.cancellationReason?.trim() || "No reason provided"
-    cancellationReasonCounts.set(reason, (cancellationReasonCounts.get(reason) || 0) + 1)
-  }
-  const churnReasons = Array.from(cancellationReasonCounts.entries())
-    .map(([reason, count]) => ({ reason, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-
-  const membershipBuckets = [
-    { type: "No credits", count: 0 },
-    { type: "1-4 credits", count: 0 },
-    { type: "5-9 credits", count: 0 },
-    { type: "10+ credits", count: 0 }
-  ]
-  for (const client of activeClientsList) {
-    if (client.credits <= 0) membershipBuckets[0].count += 1
-    else if (client.credits <= 4) membershipBuckets[1].count += 1
-    else if (client.credits <= 9) membershipBuckets[2].count += 1
-    else membershipBuckets[3].count += 1
-  }
-  const membershipBreakdown = membershipBuckets.map((bucket) => ({
-    type: bucket.type,
-    count: bucket.count,
-    percent: ratioPercentage(bucket.count, activeClientsList.length, 1)
-  }))
+  const retention = buildRetentionSummary({
+    atRiskCandidates,
+    activeClientsList,
+    recentlyActiveClientIds,
+    cancelledBookingsInPeriod,
+    reportEndDate,
+    churnedClients,
+    totalClients,
+  })
 
   const marketingInsights =
     emailsSent > 0
@@ -1049,15 +995,7 @@ export async function GET(request: NextRequest) {
     },
     clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
     instructors: instructorRows,
-    retention: {
-      atRiskClients: atRiskCandidates.length,
-      atRiskList,
-      membershipBreakdown,
-      churnReasons,
-      cohortRetention,
-      churnRate: ratioPercentage(churnedClients, totalClients, 1),
-      churnDefinition: "inactive clients / total clients"
-    },
+    retention,
     classes: {
       total: classSessions.length,
       totalCapacity,
