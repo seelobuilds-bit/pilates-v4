@@ -4,7 +4,7 @@ import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performan
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
-import { type MobileReportMetric } from "@/lib/reporting/mobile-report-metrics"
+import { buildMobileReportsPayload, type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { buildMobileOwnerReportMetrics } from "@/lib/reporting/mobile-owner-report-metrics"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportMetrics } from "@/lib/reporting/mobile-teacher-report-metrics"
@@ -19,30 +19,6 @@ import {
 } from "@/lib/reporting/studio-report-base-query"
 import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-export type MobileReportsPayload = {
-  role: "OWNER" | "TEACHER" | "CLIENT"
-  studio: {
-    id: string
-    name: string
-    subdomain: string
-    primaryColor: string | null
-    currency: string | null
-  }
-  periodDays: number
-  generatedAt: string
-  range: {
-    start: string
-    end: string
-  }
-  metrics: MobileReportMetric[]
-  highlights: Array<{ label: string; value: string }>
-  series: Array<{
-    label: string
-    start: string
-    end: string
-    metrics: Record<string, number>
-  }>
-}
 
 export class MobileReportsError extends Error {
   status: number
@@ -124,19 +100,17 @@ export async function getMobileReports(
       newClients: currentNewClientRows,
     })
 
-    return {
+    return buildMobileReportsPayload({
       role: "OWNER",
       studio: studioSummary,
       periodDays,
-      generatedAt: periodEnd.toISOString(),
-      range: {
-        start: currentStart.toISOString(),
-        end: responseEnd.toISOString(),
-      },
+      periodEnd,
+      rangeStart: currentStart,
+      rangeEnd: responseEnd,
       metrics: buildMobileOwnerReportMetrics(ownerMetrics),
       highlights: buildClassTypeHighlights(currentSessions),
       series: ownerSeries,
-    }
+    })
   }
 
   if (decoded.role === "TEACHER") {
@@ -179,19 +153,17 @@ export async function getMobileReports(
       sessions: currentSessions,
     })
 
-    return {
+    return buildMobileReportsPayload({
       role: "TEACHER",
       studio: studioSummary,
       periodDays,
-      generatedAt: periodEnd.toISOString(),
-      range: {
-        start: currentStart.toISOString(),
-        end: responseEnd.toISOString(),
-      },
+      periodEnd,
+      rangeStart: currentStart,
+      rangeEnd: responseEnd,
       metrics: buildMobileTeacherReportMetrics(teacherMetrics),
       highlights: buildClassTypeHighlights(currentSessions),
       series: teacherSeries,
-    }
+    })
   }
 
   const clientId = decoded.clientId || decoded.sub
@@ -260,17 +232,15 @@ export async function getMobileReports(
     bookings: currentBookings,
   })
 
-  return {
+  return buildMobileReportsPayload({
     role: "CLIENT",
     studio: studioSummary,
     periodDays,
-    generatedAt: periodEnd.toISOString(),
-    range: {
-      start: currentStart.toISOString(),
-      end: responseEnd.toISOString(),
-    },
+    periodEnd,
+    rangeStart: currentStart,
+    rangeEnd: responseEnd,
     metrics: buildMobileClientReportMetrics(clientMetrics),
     highlights: buildMobileClientHighlights(nextBooking),
     series: clientSeries,
-  }
+  })
 }
