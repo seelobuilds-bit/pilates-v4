@@ -1,5 +1,5 @@
 import { ratioPercentage } from "./metrics"
-import { calculateChurnRate } from "./retention"
+import { buildChurnMeta } from "./retention-churn"
 
 type ActiveClientLike = {
   id: string
@@ -140,7 +140,6 @@ export function buildRetentionSummary({
     membershipBreakdown,
     churnReasons,
     cohortRetention,
-    churnRate: calculateChurnRate(churnedClients, totalClients, 1),
-    churnDefinition: "inactive clients / total clients",
+    ...buildChurnMeta(churnedClients, totalClients, 1),
   }
 }

@@ -1,5 +1,6 @@
 import { buildReportRangePayload } from "./date-range"
 import { buildClientSummary } from "./retention"
+import { buildEmptyChurnMeta } from "./retention-churn"
 
 function buildEmptyRevenueSummary() {
   return {
@@ -33,8 +34,7 @@ function buildEmptyRetentionSummary(includeChurnMeta: boolean) {
 
   return {
     ...base,
-    churnRate: 0,
-    churnDefinition: "inactive clients / total clients",
+    ...buildEmptyChurnMeta(),
   }
 }
 
