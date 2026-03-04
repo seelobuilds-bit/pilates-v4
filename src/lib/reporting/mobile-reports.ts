@@ -8,6 +8,7 @@ import {
   buildMobileMetric,
   type MobileReportMetric,
 } from "@/lib/reporting/mobile-report-metrics"
+import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
@@ -124,46 +125,12 @@ export async function getMobileReports(
       periodEnd,
     })
 
-    const ownerBuckets = buildTrendBuckets(currentStart, periodEnd)
-    const ownerSeries = ownerBuckets.map((bucket) => ({
-      label: bucket.label,
-      start: bucket.start.toISOString(),
-      end: bucket.end.toISOString(),
-      metrics: {
-        revenue: 0,
-        bookings: 0,
-        classes: 0,
-        "fill-rate": 0,
-        "new-clients": 0,
-      },
-    }))
-    const ownerCapacityByBucket = ownerBuckets.map(() => 0)
-    const ownerAttendedByBucket = ownerBuckets.map(() => 0)
-
-    for (const booking of currentBookings) {
-      if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
-      const index = bucketIndexForDate(booking.classSession.startTime, ownerBuckets)
-      if (index < 0) continue
-      ownerSeries[index].metrics.bookings += 1
-      ownerSeries[index].metrics.revenue = roundCurrency(ownerSeries[index].metrics.revenue + bookingRevenue(booking))
-    }
-
-    for (const session of currentSessions) {
-      const index = bucketIndexForDate(session.startTime, ownerBuckets)
-      if (index < 0) continue
-      ownerSeries[index].metrics.classes += 1
-      ownerCapacityByBucket[index] += session.capacity
-      ownerAttendedByBucket[index] += countAttendedBookings(session.bookings)
-    }
-
-    for (const client of currentNewClientRows) {
-      const index = bucketIndexForDate(client.createdAt, ownerBuckets)
-      if (index < 0) continue
-      ownerSeries[index].metrics["new-clients"] += 1
-    }
-
-    ownerSeries.forEach((point, index) => {
-      point.metrics["fill-rate"] = ratioPercentage(ownerAttendedByBucket[index], ownerCapacityByBucket[index], 1)
+    const ownerSeries = buildMobileOwnerSeries({
+      startDate: currentStart,
+      endDate: periodEnd,
+      bookings: currentBookings,
+      sessions: currentSessions,
+      newClients: currentNewClientRows,
     })
 
     return {
