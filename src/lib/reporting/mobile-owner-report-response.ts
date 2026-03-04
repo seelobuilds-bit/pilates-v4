@@ -1,6 +1,7 @@
 import { buildClassTypeHighlights } from "./mobile-report-highlights"
 import { buildMobileOwnerReportMetrics } from "./mobile-owner-report-metrics"
-import { buildMobileReportsPayload, type MobileReportsPayload } from "./mobile-report-payload"
+import { type MobileReportsPayload } from "./mobile-report-payload"
+import { buildMobileRoleReportResponse } from "./mobile-report-response"
 
 type StudioSummary = MobileReportsPayload["studio"]
 
@@ -14,7 +15,7 @@ export function buildMobileOwnerReportResponse(args: {
   sessions: Parameters<typeof buildClassTypeHighlights>[0]
   series: MobileReportsPayload["series"]
 }): MobileReportsPayload {
-  return buildMobileReportsPayload({
+  return buildMobileRoleReportResponse({
     role: "OWNER",
     studio: args.studio,
     periodDays: args.periodDays,

@@ -1,5 +1,6 @@
 import { buildClassTypeHighlights } from "./mobile-report-highlights"
-import { buildMobileReportsPayload, type MobileReportsPayload } from "./mobile-report-payload"
+import { type MobileReportsPayload } from "./mobile-report-payload"
+import { buildMobileRoleReportResponse } from "./mobile-report-response"
 import { buildMobileTeacherReportMetrics } from "./mobile-teacher-report-metrics"
 
 type StudioSummary = MobileReportsPayload["studio"]
@@ -14,7 +15,7 @@ export function buildMobileTeacherReportResponse(args: {
   sessions: Parameters<typeof buildClassTypeHighlights>[0]
   series: MobileReportsPayload["series"]
 }): MobileReportsPayload {
-  return buildMobileReportsPayload({
+  return buildMobileRoleReportResponse({
     role: "TEACHER",
     studio: args.studio,
     periodDays: args.periodDays,
