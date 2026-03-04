@@ -8,11 +8,9 @@ import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
 import { fetchClientSummaryCounts } from "@/lib/reporting/client-summary-query"
-import { fetchMarketingAndSocialInputs } from "@/lib/reporting/marketing-social-query"
-import { fetchStudioReportBaseData } from "@/lib/reporting/studio-report-base-query"
+import { loadStudioReportData } from "@/lib/reporting/studio-report-loader"
 import {
   buildRetentionAndClientSummary,
-  fetchActiveClientVisitRows,
 } from "@/lib/reporting/retention-composition"
 
 export async function buildStudioReportResponse(args: {
@@ -38,14 +36,6 @@ export async function buildStudioReportResponse(args: {
       studioTeachers,
       studioClients,
       cancelledBookingsInPeriod,
-    } = await fetchStudioReportBaseData({
-      studioId,
-      startDate,
-      reportEndDate,
-      previousStartDate,
-    })
-
-    const {
       periodMessages,
       previousPeriodMessages,
       reminderAutomations,
@@ -54,20 +44,12 @@ export async function buildStudioReportResponse(args: {
       totalSocialTriggered,
       totalSocialResponded,
       totalSocialBooked,
-    } = await fetchMarketingAndSocialInputs({
+      activeClientVisitRows,
+    } = await loadStudioReportData({
       studioId,
       startDate,
       reportEndDate,
       previousStartDate,
-    })
-
-    const activityLookbackStart = new Date(reportEndDate)
-    activityLookbackStart.setDate(activityLookbackStart.getDate() - 365)
-
-    const activeClientVisitRows = await fetchActiveClientVisitRows({
-      studioId,
-      activityLookbackStart,
-      reportEndDate,
     })
 
     const revenue = buildRevenueSummary({
