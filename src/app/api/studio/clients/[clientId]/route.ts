@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
+import { filterByInclusiveDateRange } from "@/lib/reporting/date-range"
 import {
   buildClientEntityStats,
   mapClientCommunications,
@@ -64,10 +65,12 @@ export async function GET(
       }
     })
 
-    const reportBookings = allBookings.filter((booking) => {
-      const classStart = new Date(booking.classSession.startTime)
-      return classStart >= context.startDate && classStart <= context.endDate
-    })
+    const reportBookings = filterByInclusiveDateRange(
+      allBookings,
+      (booking) => new Date(booking.classSession.startTime),
+      context.startDate,
+      context.endDate
+    )
 
     const communications = mapClientCommunications(messages)
     const stats = buildClientEntityStats({

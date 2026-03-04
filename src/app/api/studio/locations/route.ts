@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 import { fetchStudioLocations } from "@/lib/studio-directory-query"
 
 export async function GET() {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
+  if ("error" in auth) return auth.error
 
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const locations = await fetchStudioLocations(session.user.studioId)
+  const locations = await fetchStudioLocations(auth.studioId)
 
   return NextResponse.json(locations)
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getSession()
-
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await requireOwnerStudioAccess()
+  if ("error" in auth) return auth.error
 
   try {
     const body = await request.json()
@@ -34,7 +28,7 @@ export async function POST(request: NextRequest) {
         state,
         zipCode,
         phone,
-        studioId: session.user.studioId
+        studioId: auth.studioId
       }
     })
 

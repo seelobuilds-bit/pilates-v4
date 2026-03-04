@@ -169,3 +169,16 @@ export function buildReportRangePayload(days: number, startDate: Date, endDate: 
     endDate: endDate.toISOString(),
   }
 }
+
+export function isWithinInclusiveDateRange(value: Date, startDate: Date, endDate: Date) {
+  return value >= startDate && value <= endDate
+}
+
+export function filterByInclusiveDateRange<T>(
+  items: T[],
+  getDate: (item: T) => Date,
+  startDate: Date,
+  endDate: Date
+) {
+  return items.filter((item) => isWithinInclusiveDateRange(getDate(item), startDate, endDate))
+}

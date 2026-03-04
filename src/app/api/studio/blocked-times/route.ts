@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 import { fetchStudioBlockedTimes } from "@/lib/studio-read-models"
 
 // GET - Fetch all blocked times for all teachers in the studio (for schedule view)
 export async function GET(request: NextRequest) {
-  const session = await getSession()
-
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await requireOwnerStudioAccess()
+  if ("error" in auth) return auth.error
 
   const searchParams = request.nextUrl.searchParams
   const start = searchParams.get("start")
@@ -17,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const blockedTimes = await fetchStudioBlockedTimes({
-      studioId: session.user.studioId,
+      studioId: auth.studioId,
       start,
       end,
       teacherId,
@@ -29,7 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch blocked times" }, { status: 500 })
   }
 }
-
 
 
 

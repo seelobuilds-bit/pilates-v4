@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
+import { filterByInclusiveDateRange } from "@/lib/reporting/date-range"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import {
   buildTeacherEntityReportSummary,
@@ -86,14 +87,18 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
-    const reportClassSessions = allClassSessions.filter((session) => {
-      const classStart = new Date(session.startTime)
-      return classStart >= context.startDate && classStart <= context.endDate
-    })
-    const reportBookings = allBookings.filter((booking) => {
-      const classStart = new Date(booking.classSession.startTime)
-      return classStart >= context.startDate && classStart <= context.endDate
-    })
+    const reportClassSessions = filterByInclusiveDateRange(
+      allClassSessions,
+      (session) => new Date(session.startTime),
+      context.startDate,
+      context.endDate
+    )
+    const reportBookings = filterByInclusiveDateRange(
+      allBookings,
+      (booking) => new Date(booking.classSession.startTime),
+      context.startDate,
+      context.endDate
+    )
 
     const { stats, extendedStats } = buildTeacherEntityReportSummary({
       reportClassSessions,

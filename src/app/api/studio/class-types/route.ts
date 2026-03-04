@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession } from "@/lib/session"
+import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 import { fetchStudioClassTypes } from "@/lib/studio-directory-query"
 
 export async function GET() {
-  const session = await getSession()
+  const auth = await requireOwnerStudioAccess()
+  if ("error" in auth) return auth.error
 
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const classTypes = await fetchStudioClassTypes(session.user.studioId)
+  const classTypes = await fetchStudioClassTypes(auth.studioId)
 
   return NextResponse.json(classTypes)
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getSession()
-
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await requireOwnerStudioAccess()
+  if ("error" in auth) return auth.error
 
   try {
     const body = await request.json()
@@ -33,7 +27,7 @@ export async function POST(request: NextRequest) {
         duration,
         capacity,
         price,
-        studioId: session.user.studioId
+        studioId: auth.studioId
       }
     })
 
