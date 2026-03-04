@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
-import {
-  addCountToMonthlyBuckets,
-  buildMonthlyBucketLookup,
-  buildMonthlyCountBuckets,
-} from "@/lib/reporting/monthly"
-import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { buildClassTypeEntityStats } from "@/lib/reporting/class-type-entity"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
@@ -89,76 +84,12 @@ export async function GET(
     orderBy: { createdAt: "desc" }
   })
 
-  const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
-  const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = resolveBookingRevenue(booking.paidAmount, classType.price)
-    return sum + amount
-  }, 0)
-
-  const teacherCounts = new Map<string, number>()
-  const locationBookingCounts = new Map<string, number>()
-  const timeSlotCounts = new Map<string, number>()
-
-  for (const session of classSessions) {
-    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`.trim()
-    teacherCounts.set(teacherName, (teacherCounts.get(teacherName) || 0) + 1)
-
-    const slot = new Date(session.startTime).toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit"
-    })
-    timeSlotCounts.set(slot, (timeSlotCounts.get(slot) || 0) + 1)
-  }
-
-  for (const booking of nonCancelledBookings) {
-    const locationName = booking.classSession.location.name
-    locationBookingCounts.set(locationName, (locationBookingCounts.get(locationName) || 0) + 1)
-  }
-
-  const monthlyBuckets = buildMonthlyCountBuckets(endDate, 6)
-  const monthlyLookup = buildMonthlyBucketLookup(monthlyBuckets)
-
-  for (const booking of nonCancelledBookings) {
-    addCountToMonthlyBuckets(monthlyLookup, new Date(booking.classSession.startTime))
-  }
-
-  const recentClasses = classSessions.slice(0, 10).map((session) => ({
-    date: new Date(session.startTime).toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit"
-    }),
-    teacher: `${session.teacher.user.firstName} ${session.teacher.user.lastName}`.trim(),
-    location: session.location.name,
-    attendance: session._count.bookings,
-    capacity: session.capacity
-  }))
-
-  const stats = {
-    totalBookings: bookings.length,
-    totalRevenue: Math.round(totalRevenue * 100) / 100,
-    avgAttendance:
-      classSessions.length > 0
-        ? Math.round((nonCancelledBookings.length / classSessions.length) * 10) / 10
-        : 0,
-    avgRating: null,
-    ratingDataAvailable: false,
-    topTeachers: Array.from(teacherCounts.entries())
-      .map(([name, classes]) => ({ name, classes, rating: null }))
-      .sort((a, b) => b.classes - a.classes)
-      .slice(0, 5),
-    topLocations: Array.from(locationBookingCounts.entries())
-      .map(([name, bookingsCount]) => ({ name, bookings: bookingsCount }))
-      .sort((a, b) => b.bookings - a.bookings)
-      .slice(0, 5),
-    monthlyBookings: monthlyBuckets.map(({ month, count }) => ({ month, count })),
-    popularTimes: Array.from(timeSlotCounts.entries())
-      .map(([time, count]) => ({ time, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5),
-    recentClasses
-  }
+  const stats = buildClassTypeEntityStats({
+    classSessions,
+    bookings,
+    classPrice: classType.price,
+    endDate,
+  })
 
   const locationIds = Array.from(new Set(classSessions.map((session) => session.locationId)))
   const teacherIds = Array.from(new Set(classSessions.map((session) => session.teacherId)))

@@ -457,6 +457,10 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/teacher-entity.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/teachers/[teacherId]/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/teachers/[teacherId]/route.ts`
+- Class-type entity profile summary composition:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/class-type-entity.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/class-types/[classTypeId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/class-types/[classTypeId]/route.ts`
 - Studio report marketing composition:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Leaderboard presentation / participant counts:
