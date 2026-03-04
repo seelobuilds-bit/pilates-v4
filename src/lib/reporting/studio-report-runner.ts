@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { buildReportRangePayload } from "@/lib/reporting/date-range"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { buildClassesSummary } from "@/lib/reporting/classes"
@@ -10,6 +9,7 @@ import {
   buildRetentionAndClientSummary,
 } from "@/lib/reporting/retention-composition"
 import { loadStudioReportData } from "@/lib/reporting/studio-report-loader"
+import { buildStudioReportPayload } from "./studio-report-payload"
 
 type StudioReportLoadedData = Awaited<ReturnType<typeof loadStudioReportData>>
 
@@ -98,15 +98,19 @@ export async function runStudioReport(args: {
     churnedClients,
   })
 
-  return NextResponse.json({
-    revenue,
-    clients,
-    instructors: instructorRows,
-    retention,
-    classes: classesSummary,
-    bookings: bookingSummary,
-    marketing,
-    social,
-    range: buildReportRangePayload(days, startDate, reportEndDate),
-  })
+  return NextResponse.json(
+    buildStudioReportPayload({
+      days,
+      startDate,
+      reportEndDate,
+      revenue,
+      clients,
+      instructors: instructorRows,
+      retention,
+      classes: classesSummary,
+      bookings: bookingSummary,
+      marketing,
+      social,
+    })
+  )
 }
