@@ -1,5 +1,4 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
-import { MobileReportsError } from "@/lib/reporting/mobile-report-errors"
 import { buildMobileClientReportResponse } from "@/lib/reporting/mobile-client-report-response"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
@@ -9,6 +8,10 @@ import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-rep
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
+import {
+  resolveMobileClientReportId,
+  resolveMobileTeacherReportId,
+} from "@/lib/reporting/mobile-report-role-context"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
@@ -95,20 +98,18 @@ export async function getMobileReports(
   }
 
   if (decoded.role === "TEACHER") {
-    if (!decoded.teacherId) {
-      throw new MobileReportsError("Teacher session invalid", 401)
-    }
+    const teacherId = resolveMobileTeacherReportId(decoded)
 
     const [currentWindow, previousWindow] = await Promise.all([
       fetchTeacherPerformanceWindow({
         studioId: studio.id,
-        teacherId: decoded.teacherId,
+        teacherId,
         startDate: currentStart,
         endDate: periodEnd,
       }),
       fetchTeacherPerformanceWindow({
         studioId: studio.id,
-        teacherId: decoded.teacherId,
+        teacherId,
         startDate: previousStart,
         endDate: currentStart,
       }),
@@ -146,7 +147,7 @@ export async function getMobileReports(
     })
   }
 
-  const clientId = decoded.clientId || decoded.sub
+  const clientId = resolveMobileClientReportId(decoded)
 
   const [currentBookings, previousBookings, nextBooking] = await Promise.all([
     db.booking.findMany({
