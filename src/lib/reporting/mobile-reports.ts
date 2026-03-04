@@ -1,8 +1,6 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
-import { buildMobileClientReportResponse } from "@/lib/reporting/mobile-client-report-response"
+import { runMobileClientReport } from "@/lib/reporting/mobile-client-report-runner"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
-import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
-import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
 import { runMobileTeacherReport } from "@/lib/reporting/mobile-teacher-report-runner"
@@ -149,25 +147,14 @@ export async function getMobileReports(
     }),
   ])
 
-  const clientMetrics = buildMobileClientWindowMetrics({
-    currentBookings,
-    previousBookings,
-  })
-
-  const clientSeries = buildMobileClientSeries({
-    startDate: currentStart,
-    endDate: periodEnd,
-    bookings: currentBookings,
-  })
-
-  return buildMobileClientReportResponse({
+  return runMobileClientReport({
     studio: studioSummary,
     periodDays,
+    currentStart,
     periodEnd,
-    rangeStart: currentStart,
-    rangeEnd: responseEnd,
-    metrics: clientMetrics,
+    responseEnd,
+    currentBookings,
+    previousBookings,
     nextBooking,
-    series: clientSeries,
   })
 }
