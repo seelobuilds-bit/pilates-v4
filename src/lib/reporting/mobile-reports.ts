@@ -3,11 +3,15 @@ import {
   countAttendedBookings,
 } from "@/lib/reporting/attendance"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
+import {
+  buildMobileMetric,
+  type MobileReportMetric,
+} from "@/lib/reporting/mobile-report-metrics"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
-import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import {
   fetchStudioReportBaseData,
@@ -17,17 +21,6 @@ import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-wind
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 import { bucketIndexForDate, buildTrendBuckets } from "@/lib/reporting/trend-series"
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
-
-export type MobileMetricFormat = "number" | "currency" | "percent"
-
-export type MobileReportMetric = {
-  id: string
-  label: string
-  value: number
-  previousValue: number
-  changePct: number
-  format: MobileMetricFormat
-}
 
 export type MobileReportsPayload = {
   role: "OWNER" | "TEACHER" | "CLIENT"
@@ -64,27 +57,8 @@ export class MobileReportsError extends Error {
   }
 }
 
-function calcChange(current: number, previous: number) {
-  if (previous === 0) {
-    if (current === 0) return 0
-    return 100
-  }
-  return roundTo(((current - previous) / previous) * 100, 1)
-}
-
 function bookingRevenue(booking: { paidAmount: number | null; classSession: { classType: { price: number } } }) {
   return resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-}
-
-function metric(id: string, label: string, format: MobileMetricFormat, value: number, previousValue: number): MobileReportMetric {
-  return {
-    id,
-    label,
-    value,
-    previousValue,
-    changePct: calcChange(value, previousValue),
-    format,
-  }
 }
 
 function classTypeHighlights(
@@ -230,11 +204,17 @@ export async function getMobileReports(
         end: responseEnd.toISOString(),
       },
       metrics: [
-        metric("revenue", "Revenue", "currency", ownerMetrics.currentRevenue, ownerMetrics.previousRevenue),
-        metric("bookings", "Bookings", "number", ownerMetrics.currentBooked, ownerMetrics.previousBooked),
-        metric("classes", "Classes", "number", ownerMetrics.currentClasses, ownerMetrics.previousClasses),
-        metric("fill-rate", "Fill Rate", "percent", ownerMetrics.currentFillRate, ownerMetrics.previousFillRate),
-        metric("new-clients", "New Clients", "number", ownerMetrics.currentNewClients, ownerMetrics.previousNewClients),
+        buildMobileMetric("revenue", "Revenue", "currency", ownerMetrics.currentRevenue, ownerMetrics.previousRevenue),
+        buildMobileMetric("bookings", "Bookings", "number", ownerMetrics.currentBooked, ownerMetrics.previousBooked),
+        buildMobileMetric("classes", "Classes", "number", ownerMetrics.currentClasses, ownerMetrics.previousClasses),
+        buildMobileMetric("fill-rate", "Fill Rate", "percent", ownerMetrics.currentFillRate, ownerMetrics.previousFillRate),
+        buildMobileMetric(
+          "new-clients",
+          "New Clients",
+          "number",
+          ownerMetrics.currentNewClients,
+          ownerMetrics.previousNewClients
+        ),
       ],
       highlights: classTypeHighlights(currentSessions),
       series: ownerSeries,
@@ -329,11 +309,23 @@ export async function getMobileReports(
         end: responseEnd.toISOString(),
       },
       metrics: [
-        metric("revenue", "Revenue", "currency", teacherMetrics.currentRevenue, teacherMetrics.previousRevenue),
-        metric("classes", "Classes", "number", teacherMetrics.currentClasses, teacherMetrics.previousClasses),
-        metric("students", "Unique Students", "number", teacherMetrics.currentStudents, teacherMetrics.previousStudents),
-        metric("fill-rate", "Fill Rate", "percent", teacherMetrics.currentFillRate, teacherMetrics.previousFillRate),
-        metric(
+        buildMobileMetric("revenue", "Revenue", "currency", teacherMetrics.currentRevenue, teacherMetrics.previousRevenue),
+        buildMobileMetric("classes", "Classes", "number", teacherMetrics.currentClasses, teacherMetrics.previousClasses),
+        buildMobileMetric(
+          "students",
+          "Unique Students",
+          "number",
+          teacherMetrics.currentStudents,
+          teacherMetrics.previousStudents
+        ),
+        buildMobileMetric(
+          "fill-rate",
+          "Fill Rate",
+          "percent",
+          teacherMetrics.currentFillRate,
+          teacherMetrics.previousFillRate
+        ),
+        buildMobileMetric(
           "completion-rate",
           "Completion Rate",
           "percent",
@@ -457,10 +449,10 @@ export async function getMobileReports(
       end: responseEnd.toISOString(),
     },
     metrics: [
-      metric("booked", "Booked Classes", "number", currentNonCancelled.length, previousNonCancelled.length),
-      metric("completed", "Completed Classes", "number", currentCompleted, previousCompleted),
-      metric("cancelled", "Cancelled", "number", currentCancelled, previousCancelled),
-      metric(
+      buildMobileMetric("booked", "Booked Classes", "number", currentNonCancelled.length, previousNonCancelled.length),
+      buildMobileMetric("completed", "Completed Classes", "number", currentCompleted, previousCompleted),
+      buildMobileMetric("cancelled", "Cancelled", "number", currentCancelled, previousCancelled),
+      buildMobileMetric(
         "completion-rate",
         "Completion Rate",
         "percent",
