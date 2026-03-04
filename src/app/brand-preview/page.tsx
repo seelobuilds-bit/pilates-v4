@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { DM_Sans, Instrument_Serif } from "next/font/google"
 import MarketingHomePage from "@/components/marketing/home-page"
 
@@ -16,8 +19,19 @@ const instrumentSerif = Instrument_Serif({
 })
 
 export default function BrandPreviewPage() {
+  const [showScrolledHeader, setShowScrolledHeader] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setShowScrolledHeader(window.scrollY > 28)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   return (
-    <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
+    <div
+      className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell ${showScrolledHeader ? "preview-header-visible" : "preview-header-hidden"}`}
+    >
       <style>{`
         .brand-preview-shell {
           --brand-accent: #9d7350;
@@ -44,6 +58,24 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell header.bg-white\\/80 {
           background-color: #f5f2ed !important;
+        }
+
+        .brand-preview-shell.preview-header-hidden header {
+          opacity: 0 !important;
+          transform: translateY(-110%) !important;
+          pointer-events: none !important;
+        }
+
+        .brand-preview-shell.preview-header-visible header {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+          pointer-events: auto !important;
+        }
+
+        .brand-preview-shell header {
+          transition:
+            opacity 220ms ease,
+            transform 220ms ease !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
@@ -604,6 +636,17 @@ export default function BrandPreviewPage() {
         .brand-preview-shell footer button:hover {
           background-color: #f2ede6 !important;
           color: #0d0d0d !important;
+        }
+
+        .brand-preview-shell .fixed.inset-0.z-\\[100\\] .relative.bg-white.rounded-2xl .bg-gradient-to-r.from-pink-500.to-violet-600 {
+          background: linear-gradient(140deg, #121417 0%, #1a1d22 60%, #101215 100%) !important;
+          color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell .fixed.inset-0.z-\\[100\\] .relative.bg-white.rounded-2xl .bg-gradient-to-r.from-pink-500.to-violet-600 h3,
+        .brand-preview-shell .fixed.inset-0.z-\\[100\\] .relative.bg-white.rounded-2xl .bg-gradient-to-r.from-pink-500.to-violet-600 p {
+          color: #faf8f5 !important;
+          -webkit-text-fill-color: #faf8f5 !important;
         }
 
         .brand-preview-shell input,
