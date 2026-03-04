@@ -5,10 +5,13 @@ import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
   loadParticipantMapsForEntries,
+  loadViewerEntryByPeriodId,
   resolveExpectedParticipantCountFromDb,
 } from "@/lib/leaderboards/query"
 import {
   attachParticipantsToEntries,
+  buildUserRanksByLeaderboardId,
+  collectCurrentPeriodIds,
   groupLeaderboardsByDisplayCategory,
   LEADERBOARD_DISPLAY_CATEGORIES,
 } from "@/lib/leaderboards/presentation"
@@ -123,43 +126,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const currentPeriodIds = enriched
-      .map((leaderboard) => leaderboard.currentPeriod?.id)
-      .filter((id): id is string => Boolean(id))
-
-    const myEntries = await db.leaderboardEntry.findMany({
-      where: {
-        periodId: { in: currentPeriodIds },
-        ...(participantType === "STUDIO" ? { studioId: decoded.studioId } : { teacherId: decoded.teacherId || "__missing_teacher__" }),
-      },
-      select: {
-        periodId: true,
-        rank: true,
-        score: true,
-      },
+    const viewerEntryByPeriodId = await loadViewerEntryByPeriodId({
+      participantType,
+      periodIds: collectCurrentPeriodIds(enriched),
+      studioId: decoded.studioId,
+      teacherId: decoded.teacherId,
     })
-
-    const myEntryByPeriod = new Map(myEntries.map((entry) => [entry.periodId, entry]))
-
-    const myRanks: Record<string, { rank: number; score: number } | null> = {}
-    for (const leaderboard of enriched) {
-      const currentPeriod = leaderboard.currentPeriod
-      if (!currentPeriod) {
-        myRanks[leaderboard.id] = null
-        continue
-      }
-
-      const entry = myEntryByPeriod.get(currentPeriod.id)
-      if (!entry || !entry.rank || entry.rank <= 0) {
-        myRanks[leaderboard.id] = null
-        continue
-      }
-
-      myRanks[leaderboard.id] = {
-        rank: entry.rank,
-        score: entry.score,
-      }
-    }
+    const myRanks = buildUserRanksByLeaderboardId(enriched, viewerEntryByPeriodId)
 
     return NextResponse.json({
       role: decoded.role,

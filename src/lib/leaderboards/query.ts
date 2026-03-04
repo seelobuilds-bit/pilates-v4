@@ -64,3 +64,29 @@ export async function loadParticipantMapsForEntries(entries: LeaderboardEntryPar
     ),
   }
 }
+
+export async function loadViewerEntryByPeriodId(params: {
+  participantType: LeaderboardParticipantType
+  periodIds: string[]
+  studioId?: string | null
+  teacherId?: string | null
+}) {
+  const { participantType, periodIds, studioId, teacherId } = params
+  if (!periodIds.length) return new Map<string, { rank: number | null; score: number }>()
+  if (participantType === "STUDIO" && !studioId) return new Map<string, { rank: number | null; score: number }>()
+  if (participantType === "TEACHER" && !teacherId) return new Map<string, { rank: number | null; score: number }>()
+
+  const entries = await db.leaderboardEntry.findMany({
+    where: {
+      periodId: { in: periodIds },
+      ...(participantType === "STUDIO" ? { studioId: studioId as string } : { teacherId: teacherId as string }),
+    },
+    select: {
+      periodId: true,
+      rank: true,
+      score: true,
+    },
+  })
+
+  return new Map(entries.map((entry) => [entry.periodId, { rank: entry.rank, score: entry.score }]))
+}

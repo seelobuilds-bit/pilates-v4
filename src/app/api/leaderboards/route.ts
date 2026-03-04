@@ -5,10 +5,13 @@ import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
   loadParticipantMapsForEntries,
+  loadViewerEntryByPeriodId,
   resolveExpectedParticipantCountFromDb,
 } from "@/lib/leaderboards/query"
 import {
   attachParticipantsToEntries,
+  buildUserRanksByLeaderboardId,
+  collectCurrentPeriodIds,
   groupLeaderboardsByDisplayCategory,
   LEADERBOARD_DISPLAY_CATEGORIES,
 } from "@/lib/leaderboards/presentation"
@@ -112,73 +115,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get user's rank in each leaderboard
-    const userRanks: Record<string, { rank: number; score: number } | null> = {}
-    const studioId = session.user.studioId
-    const teacherId = session.user.teacherId
-
-    const currentPeriods = enrichedLeaderboards
-      .map((lb) => ({
-        leaderboardId: lb.id,
-        participantType: lb.participantType,
-        periodId: lb.currentPeriod?.id ?? null
-      }))
-      .filter((item): item is { leaderboardId: string; participantType: LeaderboardParticipantType; periodId: string } =>
-        Boolean(item.periodId)
-      )
-
-    const studioPeriodIds = currentPeriods
-      .filter((item) => item.participantType === "STUDIO")
-      .map((item) => item.periodId)
-    const teacherPeriodIds = currentPeriods
-      .filter((item) => item.participantType === "TEACHER")
-      .map((item) => item.periodId)
-
-    const [studioEntries, teacherEntries] = await Promise.all([
-      studioId && studioPeriodIds.length
-        ? db.leaderboardEntry.findMany({
-            where: {
-              periodId: { in: studioPeriodIds },
-              studioId
-            },
-            select: { periodId: true, rank: true, score: true }
-          })
-        : Promise.resolve([]),
-      teacherId && teacherPeriodIds.length
-        ? db.leaderboardEntry.findMany({
-            where: {
-              periodId: { in: teacherPeriodIds },
-              teacherId
-            },
-            select: { periodId: true, rank: true, score: true }
-          })
-        : Promise.resolve([])
-    ])
-
-    const studioEntryByPeriod = new Map(studioEntries.map((entry) => [entry.periodId, entry]))
-    const teacherEntryByPeriod = new Map(teacherEntries.map((entry) => [entry.periodId, entry]))
-
-    for (const lb of enrichedLeaderboards) {
-      if (!lb.currentPeriod) {
-        userRanks[lb.id] = null
-        continue
-      }
-
-      const matchedEntry =
-        lb.participantType === "STUDIO"
-          ? studioEntryByPeriod.get(lb.currentPeriod.id)
-          : teacherEntryByPeriod.get(lb.currentPeriod.id)
-
-      if (!matchedEntry || !matchedEntry.rank || matchedEntry.rank <= 0) {
-        userRanks[lb.id] = null
-        continue
-      }
-
-      userRanks[lb.id] = {
-        rank: matchedEntry.rank,
-        score: matchedEntry.score
-      }
-    }
+    const viewerEntryByPeriodId = await loadViewerEntryByPeriodId({
+      participantType,
+      periodIds: collectCurrentPeriodIds(enrichedLeaderboards),
+      studioId: session.user.studioId,
+      teacherId: session.user.teacherId,
+    })
+    const userRanks = buildUserRanksByLeaderboardId(enrichedLeaderboards, viewerEntryByPeriodId)
 
     // Group leaderboards by category for UI
     const groupedLeaderboards = groupLeaderboardsByDisplayCategory(enrichedLeaderboards)

@@ -2,8 +2,10 @@ import { strict as assert } from "assert"
 import {
   attachParticipantsToEntries,
   attachParticipantToEntry,
+  buildUserRanksByLeaderboardId,
   compareLeaderboardEntries,
   collectEntryParticipantIds,
+  collectCurrentPeriodIds,
   createStudioParticipantMap,
   createTeacherParticipantMap,
   groupLeaderboardsByDisplayCategory,
@@ -67,5 +69,32 @@ assert.equal(grouped.length, 2)
 assert.equal(grouped[0].leaderboards.length, 1)
 assert.equal(grouped[1].leaderboards.length, 1)
 assert.equal(LEADERBOARD_DISPLAY_CATEGORIES.length, 6)
+
+const periodIds = collectCurrentPeriodIds([
+  { id: "l1", currentPeriod: { id: "p1" } },
+  { id: "l2", currentPeriod: null },
+  { id: "l3", currentPeriod: { id: "p3" } },
+])
+assert.deepEqual(periodIds, ["p1", "p3"])
+
+const userRanks = buildUserRanksByLeaderboardId(
+  [
+    { id: "l1", currentPeriod: { id: "p1" } },
+    { id: "l2", currentPeriod: null },
+    { id: "l3", currentPeriod: { id: "p3" } },
+    { id: "l4", currentPeriod: { id: "p4" } },
+  ],
+  new Map([
+    ["p1", { rank: 2, score: 99.5 }],
+    ["p3", { rank: 0, score: 20 }],
+    ["p4", { rank: null, score: 0 }],
+  ])
+)
+assert.deepEqual(userRanks, {
+  l1: { rank: 2, score: 99.5 },
+  l2: null,
+  l3: null,
+  l4: null,
+})
 
 console.log("Leaderboard presentation logic passed")

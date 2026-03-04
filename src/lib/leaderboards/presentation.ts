@@ -32,6 +32,15 @@ type LeaderboardWithCategory = {
   category: LeaderboardCategory
 }
 
+type CurrentPeriodRef = {
+  id: string
+}
+
+type LeaderboardWithCurrentPeriod = {
+  id: string
+  currentPeriod: CurrentPeriodRef | null
+}
+
 export const LEADERBOARD_DISPLAY_CATEGORIES: LeaderboardDisplayCategory[] = [
   { id: "content", name: "Content & Social", icon: "Share2" },
   { id: "growth", name: "Growth", icon: "TrendingUp" },
@@ -164,4 +173,38 @@ export function groupLeaderboardsByDisplayCategory<T extends LeaderboardWithCate
       (leaderboard) => resolveLeaderboardDisplayCategoryId(leaderboard.category) === category.id
     ),
   })).filter((category) => category.leaderboards.length > 0)
+}
+
+export function collectCurrentPeriodIds<T extends LeaderboardWithCurrentPeriod>(leaderboards: T[]) {
+  return leaderboards
+    .map((leaderboard) => leaderboard.currentPeriod?.id)
+    .filter((id): id is string => Boolean(id))
+}
+
+export function buildUserRanksByLeaderboardId<T extends LeaderboardWithCurrentPeriod>(
+  leaderboards: T[],
+  viewerEntryByPeriodId: Map<string, { rank: number | null; score: number }>
+) {
+  const ranks: Record<string, { rank: number; score: number } | null> = {}
+
+  for (const leaderboard of leaderboards) {
+    const currentPeriod = leaderboard.currentPeriod
+    if (!currentPeriod) {
+      ranks[leaderboard.id] = null
+      continue
+    }
+
+    const entry = viewerEntryByPeriodId.get(currentPeriod.id)
+    if (!entry || !entry.rank || entry.rank <= 0) {
+      ranks[leaderboard.id] = null
+      continue
+    }
+
+    ranks[leaderboard.id] = {
+      rank: entry.rank,
+      score: entry.score,
+    }
+  }
+
+  return ranks
 }
