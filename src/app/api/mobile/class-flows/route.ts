@@ -1,7 +1,7 @@
 import { ContentType, DifficultyLevel, Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { summarizeClassFlowCatalog } from "@/lib/class-flows/analytics"
+import { buildMobileClassFlowsCatalogResponse } from "@/lib/class-flows/response"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
@@ -144,8 +144,6 @@ export async function GET(request: NextRequest) {
           })
         : []
 
-    const progressByContentId = new Map(progressRows.map((row) => [row.contentId, row]))
-
     const recentRequests = await db.trainingRequest.findMany({
       where: {
         studioId: studio.id,
@@ -163,82 +161,23 @@ export async function GET(request: NextRequest) {
       take: 6,
     })
 
-    const mapContent = (content: (typeof categories)[number]["contents"][number]) => {
-      const progress = progressByContentId.get(content.id)
-      return {
-        id: content.id,
-        title: content.title,
-        description: content.description,
-        type: content.type,
-        difficulty: content.difficulty,
-        duration: content.duration,
-        videoUrl: content.videoUrl,
-        pdfUrl: content.pdfUrl,
-        thumbnailUrl: content.thumbnailUrl,
-        isFeatured: content.isFeatured,
-        tags: content.tags || [],
-        progress: progress
-          ? {
-              isCompleted: progress.isCompleted,
-              progressPercent: progress.progressPercent,
-              lastViewedAt: progress.lastViewedAt?.toISOString() || null,
-              completedAt: progress.completedAt?.toISOString() || null,
-              notes: progress.notes,
-            }
-          : null,
-      }
-    }
-
-    const mappedCategories = categories
-      .map((category) => ({
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        icon: category.icon,
-        color: category.color,
-        contentCount: category.contents.length,
-        contents: category.contents.map(mapContent),
-      }))
-      .filter((category) => category.contents.length > 0)
-
-    const mappedFeatured = featured.map((content) => mapContent(content))
-    const catalogStats = summarizeClassFlowCatalog(
-      mappedCategories.map((category) => ({
-        contentCount: category.contentCount,
-        featuredContentCount: category.contents.filter((content) => content.isFeatured).length,
-      })),
-      progressRows,
-      recentRequests
+    return NextResponse.json(
+      buildMobileClassFlowsCatalogResponse({
+        role: decoded.role,
+        studio: studioSummary,
+        filters: {
+          categoryId,
+          type,
+          difficulty,
+          featuredOnly,
+          search,
+        },
+        categories,
+        featured,
+        progressRows,
+        recentRequests,
+      })
     )
-
-    return NextResponse.json({
-      role: decoded.role,
-      studio: studioSummary,
-      filters: {
-        categoryId,
-        type,
-        difficulty,
-        featuredOnly,
-        search,
-      },
-      stats: {
-        categories: catalogStats.categories,
-        totalContent: catalogStats.totalContent,
-        featuredContent: catalogStats.featuredContent,
-        completedContent: catalogStats.completedContent,
-        pendingTrainingRequests: catalogStats.pendingTrainingRequests,
-      },
-      categories: mappedCategories,
-      featured: mappedFeatured,
-      recentRequests: recentRequests.map((request) => ({
-        id: request.id,
-        title: request.title,
-        status: request.status,
-        createdAt: request.createdAt.toISOString(),
-        preferredDate1: request.preferredDate1?.toISOString() || null,
-        scheduledDate: request.scheduledDate?.toISOString() || null,
-      })),
-    })
   } catch (error) {
     console.error("Mobile class flows error:", error)
     return NextResponse.json({ error: "Failed to load class flows" }, { status: 500 })

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-import { summarizeVaultCourseEnrollments } from "@/lib/vault/analytics"
+import { buildMobileVaultCourseDetailResponse } from "@/lib/vault/response"
 
 export async function GET(
   request: NextRequest,
@@ -198,144 +198,13 @@ export async function GET(
       return NextResponse.json({ error: "Vault course not found" }, { status: 404 })
     }
 
-    const enrollmentStats = summarizeVaultCourseEnrollments(course.enrollments)
-
-    const totalLessons = course.modules.reduce((sum, module) => sum + module._count.lessons, 0)
-    const publishedModules = course.modules.filter((module) => module.isPublished).length
-    const publishedLessons = course.modules.reduce(
-      (sum, module) => sum + module.lessons.filter((lesson) => lesson.isPublished).length,
-      0
+    return NextResponse.json(
+      buildMobileVaultCourseDetailResponse({
+        role: decoded.role,
+        studio: toMobileStudioSummary(studio),
+        course,
+      })
     )
-
-    return NextResponse.json({
-      role: decoded.role,
-      studio: toMobileStudioSummary(studio),
-      course: {
-        id: course.id,
-        title: course.title,
-        slug: course.slug,
-        subtitle: course.subtitle,
-        description: course.description,
-        thumbnailUrl: course.thumbnailUrl,
-        promoVideoUrl: course.promoVideoUrl,
-        audience: course.audience,
-        category: course.category,
-        tags: course.tags || [],
-        difficulty: course.difficulty,
-        pricingType: course.pricingType,
-        price: course.price,
-        currency: course.currency,
-        subscriptionInterval: course.subscriptionInterval,
-        subscriptionPrice: course.subscriptionPrice,
-        accessType: course.accessType,
-        accessDays: course.accessDays,
-        dripIntervalDays: course.dripIntervalDays,
-        hasLiveEvents: course.hasLiveEvents,
-        hasCertificate: course.hasCertificate,
-        includeInSubscription: course.includeInSubscription,
-        isPublished: course.isPublished,
-        isFeatured: course.isFeatured,
-        enrollmentCount: course.enrollmentCount,
-        reviewCount: course.reviewCount,
-        averageRating: course.averageRating,
-        createdAt: course.createdAt.toISOString(),
-        updatedAt: course.updatedAt.toISOString(),
-        publishedAt: course.publishedAt?.toISOString() || null,
-        creator: course.creator
-          ? {
-              id: course.creator.id,
-              firstName: course.creator.user.firstName,
-              lastName: course.creator.user.lastName,
-              email: course.creator.user.email,
-            }
-          : null,
-      },
-      stats: {
-        totalEnrollments: enrollmentStats.totalEnrollments,
-        activeEnrollments: enrollmentStats.activeEnrollments,
-        completedEnrollments: enrollmentStats.completedEnrollments,
-        completionRate: enrollmentStats.completionRate,
-        averageProgress: enrollmentStats.averageProgress,
-        totalModules: course.modules.length,
-        publishedModules,
-        totalLessons,
-        publishedLessons,
-      },
-      instructors: course.instructors.map((instructor) => ({
-        id: instructor.id,
-        role: instructor.role,
-        teacher: {
-          id: instructor.teacher.id,
-          firstName: instructor.teacher.user.firstName,
-          lastName: instructor.teacher.user.lastName,
-          email: instructor.teacher.user.email,
-        },
-      })),
-      modules: course.modules.map((module) => ({
-        id: module.id,
-        title: module.title,
-        description: module.description,
-        order: module.order,
-        dripDelay: module.dripDelay,
-        subscriptionAudience: module.subscriptionAudience,
-        isPublished: module.isPublished,
-        lessonCount: module._count.lessons,
-        publishedLessons: module.lessons.filter((lesson) => lesson.isPublished).length,
-        lessons: module.lessons.map((lesson) => ({
-          id: lesson.id,
-          title: lesson.title,
-          order: lesson.order,
-          contentType: lesson.contentType,
-          isPreview: lesson.isPreview,
-          isPublished: lesson.isPublished,
-          videoDuration: lesson.videoDuration,
-          resourceCount: lesson._count.resources,
-        })),
-      })),
-      recentEnrollments: course.enrollments.slice(0, 50).map((enrollment) => {
-        const participant =
-          enrollment.client
-            ? {
-                type: "CLIENT" as const,
-                firstName: enrollment.client.firstName,
-                lastName: enrollment.client.lastName,
-                email: enrollment.client.email,
-              }
-            : enrollment.teacher?.user
-              ? {
-                  type: "TEACHER" as const,
-                  firstName: enrollment.teacher.user.firstName,
-                  lastName: enrollment.teacher.user.lastName,
-                  email: enrollment.teacher.user.email,
-                }
-              : enrollment.user
-                ? {
-                    type: "OWNER" as const,
-                    firstName: enrollment.user.firstName,
-                    lastName: enrollment.user.lastName,
-                    email: enrollment.user.email,
-                  }
-                : {
-                    type: "UNKNOWN" as const,
-                    firstName: "Unknown",
-                    lastName: "User",
-                    email: "",
-                  }
-
-        return {
-          id: enrollment.id,
-          status: enrollment.status,
-          enrolledAt: enrollment.enrolledAt.toISOString(),
-          expiresAt: enrollment.expiresAt?.toISOString() || null,
-          completedAt: enrollment.completedAt?.toISOString() || null,
-          progressPercent: enrollment.progressPercent,
-          lessonsCompleted: enrollment.lessonsCompleted,
-          lastAccessedAt: enrollment.lastAccessedAt?.toISOString() || null,
-          paidAmount: enrollment.paidAmount,
-          participant,
-        }
-      }),
-    })
   } catch (error) {
     console.error("Mobile vault course detail error:", error)
     return NextResponse.json({ error: "Failed to load vault course detail" }, { status: 500 })

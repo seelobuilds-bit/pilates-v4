@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { fetchWebsiteAnalyticsSnapshot } from "./query"
+import {
+  buildWebsiteAnalyticsFallbackPayload,
+  buildWebsiteAnalyticsPayload,
+  toWebsiteAnalyticsRangePayload,
+} from "./payload"
 import { resolveWebsiteAnalyticsRange } from "./reporting"
 
 export async function buildWebsiteAnalyticsResponse(args: {
@@ -38,43 +43,15 @@ export async function buildWebsiteAnalyticsResponse(args: {
 
     return NextResponse.json({
       config,
-      range: {
-        period,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      },
-      analytics: {
-        overview: analytics.overview,
-        topPages: analytics.topPages,
-        topSources: analytics.topSources,
-        deviceBreakdown: analytics.deviceBreakdown,
-        recentEvents: analytics.recentEvents,
-        visitorTrend: analytics.visitorTrend,
-      },
+      range: toWebsiteAnalyticsRangePayload({ period, startDate, endDate }),
+      analytics: buildWebsiteAnalyticsPayload(analytics),
     })
   } catch (error) {
     console.error("Failed to fetch website analytics:", error)
     return NextResponse.json({
       config: null,
-      range: {
-        period,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      },
-      analytics: {
-        overview: {
-          totalPageViews: 0,
-          uniqueVisitors: 0,
-          totalConversions: 0,
-          conversionRate: "0",
-          avgPagesPerVisit: "0",
-        },
-        topPages: [],
-        topSources: [],
-        deviceBreakdown: [],
-        recentEvents: [],
-        visitorTrend: [],
-      },
+      range: toWebsiteAnalyticsRangePayload({ period, startDate, endDate }),
+      analytics: buildWebsiteAnalyticsFallbackPayload(),
       partial: true,
       warning: "Website analytics are temporarily unavailable. Retry in a moment.",
     })

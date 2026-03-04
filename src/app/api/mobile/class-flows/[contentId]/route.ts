@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { summarizeClassFlowDetail } from "@/lib/class-flows/analytics"
+import { buildMobileClassFlowDetailResponse } from "@/lib/class-flows/response"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-
-function articlePreview(value: string | null, maxLength = 420) {
-  if (!value) return null
-  const normalized = value.replace(/\s+/g, " ").trim()
-  if (!normalized) return null
-  if (normalized.length <= maxLength) return normalized
-  return `${normalized.slice(0, maxLength - 1)}...`
-}
 
 export async function GET(
   request: NextRequest,
@@ -147,83 +139,18 @@ export async function GET(
           })
         : []
 
-    const progressByContentId = new Map(progressRows.map((row) => [row.contentId, row]))
-    const currentProgress = progressByContentId.get(content.id)
-
-    const detailStats = summarizeClassFlowDetail(recentRequests, relatedRows.length, categoryContentCount)
-
-    return NextResponse.json({
-      role: decoded.role,
-      studio: toMobileStudioSummary(studio),
-      content: {
-        id: content.id,
-        title: content.title,
-        description: content.description,
-        type: content.type,
-        difficulty: content.difficulty,
-        duration: content.duration,
-        videoUrl: content.videoUrl,
-        pdfUrl: content.pdfUrl,
-        thumbnailUrl: content.thumbnailUrl,
-        articlePreview: articlePreview(content.articleContent),
-        isFeatured: content.isFeatured,
-        tags: content.tags || [],
-        createdAt: content.createdAt.toISOString(),
-        updatedAt: content.updatedAt.toISOString(),
-        category: content.category,
-        resourceAvailability: {
-          video: Boolean(content.videoUrl),
-          pdf: Boolean(content.pdfUrl),
-          article: Boolean(content.articleContent?.trim()),
-        },
-      },
-      progress: currentProgress
-        ? {
-            isCompleted: currentProgress.isCompleted,
-            progressPercent: currentProgress.progressPercent,
-            lastViewedAt: currentProgress.lastViewedAt?.toISOString() || null,
-            completedAt: currentProgress.completedAt?.toISOString() || null,
-            notes: currentProgress.notes,
-          }
-        : null,
-      relatedContent: relatedRows.map((row) => {
-        const progress = progressByContentId.get(row.id)
-        return {
-          id: row.id,
-          title: row.title,
-          type: row.type,
-          difficulty: row.difficulty,
-          duration: row.duration,
-          thumbnailUrl: row.thumbnailUrl,
-          isFeatured: row.isFeatured,
-          progress: progress
-            ? {
-                isCompleted: progress.isCompleted,
-                progressPercent: progress.progressPercent,
-                lastViewedAt: progress.lastViewedAt?.toISOString() || null,
-                completedAt: progress.completedAt?.toISOString() || null,
-                notes: progress.notes,
-              }
-            : null,
-        }
-      }),
-      recentRequests: recentRequests.map((request) => ({
-        id: request.id,
-        title: request.title,
-        status: request.status,
-        createdAt: request.createdAt.toISOString(),
-        preferredDate1: request.preferredDate1?.toISOString() || null,
-        scheduledDate: request.scheduledDate?.toISOString() || null,
-      })),
-      stats: {
-        categoryContentCount: detailStats.categoryContentCount,
-        relatedContentCount: detailStats.relatedContentCount,
-        requestCount: detailStats.requestCount,
-      },
-      permissions: {
+    return NextResponse.json(
+      buildMobileClassFlowDetailResponse({
+        role: decoded.role,
+        studio: toMobileStudioSummary(studio),
+        content,
+        categoryContentCount,
+        relatedRows,
+        progressRows,
+        recentRequests,
         canUpdateProgress: decoded.role === "TEACHER",
-      },
-    })
+      })
+    )
   } catch (error) {
     console.error("Mobile class flow detail error:", error)
     return NextResponse.json({ error: "Failed to load class flow detail" }, { status: 500 })

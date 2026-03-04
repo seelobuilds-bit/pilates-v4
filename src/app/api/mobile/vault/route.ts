@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-import { summarizeVaultCourses } from "@/lib/vault/analytics"
+import { buildMobileVaultCatalogResponse } from "@/lib/vault/response"
 
 const VALID_AUDIENCE_FILTERS = new Set(["all", "STUDIO_OWNERS", "TEACHERS", "CLIENTS", "ALL"])
 const VALID_STATUS_FILTERS = new Set(["all", "published", "draft"])
@@ -133,52 +133,19 @@ export async function GET(request: NextRequest) {
         distinct: ["category"],
       }),
     ])
-    const courseStats = summarizeVaultCourses(courses)
-
-    return NextResponse.json({
-      role: decoded.role,
-      studio: studioSummary,
-      filters: {
-        search,
-        audience,
-        status,
-      },
-      categories: categories
-        .map((item) => item.category)
-        .filter((value): value is string => Boolean(value))
-        .sort((a, b) => a.localeCompare(b)),
-      courses: courses.map((course) => ({
-        id: course.id,
-        title: course.title,
-        slug: course.slug,
-        subtitle: course.subtitle,
-        description: course.description,
-        thumbnailUrl: course.thumbnailUrl,
-        audience: course.audience,
-        category: course.category,
-        difficulty: course.difficulty,
-        pricingType: course.pricingType,
-        price: course.price,
-        currency: course.currency,
-        isPublished: course.isPublished,
-        isFeatured: course.isFeatured,
-        includeInSubscription: course.includeInSubscription,
-        enrollmentCount: course.enrollmentCount,
-        averageRating: course.averageRating,
-        moduleCount: course._count.modules,
-        reviewCount: course._count.reviews,
-        createdAt: course.createdAt.toISOString(),
-        creatorName: course.creator?.user
-          ? `${course.creator.user.firstName} ${course.creator.user.lastName}`.trim()
-          : null,
-      })),
-      stats: {
-        totalCourses: courseStats.totalCourses,
-        publishedCourses: courseStats.publishedCourses,
-        featuredCourses: courseStats.featuredCourses,
-        totalEnrollments: courseStats.totalEnrollments,
-      },
-    })
+    return NextResponse.json(
+      buildMobileVaultCatalogResponse({
+        role: decoded.role,
+        studio: studioSummary,
+        filters: {
+          search,
+          audience,
+          status,
+        },
+        categories,
+        courses,
+      })
+    )
   } catch (error) {
     console.error("Mobile vault error:", error)
     return NextResponse.json({ error: "Failed to load vault" }, { status: 500 })
