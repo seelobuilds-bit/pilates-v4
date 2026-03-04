@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { getDemoStudioId } from "@/lib/demo-studio"
@@ -12,14 +11,10 @@ import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
 import { fetchClientSummaryCounts } from "@/lib/reporting/client-summary-query"
 import {
-  buildActiveClientVisitIndex,
-  buildAtRiskCandidates,
-  buildClientSummary,
-} from "@/lib/reporting/retention"
-import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
+  buildRetentionAndClientSummary,
+  fetchActiveClientVisitRows,
+} from "@/lib/reporting/retention-composition"
 import { buildReportRangePayload, resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
-
-const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 
 export async function GET(request: NextRequest) {
   const studioId = await getDemoStudioId()
@@ -387,35 +382,10 @@ export async function GET(request: NextRequest) {
   const activityLookbackStart = new Date(reportEndDate)
   activityLookbackStart.setDate(activityLookbackStart.getDate() - 365)
 
-  const activeClientVisitRows = await db.booking.findMany({
-    where: {
-      studioId,
-      status: {
-        in: ATTENDED_BOOKING_STATUS_LIST
-      },
-      client: {
-        isActive: true
-      },
-      classSession: {
-        startTime: {
-          gte: activityLookbackStart,
-          lt: reportEndDate
-        }
-      }
-    },
-    select: {
-      clientId: true,
-      classSession: {
-        select: {
-          startTime: true
-        }
-      }
-    },
-    orderBy: {
-      classSession: {
-        startTime: "desc"
-      }
-    }
+  const activeClientVisitRows = await fetchActiveClientVisitRows({
+    studioId,
+    activityLookbackStart,
+    reportEndDate,
   })
 
   const revenue = buildRevenueSummary({
@@ -460,33 +430,20 @@ export async function GET(request: NextRequest) {
     previousClassCountByTeacherId,
   })
 
-  const {
-    visitCountByClientId,
-    lastVisitByClientId,
-    recentlyActiveClientIds,
-  } = buildActiveClientVisitIndex(activeClientVisitRows, reportEndDate)
-
-  const activeClientsList = studioClients.filter((client) => client.isActive)
-  const atRiskCandidates = buildAtRiskCandidates(
+  const { clients, retention } = buildRetentionAndClientSummary({
     studioClients,
-    lastVisitByClientId,
-    visitCountByClientId,
-    reportEndDate
-  )
-
-  const retention = buildRetentionSummary({
-    atRiskCandidates,
-    activeClientsList,
-    recentlyActiveClientIds,
+    activeClientVisitRows,
     cancelledBookingsInPeriod,
     reportEndDate,
-    churnedClients,
     totalClients,
+    newClients,
+    activeClients,
+    churnedClients,
   })
 
     return NextResponse.json({
     revenue,
-    clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
+    clients,
     instructors: instructorRows,
     retention,
     classes: classesSummary,
