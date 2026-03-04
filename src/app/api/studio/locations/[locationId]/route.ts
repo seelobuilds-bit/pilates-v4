@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
-import {
-  addRevenueToMonthlyBuckets,
-  buildMonthlyBucketLookup,
-  buildMonthlyRevenueBuckets,
-} from "@/lib/reporting/monthly"
-import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { buildLocationEntityStats } from "@/lib/reporting/location-entity"
 import { getSession } from "@/lib/session"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
@@ -94,83 +89,11 @@ export async function GET(
     orderBy: { createdAt: "desc" }
   })
 
-  const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
-  const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    return sum + amount
-  }, 0)
-
-  const activeClientIds = new Set(
-    nonCancelledBookings.filter((booking) => booking.client.isActive).map((booking) => booking.clientId)
-  )
-
-  const classCounts = new Map<string, number>()
-  const teacherCounts = new Map<string, number>()
-  const bookingsByDayMap = new Map<string, number>([
-    ["Sun", 0],
-    ["Mon", 0],
-    ["Tue", 0],
-    ["Wed", 0],
-    ["Thu", 0],
-    ["Fri", 0],
-    ["Sat", 0]
-  ])
-
-  for (const booking of nonCancelledBookings) {
-    const className = booking.classSession.classType.name
-    classCounts.set(className, (classCounts.get(className) || 0) + 1)
-
-    const dayKey = new Date(booking.classSession.startTime).toLocaleDateString("en-US", { weekday: "short" })
-    bookingsByDayMap.set(dayKey, (bookingsByDayMap.get(dayKey) || 0) + 1)
-  }
-
-  for (const session of classSessions) {
-    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`.trim()
-    teacherCounts.set(teacherName, (teacherCounts.get(teacherName) || 0) + 1)
-  }
-
-  const monthlyBuckets = buildMonthlyRevenueBuckets(endDate, 6)
-  const monthlyLookup = buildMonthlyBucketLookup(monthlyBuckets)
-
-  for (const booking of nonCancelledBookings) {
-    const date = new Date(booking.classSession.startTime)
-    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    addRevenueToMonthlyBuckets(monthlyLookup, date, amount)
-  }
-
-  const stats = {
-    totalBookings: nonCancelledBookings.length,
-    totalRevenue: Math.round(totalRevenue * 100) / 100,
-    activeClients: activeClientIds.size,
-    avgClassSize:
-      classSessions.length > 0
-        ? Math.round((nonCancelledBookings.length / classSessions.length) * 10) / 10
-        : 0,
-    topClasses: Array.from(classCounts.entries())
-      .map(([name, bookingsCount]) => ({ name, bookings: bookingsCount }))
-      .sort((a, b) => b.bookings - a.bookings)
-      .slice(0, 5),
-    topTeachers: Array.from(teacherCounts.entries())
-      .map(([name, classes]) => ({ name, classes, rating: null }))
-      .sort((a, b) => b.classes - a.classes)
-      .slice(0, 5),
-    ratingDataAvailable: false,
-    recentBookings: nonCancelledBookings.slice(0, 10).map((booking) => ({
-      clientName: `${booking.client.firstName} ${booking.client.lastName}`.trim(),
-      className: booking.classSession.classType.name,
-      date: new Date(booking.createdAt).toLocaleString([], {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-      })
-    })),
-    bookingsByDay: Array.from(bookingsByDayMap.entries()).map(([day, count]) => ({ day, count })),
-    monthlyRevenue: monthlyBuckets.map(({ month, revenue }) => ({
-      month,
-      revenue: Math.round(revenue * 100) / 100
-    }))
-  }
+  const stats = buildLocationEntityStats({
+    classSessions,
+    bookings,
+    endDate,
+  })
 
   return NextResponse.json({
     ...location,
