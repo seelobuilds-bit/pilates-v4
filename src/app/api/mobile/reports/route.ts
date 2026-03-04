@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MobileReportsError } from "@/lib/reporting/mobile-report-errors"
+import {
+  resolveMobileReportRangeInputFromBody,
+  resolveMobileReportRangeInputFromSearchParams,
+} from "@/lib/reporting/mobile-report-request"
 import { getMobileReports } from "@/lib/reporting/mobile-reports"
 import type { ReportRangeInput } from "@/lib/reporting/date-range"
 
@@ -20,18 +24,10 @@ async function handleReportRequest(request: NextRequest, input: ReportRangeInput
 }
 
 export async function GET(request: NextRequest) {
-  return handleReportRequest(request, {
-    days: request.nextUrl.searchParams.get("days"),
-    startDate: request.nextUrl.searchParams.get("startDate"),
-    endDate: request.nextUrl.searchParams.get("endDate"),
-  })
+  return handleReportRequest(request, resolveMobileReportRangeInputFromSearchParams(request.nextUrl.searchParams))
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
-  return handleReportRequest(request, {
-    days: body?.days != null ? String(body.days) : null,
-    startDate: body?.startDate != null ? String(body.startDate) : null,
-    endDate: body?.endDate != null ? String(body.endDate) : null,
-  })
+  return handleReportRequest(request, resolveMobileReportRangeInputFromBody(body))
 }
