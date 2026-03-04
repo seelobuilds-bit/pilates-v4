@@ -103,6 +103,9 @@ jobs:
       - name: Reporting retention regression
         run: pnpm test:reporting:retention
 
+      - name: Reporting retention summary regression
+        run: pnpm test:reporting:retention-summary
+
       - name: Reporting marketing regression
         run: pnpm test:reporting:marketing
 
