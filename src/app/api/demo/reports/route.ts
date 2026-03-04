@@ -4,6 +4,11 @@ import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { getDemoStudioId } from "@/lib/demo-studio"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import {
+  buildActiveClientVisitIndex,
+  buildAtRiskCandidates,
+  buildClientSummary,
+} from "@/lib/reporting/retention"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
@@ -893,50 +898,19 @@ export async function GET(request: NextRequest) {
     })
     .sort((a, b) => b.classes - a.classes || a.name.localeCompare(b.name))
 
+  const {
+    visitCountByClientId,
+    lastVisitByClientId,
+    recentlyActiveClientIds,
+  } = buildActiveClientVisitIndex(activeClientVisitRows, reportEndDate)
+
   const activeClientsList = studioClients.filter((client) => client.isActive)
-  const riskCutoff = new Date(reportEndDate)
-  riskCutoff.setDate(riskCutoff.getDate() - 14)
-  const highRiskCutoff = new Date(reportEndDate)
-  highRiskCutoff.setDate(highRiskCutoff.getDate() - 30)
-  const recentActivityCutoff = new Date(reportEndDate)
-  recentActivityCutoff.setDate(recentActivityCutoff.getDate() - 30)
-
-  const visitCountByClientId = new Map<string, number>()
-  const lastVisitByClientId = new Map<string, Date>()
-  const recentlyActiveClientIds = new Set<string>()
-  for (const visit of activeClientVisitRows) {
-    visitCountByClientId.set(visit.clientId, (visitCountByClientId.get(visit.clientId) || 0) + 1)
-    if (!lastVisitByClientId.has(visit.clientId)) {
-      lastVisitByClientId.set(visit.clientId, visit.classSession.startTime)
-    }
-    if (visit.classSession.startTime >= recentActivityCutoff) {
-      recentlyActiveClientIds.add(visit.clientId)
-    }
-  }
-
-  const atRiskCandidates = activeClientsList
-    .map((client) => {
-      const lastVisit = lastVisitByClientId.get(client.id) || null
-      const visits = visitCountByClientId.get(client.id) || 0
-      const isAtRisk = !lastVisit || lastVisit < riskCutoff
-      const status = !lastVisit || lastVisit < highRiskCutoff ? "high-risk" : "medium-risk"
-      return {
-        id: client.id,
-        name: `${client.firstName} ${client.lastName}`,
-        email: client.email,
-        lastVisit,
-        visits,
-        isAtRisk,
-        status
-      }
-    })
-    .filter((client) => client.isAtRisk)
-    .sort((a, b) => {
-      if (!a.lastVisit && !b.lastVisit) return a.name.localeCompare(b.name)
-      if (!a.lastVisit) return -1
-      if (!b.lastVisit) return 1
-      return a.lastVisit.getTime() - b.lastVisit.getTime()
-    })
+  const atRiskCandidates = buildAtRiskCandidates(
+    studioClients,
+    lastVisitByClientId,
+    visitCountByClientId,
+    reportEndDate
+  )
 
   const atRiskList = atRiskCandidates.slice(0, 10).map((client) => ({
     id: client.id,
@@ -1073,12 +1047,7 @@ export async function GET(request: NextRequest) {
       byClassType: Object.entries(revenueByClassType).map(([name, amount]) => ({ name, amount })),
       monthly: Array.from(monthlyRevenueMap.values())
     },
-    clients: {
-      total: totalClients,
-      new: newClients,
-      active: activeClients,
-      churned: churnedClients
-    },
+    clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
     instructors: instructorRows,
     retention: {
       atRiskClients: atRiskCandidates.length,
@@ -1162,12 +1131,7 @@ export async function GET(request: NextRequest) {
           byClassType: [],
           monthly: []
         },
-        clients: {
-          total: totalClients,
-          new: newClients,
-          active: activeClients,
-          churned: churnedClients
-        },
+        clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
         instructors: [],
         retention: {
           atRiskClients: 0,
@@ -1233,12 +1197,7 @@ export async function GET(request: NextRequest) {
           byClassType: [],
           monthly: []
         },
-        clients: {
-          total: 0,
-          new: 0,
-          active: 0,
-          churned: 0
-        },
+        clients: buildClientSummary(0, 0, 0, 0),
         instructors: [],
         retention: {
           atRiskClients: 0,

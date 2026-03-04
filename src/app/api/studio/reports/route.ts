@@ -12,7 +12,9 @@ import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import {
-  getClientRiskStatus,
+  buildActiveClientVisitIndex,
+  buildAtRiskCandidates,
+  buildClientSummary,
 } from "@/lib/reporting/retention"
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 const DEFAULT_REPORT_DAYS = 30
@@ -480,45 +482,19 @@ export async function GET(request: NextRequest) {
     previousClassCountByTeacherId,
   })
 
+  const {
+    visitCountByClientId,
+    lastVisitByClientId,
+    recentlyActiveClientIds,
+  } = buildActiveClientVisitIndex(activeClientVisitRows, reportEndDate)
+
   const activeClientsList = studioClients.filter((client) => client.isActive)
-  const recentActivityCutoff = new Date(reportEndDate)
-  recentActivityCutoff.setDate(recentActivityCutoff.getDate() - 30)
-
-  const visitCountByClientId = new Map<string, number>()
-  const lastVisitByClientId = new Map<string, Date>()
-  const recentlyActiveClientIds = new Set<string>()
-  for (const visit of activeClientVisitRows) {
-    visitCountByClientId.set(visit.clientId, (visitCountByClientId.get(visit.clientId) || 0) + 1)
-    if (!lastVisitByClientId.has(visit.clientId)) {
-      lastVisitByClientId.set(visit.clientId, visit.classSession.startTime)
-    }
-    if (visit.classSession.startTime >= recentActivityCutoff) {
-      recentlyActiveClientIds.add(visit.clientId)
-    }
-  }
-
-  const atRiskCandidates = activeClientsList
-    .map((client) => {
-      const lastVisit = lastVisitByClientId.get(client.id) || null
-      const visits = visitCountByClientId.get(client.id) || 0
-      const { isAtRisk, status } = getClientRiskStatus(lastVisit, reportEndDate)
-      return {
-        id: client.id,
-        name: `${client.firstName} ${client.lastName}`,
-        email: client.email,
-        lastVisit,
-        visits,
-        isAtRisk,
-        status
-      }
-    })
-    .filter((client) => client.isAtRisk)
-    .sort((a, b) => {
-      if (!a.lastVisit && !b.lastVisit) return a.name.localeCompare(b.name)
-      if (!a.lastVisit) return -1
-      if (!b.lastVisit) return 1
-      return a.lastVisit.getTime() - b.lastVisit.getTime()
-    })
+  const atRiskCandidates = buildAtRiskCandidates(
+    studioClients,
+    lastVisitByClientId,
+    visitCountByClientId,
+    reportEndDate
+  )
 
   const retention = buildRetentionSummary({
     atRiskCandidates,
@@ -532,12 +508,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
     revenue,
-    clients: {
-      total: totalClients,
-      new: newClients,
-      active: activeClients,
-      churned: churnedClients
-    },
+    clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
     instructors: instructorRows,
     retention,
     classes: classesSummary,
@@ -577,12 +548,7 @@ export async function GET(request: NextRequest) {
           byClassType: [],
           monthly: []
         },
-        clients: {
-          total: totalClients,
-          new: newClients,
-          active: activeClients,
-          churned: churnedClients
-        },
+        clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
         instructors: [],
         retention: {
           atRiskClients: 0,
@@ -648,12 +614,7 @@ export async function GET(request: NextRequest) {
           byClassType: [],
           monthly: []
         },
-        clients: {
-          total: 0,
-          new: 0,
-          active: 0,
-          churned: 0
-        },
+        clients: buildClientSummary(0, 0, 0, 0),
         instructors: [],
         retention: {
           atRiskClients: 0,
