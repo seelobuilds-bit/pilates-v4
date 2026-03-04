@@ -4,7 +4,7 @@ import {
   buildMonthlyCountBucketsByOffsets,
 } from "./monthly"
 import { resolveBookingRevenue } from "./revenue"
-import { calculateRepeatClientRetentionRate } from "./retention"
+import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
 
 export type TeacherEntitySessionLike = {
   startTime: Date
@@ -65,11 +65,12 @@ export function buildTeacherEntityReportSummary(params: {
   const completionRate =
     nonCancelledBookings.length > 0 ? Math.round((completedBookings / nonCancelledBookings.length) * 100) : 0
 
-  const clientBookingCounts = new Map<string, number>()
+  const clientDisplayNameById = new Map<string, string>()
   for (const booking of nonCancelledBookings) {
     const name = `${booking.client.firstName} ${booking.client.lastName}`.trim()
-    clientBookingCounts.set(name, (clientBookingCounts.get(name) || 0) + 1)
+    clientDisplayNameById.set(booking.clientId, name)
   }
+  const clientBookingCounts = buildClientVisitCounts(nonCancelledBookings, (booking) => booking.clientId)
   const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
 
   const classCounts = new Map<string, number>()
@@ -86,7 +87,10 @@ export function buildTeacherEntityReportSummary(params: {
   }
 
   const topClients = Array.from(clientBookingCounts.entries())
-    .map(([name, bookings]) => ({ name, bookings }))
+    .map(([clientId, bookings]) => ({
+      name: clientDisplayNameById.get(clientId) || "Client",
+      bookings,
+    }))
     .sort((a, b) => b.bookings - a.bookings)
     .slice(0, 5)
 

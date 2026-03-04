@@ -29,6 +29,19 @@ export function countRepeatClients(clientVisitCounts: Map<string, number>) {
   return Array.from(clientVisitCounts.values()).filter((count) => count > 1).length
 }
 
+export function buildClientVisitCounts<T>(
+  rows: T[],
+  resolveClientId: (row: T) => string | null | undefined
+) {
+  const clientVisitCounts = new Map<string, number>()
+  for (const row of rows) {
+    const clientId = resolveClientId(row)
+    if (!clientId) continue
+    clientVisitCounts.set(clientId, (clientVisitCounts.get(clientId) || 0) + 1)
+  }
+  return clientVisitCounts
+}
+
 export function calculateRepeatClientRetentionRate(
   clientVisitCounts: Map<string, number>,
   decimals = 1

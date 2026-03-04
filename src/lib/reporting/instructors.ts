@@ -1,7 +1,7 @@
 import { isAttendedBookingStatus } from "./attendance"
 import { ratioPercentage, roundCurrency } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
-import { calculateRepeatClientRetentionRate } from "./retention"
+import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
 
 type InstructorSessionLike = {
   teacherId: string
@@ -74,7 +74,7 @@ export function buildInstructorRows({
       revenue: number
       rating: number | null
       previousClasses: number
-      clientVisits: Map<string, number>
+      clientVisits: string[]
     }
   >()
 
@@ -92,7 +92,7 @@ export function buildInstructorRows({
         revenue: 0,
         rating: null,
         previousClasses: previousClassCountByTeacherId.get(session.teacherId) || 0,
-        clientVisits: new Map<string, number>(),
+        clientVisits: [],
       }
 
     bucket.classes += 1
@@ -104,7 +104,7 @@ export function buildInstructorRows({
       }
       if (!isAttendedBookingStatus(booking.status)) continue
       bucket.attended += 1
-      bucket.clientVisits.set(booking.clientId, (bucket.clientVisits.get(booking.clientId) || 0) + 1)
+      bucket.clientVisits.push(booking.clientId)
     }
 
     instructorBuckets.set(session.teacherId, bucket)
@@ -123,14 +123,15 @@ export function buildInstructorRows({
       revenue: 0,
       rating: null,
       previousClasses: previousClassCountByTeacherId.get(teacher.id) || 0,
-      clientVisits: new Map<string, number>(),
+      clientVisits: [],
     })
   }
 
   return Array.from(instructorBuckets.values())
     .map((bucket) => {
       const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
-      const retention = calculateRepeatClientRetentionRate(bucket.clientVisits, 1)
+      const clientVisitCounts = buildClientVisitCounts(bucket.clientVisits, (clientId) => clientId)
+      const retention = calculateRepeatClientRetentionRate(clientVisitCounts, 1)
       const trend =
         bucket.classes > bucket.previousClasses
           ? ("up" as const)

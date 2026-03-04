@@ -1,5 +1,6 @@
 import { strict as assert } from "assert"
 import {
+  buildClientVisitCounts,
   calculateChurnRate,
   calculateRepeatClientRetentionRate,
   countRepeatClients,
@@ -26,6 +27,20 @@ assert.equal(calculateRepeatClientRetentionRate(mixedVisitCounts, 1), 50)
 
 assert.equal(calculateChurnRate(0, 10, 1), 0)
 assert.equal(calculateChurnRate(3, 12, 1), 25)
+
+const builtVisitCounts = buildClientVisitCounts(
+  [
+    { clientId: "a" },
+    { clientId: "a" },
+    { clientId: "b" },
+    { clientId: null },
+  ],
+  (row) => row.clientId
+)
+assert.deepEqual(Array.from(builtVisitCounts.entries()), [
+  ["a", 2],
+  ["b", 1],
+])
 
 const reportEndDate = new Date("2026-03-03T00:00:00.000Z")
 

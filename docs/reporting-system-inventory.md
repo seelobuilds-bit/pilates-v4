@@ -495,6 +495,11 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/mobile-reports.ts`
+- Repeat-client retention counting normalization:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/retention.ts`
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/teacher-performance.ts`
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/teacher-entity.ts`
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/instructors.ts`
 
 ## Non-Negotiable Safety Constraint
 

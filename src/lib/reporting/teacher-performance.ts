@@ -5,7 +5,7 @@ import {
 } from "./attendance"
 import { ratioPercentage, roundCurrency } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
-import { calculateRepeatClientRetentionRate } from "./retention"
+import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
 
 type TeacherBookingLike = {
   status: string
@@ -48,10 +48,7 @@ export function buildTeacherPerformanceSummary(
   const avgFillRate = calculateAverageFillRate(sessions, decimals)
   const completionRate = ratioPercentage(completedBookings, nonCancelledBookings.length, decimals)
 
-  const clientBookingCounts = new Map<string, number>()
-  for (const booking of nonCancelledBookings) {
-    clientBookingCounts.set(booking.clientId, (clientBookingCounts.get(booking.clientId) || 0) + 1)
-  }
+  const clientBookingCounts = buildClientVisitCounts(nonCancelledBookings, (booking) => booking.clientId)
   const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, decimals)
 
   const classCounts = new Map<string, number>()
