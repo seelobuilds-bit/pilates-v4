@@ -3,6 +3,7 @@ import {
   addCountToMonthlyBuckets,
   addRevenueToMonthlyBuckets,
   buildMonthlyBucketLookup,
+  buildMonthlyCountBucketsByOffsets,
   buildMonthlyCountBuckets,
   buildMonthlyRevenueBuckets,
 } from "../../src/lib/reporting/monthly"
@@ -44,6 +45,12 @@ assert.equal(revenueBuckets[5].revenue, 34.75)
 assert.equal(
   Math.round(revenueBuckets.reduce((sum, bucket) => sum + bucket.revenue, 0) * 100) / 100,
   46.75
+)
+
+const offsetBuckets = buildMonthlyCountBucketsByOffsets(referenceDate, [-2, -1, 0, 1, 2, 3])
+assert.deepEqual(
+  offsetBuckets.map((bucket) => bucket.month),
+  ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 )
 
 console.log("Reporting monthly bucket logic passed")

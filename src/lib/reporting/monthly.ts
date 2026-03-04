@@ -24,8 +24,25 @@ function buildMonthlyBucketBase(endDate: Date, months: number) {
   })
 }
 
+function buildMonthlyBucketBaseByOffsets(referenceDate: Date, monthOffsets: number[]) {
+  return monthOffsets.map((offset) => {
+    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + offset, 1)
+    return {
+      key: resolveMonthlyBucketKey(date),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+    }
+  })
+}
+
 export function buildMonthlyCountBuckets(endDate: Date, months = 6): MonthlyCountBucket[] {
   return buildMonthlyBucketBase(endDate, months).map((bucket) => ({
+    ...bucket,
+    count: 0,
+  }))
+}
+
+export function buildMonthlyCountBucketsByOffsets(referenceDate: Date, monthOffsets: number[]) {
+  return buildMonthlyBucketBaseByOffsets(referenceDate, monthOffsets).map((bucket) => ({
     ...bucket,
     count: 0,
   }))

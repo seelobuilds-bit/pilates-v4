@@ -207,7 +207,7 @@ Key routes:
 
 Current note:
 
-- Monthly trend bucket composition for entity routes is now centralized in `/Users/charlie/Development/pilates-v4/src/lib/reporting/monthly.ts` and consumed by class type, location, and client reporting routes.
+- Monthly trend bucket composition for entity routes is now centralized in `/Users/charlie/Development/pilates-v4/src/lib/reporting/monthly.ts` and consumed by teacher, class type, location, and client reporting routes.
 
 ### E. Leaderboards
 

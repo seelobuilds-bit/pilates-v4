@@ -1,6 +1,11 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
+import {
+  addCountToMonthlyBuckets,
+  buildMonthlyBucketLookup,
+  buildMonthlyCountBucketsByOffsets,
+} from "@/lib/reporting/monthly"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
 import { getSession } from "@/lib/session"
@@ -146,22 +151,10 @@ export async function GET(
     }
 
     const monthOffsets = [-2, -1, 0, 1, 2, 3]
-    const monthlyBuckets = monthOffsets.map((offset) => {
-      const date = new Date(endDate.getFullYear(), endDate.getMonth() + offset, 1)
-      return {
-        key: `${date.getFullYear()}-${date.getMonth()}`,
-        month: date.toLocaleDateString("en-US", { month: "short" }),
-        count: 0
-      }
-    })
-    const monthLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+    const monthlyBuckets = buildMonthlyCountBucketsByOffsets(endDate, monthOffsets)
+    const monthLookup = buildMonthlyBucketLookup(monthlyBuckets)
     for (const session of allClassSessions) {
-      const date = new Date(session.startTime)
-      const key = `${date.getFullYear()}-${date.getMonth()}`
-      const bucket = monthLookup.get(key)
-      if (bucket) {
-        bucket.count += 1
-      }
+      addCountToMonthlyBuckets(monthLookup, new Date(session.startTime))
     }
 
     const topClients = Array.from(clientBookingCounts.entries())
