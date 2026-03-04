@@ -1,4 +1,4 @@
-import { LeaderboardParticipantType } from "@prisma/client"
+import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 
 type ParticipantEntry = {
   id: string
@@ -16,6 +16,52 @@ type TeacherParticipantRow = {
   id: string
   name: string
   studioId?: string | null
+}
+
+type LeaderboardDisplayCategory = {
+  id: string
+  name: string
+  icon: string
+}
+
+type LeaderboardWithCategory = {
+  category: LeaderboardCategory
+}
+
+export const LEADERBOARD_DISPLAY_CATEGORIES: LeaderboardDisplayCategory[] = [
+  { id: "content", name: "Content & Social", icon: "Share2" },
+  { id: "growth", name: "Growth", icon: "TrendingUp" },
+  { id: "courses", name: "Courses & Vault", icon: "BookOpen" },
+  { id: "bookings", name: "Bookings & Classes", icon: "Calendar" },
+  { id: "engagement", name: "Engagement", icon: "Heart" },
+  { id: "special", name: "Special", icon: "Award" },
+]
+
+const LEADERBOARD_CATEGORY_DISPLAY_MAP: Record<LeaderboardCategory, string> = {
+  MOST_CONTENT_POSTED: "content",
+  MOST_SOCIAL_VIEWS: "content",
+  MOST_SOCIAL_LIKES: "content",
+  MOST_SOCIAL_ENGAGEMENT: "content",
+  CONTENT_CONSISTENCY: "content",
+  FASTEST_GROWING: "growth",
+  BIGGEST_GROWTH_MONTHLY: "growth",
+  BIGGEST_GROWTH_QUARTERLY: "growth",
+  MOST_NEW_CLIENTS: "growth",
+  HIGHEST_RETENTION: "growth",
+  MOST_COURSES_COMPLETED: "courses",
+  MOST_COURSE_ENROLLMENTS: "courses",
+  TOP_COURSE_CREATOR: "courses",
+  BEST_COURSE_RATINGS: "courses",
+  MOST_BOOKINGS: "bookings",
+  HIGHEST_ATTENDANCE_RATE: "bookings",
+  MOST_CLASSES_TAUGHT: "bookings",
+  TOP_REVENUE: "bookings",
+  MOST_ACTIVE_COMMUNITY: "engagement",
+  TOP_REVIEWER: "engagement",
+  MOST_REFERRALS: "engagement",
+  NEWCOMER_OF_MONTH: "special",
+  COMEBACK_CHAMPION: "special",
+  ALL_ROUNDER: "special",
 }
 
 export function resolveExpectedParticipantCount(
@@ -88,3 +134,17 @@ export function attachParticipantsToEntries<T extends ParticipantEntry>(
     .filter((entry) => Boolean(entry.participant))
 }
 
+export function resolveLeaderboardDisplayCategoryId(category: LeaderboardCategory) {
+  return LEADERBOARD_CATEGORY_DISPLAY_MAP[category]
+}
+
+export function groupLeaderboardsByDisplayCategory<T extends LeaderboardWithCategory>(
+  leaderboards: T[]
+) {
+  return LEADERBOARD_DISPLAY_CATEGORIES.map((category) => ({
+    ...category,
+    leaderboards: leaderboards.filter(
+      (leaderboard) => resolveLeaderboardDisplayCategoryId(leaderboard.category) === category.id
+    ),
+  })).filter((category) => category.leaderboards.length > 0)
+}

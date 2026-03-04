@@ -7,6 +7,8 @@ import {
   attachParticipantsToEntries,
   createStudioParticipantMap,
   createTeacherParticipantMap,
+  groupLeaderboardsByDisplayCategory,
+  LEADERBOARD_DISPLAY_CATEGORIES,
   resolveExpectedParticipantCount,
 } from "@/lib/leaderboards/presentation"
 
@@ -219,58 +221,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Group leaderboards by category for UI
-    const categories = [
-      { id: "content", name: "Content & Social", icon: "Share2" },
-      { id: "growth", name: "Growth", icon: "TrendingUp" },
-      { id: "courses", name: "Courses & Vault", icon: "BookOpen" },
-      { id: "bookings", name: "Bookings & Classes", icon: "Calendar" },
-      { id: "engagement", name: "Engagement", icon: "Heart" },
-      { id: "special", name: "Special", icon: "Award" }
-    ]
-
-    const categoryMap: Record<string, string> = {
-      MOST_CONTENT_POSTED: "content",
-      MOST_SOCIAL_VIEWS: "content",
-      MOST_SOCIAL_LIKES: "content",
-      MOST_SOCIAL_ENGAGEMENT: "content",
-      CONTENT_CONSISTENCY: "content",
-      FASTEST_GROWING: "growth",
-      BIGGEST_GROWTH_MONTHLY: "growth",
-      BIGGEST_GROWTH_QUARTERLY: "growth",
-      MOST_NEW_CLIENTS: "growth",
-      HIGHEST_RETENTION: "growth",
-      MOST_COURSES_COMPLETED: "courses",
-      MOST_COURSE_ENROLLMENTS: "courses",
-      TOP_COURSE_CREATOR: "courses",
-      BEST_COURSE_RATINGS: "courses",
-      MOST_BOOKINGS: "bookings",
-      HIGHEST_ATTENDANCE_RATE: "bookings",
-      MOST_CLASSES_TAUGHT: "bookings",
-      TOP_REVENUE: "bookings",
-      MOST_ACTIVE_COMMUNITY: "engagement",
-      TOP_REVIEWER: "engagement",
-      MOST_REFERRALS: "engagement",
-      NEWCOMER_OF_MONTH: "special",
-      COMEBACK_CHAMPION: "special",
-      ALL_ROUNDER: "special"
-    }
-
-    const groupedLeaderboards = categories.map(cat => ({
-      ...cat,
-      leaderboards: enrichedLeaderboards.filter(
-        lb => categoryMap[lb.category] === cat.id
-      )
-    })).filter(cat => cat.leaderboards.length > 0)
+    const groupedLeaderboards = groupLeaderboardsByDisplayCategory(enrichedLeaderboards)
 
     return NextResponse.json({
       leaderboards: enrichedLeaderboards,
       grouped: groupedLeaderboards,
       myRanks: userRanks,
-      categories
+      categories: LEADERBOARD_DISPLAY_CATEGORIES
     })
   } catch (error) {
     console.error("Failed to fetch leaderboards:", error)
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
   }
 }
-

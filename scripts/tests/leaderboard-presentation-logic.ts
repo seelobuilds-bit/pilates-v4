@@ -4,6 +4,9 @@ import {
   compareLeaderboardEntries,
   createStudioParticipantMap,
   createTeacherParticipantMap,
+  groupLeaderboardsByDisplayCategory,
+  LEADERBOARD_DISPLAY_CATEGORIES,
+  resolveLeaderboardDisplayCategoryId,
   resolveExpectedParticipantCount,
 } from "../../src/lib/leaderboards/presentation"
 
@@ -36,5 +39,17 @@ const attached = attachParticipantsToEntries(
 assert.equal(attached.length, 2)
 assert.equal(attached[0].participant?.name, "Studio One")
 assert.equal(attached[1].participant?.name, "Teacher One")
+
+assert.equal(resolveLeaderboardDisplayCategoryId("TOP_REVENUE"), "bookings")
+assert.equal(resolveLeaderboardDisplayCategoryId("MOST_COURSE_ENROLLMENTS"), "courses")
+
+const grouped = groupLeaderboardsByDisplayCategory([
+  { id: "l1", category: "TOP_REVENUE" as const },
+  { id: "l2", category: "HIGHEST_RETENTION" as const },
+])
+assert.equal(grouped.length, 2)
+assert.equal(grouped[0].leaderboards.length, 1)
+assert.equal(grouped[1].leaderboards.length, 1)
+assert.equal(LEADERBOARD_DISPLAY_CATEGORIES.length, 6)
 
 console.log("Leaderboard presentation logic passed")

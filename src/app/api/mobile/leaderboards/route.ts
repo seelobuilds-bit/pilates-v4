@@ -7,6 +7,8 @@ import {
   attachParticipantsToEntries,
   createStudioParticipantMap,
   createTeacherParticipantMap,
+  groupLeaderboardsByDisplayCategory,
+  LEADERBOARD_DISPLAY_CATEGORIES,
   resolveExpectedParticipantCount,
 } from "@/lib/leaderboards/presentation"
 
@@ -219,6 +221,11 @@ export async function GET(request: NextRequest) {
       role: decoded.role,
       studio: studioSummary,
       participantType,
+      categories: LEADERBOARD_DISPLAY_CATEGORIES,
+      grouped: groupLeaderboardsByDisplayCategory(enriched).map((category) => ({
+        ...category,
+        leaderboards: category.leaderboards.map((leaderboard) => leaderboard.id),
+      })),
       leaderboards: enriched.map((leaderboard) => ({
         id: leaderboard.id,
         name: leaderboard.name,
