@@ -1,6 +1,62 @@
 import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
 
+export async function fetchStudioReportClassSessionsWindow(args: {
+  studioId: string
+  startDate: Date
+  endDate: Date
+}) {
+  const { studioId, startDate, endDate } = args
+  return db.classSession.findMany({
+    where: {
+      studioId,
+      startTime: {
+        gte: startDate,
+        lt: endDate,
+      },
+    },
+    select: {
+      id: true,
+      studioId: true,
+      teacherId: true,
+      classTypeId: true,
+      capacity: true,
+      startTime: true,
+      classType: {
+        select: {
+          name: true,
+          price: true,
+        },
+      },
+      location: {
+        select: {
+          name: true,
+        },
+      },
+      teacher: {
+        select: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      },
+      bookings: {
+        select: {
+          status: true,
+          paidAmount: true,
+          clientId: true,
+        },
+      },
+      _count: {
+        select: { waitlists: true },
+      },
+    },
+  })
+}
+
 export async function fetchStudioReportBaseData(args: {
   studioId: string
   startDate: Date
@@ -102,53 +158,10 @@ export async function fetchStudioReportBaseData(args: {
         },
       }),
     () =>
-      db.classSession.findMany({
-        where: {
-          studioId,
-          startTime: {
-            gte: startDate,
-            lt: reportEndDate,
-          },
-        },
-        select: {
-          id: true,
-          studioId: true,
-          teacherId: true,
-          classTypeId: true,
-          capacity: true,
-          startTime: true,
-          classType: {
-            select: {
-              name: true,
-              price: true,
-            },
-          },
-          location: {
-            select: {
-              name: true,
-            },
-          },
-          teacher: {
-            select: {
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-          bookings: {
-            select: {
-              status: true,
-              paidAmount: true,
-              clientId: true,
-            },
-          },
-          _count: {
-            select: { waitlists: true },
-          },
-        },
+      fetchStudioReportClassSessionsWindow({
+        studioId,
+        startDate,
+        endDate: reportEndDate,
       }),
   ])
 

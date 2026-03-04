@@ -10,6 +10,10 @@ import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/re
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
+import {
+  fetchStudioReportBaseData,
+  fetchStudioReportClassSessionsWindow,
+} from "@/lib/reporting/studio-report-base-query"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
@@ -189,82 +193,29 @@ export async function getMobileReports(
   } = resolveDefaultMobileReportRange(input)
 
   if (decoded.role === "OWNER") {
-    const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([
-      db.booking.findMany({
-        where: {
-          studioId: studio.id,
-          classSession: {
-            startTime: { gte: currentStart, lt: periodEnd },
-          },
-        },
-        select: {
-          status: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              startTime: true,
-              classType: { select: { price: true } },
-            },
-          },
-        },
+    const [currentBase, previousSessions] = await Promise.all([
+      fetchStudioReportBaseData({
+        studioId: studio.id,
+        startDate: currentStart,
+        reportEndDate: periodEnd,
+        previousStartDate: previousStart,
       }),
-      db.booking.findMany({
-        where: {
-          studioId: studio.id,
-          classSession: {
-            startTime: { gte: previousStart, lt: currentStart },
-          },
-        },
-        select: {
-          status: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              startTime: true,
-              classType: { select: { price: true } },
-            },
-          },
-        },
-      }),
-      db.classSession.findMany({
-        where: {
-          studioId: studio.id,
-          startTime: { gte: currentStart, lt: periodEnd },
-        },
-        select: {
-          startTime: true,
-          capacity: true,
-          classType: { select: { name: true } },
-          bookings: { select: { status: true } },
-        },
-      }),
-      db.classSession.findMany({
-        where: {
-          studioId: studio.id,
-          startTime: { gte: previousStart, lt: currentStart },
-        },
-        select: {
-          capacity: true,
-          classType: { select: { name: true } },
-          bookings: { select: { status: true } },
-        },
-      }),
-      db.client.findMany({
-        where: {
-          studioId: studio.id,
-          createdAt: { gte: currentStart, lt: periodEnd },
-        },
-        select: {
-          createdAt: true,
-        },
-      }),
-      db.client.count({
-        where: {
-          studioId: studio.id,
-          createdAt: { gte: previousStart, lt: currentStart },
-        },
+      fetchStudioReportClassSessionsWindow({
+        studioId: studio.id,
+        startDate: previousStart,
+        endDate: currentStart,
       }),
     ])
+
+    const currentBookings = currentBase.bookings
+    const previousBookings = currentBase.previousBookings
+    const currentSessions = currentBase.classSessions
+    const currentNewClientRows = currentBase.studioClients.filter(
+      (client) => client.createdAt >= currentStart && client.createdAt < periodEnd
+    )
+    const previousNewClients = currentBase.studioClients.filter(
+      (client) => client.createdAt >= previousStart && client.createdAt < currentStart
+    ).length
 
     const revenueSummary = buildRevenueSummary({
       bookings: currentBookings,
@@ -288,7 +239,7 @@ export async function getMobileReports(
       (sum, session) => sum + countAttendedBookings(session.bookings),
       0
     )
-    const currentNewClients = currentNewClientRows.length
+    const currentNewClients = currentBase.newClients
 
     const ownerBuckets = buildTrendBuckets(currentStart, periodEnd)
     const ownerSeries = ownerBuckets.map((bucket) => ({
