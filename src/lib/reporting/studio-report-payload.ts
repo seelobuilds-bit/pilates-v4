@@ -1,17 +1,26 @@
 import { buildReportRangePayload } from "./date-range"
 
-export function buildStudioReportPayload(args: {
+export function buildStudioReportPayload<
+  Revenue,
+  Clients,
+  Instructors,
+  Retention,
+  Classes,
+  Bookings,
+  Marketing,
+  Social,
+>(args: {
   days: number
   startDate: Date
   reportEndDate: Date
-  revenue: unknown
-  clients: unknown
-  instructors: unknown
-  retention: unknown
-  classes: unknown
-  bookings: unknown
-  marketing: unknown
-  social: unknown
+  revenue: Revenue
+  clients: Clients
+  instructors: Instructors
+  retention: Retention
+  classes: Classes
+  bookings: Bookings
+  marketing: Marketing
+  social: Social
 }) {
   return {
     revenue: args.revenue,

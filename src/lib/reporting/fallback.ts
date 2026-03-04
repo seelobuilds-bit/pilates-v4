@@ -1,6 +1,6 @@
-import { buildReportRangePayload } from "./date-range"
 import { buildClientSummary } from "./retention"
 import { buildEmptyChurnMeta } from "./retention-churn"
+import { buildStudioReportPayload } from "./studio-report-payload"
 
 function buildEmptyRevenueSummary() {
   return {
@@ -121,25 +121,29 @@ export function buildPartialReportsPayload(params: {
   } = params
 
   return {
-    revenue: buildEmptyRevenueSummary(),
-    clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
-    instructors: [] as Array<{
-      id: string
-      name: string
-      classes: number
-      avgFill: number
-      revenue: number
-      rating: number | null
-      retention: number
-      trend: "up" | "down" | "stable"
-      specialties: string[]
-    }>,
-    retention: buildEmptyRetentionSummary(includeChurnMeta),
-    classes: buildEmptyClassesSummary(),
-    bookings: buildEmptyBookingsSummary(),
-    marketing: buildEmptyMarketingSummary(warningMessage),
-    social: buildEmptySocialSummary(),
-    range: buildReportRangePayload(days, startDate, endDate),
+    ...buildStudioReportPayload({
+      days,
+      startDate,
+      reportEndDate: endDate,
+      revenue: buildEmptyRevenueSummary(),
+      clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
+      instructors: [] as Array<{
+        id: string
+        name: string
+        classes: number
+        avgFill: number
+        revenue: number
+        rating: number | null
+        retention: number
+        trend: "up" | "down" | "stable"
+        specialties: string[]
+      }>,
+      retention: buildEmptyRetentionSummary(includeChurnMeta),
+      classes: buildEmptyClassesSummary(),
+      bookings: buildEmptyBookingsSummary(),
+      marketing: buildEmptyMarketingSummary(warningMessage),
+      social: buildEmptySocialSummary(),
+    }),
     partial: true,
   }
 }
