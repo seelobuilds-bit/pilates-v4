@@ -3,15 +3,15 @@ import { getSession } from "@/lib/session"
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
+  type EnrichedLeaderboard,
   loadEnrichedLeaderboards,
   loadViewerEntryByPeriodId,
 } from "@/lib/leaderboards/query"
 import {
   buildUserRanksByLeaderboardId,
   collectCurrentPeriodIds,
-  groupLeaderboardsByDisplayCategory,
-  LEADERBOARD_DISPLAY_CATEGORIES,
 } from "@/lib/leaderboards/presentation"
+import { buildWebLeaderboardsResponsePayload } from "@/lib/leaderboards/response"
 
 // GET - Fetch leaderboards for studios/teachers
 export async function GET(request: NextRequest) {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enrichedLeaderboards = await loadEnrichedLeaderboards({
+    const enrichedLeaderboards: EnrichedLeaderboard[] = await loadEnrichedLeaderboards({
       participantType,
       categoryFilter,
       featuredOnly: featured,
@@ -56,15 +56,12 @@ export async function GET(request: NextRequest) {
     })
     const userRanks = buildUserRanksByLeaderboardId(enrichedLeaderboards, viewerEntryByPeriodId)
 
-    // Group leaderboards by category for UI
-    const groupedLeaderboards = groupLeaderboardsByDisplayCategory(enrichedLeaderboards)
-
-    return NextResponse.json({
-      leaderboards: enrichedLeaderboards,
-      grouped: groupedLeaderboards,
-      myRanks: userRanks,
-      categories: LEADERBOARD_DISPLAY_CATEGORIES
-    })
+    return NextResponse.json(
+      buildWebLeaderboardsResponsePayload({
+        leaderboards: enrichedLeaderboards,
+        userRanks,
+      })
+    )
   } catch (error) {
     console.error("Failed to fetch leaderboards:", error)
     return NextResponse.json({ error: "Failed to fetch leaderboards" }, { status: 500 })
