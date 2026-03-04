@@ -1,11 +1,8 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
-import { filterByInclusiveDateRange } from "@/lib/reporting/date-range"
 import { buildTeacherEntityResponse } from "@/lib/reporting/entity-response"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
-import {
-  buildTeacherEntityReportSummary,
-} from "@/lib/reporting/teacher-entity"
+import { loadTeacherEntityReport } from "@/lib/reporting/entity-loaders"
 import { getSession } from "@/lib/session"
 
 export async function GET(
@@ -18,103 +15,25 @@ export async function GET(
 
     const { teacherId } = await params
 
-    const teacher = await db.teacher.findFirst({
-      where: {
-        id: teacherId,
-        studioId: context.studioId
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        },
-        classSessions: {
-          where: {
-            startTime: { gte: new Date() }
-          },
-          orderBy: { startTime: "asc" },
-          take: 5,
-          include: {
-            classType: { select: { name: true } },
-            location: { select: { name: true } },
-            _count: { select: { bookings: true } }
-          }
-        },
-        _count: {
-          select: { classSessions: true }
-        }
-      }
+    const teacherReport = await loadTeacherEntityReport({
+      studioId: context.studioId,
+      teacherId,
+      startDate: context.startDate,
+      endDate: context.endDate,
+      includeScheduleClasses: true,
     })
 
-    if (!teacher) {
+    if (!teacherReport) {
       return NextResponse.json({ error: "Teacher not found" }, { status: 404 })
     }
 
-    const allClassSessions = await db.classSession.findMany({
-      where: {
-        teacherId: teacher.id,
-        studioId: context.studioId
-      },
-      include: {
-        classType: { select: { name: true } },
-        location: { select: { name: true } },
-        _count: { select: { bookings: true } }
-      },
-      orderBy: { startTime: "desc" }
-    })
-
-    const allBookings = await db.booking.findMany({
-      where: {
-        studioId: context.studioId,
-        classSession: {
-          teacherId: teacher.id
-        }
-      },
-      include: {
-        classSession: {
-          include: {
-            classType: { select: { name: true, price: true } },
-            location: { select: { name: true } }
-          }
-        },
-        client: {
-          select: { firstName: true, lastName: true }
-        }
-      },
-      orderBy: { createdAt: "desc" }
-    })
-
-    const reportClassSessions = filterByInclusiveDateRange(
-      allClassSessions,
-      (session) => new Date(session.startTime),
-      context.startDate,
-      context.endDate
-    )
-    const reportBookings = filterByInclusiveDateRange(
-      allBookings,
-      (booking) => new Date(booking.classSession.startTime),
-      context.startDate,
-      context.endDate
-    )
-
-    const { stats, extendedStats } = buildTeacherEntityReportSummary({
-      reportClassSessions,
-      reportBookings,
-      allClassSessions,
-      endDate: context.endDate,
-    })
-
     return NextResponse.json(
       buildTeacherEntityResponse({
-        teacher,
-        upcomingClasses: teacher.classSessions,
-        scheduleClasses: allClassSessions,
-        stats,
-        extendedStats,
+        teacher: teacherReport.teacher,
+        upcomingClasses: teacherReport.upcomingClasses,
+        scheduleClasses: teacherReport.scheduleClasses,
+        stats: teacherReport.stats,
+        extendedStats: teacherReport.extendedStats,
       })
     )
   } catch (error) {

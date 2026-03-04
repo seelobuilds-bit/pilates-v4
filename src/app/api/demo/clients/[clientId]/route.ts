@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
-import { filterByInclusiveDateRange, resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
 import { buildClientEntityResponse } from "@/lib/reporting/entity-response"
-import {
-  buildClientEntityStats,
-  mapClientCommunications,
-} from "@/lib/reporting/client-entity"
+import { loadClientEntityReport } from "@/lib/reporting/entity-loaders"
 
 export async function GET(
   request: NextRequest,
@@ -21,73 +18,23 @@ export async function GET(
     const { clientId } = await params
     const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
 
-    const client = await db.client.findFirst({
-      where: {
-        id: clientId,
-        studioId,
-      },
+    const clientReport = await loadClientEntityReport({
+      studioId,
+      clientId,
+      startDate,
+      endDate,
     })
 
-    if (!client) {
+    if (!clientReport) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
 
-    const allBookings = await db.booking.findMany({
-      where: {
-        clientId: client.id,
-        studioId,
-      },
-      include: {
-        classSession: {
-          include: {
-            classType: true,
-            teacher: { include: { user: true } },
-            location: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    })
-
-    const recentBookings = allBookings.slice(0, 20)
-
-    const messages = await db.message.findMany({
-      where: {
-        studioId,
-        clientId: client.id,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        channel: true,
-        direction: true,
-        subject: true,
-        body: true,
-        createdAt: true,
-      },
-    })
-
-    const reportBookings = filterByInclusiveDateRange(
-      allBookings,
-      (booking) => new Date(booking.classSession.startTime),
-      startDate,
-      endDate
-    )
-
-    const communications = mapClientCommunications(messages)
-    const stats = buildClientEntityStats({
-      reportBookings,
-      endDate,
-      credits: client.credits,
-    })
-
     return NextResponse.json(
       buildClientEntityResponse({
-        client,
-        bookings: recentBookings,
-        stats,
-        communications,
+        client: clientReport.client,
+        bookings: clientReport.bookings,
+        stats: clientReport.stats,
+        communications: clientReport.communications,
       })
     )
   } catch (error) {

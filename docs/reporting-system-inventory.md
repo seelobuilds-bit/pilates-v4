@@ -469,6 +469,16 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/client-entity.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/clients/[clientId]/route.ts`
+- Entity profile loader normalization (studio + demo):
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/entity-loaders.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/teachers/[teacherId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/teachers/[teacherId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/clients/[clientId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/class-types/[classTypeId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/class-types/[classTypeId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/locations/[locationId]/route.ts`
 - Studio report marketing composition:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Leaderboard presentation / participant counts:

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import { buildLocationEntityResponse } from "@/lib/reporting/entity-response"
-import { buildLocationEntityStats } from "@/lib/reporting/location-entity"
+import { loadLocationEntityReport } from "@/lib/reporting/entity-loaders"
 import { getSession } from "@/lib/session"
 
 export async function GET(
@@ -13,83 +13,21 @@ export async function GET(
   if (!context.ok) return context.response
 
   const { locationId } = await params
-  const location = await db.location.findFirst({
-    where: {
-      id: locationId,
-      studioId: context.studioId
-    }
-  })
-
-  if (!location) {
-    return NextResponse.json({ error: "Location not found" }, { status: 404 })
-  }
-
-  const classSessions = await db.classSession.findMany({
-    where: {
-      studioId: context.studioId,
-      locationId,
-      startTime: {
-        gte: context.startDate,
-        lte: context.endDate
-      }
-    },
-    include: {
-      classType: { select: { name: true } },
-      teacher: {
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true
-            }
-          }
-        }
-      },
-      _count: {
-        select: { bookings: true }
-      }
-    },
-    orderBy: { startTime: "desc" }
-  })
-
-  const bookings = await db.booking.findMany({
-    where: {
-      studioId: context.studioId,
-      classSession: {
-        locationId,
-        startTime: {
-          gte: context.startDate,
-          lte: context.endDate
-        }
-      }
-    },
-    include: {
-      client: {
-        select: {
-          firstName: true,
-          lastName: true,
-          isActive: true
-        }
-      },
-      classSession: {
-        include: {
-          classType: { select: { name: true, price: true } }
-        }
-      }
-    },
-    orderBy: { createdAt: "desc" }
-  })
-
-  const stats = buildLocationEntityStats({
-    classSessions,
-    bookings,
+  const locationReport = await loadLocationEntityReport({
+    studioId: context.studioId,
+    locationId,
+    startDate: context.startDate,
     endDate: context.endDate,
   })
 
+  if (!locationReport) {
+    return NextResponse.json({ error: "Location not found" }, { status: 404 })
+  }
+
   return NextResponse.json(
     buildLocationEntityResponse({
-      location,
-      stats,
+      location: locationReport.location,
+      stats: locationReport.stats,
     })
   )
 }

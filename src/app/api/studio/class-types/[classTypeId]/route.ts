@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import { buildClassTypeEntityResponse } from "@/lib/reporting/entity-response"
-import { buildClassTypeEntityStats } from "@/lib/reporting/class-type-entity"
+import { loadClassTypeEntityReport } from "@/lib/reporting/entity-loaders"
 import { getSession } from "@/lib/session"
 
 export async function GET(
@@ -13,84 +13,23 @@ export async function GET(
   if (!context.ok) return context.response
 
   const { classTypeId } = await params
-  const classType = await db.classType.findFirst({
-    where: {
-      id: classTypeId,
-      studioId: context.studioId
-    }
-  })
-
-  if (!classType) {
-    return NextResponse.json({ error: "Class type not found" }, { status: 404 })
-  }
-
-  const classSessions = await db.classSession.findMany({
-    where: {
-      studioId: context.studioId,
-      classTypeId,
-      startTime: {
-        gte: context.startDate,
-        lte: context.endDate
-      }
-    },
-    include: {
-      teacher: {
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true
-            }
-          }
-        }
-      },
-      location: {
-        select: { name: true }
-      },
-      _count: {
-        select: { bookings: true }
-      }
-    },
-    orderBy: { startTime: "desc" }
-  })
-
-  const bookings = await db.booking.findMany({
-    where: {
-      studioId: context.studioId,
-      classSession: {
-        classTypeId,
-        startTime: {
-          gte: context.startDate,
-          lte: context.endDate
-        }
-      }
-    },
-    include: {
-      classSession: {
-        include: {
-          location: { select: { name: true } }
-        }
-      }
-    },
-    orderBy: { createdAt: "desc" }
-  })
-
-  const stats = buildClassTypeEntityStats({
-    classSessions,
-    bookings,
-    classPrice: classType.price,
+  const classTypeReport = await loadClassTypeEntityReport({
+    studioId: context.studioId,
+    classTypeId,
+    startDate: context.startDate,
     endDate: context.endDate,
   })
 
-  const locationIds = Array.from(new Set(classSessions.map((session) => session.locationId)))
-  const teacherIds = Array.from(new Set(classSessions.map((session) => session.teacherId)))
+  if (!classTypeReport) {
+    return NextResponse.json({ error: "Class type not found" }, { status: 404 })
+  }
 
   return NextResponse.json(
     buildClassTypeEntityResponse({
-      classType,
-      stats,
-      locationIds,
-      teacherIds,
+      classType: classTypeReport.classType,
+      stats: classTypeReport.stats,
+      locationIds: classTypeReport.locationIds,
+      teacherIds: classTypeReport.teacherIds,
     })
   )
 }
