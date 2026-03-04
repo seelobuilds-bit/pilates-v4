@@ -1,5 +1,5 @@
-import { BookingStatus } from "@prisma/client"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
+import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
 import {
@@ -12,15 +12,12 @@ import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metric
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
-import { ratioPercentage } from "@/lib/reporting/metrics"
 import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
 } from "@/lib/reporting/studio-report-base-query"
 import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
-
 export type MobileReportsPayload = {
   role: "OWNER" | "TEACHER" | "CLIENT"
   studio: {
@@ -287,13 +284,10 @@ export async function getMobileReports(
     }),
   ])
 
-  const currentNonCancelled = currentBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-  const previousNonCancelled = previousBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-
-  const currentCompleted = currentBookings.filter((booking) => booking.status === "COMPLETED").length
-  const previousCompleted = previousBookings.filter((booking) => booking.status === "COMPLETED").length
-  const currentCancelled = currentBookings.filter((booking) => booking.status === "CANCELLED").length
-  const previousCancelled = previousBookings.filter((booking) => booking.status === "CANCELLED").length
+  const clientMetrics = buildMobileClientWindowMetrics({
+    currentBookings,
+    previousBookings,
+  })
 
   const clientSeries = buildMobileClientSeries({
     startDate: currentStart,
@@ -311,15 +305,27 @@ export async function getMobileReports(
       end: responseEnd.toISOString(),
     },
     metrics: [
-      buildMobileMetric("booked", "Booked Classes", "number", currentNonCancelled.length, previousNonCancelled.length),
-      buildMobileMetric("completed", "Completed Classes", "number", currentCompleted, previousCompleted),
-      buildMobileMetric("cancelled", "Cancelled", "number", currentCancelled, previousCancelled),
+      buildMobileMetric("booked", "Booked Classes", "number", clientMetrics.currentBooked, clientMetrics.previousBooked),
+      buildMobileMetric(
+        "completed",
+        "Completed Classes",
+        "number",
+        clientMetrics.currentCompleted,
+        clientMetrics.previousCompleted
+      ),
+      buildMobileMetric(
+        "cancelled",
+        "Cancelled",
+        "number",
+        clientMetrics.currentCancelled,
+        clientMetrics.previousCancelled
+      ),
       buildMobileMetric(
         "completion-rate",
         "Completion Rate",
         "percent",
-        ratioPercentage(currentCompleted, currentNonCancelled.length, 1),
-        ratioPercentage(previousCompleted, previousNonCancelled.length, 1)
+        clientMetrics.currentCompletionRate,
+        clientMetrics.previousCompletionRate
       ),
     ],
     highlights: nextBooking
