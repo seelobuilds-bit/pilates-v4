@@ -3,8 +3,10 @@ import {
   calculateLeaderboardDerivedMetrics,
   leaderboardRatioPercentage,
   normalizeLeaderboardScore,
+  resolveLeaderboardScoreByCategory,
   roundLeaderboardValue,
 } from "../../src/lib/leaderboards/metrics"
+import { LeaderboardParticipantType } from "@prisma/client"
 
 assert.equal(roundLeaderboardValue(12.34567, 2), 12.35)
 assert.equal(leaderboardRatioPercentage(3, 8, 2), 37.5)
@@ -66,5 +68,55 @@ const nonNewcomer = calculateLeaderboardDerivedMetrics({
 
 assert.equal(nonNewcomer.newcomerScore, 0)
 assert.equal(nonNewcomer.comebackScore, 0)
+
+const categoryScore = resolveLeaderboardScoreByCategory({
+  category: "TOP_REVENUE",
+  metricName: "Revenue",
+  participantType: LeaderboardParticipantType.STUDIO,
+  bookingsCurrentCount: 20,
+  revenue: 5000,
+  classesCount: 14,
+  newClients: 4,
+  socialTriggered: 30,
+  socialResponded: 9,
+  socialBooked: 3,
+  socialPosts: 42,
+  contentConsistencyDays: 7,
+  coursesCreated: 2,
+  courseEnrollments: 6,
+  coursesCompleted: 4,
+  mostActiveCommunity: 10,
+  topReviewer: 5,
+  referrals: 2,
+  derived: metrics,
+})
+assert.equal(categoryScore, 5000)
+
+const fallbackScore = resolveLeaderboardScoreByCategory({
+  category: "ALL_ROUNDER",
+  metricName: "Social Engagement",
+  participantType: LeaderboardParticipantType.TEACHER,
+  bookingsCurrentCount: 8,
+  revenue: 100,
+  classesCount: 3,
+  newClients: 0,
+  socialTriggered: 4,
+  socialResponded: 2,
+  socialBooked: 1,
+  socialPosts: 9,
+  contentConsistencyDays: 2,
+  coursesCreated: 1,
+  courseEnrollments: 1,
+  coursesCompleted: 0,
+  mostActiveCommunity: 0,
+  topReviewer: 0,
+  referrals: 0,
+  derived: {
+    ...metrics,
+    allRounder: 0,
+    socialEngagementRate: 75,
+  },
+})
+assert.equal(fallbackScore, 0)
 
 console.log("Leaderboard score logic passed")

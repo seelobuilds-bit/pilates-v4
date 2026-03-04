@@ -233,6 +233,7 @@ This is a major cross-module dependency surface and cannot be refactored casuall
 Current note:
 
 - Low-risk score sub-calculations are now being centralized in `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/metrics.ts` while the existing scoring route remains the source of truth.
+- Category score composition and fallback metric selection are now also centralized in `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/metrics.ts`, with `scoring.ts` retaining data-fetch and ranking orchestration.
 
 ### F. Class Flows
 

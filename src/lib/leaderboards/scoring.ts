@@ -10,6 +10,7 @@ import { db } from "../db"
 import {
   calculateLeaderboardDerivedMetrics,
   normalizeLeaderboardScore,
+  resolveLeaderboardScoreByCategory,
   roundLeaderboardValue,
 } from "./metrics"
 import { compareLeaderboardEntries } from "./presentation"
@@ -527,49 +528,27 @@ export async function populateLeaderboardPeriodEntries(params: {
       courseEnrollments,
     })
 
-    const metricByCategory: Record<LeaderboardCategory, number> = {
-      MOST_CONTENT_POSTED: socialPosts,
-      MOST_SOCIAL_VIEWS: socialTriggered * 3 + socialResponded,
-      MOST_SOCIAL_LIKES: socialResponded,
-      MOST_SOCIAL_ENGAGEMENT: derived.socialEngagementRate,
-      CONTENT_CONSISTENCY: contentConsistencyDays,
-      FASTEST_GROWING: isStudio ? derived.clientGrowthPercent : derived.growthPercent,
-      BIGGEST_GROWTH_MONTHLY: derived.growthPercent,
-      BIGGEST_GROWTH_QUARTERLY: derived.growthPercent,
-      MOST_NEW_CLIENTS: newClients,
-      HIGHEST_RETENTION: isStudio ? derived.retention : 0,
-      MOST_COURSES_COMPLETED: coursesCompleted,
-      MOST_COURSE_ENROLLMENTS: courseEnrollments,
-      TOP_COURSE_CREATOR: coursesCreated,
-      BEST_COURSE_RATINGS: derived.averageRating,
-      MOST_BOOKINGS: bookingsCurrentCount,
-      HIGHEST_ATTENDANCE_RATE: derived.attendanceRate,
-      MOST_CLASSES_TAUGHT: classesCount,
-      TOP_REVENUE: revenue,
-      MOST_ACTIVE_COMMUNITY: mostActiveCommunity,
-      TOP_REVIEWER: topReviewer,
-      MOST_REFERRALS: referrals,
-      NEWCOMER_OF_MONTH: derived.newcomerScore,
-      COMEBACK_CHAMPION: derived.comebackScore,
-      ALL_ROUNDER: derived.allRounder,
-    }
-
-    const fallbackMetricName = leaderboard.metricName.toLowerCase()
-    const fallbackScore = fallbackMetricName.includes("book")
-      ? bookingsCurrentCount
-      : fallbackMetricName.includes("revenue")
-        ? revenue
-        : fallbackMetricName.includes("class")
-          ? classesCount
-          : fallbackMetricName.includes("client")
-            ? newClients
-            : fallbackMetricName.includes("engage")
-              ? derived.socialEngagementRate
-              : fallbackMetricName.includes("social")
-                ? socialTriggered
-                : 0
-
-    const score = metricByCategory[leaderboard.category] ?? fallbackScore
+    const score = resolveLeaderboardScoreByCategory({
+      category: leaderboard.category,
+      metricName: leaderboard.metricName,
+      participantType: leaderboard.participantType,
+      bookingsCurrentCount,
+      revenue,
+      classesCount,
+      newClients,
+      socialTriggered,
+      socialResponded,
+      socialBooked,
+      socialPosts,
+      contentConsistencyDays,
+      coursesCreated,
+      courseEnrollments,
+      coursesCompleted,
+      mostActiveCommunity,
+      topReviewer,
+      referrals,
+      derived,
+    })
 
     return {
       score: normalizeLeaderboardScore(score),
