@@ -8,7 +8,7 @@ import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { buildClassesSummary } from "@/lib/reporting/classes"
 import { buildInstructorRows } from "@/lib/reporting/instructors"
-import { ratioPercentage } from "@/lib/reporting/metrics"
+import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import {
@@ -455,7 +455,12 @@ export async function GET(request: NextRequest) {
     previousBookings,
   })
 
-  const socialConversionRate = ratioPercentage(totalSocialBooked, totalSocialTriggered, 1)
+  const social = buildSocialSummary({
+    activeFlows: activeSocialFlows,
+    totalTriggered: totalSocialTriggered,
+    totalResponded: totalSocialResponded,
+    totalBooked: totalSocialBooked,
+  })
 
   const previousClassCountByTeacherId = new Map(
     previousClassCounts.map((row) => {
@@ -538,13 +543,7 @@ export async function GET(request: NextRequest) {
     classes: classesSummary,
     bookings: bookingSummary,
     marketing,
-    social: {
-      activeFlows: activeSocialFlows,
-      totalTriggered: totalSocialTriggered,
-      totalResponded: totalSocialResponded,
-      totalBooked: totalSocialBooked,
-      conversionRate: socialConversionRate
-    },
+    social,
     range: {
       days,
       startDate: startDate.toISOString(),

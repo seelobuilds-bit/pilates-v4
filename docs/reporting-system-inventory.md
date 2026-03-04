@@ -427,6 +427,8 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Studio report instructor composition:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+- Studio report social composition:
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Attendance / fill:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/reports/route.ts`
