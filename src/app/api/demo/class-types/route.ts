@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { fetchStudioClassTypes } from "@/lib/studio-directory-query"
 
 export async function GET() {
   const studioId = await getDemoStudioId()
@@ -8,10 +8,7 @@ export async function GET() {
     return NextResponse.json([])
   }
 
-  const classTypes = await db.classType.findMany({
-    where: { studioId },
-    orderBy: { name: "asc" }
-  })
+  const classTypes = await fetchStudioClassTypes(studioId)
 
   return NextResponse.json(classTypes)
 }

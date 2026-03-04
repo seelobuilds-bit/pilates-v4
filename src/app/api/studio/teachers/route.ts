@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { sendSystemTemplateEmail } from "@/lib/email"
 import { requireOwnerStudioAccess } from "@/lib/owner-auth"
+import { fetchStudioTeachers } from "@/lib/studio-directory-query"
 
 export async function GET() {
   const auth = await requireOwnerStudioAccess()
@@ -12,20 +13,7 @@ export async function GET() {
     return auth.error
   }
 
-  const teachers = await db.teacher.findMany({
-    where: { studioId: auth.studioId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true
-        }
-      }
-    },
-    orderBy: { createdAt: "desc" }
-  })
+  const teachers = await fetchStudioTeachers(auth.studioId)
 
   return NextResponse.json(teachers)
 }

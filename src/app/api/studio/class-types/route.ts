@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { fetchStudioClassTypes } from "@/lib/studio-directory-query"
 
 export async function GET() {
   const session = await getSession()
@@ -9,10 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const classTypes = await db.classType.findMany({
-    where: { studioId: session.user.studioId },
-    orderBy: { name: "asc" }
-  })
+  const classTypes = await fetchStudioClassTypes(session.user.studioId)
 
   return NextResponse.json(classTypes)
 }

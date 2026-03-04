@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { fetchStudioTeachers } from "@/lib/studio-directory-query"
 
 export async function GET() {
   const studioId = await getDemoStudioId()
@@ -8,20 +8,7 @@ export async function GET() {
     return NextResponse.json([])
   }
 
-  const teachers = await db.teacher.findMany({
-    where: { studioId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true
-        }
-      }
-    },
-    orderBy: { createdAt: "desc" }
-  })
+  const teachers = await fetchStudioTeachers(studioId)
 
   return NextResponse.json(teachers)
 }
