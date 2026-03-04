@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { BookingStatus } from "@prisma/client"
 import {
-  calculateAverageFillRate,
-  countAttendedBookings,
   isAttendedBookingStatus,
 } from "@/lib/reporting/attendance"
 import { db } from "@/lib/db"
@@ -11,7 +9,8 @@ import { runDbQueries } from "@/lib/db-query-mode"
 import { resolveReportRange } from "@/lib/reporting/date-range"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
-import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
+import { buildClassesSummary } from "@/lib/reporting/classes"
+import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import {
@@ -438,64 +437,7 @@ export async function GET(request: NextRequest) {
     monthlyBookings,
   })
 
-  const classesByLocation: Record<string, number> = {}
-  const classesByTeacher: Record<string, number> = {}
-  const byTimeSlotMap = new Map<string, { time: string; fillTotal: number; classes: number }>()
-  const byDayMap = new Map<string, { day: string; fillTotal: number; classes: number }>()
-  const byClassTypeMap = new Map<
-    string,
-    {
-      id: string
-      name: string
-      fillTotal: number
-      classes: number
-      waitlist: number
-    }
-  >()
-
-  const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  for (const day of dayOrder) {
-    byDayMap.set(day, { day, fillTotal: 0, classes: 0 })
-  }
-
-  for (const session of classSessions) {
-    classesByLocation[session.location.name] = (classesByLocation[session.location.name] || 0) + 1
-    const teacherName = `${session.teacher.user.firstName} ${session.teacher.user.lastName}`
-    classesByTeacher[teacherName] = (classesByTeacher[teacherName] || 0) + 1
-
-    const attendedCount = countAttendedBookings(session.bookings)
-    const fill = ratioPercentage(attendedCount, session.capacity, 0)
-
-    const slotLabel = new Date(session.startTime).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit"
-    })
-    const slotEntry = byTimeSlotMap.get(slotLabel) || { time: slotLabel, fillTotal: 0, classes: 0 }
-    slotEntry.fillTotal += fill
-    slotEntry.classes += 1
-    byTimeSlotMap.set(slotLabel, slotEntry)
-
-    const dayLabel = new Date(session.startTime).toLocaleDateString("en-US", { weekday: "short" })
-    const dayEntry = byDayMap.get(dayLabel) || { day: dayLabel, fillTotal: 0, classes: 0 }
-    dayEntry.fillTotal += fill
-    dayEntry.classes += 1
-    byDayMap.set(dayLabel, dayEntry)
-
-    const classEntry = byClassTypeMap.get(session.classTypeId) || {
-      id: session.classTypeId,
-      name: session.classType.name,
-      fillTotal: 0,
-      classes: 0,
-      waitlist: 0
-    }
-    classEntry.fillTotal += fill
-    classEntry.classes += 1
-    classEntry.waitlist += session._count.waitlists
-    byClassTypeMap.set(session.classTypeId, classEntry)
-  }
-  const totalCapacity = classSessions.reduce((sum, session) => sum + session.capacity, 0)
-  const totalAttendance = classSessions.reduce((sum, session) => sum + countAttendedBookings(session.bookings), 0)
-  const overallAverageFill = classSessions.length > 0 ? calculateAverageFillRate(classSessions, 0) : 0
+  const classesSummary = buildClassesSummary(classSessions)
 
   const clientCreatedAtById = new Map(studioClients.map((client) => [client.id, client.createdAt]))
   const bookingSummary = buildBookingSummary({
@@ -737,42 +679,6 @@ export async function GET(request: NextRequest) {
     percent: ratioPercentage(bucket.count, activeClientsList.length, 1)
   }))
 
-  const byTimeSlot = Array.from(byTimeSlotMap.values())
-    .map((item) => ({
-      time: item.time,
-      fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
-      classes: item.classes
-    }))
-    .sort((a, b) => b.fill - a.fill)
-
-  const byDay = Array.from(byDayMap.values()).map((item) => ({
-    day: item.day,
-    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
-    classes: item.classes
-  }))
-
-  const classFillRows = Array.from(byClassTypeMap.values()).map((item) => ({
-    id: item.id,
-    name: item.name,
-    fill: item.classes > 0 ? roundTo(item.fillTotal / item.classes, 0) : 0,
-    waitlist: item.waitlist
-  }))
-
-  const topClasses = [...classFillRows]
-    .sort((a, b) => b.fill - a.fill)
-    .slice(0, 5)
-
-  const underperforming = [...classFillRows]
-    .filter((item) => item.fill < overallAverageFill)
-    .sort((a, b) => a.fill - b.fill)
-    .slice(0, 5)
-    .map((item) => ({
-      id: item.id,
-      name: item.name,
-      fill: item.fill,
-      avgFill: overallAverageFill
-    }))
-
     return NextResponse.json({
     revenue,
     clients: {
@@ -791,18 +697,7 @@ export async function GET(request: NextRequest) {
       churnRate: calculateChurnRate(churnedClients, totalClients, 1),
       churnDefinition: "inactive clients / total clients"
     },
-    classes: {
-      total: classSessions.length,
-      totalCapacity,
-      totalAttendance,
-      averageFill: overallAverageFill,
-      byLocation: Object.entries(classesByLocation).map(([name, count]) => ({ name, count })),
-      byTeacher: Object.entries(classesByTeacher).map(([name, count]) => ({ name, count })),
-      byTimeSlot,
-      byDay,
-      topClasses,
-      underperforming
-    },
+    classes: classesSummary,
     bookings: bookingSummary,
     marketing,
     social: {

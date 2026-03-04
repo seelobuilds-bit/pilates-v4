@@ -97,6 +97,9 @@ jobs:
       - name: Reporting attendance regression
         run: pnpm test:reporting:attendance
 
+      - name: Reporting classes regression
+        run: pnpm test:reporting:classes
+
       - name: Reporting retention regression
         run: pnpm test:reporting:retention
 
