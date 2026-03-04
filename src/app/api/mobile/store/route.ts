@@ -1,46 +1,31 @@
 import { Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileTokenContext } from "@/lib/mobile-auth-context"
+import { fetchStudioBrandingSummary, toMobileStudioSummary } from "@/lib/studio-read-models"
 
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
-    }
-
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
+    const auth = resolveMobileTokenContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+
+    const decoded = auth.decoded
 
     if (decoded.role !== "OWNER") {
       return NextResponse.json({ error: "Store is available for studio owner accounts only" }, { status: 403 })
     }
 
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
-
+    const studio = await fetchStudioBrandingSummary(decoded.studioId)
     if (!studio || studio.subdomain !== decoded.studioSubdomain) {
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const studioSummary = {
-      id: studio.id,
-      name: studio.name,
-      subdomain: studio.subdomain,
-      primaryColor: studio.primaryColor,
-      currency: studio.stripeCurrency,
-    }
+    const studioSummary = toMobileStudioSummary(studio)
 
     const search = String(request.nextUrl.searchParams.get("search") || "").trim()
     const status = String(request.nextUrl.searchParams.get("status") || "active").toLowerCase() === "all" ? "all" : "active"

@@ -1,6 +1,16 @@
 import { extractBearerToken, verifyMobileToken, type MobileTokenPayload } from "./mobile-auth"
 import { fetchStudioBrandingSummary, type StudioBrandingSummary } from "./studio-read-models"
 
+export type MobileTokenContext =
+  | {
+      ok: true
+      decoded: MobileTokenPayload
+    }
+  | {
+      ok: false
+      reason: "missing_token" | "invalid_token"
+    }
+
 export type MobileStudioAuthContext =
   | {
       ok: true
@@ -12,9 +22,9 @@ export type MobileStudioAuthContext =
       reason: "missing_token" | "invalid_token" | "studio_not_found"
     }
 
-export async function resolveMobileStudioAuthContext(
+export function resolveMobileTokenContext(
   authorizationHeader: string | null
-): Promise<MobileStudioAuthContext> {
+): MobileTokenContext {
   const token = extractBearerToken(authorizationHeader)
   if (!token) {
     return { ok: false, reason: "missing_token" }
@@ -25,14 +35,28 @@ export async function resolveMobileStudioAuthContext(
     return { ok: false, reason: "invalid_token" }
   }
 
-  const studio = await fetchStudioBrandingSummary(decoded.studioId)
-  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+  return {
+    ok: true,
+    decoded,
+  }
+}
+
+export async function resolveMobileStudioAuthContext(
+  authorizationHeader: string | null
+): Promise<MobileStudioAuthContext> {
+  const auth = resolveMobileTokenContext(authorizationHeader)
+  if (!auth.ok) {
+    return auth
+  }
+
+  const studio = await fetchStudioBrandingSummary(auth.decoded.studioId)
+  if (!studio || studio.subdomain !== auth.decoded.studioSubdomain) {
     return { ok: false, reason: "studio_not_found" }
   }
 
   return {
     ok: true,
-    decoded,
+    decoded: auth.decoded,
     studio,
   }
 }
