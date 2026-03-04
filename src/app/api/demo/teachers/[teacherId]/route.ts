@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
 import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
-import {
-  addCountToMonthlyBuckets,
-  buildMonthlyBucketLookup,
-  buildMonthlyCountBuckets,
-} from "@/lib/reporting/monthly"
-import { resolveBookingRevenue } from "@/lib/reporting/revenue"
-import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
+import { buildTeacherEntityReportSummary } from "@/lib/reporting/teacher-entity"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
 const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
@@ -90,86 +84,17 @@ export async function GET(
       return classStart >= startDate && classStart <= endDate
     })
 
-    const thisMonthStart = new Date()
-    thisMonthStart.setDate(1)
-    thisMonthStart.setHours(0, 0, 0, 0)
-
-    const classesThisMonth = reportClassSessions.filter(
-      (session) => new Date(session.startTime) >= thisMonthStart
-    ).length
-
-    const uniqueStudents = new Set(reportBookings.map((booking) => booking.clientId))
-    const nonCancelledBookings = reportBookings.filter((booking) => booking.status !== "CANCELLED")
-    const completedBookings = reportBookings.filter((booking) => booking.status === "COMPLETED").length
-
-    const revenue = nonCancelledBookings.reduce((sum, booking) => {
-      const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-      return sum + amount
-    }, 0)
-
-    const avgClassSize =
-      reportClassSessions.length > 0
-        ? Math.round((nonCancelledBookings.length / reportClassSessions.length) * 10) / 10
-        : 0
-
-    const completionRate =
-      nonCancelledBookings.length > 0
-        ? Math.round((completedBookings / nonCancelledBookings.length) * 100)
-        : 0
-
-    const clientBookingCounts = new Map<string, number>()
-    for (const booking of nonCancelledBookings) {
-      const name = `${booking.client.firstName} ${booking.client.lastName}`.trim()
-      clientBookingCounts.set(name, (clientBookingCounts.get(name) || 0) + 1)
-    }
-
-    const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
-
-    const classCounts = new Map<string, number>()
-    const locationCounts = new Map<string, number>()
-    for (const session of reportClassSessions) {
-      classCounts.set(session.classType.name, (classCounts.get(session.classType.name) || 0) + 1)
-      locationCounts.set(session.location.name, (locationCounts.get(session.location.name) || 0) + 1)
-    }
-
-    const monthlyBuckets = buildMonthlyCountBuckets(endDate, 6)
-    const monthLookup = buildMonthlyBucketLookup(monthlyBuckets)
-    for (const session of reportClassSessions) {
-      addCountToMonthlyBuckets(monthLookup, new Date(session.startTime))
-    }
-
-    const topClients = Array.from(clientBookingCounts.entries())
-      .map(([name, bookings]) => ({ name, bookings }))
-      .sort((a, b) => b.bookings - a.bookings)
-      .slice(0, 5)
-
-    const extendedStats = {
-      revenue: Math.round(revenue * 100) / 100,
-      retentionRate,
-      avgClassSize,
-      completionRate,
-      classBreakdown: Array.from(classCounts.entries())
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count),
-      locationBreakdown: Array.from(locationCounts.entries())
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count),
-      monthlyClasses: monthlyBuckets.map(({ month, count }) => ({ month, count })),
-      ratingDataAvailable: false,
-      recentReviews: [] as Array<{ clientName: string; rating: number; comment: string; date: string }>,
-      topClients
-    }
+    const { stats, extendedStats } = buildTeacherEntityReportSummary({
+      reportClassSessions,
+      reportBookings,
+      allClassSessions,
+      endDate,
+    })
 
     return NextResponse.json({
       ...teacher,
       upcomingClasses: teacher.classSessions,
-      stats: {
-        totalClasses: reportClassSessions.length,
-        totalStudents: uniqueStudents.size,
-        averageRating: null,
-        ratingDataAvailable: false,
-        thisMonth: classesThisMonth
-      },
+      stats,
       extendedStats
     })
   } catch (error) {
