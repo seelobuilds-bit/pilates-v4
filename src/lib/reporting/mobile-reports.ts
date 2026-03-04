@@ -8,6 +8,7 @@ import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const ALLOWED_DAYS = new Set([7, 30, 90])
@@ -268,16 +269,14 @@ export async function getMobileReports(
       }),
     ])
 
-    const currentRevenue = roundCurrency(
-      currentBookings
-        .filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-        .reduce((sum, booking) => sum + bookingRevenue(booking), 0)
-    )
-    const previousRevenue = roundCurrency(
-      previousBookings
-        .filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-        .reduce((sum, booking) => sum + bookingRevenue(booking), 0)
-    )
+    const revenueSummary = buildRevenueSummary({
+      bookings: currentBookings,
+      previousBookings,
+      monthlyBookings: [],
+      referenceDate: periodEnd,
+    })
+    const currentRevenue = roundCurrency(revenueSummary.total)
+    const previousRevenue = roundCurrency(revenueSummary.previousTotal)
 
     const currentBooked = currentBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status)).length
     const previousBooked = previousBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status)).length
