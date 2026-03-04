@@ -3,6 +3,7 @@ import {
   buildMonthlyBucketLookup,
   buildMonthlyCountBuckets,
 } from "./monthly"
+import { roundTo } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
 import { buildNonCancelledBookingAggregate } from "./booking-aggregates"
 
@@ -34,10 +35,6 @@ export type ClassTypeEntityBookingLike = {
       name: string
     }
   }
-}
-
-function roundTwo(value: number) {
-  return Math.round(value * 100) / 100
 }
 
 export function buildClassTypeEntityStats(params: {
@@ -94,8 +91,8 @@ export function buildClassTypeEntityStats(params: {
 
   return {
     totalBookings: bookings.length,
-    totalRevenue: roundTwo(totalRevenue),
-    avgAttendance: classSessions.length > 0 ? roundTwo(nonCancelledBookings.length / classSessions.length) : 0,
+    totalRevenue: roundTo(totalRevenue, 2),
+    avgAttendance: classSessions.length > 0 ? roundTo(nonCancelledBookings.length / classSessions.length, 2) : 0,
     avgRating: null,
     ratingDataAvailable: false,
     topTeachers: Array.from(teacherCounts.entries())

@@ -3,6 +3,7 @@ import {
   buildMonthlyBucketLookup,
   buildMonthlyRevenueBuckets,
 } from "./monthly"
+import { roundTo } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
 import { buildNonCancelledBookingAggregate } from "./booking-aggregates"
 
@@ -33,10 +34,6 @@ export type LocationEntityBookingLike = {
       price: number
     }
   }
-}
-
-function roundTwo(value: number) {
-  return Math.round(value * 100) / 100
 }
 
 export function buildLocationEntityStats(params: {
@@ -90,9 +87,9 @@ export function buildLocationEntityStats(params: {
 
   return {
     totalBookings: nonCancelledBookings.length,
-    totalRevenue: roundTwo(totalRevenue),
+    totalRevenue: roundTo(totalRevenue, 2),
     activeClients: activeClientIds.size,
-    avgClassSize: classSessions.length > 0 ? roundTwo(nonCancelledBookings.length / classSessions.length) : 0,
+    avgClassSize: classSessions.length > 0 ? roundTo(nonCancelledBookings.length / classSessions.length, 2) : 0,
     topClasses: Array.from(classCounts.entries())
       .map(([name, bookingsCount]) => ({ name, bookings: bookingsCount }))
       .sort((a, b) => b.bookings - a.bookings)
@@ -115,7 +112,7 @@ export function buildLocationEntityStats(params: {
     bookingsByDay: Array.from(bookingsByDayMap.entries()).map(([day, count]) => ({ day, count })),
     monthlyRevenue: monthlyBuckets.map(({ month, revenue }) => ({
       month,
-      revenue: roundTwo(revenue),
+      revenue: roundTo(revenue, 2),
     })),
   }
 }

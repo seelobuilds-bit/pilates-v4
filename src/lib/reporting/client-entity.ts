@@ -3,6 +3,7 @@ import {
   buildMonthlyBucketLookup,
   buildMonthlyCountBuckets,
 } from "./monthly"
+import { roundTo } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
 import { buildNonCancelledBookingAggregate } from "./booking-aggregates"
 
@@ -37,14 +38,6 @@ export type ClientEntityMessageLike = {
   createdAt: Date
 }
 
-function roundTwo(value: number) {
-  return Math.round(value * 100) / 100
-}
-
-function roundOne(value: number) {
-  return Math.round(value * 10) / 10
-}
-
 function resolveActivityAction(status: string) {
   if (status === "CONFIRMED") return "Booked"
   if (status === "COMPLETED") return "Completed"
@@ -72,7 +65,7 @@ export function buildClientEntityStats(params: {
 
   const totalBookings = nonCancelledBookings.length
   const totalBookingAttempts = reportBookings.length
-  const cancelRate = totalBookingAttempts > 0 ? roundOne((cancelledClasses / totalBookingAttempts) * 100) : 0
+  const cancelRate = totalBookingAttempts > 0 ? roundTo((cancelledClasses / totalBookingAttempts) * 100, 1) : 0
 
   const classCounts = new Map<string, number>()
   const teacherCounts = new Map<string, number>()
@@ -113,7 +106,7 @@ export function buildClientEntityStats(params: {
       (endDate.getMonth() - oldestBookingDate.getMonth()) +
       1
     const activeMonths = Math.max(1, monthDiff)
-    avgBookingsPerMonth = roundOne(totalBookings / activeMonths)
+    avgBookingsPerMonth = roundTo(totalBookings / activeMonths, 1)
   }
 
   const monthlyBuckets = buildMonthlyCountBuckets(endDate, 6)
@@ -132,7 +125,7 @@ export function buildClientEntityStats(params: {
   })
 
   return {
-    totalSpent: roundTwo(totalSpent),
+    totalSpent: roundTo(totalSpent, 2),
     totalBookings,
     completedClasses,
     cancelRate,

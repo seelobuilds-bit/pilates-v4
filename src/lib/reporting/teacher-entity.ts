@@ -3,6 +3,7 @@ import {
   buildMonthlyBucketLookup,
   buildMonthlyCountBucketsByOffsets,
 } from "./monthly"
+import { roundTo } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
 import { buildClientVisitCounts } from "./retention"
 import { buildTeacherBookingSnapshot } from "./teacher-metrics"
@@ -28,10 +29,6 @@ export type TeacherEntityBookingLike = {
 }
 
 const DEFAULT_MONTH_OFFSETS = [-2, -1, 0, 1, 2, 3]
-
-function roundTwo(value: number) {
-  return Math.round(value * 100) / 100
-}
 
 export function buildTeacherEntityReportSummary(params: {
   reportClassSessions: TeacherEntitySessionLike[]
@@ -60,7 +57,7 @@ export function buildTeacherEntityReportSummary(params: {
   const uniqueStudents = new Set(reportBookings.map((booking) => booking.clientId))
 
   const avgClassSize =
-    reportClassSessions.length > 0 ? roundTwo(nonCancelledBookings.length / reportClassSessions.length) : 0
+    reportClassSessions.length > 0 ? roundTo(nonCancelledBookings.length / reportClassSessions.length, 2) : 0
 
   const completionRate =
     nonCancelledBookings.length > 0 ? Math.round((completedBookings / nonCancelledBookings.length) * 100) : 0
@@ -102,7 +99,7 @@ export function buildTeacherEntityReportSummary(params: {
       thisMonth: classesThisMonth,
     },
     extendedStats: {
-      revenue: roundTwo(revenue),
+      revenue: roundTo(revenue, 2),
       retentionRate,
       avgClassSize,
       completionRate,
