@@ -6,7 +6,7 @@ import { getDemoStudioId } from "@/lib/demo-studio"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { buildClassesSummary } from "@/lib/reporting/classes"
-import { buildInstructorRows } from "@/lib/reporting/instructors"
+import { buildInstructorRows, buildPreviousClassCountByTeacherId } from "@/lib/reporting/instructors"
 import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
@@ -452,18 +452,7 @@ export async function GET(request: NextRequest) {
     totalBooked: totalSocialBooked,
   })
 
-  const previousClassCountByTeacherId = new Map(
-    previousClassCounts.map((row) => {
-      const count =
-        typeof row._count === "object" &&
-        row._count !== null &&
-        "teacherId" in row._count &&
-        typeof row._count.teacherId === "number"
-          ? row._count.teacherId
-          : 0
-      return [row.teacherId, count] as const
-    })
-  )
+  const previousClassCountByTeacherId = buildPreviousClassCountByTeacherId(previousClassCounts)
   const instructorRows = buildInstructorRows({
     classSessions,
     studioTeachers,

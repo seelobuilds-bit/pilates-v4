@@ -44,6 +44,26 @@ type InstructorRow = {
   specialties: string[]
 }
 
+type PreviousClassCountRow = {
+  teacherId: string
+  _count: unknown
+}
+
+export function buildPreviousClassCountByTeacherId(rows: PreviousClassCountRow[]) {
+  return new Map(
+    rows.map((row) => {
+      const count =
+        typeof row._count === "object" &&
+        row._count !== null &&
+        "teacherId" in row._count &&
+        typeof (row._count as { teacherId?: unknown }).teacherId === "number"
+          ? (row._count as { teacherId: number }).teacherId
+          : 0
+      return [row.teacherId, count] as const
+    })
+  )
+}
+
 export function buildInstructorRows({
   classSessions,
   studioTeachers,

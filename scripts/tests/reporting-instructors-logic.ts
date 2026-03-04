@@ -1,5 +1,8 @@
 import assert from "node:assert/strict"
-import { buildInstructorRows } from "../../src/lib/reporting/instructors"
+import {
+  buildInstructorRows,
+  buildPreviousClassCountByTeacherId,
+} from "../../src/lib/reporting/instructors"
 
 const rows = buildInstructorRows({
   classSessions: [
@@ -67,5 +70,14 @@ assert.equal(rows[2].id, "t3")
 assert.equal(rows[2].classes, 0)
 assert.equal(rows[2].avgFill, 0)
 assert.equal(rows[2].trend, "stable")
+
+const previousClassCountByTeacherId = buildPreviousClassCountByTeacherId([
+  { teacherId: "t1", _count: { teacherId: 3 } },
+  { teacherId: "t2", _count: { teacherId: "invalid" } },
+  { teacherId: "t3", _count: null },
+])
+assert.equal(previousClassCountByTeacherId.get("t1"), 3)
+assert.equal(previousClassCountByTeacherId.get("t2"), 0)
+assert.equal(previousClassCountByTeacherId.get("t3"), 0)
 
 console.log("Reporting instructors logic passed")
