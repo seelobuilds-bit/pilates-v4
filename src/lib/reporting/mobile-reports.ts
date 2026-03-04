@@ -5,11 +5,10 @@ import { buildMobileClientReportMetrics } from "@/lib/reporting/mobile-client-re
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
-import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
 import { buildMobileReportsPayload, type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-report-response"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
-import { buildMobileTeacherReportMetrics } from "@/lib/reporting/mobile-teacher-report-metrics"
+import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
@@ -136,15 +135,14 @@ export async function getMobileReports(
       sessions: currentSessions,
     })
 
-    return buildMobileReportsPayload({
-      role: "TEACHER",
+    return buildMobileTeacherReportResponse({
       studio: studioSummary,
       periodDays,
       periodEnd,
       rangeStart: currentStart,
       rangeEnd: responseEnd,
-      metrics: buildMobileTeacherReportMetrics(teacherMetrics),
-      highlights: buildClassTypeHighlights(currentSessions),
+      metrics: teacherMetrics,
+      sessions: currentSessions,
       series: teacherSeries,
     })
   }
