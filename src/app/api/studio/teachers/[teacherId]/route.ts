@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { filterByInclusiveDateRange } from "@/lib/reporting/date-range"
+import { buildTeacherEntityResponse } from "@/lib/reporting/entity-response"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import {
   buildTeacherEntityReportSummary,
@@ -107,13 +108,15 @@ export async function GET(
       endDate: context.endDate,
     })
 
-    return NextResponse.json({
-      ...teacher,
-      upcomingClasses: teacher.classSessions,
-      scheduleClasses: allClassSessions,
-      stats,
-      extendedStats
-    })
+    return NextResponse.json(
+      buildTeacherEntityResponse({
+        teacher,
+        upcomingClasses: teacher.classSessions,
+        scheduleClasses: allClassSessions,
+        stats,
+        extendedStats,
+      })
+    )
   } catch (error) {
     console.error("Error fetching teacher:", error)
     return NextResponse.json({ error: "Failed to fetch teacher" }, { status: 500 })

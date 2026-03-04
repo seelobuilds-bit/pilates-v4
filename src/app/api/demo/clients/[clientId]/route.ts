@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { filterByInclusiveDateRange, resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { buildClientEntityResponse } from "@/lib/reporting/entity-response"
 import {
   buildClientEntityStats,
   mapClientCommunications,
@@ -67,10 +68,12 @@ export async function GET(
       },
     })
 
-    const reportBookings = allBookings.filter((booking) => {
-      const classStart = new Date(booking.classSession.startTime)
-      return classStart >= startDate && classStart <= endDate
-    })
+    const reportBookings = filterByInclusiveDateRange(
+      allBookings,
+      (booking) => new Date(booking.classSession.startTime),
+      startDate,
+      endDate
+    )
 
     const communications = mapClientCommunications(messages)
     const stats = buildClientEntityStats({
@@ -79,12 +82,14 @@ export async function GET(
       credits: client.credits,
     })
 
-    return NextResponse.json({
-      client,
-      bookings: recentBookings,
-      stats,
-      communications,
-    })
+    return NextResponse.json(
+      buildClientEntityResponse({
+        client,
+        bookings: recentBookings,
+        stats,
+        communications,
+      })
+    )
   } catch (error) {
     console.error("Error fetching demo client:", error)
     return NextResponse.json({ error: "Failed to fetch client" }, { status: 500 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
+import { buildClassTypeEntityResponse } from "@/lib/reporting/entity-response"
 import { buildClassTypeEntityStats } from "@/lib/reporting/class-type-entity"
 import { getSession } from "@/lib/session"
 
@@ -84,12 +85,14 @@ export async function GET(
   const locationIds = Array.from(new Set(classSessions.map((session) => session.locationId)))
   const teacherIds = Array.from(new Set(classSessions.map((session) => session.teacherId)))
 
-  return NextResponse.json({
-    ...classType,
-    stats,
-    locationIds,
-    teacherIds
-  })
+  return NextResponse.json(
+    buildClassTypeEntityResponse({
+      classType,
+      stats,
+      locationIds,
+      teacherIds,
+    })
+  )
 }
 
 export async function PATCH(

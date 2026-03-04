@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
+import { buildLocationEntityResponse } from "@/lib/reporting/entity-response"
 import { buildLocationEntityStats } from "@/lib/reporting/location-entity"
 import { getSession } from "@/lib/session"
 
@@ -85,10 +86,12 @@ export async function GET(
     endDate: context.endDate,
   })
 
-  return NextResponse.json({
-    ...location,
-    stats
-  })
+  return NextResponse.json(
+    buildLocationEntityResponse({
+      location,
+      stats,
+    })
+  )
 }
 
 export async function PATCH(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
 import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { buildLocationEntityResponse } from "@/lib/reporting/entity-response"
 import { buildLocationEntityStats } from "@/lib/reporting/location-entity"
 
 export async function GET(
@@ -88,10 +89,12 @@ export async function GET(
     endDate,
   })
 
-  return NextResponse.json({
-    ...location,
-    stats,
-  })
+  return NextResponse.json(
+    buildLocationEntityResponse({
+      location,
+      stats,
+    })
+  )
 }
 
 export async function PATCH() {

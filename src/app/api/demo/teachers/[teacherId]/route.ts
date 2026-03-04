@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { filterByInclusiveDateRange, resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { buildTeacherEntityResponse } from "@/lib/reporting/entity-response"
 import { buildTeacherEntityReportSummary } from "@/lib/reporting/teacher-entity"
 
 export async function GET(
@@ -68,15 +69,19 @@ export async function GET(
       orderBy: { createdAt: "desc" }
     })
 
-    const reportClassSessions = allClassSessions.filter((session) => {
-      const classStart = new Date(session.startTime)
-      return classStart >= startDate && classStart <= endDate
-    })
+    const reportClassSessions = filterByInclusiveDateRange(
+      allClassSessions,
+      (session) => new Date(session.startTime),
+      startDate,
+      endDate
+    )
 
-    const reportBookings = allBookings.filter((booking) => {
-      const classStart = new Date(booking.classSession.startTime)
-      return classStart >= startDate && classStart <= endDate
-    })
+    const reportBookings = filterByInclusiveDateRange(
+      allBookings,
+      (booking) => new Date(booking.classSession.startTime),
+      startDate,
+      endDate
+    )
 
     const { stats, extendedStats } = buildTeacherEntityReportSummary({
       reportClassSessions,
@@ -85,12 +90,14 @@ export async function GET(
       endDate,
     })
 
-    return NextResponse.json({
-      ...teacher,
-      upcomingClasses: teacher.classSessions,
-      stats,
-      extendedStats
-    })
+    return NextResponse.json(
+      buildTeacherEntityResponse({
+        teacher,
+        upcomingClasses: teacher.classSessions,
+        stats,
+        extendedStats,
+      })
+    )
   } catch (error) {
     console.error("Error fetching demo teacher:", error)
     return NextResponse.json({ error: "Failed to fetch teacher" }, { status: 500 })
