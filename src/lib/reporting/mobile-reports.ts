@@ -1,3 +1,4 @@
+import { buildMobileClientHighlights } from "@/lib/reporting/mobile-client-report-highlights"
 import { buildMobileClientReportMetrics } from "@/lib/reporting/mobile-client-report-card-metrics"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
@@ -269,14 +270,7 @@ export async function getMobileReports(
       end: responseEnd.toISOString(),
     },
     metrics: buildMobileClientReportMetrics(clientMetrics),
-    highlights: nextBooking
-      ? [
-          {
-            label: "Next class",
-            value: `${nextBooking.classSession.classType.name} · ${new Date(nextBooking.classSession.startTime).toLocaleString()}`,
-          },
-        ]
-      : [{ label: "Next class", value: "No upcoming bookings yet" }],
+    highlights: buildMobileClientHighlights(nextBooking),
     series: clientSeries,
   }
 }
