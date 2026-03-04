@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { runDbQueries } from "@/lib/db-query-mode"
 import { getSession } from "@/lib/session"
-import { summarizeWebsiteOverview } from "@/lib/website-analytics/metrics"
-
-function toSafeNumber(value: unknown) {
-  if (typeof value === "bigint") return Number(value)
-  if (typeof value === "number") return value
-  if (typeof value === "string") {
-    const parsed = Number(value)
-    return Number.isFinite(parsed) ? parsed : 0
-  }
-  return 0
-}
-
-function extractGroupCount(value: unknown) {
-  if (!value || typeof value !== "object") return 0
-  const record = value as Record<string, unknown>
-  if (typeof record.id === "number") return record.id
-  if (typeof record._all === "number") return record._all
-  return 0
-}
+import {
+  resolveWebsiteAnalyticsRange,
+} from "@/lib/website-analytics/reporting"
+import { fetchWebsiteAnalyticsSnapshot } from "@/lib/website-analytics/query"
 
 // GET - Fetch website analytics config and data
 export async function GET(request: NextRequest) {
@@ -38,27 +22,8 @@ export async function GET(request: NextRequest) {
   const studioId = session.user.studioId!
 
   const searchParams = request.nextUrl.searchParams
-  const requestedPeriod = searchParams.get("period") || "7d"
-  const period = ["24h", "7d", "30d", "90d"].includes(requestedPeriod) ? requestedPeriod : "7d"
+  const { period, startDate, endDate } = resolveWebsiteAnalyticsRange(searchParams.get("period"))
   const dataType = searchParams.get("type") || "overview"
-  const endDate = new Date()
-  const startDate = new Date(endDate)
-  switch (period) {
-    case "24h":
-      startDate.setHours(startDate.getHours() - 24)
-      break
-    case "7d":
-      startDate.setDate(startDate.getDate() - 7)
-      break
-    case "30d":
-      startDate.setDate(startDate.getDate() - 30)
-      break
-    case "90d":
-      startDate.setDate(startDate.getDate() - 90)
-      break
-    default:
-      startDate.setDate(startDate.getDate() - 7)
-  }
 
   try {
     // Get or create config
@@ -78,162 +43,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ config })
     }
 
-    // Fetch analytics data
-    const [
-      totalPageViews,
-      uniqueVisitors,
-      totalConversions,
-      topPages,
-      topSources,
-      deviceBreakdown,
-      recentEvents,
-      visitorTrend
-    ] = await runDbQueries([
-      // Total page views
-      () => db.websiteEvent.count({
-        where: {
-          studioId,
-          type: "PAGE_VIEW",
-          createdAt: {
-            gte: startDate,
-            lt: endDate
-          }
-        }
-      }),
-      
-      // Unique visitors
-      () => db.websiteVisitor.count({
-        where: {
-          studioId,
-          lastVisit: {
-            gte: startDate,
-            lt: endDate
-          }
-        }
-      }),
-      
-      // Conversions
-      () => db.websiteVisitor.count({
-        where: {
-          studioId,
-          hasConverted: true,
-          convertedAt: {
-            gte: startDate,
-            lt: endDate
-          }
-        }
-      }),
-      
-      // Top pages
-      () => db.websiteEvent.groupBy({
-        by: ["pagePath"] as const,
-        where: {
-          studioId,
-          type: "PAGE_VIEW",
-          createdAt: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 10
-      }),
-      
-      // Top traffic sources
-      () => db.websiteVisitor.groupBy({
-        by: ["firstSource"] as const,
-        where: {
-          studioId,
-          lastVisit: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 5
-      }),
-      
-      // Device breakdown
-      () => db.websiteVisitor.groupBy({
-        by: ["device"] as const,
-        where: {
-          studioId,
-          lastVisit: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        _count: { id: true },
-        orderBy: { device: "asc" }
-      }),
-      
-      // Recent events
-      () => db.websiteEvent.findMany({
-        where: {
-          studioId,
-          createdAt: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        include: {
-          visitor: {
-            select: { visitorId: true, device: true, browser: true }
-          }
-        }
-      }),
-      
-      // Visitor trend (daily for 7d, or hourly for 24h)
-      () => (period === "24h"
-        ? db.$queryRaw`
-            SELECT 
-              DATE_TRUNC('hour', "createdAt") as period,
-              COUNT(DISTINCT "visitorId") as visitors,
-              COUNT(*) as pageviews
-            FROM "WebsiteEvent"
-            WHERE "studioId" = ${studioId}
-              AND "createdAt" >= ${startDate}
-              AND "createdAt" < ${endDate}
-              AND "type" = 'PAGE_VIEW'
-            GROUP BY DATE_TRUNC('hour', "createdAt")
-            ORDER BY period
-          `
-        : db.$queryRaw`
-            SELECT 
-              DATE_TRUNC('day', "createdAt") as period,
-              COUNT(DISTINCT "visitorId") as visitors,
-              COUNT(*) as pageviews
-            FROM "WebsiteEvent"
-            WHERE "studioId" = ${studioId}
-              AND "createdAt" >= ${startDate}
-              AND "createdAt" < ${endDate}
-              AND "type" = 'PAGE_VIEW'
-            GROUP BY DATE_TRUNC('day', "createdAt")
-            ORDER BY period
-          `
-      )
-    ])
-
-    const overview = summarizeWebsiteOverview(totalPageViews, uniqueVisitors, totalConversions)
-
-    const normalizedVisitorTrend = Array.isArray(visitorTrend)
-      ? visitorTrend.map((point: unknown) => {
-          const row = (point || {}) as { period?: unknown; visitors?: unknown; pageviews?: unknown }
-          const periodValue = row.period instanceof Date ? row.period.toISOString() : String(row.period || "")
-          return {
-            period: periodValue,
-            visitors: toSafeNumber(row.visitors),
-            pageviews: toSafeNumber(row.pageviews),
-          }
-        })
-      : []
-    const normalizedRecentEvents = JSON.parse(
-      JSON.stringify(recentEvents, (_key, value) => (typeof value === "bigint" ? Number(value) : value))
-    )
+    const analytics = await fetchWebsiteAnalyticsSnapshot({
+      studioId,
+      startDate,
+      endDate,
+      period,
+    })
 
     return NextResponse.json({
       config,
@@ -243,27 +58,12 @@ export async function GET(request: NextRequest) {
         endDate: endDate.toISOString()
       },
       analytics: {
-        overview: {
-          totalPageViews: overview.totalPageViews,
-          uniqueVisitors: overview.uniqueVisitors,
-          totalConversions: overview.totalConversions,
-          conversionRate: overview.conversionRate,
-          avgPagesPerVisit: overview.avgPagesPerVisit,
-        },
-        topPages: topPages.map(p => ({
-          path: p.pagePath || "/",
-          views: extractGroupCount(p._count)
-        })),
-        topSources: topSources.map(s => ({
-          source: s.firstSource || "Direct",
-          visitors: extractGroupCount(s._count)
-        })),
-        deviceBreakdown: deviceBreakdown.map(d => ({
-          device: d.device || "Unknown",
-          count: extractGroupCount(d._count)
-        })),
-        recentEvents: normalizedRecentEvents,
-        visitorTrend: normalizedVisitorTrend
+        overview: analytics.overview,
+        topPages: analytics.topPages,
+        topSources: analytics.topSources,
+        deviceBreakdown: analytics.deviceBreakdown,
+        recentEvents: analytics.recentEvents,
+        visitorTrend: analytics.visitorTrend
       }
     })
   } catch (error) {
@@ -343,8 +143,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update config" }, { status: 500 })
   }
 }
-
-
 
 
 

@@ -4,6 +4,11 @@ import {
   summarizeDeliveryMetrics,
 } from "../../src/lib/marketing/analytics"
 import { summarizeWebsiteOverview } from "../../src/lib/website-analytics/metrics"
+import {
+  extractGroupCount,
+  normalizeVisitorTrend,
+  resolveWebsiteAnalyticsRange,
+} from "../../src/lib/website-analytics/reporting"
 
 function run() {
   const website = summarizeWebsiteOverview(125, 25, 4)
@@ -23,6 +28,27 @@ function run() {
     conversionRate: "0",
     avgPagesPerVisit: "0",
   })
+
+  const referenceDate = new Date("2026-03-04T12:00:00.000Z")
+  const websiteRange = resolveWebsiteAnalyticsRange("30d", referenceDate)
+  assert.equal(websiteRange.period, "30d")
+  assert.equal(websiteRange.endDate.toISOString(), "2026-03-04T12:00:00.000Z")
+  assert.equal(websiteRange.startDate.toISOString(), "2026-02-02T12:00:00.000Z")
+
+  const fallbackRange = resolveWebsiteAnalyticsRange("invalid", referenceDate)
+  assert.equal(fallbackRange.period, "7d")
+  assert.equal(fallbackRange.startDate.toISOString(), "2026-02-25T12:00:00.000Z")
+
+  assert.equal(extractGroupCount({ id: 12 }), 12)
+  assert.equal(extractGroupCount({ _all: 3 }), 3)
+  assert.equal(extractGroupCount({}), 0)
+
+  const trend = normalizeVisitorTrend([
+    { period: new Date("2026-03-01T00:00:00.000Z"), visitors: "5", pageviews: BigInt(9) },
+  ])
+  assert.deepEqual(trend, [
+    { period: "2026-03-01T00:00:00.000Z", visitors: 5, pageviews: 9 },
+  ])
 
   const delivery = summarizeDeliveryMetrics(100, 80, 30, 12, 5)
   assert.deepEqual(delivery, {

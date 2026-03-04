@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
+import {
+  addCountToMonthlyBuckets,
+  buildMonthlyBucketLookup,
+  buildMonthlyCountBuckets,
+} from "@/lib/reporting/monthly"
 import { getSession } from "@/lib/session"
 
 export async function GET() {
@@ -156,23 +161,10 @@ export async function GET() {
 
     const performance = buildTeacherPerformanceSummary(monthClasses, monthBookings, 0)
 
-    const monthlyClassesMap = new Map<string, { month: string; count: number }>()
-    for (let i = 5; i >= 0; i -= 1) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const key = `${date.getFullYear()}-${date.getMonth()}`
-      monthlyClassesMap.set(key, {
-        month: date.toLocaleDateString("en-US", { month: "short" }),
-        count: 0
-      })
-    }
-
+    const monthlyClasses = buildMonthlyCountBuckets(now, 6)
+    const monthlyClassesLookup = buildMonthlyBucketLookup(monthlyClasses)
     for (const classSession of sixMonthClasses) {
-      const date = new Date(classSession.startTime)
-      const key = `${date.getFullYear()}-${date.getMonth()}`
-      const bucket = monthlyClassesMap.get(key)
-      if (bucket) {
-        bucket.count += 1
-      }
+      addCountToMonthlyBuckets(monthlyClassesLookup, new Date(classSession.startTime))
     }
 
     return NextResponse.json({
@@ -186,7 +178,7 @@ export async function GET() {
       avgFillRate: performance.avgFillRate,
       avgClassSize: performance.avgClassSize,
       completionRate: performance.completionRate,
-      monthlyClasses: Array.from(monthlyClassesMap.values()),
+      monthlyClasses,
       topClasses: performance.topClasses,
       recentReviews: [],
       upcomingClasses,
@@ -197,7 +189,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

@@ -23,6 +23,8 @@ Supporting shared helpers already in use:
 - `/Users/charlie/Development/pilates-v4/src/lib/marketing/analytics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/vault/analytics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/website-analytics/metrics.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/website-analytics/reporting.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/website-analytics/query.ts`
 
 Current mobile reporting service:
 
@@ -458,6 +460,9 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/[leaderboardId]/route.ts`
+- Website analytics period/range normalization:
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/website-analytics/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/website-analytics/route.ts`
 
 ## Non-Negotiable Safety Constraint
 
