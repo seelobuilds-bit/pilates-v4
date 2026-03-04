@@ -4,6 +4,7 @@ import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performan
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
+import { splitMobileOwnerClientWindows } from "@/lib/reporting/mobile-owner-client-windows"
 import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-report-response"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
@@ -60,12 +61,12 @@ export async function getMobileReports(
     const currentBookings = currentBase.bookings
     const previousBookings = currentBase.previousBookings
     const currentSessions = currentBase.classSessions
-    const currentNewClientRows = currentBase.studioClients.filter(
-      (client) => client.createdAt >= currentStart && client.createdAt < periodEnd
-    )
-    const previousNewClients = currentBase.studioClients.filter(
-      (client) => client.createdAt >= previousStart && client.createdAt < currentStart
-    ).length
+    const ownerClientWindows = splitMobileOwnerClientWindows({
+      studioClients: currentBase.studioClients,
+      currentStart,
+      previousStart,
+      periodEnd,
+    })
 
     const ownerMetrics = buildStudioOwnerWindowMetrics({
       currentBookings,
@@ -73,7 +74,7 @@ export async function getMobileReports(
       currentSessions,
       previousSessions,
       currentNewClients: currentBase.newClients,
-      previousNewClients,
+      previousNewClients: ownerClientWindows.previousCount,
       periodEnd,
     })
 
@@ -82,7 +83,7 @@ export async function getMobileReports(
       endDate: periodEnd,
       bookings: currentBookings,
       sessions: currentSessions,
-      newClients: currentNewClientRows,
+      newClients: ownerClientWindows.currentRows,
     })
 
     return buildMobileOwnerReportResponse({
