@@ -1,7 +1,4 @@
 import { BookingStatus } from "@prisma/client"
-import {
-  countAttendedBookings,
-} from "@/lib/reporting/attendance"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
 import {
@@ -9,12 +6,12 @@ import {
   type MobileReportMetric,
 } from "@/lib/reporting/mobile-report-metrics"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
+import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
-import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
-import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { ratioPercentage } from "@/lib/reporting/metrics"
 import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
@@ -57,10 +54,6 @@ export class MobileReportsError extends Error {
     this.name = "MobileReportsError"
     this.status = status
   }
-}
-
-function bookingRevenue(booking: { paidAmount: number | null; classSession: { classType: { price: number } } }) {
-  return resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
 }
 
 export async function getMobileReports(
@@ -193,49 +186,11 @@ export async function getMobileReports(
       decimals: 1,
     })
 
-    const teacherBuckets = buildTrendBuckets(currentStart, periodEnd)
-    const teacherSeries = teacherBuckets.map((bucket) => ({
-      label: bucket.label,
-      start: bucket.start.toISOString(),
-      end: bucket.end.toISOString(),
-      metrics: {
-        revenue: 0,
-        classes: 0,
-        students: 0,
-        "fill-rate": 0,
-        "completion-rate": 0,
-      },
-    }))
-    const teacherCapacityByBucket = teacherBuckets.map(() => 0)
-    const teacherAttendedByBucket = teacherBuckets.map(() => 0)
-    const teacherCompletedByBucket = teacherBuckets.map(() => 0)
-    const teacherNonCancelledByBucket = teacherBuckets.map(() => 0)
-    const teacherStudentsByBucket = teacherBuckets.map(() => new Set<string>())
-
-    for (const booking of currentBookings) {
-      if (!NON_CANCELLED_STATUSES.has(booking.status)) continue
-      const index = bucketIndexForDate(booking.classSession.startTime, teacherBuckets)
-      if (index < 0) continue
-      teacherNonCancelledByBucket[index] += 1
-      teacherSeries[index].metrics.revenue = roundCurrency(teacherSeries[index].metrics.revenue + bookingRevenue(booking))
-      teacherStudentsByBucket[index].add(booking.clientId)
-      if (booking.status === "COMPLETED") {
-        teacherCompletedByBucket[index] += 1
-      }
-    }
-
-    for (const session of currentSessions) {
-      const index = bucketIndexForDate(session.startTime, teacherBuckets)
-      if (index < 0) continue
-      teacherSeries[index].metrics.classes += 1
-      teacherCapacityByBucket[index] += session.capacity
-      teacherAttendedByBucket[index] += countAttendedBookings(session.bookings)
-    }
-
-    teacherSeries.forEach((point, index) => {
-      point.metrics.students = teacherStudentsByBucket[index].size
-      point.metrics["fill-rate"] = ratioPercentage(teacherAttendedByBucket[index], teacherCapacityByBucket[index], 1)
-      point.metrics["completion-rate"] = ratioPercentage(teacherCompletedByBucket[index], teacherNonCancelledByBucket[index], 1)
+    const teacherSeries = buildMobileTeacherSeries({
+      startDate: currentStart,
+      endDate: periodEnd,
+      bookings: currentBookings,
+      sessions: currentSessions,
     })
 
     return {
