@@ -22,6 +22,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell {
           --brand-accent: #9d7350;
           --brand-accent-strong: #6f4d34;
+          --brand-accent-soft: #c09572;
           --brand-ink: #1a1a1a;
           --brand-cream: #faf8f5;
           background:
@@ -33,11 +34,16 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header {
-          background: #faf8f5 !important;
+          background: #f5f2ed !important;
+          background-image: none !important;
           border-bottom: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
           box-shadow: none !important;
+        }
+
+        .brand-preview-shell header.bg-white\\/80 {
+          background-color: #f5f2ed !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
@@ -77,9 +83,9 @@ export default function BrandPreviewPage() {
           background-color: rgba(245, 242, 237, 0.92) !important;
         }
 
-        .brand-preview-shell [class*="bg-white/"],
-        .brand-preview-shell [class*="bg-gray-50/"],
-        .brand-preview-shell [class*="bg-zinc-50/"] {
+        .brand-preview-shell [class*="bg-white/"]:not(header),
+        .brand-preview-shell [class*="bg-gray-50/"]:not(header),
+        .brand-preview-shell [class*="bg-zinc-50/"]:not(header) {
           background-color: rgba(250, 248, 245, 0.95) !important;
           backdrop-filter: blur(18px);
         }
@@ -146,7 +152,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-amber-500,
         .brand-preview-shell .bg-violet-500,
         .brand-preview-shell .bg-pink-600 {
-          background-color: #1a1a1a !important;
+          background-color: var(--brand-accent-strong) !important;
           background-image: none !important;
           color: #faf8f5 !important;
         }
@@ -168,7 +174,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .text-pink-700,
         .brand-preview-shell .text-violet-700,
         .brand-preview-shell .text-emerald-700 {
-          color: #1a1a1a !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell .ring-1,
@@ -196,6 +202,25 @@ export default function BrandPreviewPage() {
           text-transform: uppercase;
         }
 
+        .brand-preview-shell section:first-of-type {
+          min-height: calc(100svh - 4rem) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding-top: 5.5rem !important;
+          padding-bottom: 3.5rem !important;
+        }
+
+        .brand-preview-shell section:first-of-type > .max-w-4xl {
+          width: 100%;
+        }
+
+        .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
+          background-image: none !important;
+          background-color: rgba(212, 206, 196, 0.44) !important;
+          border-color: rgba(157, 115, 80, 0.36) !important;
+        }
+
         .brand-preview-shell section:first-of-type .inline-flex .text-pink-500 {
           color: var(--brand-accent) !important;
         }
@@ -220,6 +245,102 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell #features .w-6.h-6 {
           color: var(--brand-accent-strong) !important;
+        }
+
+        .brand-preview-shell #why {
+          background: linear-gradient(145deg, #0f1114 0%, #181b20 52%, #111417 100%) !important;
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell #why .text-gray-900 {
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell #why .text-gray-600,
+        .brand-preview-shell #why .text-gray-700 {
+          color: rgba(250, 248, 245, 0.78) !important;
+        }
+
+        .brand-preview-shell #why .bg-pink-100 {
+          background-color: rgba(157, 115, 80, 0.22) !important;
+          border-color: rgba(157, 115, 80, 0.4) !important;
+        }
+
+        .brand-preview-shell #why .text-pink-700 {
+          color: #e5cab0 !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(1) {
+          background: linear-gradient(160deg, #2f2118 0%, #1a1615 100%) !important;
+          border-color: rgba(192, 149, 114, 0.4) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(2) {
+          background: linear-gradient(160deg, #1f2531 0%, #171a22 100%) !important;
+          border-color: rgba(156, 170, 210, 0.34) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(3) {
+          background: linear-gradient(160deg, #2d2416 0%, #1c1814 100%) !important;
+          border-color: rgba(223, 179, 113, 0.34) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          border: 1px solid rgba(250, 248, 245, 0.18) !important;
+        }
+
+        .brand-preview-shell #features + section {
+          background: linear-gradient(180deg, #f5f0e9 0%, #f0e7dd 100%) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child {
+          background: linear-gradient(160deg, #1e2129 0%, #302026 60%, #23262d 100%) !important;
+          border-color: rgba(157, 115, 80, 0.45) !important;
+          box-shadow: 0 26px 55px rgba(14, 14, 14, 0.34) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child h4,
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-900 {
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-600 {
+          color: rgba(250, 248, 245, 0.75) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-50 {
+          background: linear-gradient(120deg, rgba(52, 164, 125, 0.28), rgba(27, 118, 90, 0.18)) !important;
+          border-color: rgba(90, 213, 168, 0.38) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-violet-50 {
+          background: linear-gradient(120deg, rgba(113, 131, 255, 0.28), rgba(84, 100, 204, 0.18)) !important;
+          border-color: rgba(157, 173, 255, 0.38) !important;
+        }
+
+        .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-pink-50 {
+          background: linear-gradient(120deg, rgba(220, 118, 166, 0.28), rgba(180, 88, 138, 0.18)) !important;
+          border-color: rgba(245, 158, 200, 0.36) !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 {
+          background: linear-gradient(140deg, #15171b 0%, #201e22 58%, #131518 100%) !important;
+          border-top: 1px solid rgba(157, 115, 80, 0.24) !important;
+          border-bottom: 1px solid rgba(157, 115, 80, 0.24) !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 .text-gray-900 {
+          color: var(--brand-cream) !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 .text-gray-600 {
+          color: rgba(250, 248, 245, 0.74) !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button {
+          background-image: linear-gradient(100deg, var(--brand-accent-soft), var(--brand-accent-strong)) !important;
+          color: #fff7ef !important;
+          border: 1px solid rgba(241, 213, 184, 0.34) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
@@ -312,8 +433,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-amber-500,
         .brand-preview-shell .from-orange-500,
         .brand-preview-shell .from-pink-400 {
-          --tw-gradient-from: #1a1a1a !important;
-          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 26, 26, 0)) !important;
+          --tw-gradient-from: var(--brand-accent) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(157, 115, 80, 0)) !important;
         }
 
         .brand-preview-shell .to-violet-600,
@@ -323,7 +444,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .to-orange-500,
         .brand-preview-shell .to-pink-500,
         .brand-preview-shell .to-violet-500 {
-          --tw-gradient-to: #0d0d0d !important;
+          --tw-gradient-to: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell .from-pink-50,
