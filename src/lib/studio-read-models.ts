@@ -1,5 +1,13 @@
 import { db } from "@/lib/db"
 
+export type StudioBrandingSummary = {
+  id: string
+  name: string
+  subdomain: string
+  primaryColor: string | null
+  stripeCurrency: string | null
+}
+
 type ScheduleFilterOptions = {
   studioId: string
   startDate: string | null
@@ -132,4 +140,14 @@ export function fetchStudioBrandingSummary(studioId: string) {
       stripeCurrency: true,
     },
   })
+}
+
+export function toMobileStudioSummary(studio: StudioBrandingSummary) {
+  return {
+    id: studio.id,
+    name: studio.name,
+    subdomain: studio.subdomain,
+    primaryColor: studio.primaryColor,
+    currency: studio.stripeCurrency,
+  }
 }

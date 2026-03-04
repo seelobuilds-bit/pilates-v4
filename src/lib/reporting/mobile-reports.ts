@@ -14,6 +14,7 @@ import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
 } from "@/lib/reporting/studio-report-base-query"
+import { fetchStudioBrandingSummary, toMobileStudioSummary } from "@/lib/studio-read-models"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
@@ -161,28 +162,13 @@ export async function getMobileReports(
     throw new MobileReportsError("Invalid token", 401)
   }
 
-  const studio = await db.studio.findUnique({
-    where: { id: decoded.studioId },
-    select: {
-      id: true,
-      name: true,
-      subdomain: true,
-      primaryColor: true,
-      stripeCurrency: true,
-    },
-  })
+  const studio = await fetchStudioBrandingSummary(decoded.studioId)
 
   if (!studio || studio.subdomain !== decoded.studioSubdomain) {
     throw new MobileReportsError("Studio not found", 401)
   }
 
-  const studioSummary = {
-    id: studio.id,
-    name: studio.name,
-    subdomain: studio.subdomain,
-    primaryColor: studio.primaryColor,
-    currency: studio.stripeCurrency,
-  }
+  const studioSummary = toMobileStudioSummary(studio)
 
   const {
     days: periodDays,

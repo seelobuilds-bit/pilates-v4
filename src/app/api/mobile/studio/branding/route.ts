@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
-import { fetchStudioBrandingSummary } from "@/lib/studio-read-models"
+import { fetchStudioBrandingSummary, toMobileStudioSummary } from "@/lib/studio-read-models"
 
 function normalizeHexColor(value: unknown) {
   const candidate = String(value || "").trim().toLowerCase()
@@ -40,13 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       role: auth.decoded.role,
-      studio: {
-        id: auth.studio.id,
-        name: auth.studio.name,
-        subdomain: auth.studio.subdomain,
-        primaryColor: auth.studio.primaryColor,
-        currency: auth.studio.stripeCurrency,
-      },
+      studio: toMobileStudioSummary(auth.studio),
     })
   } catch (error) {
     console.error("Mobile branding GET error:", error)
@@ -85,13 +79,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      studio: {
-        id: updatedStudio.id,
-        name: updatedStudio.name,
-        subdomain: updatedStudio.subdomain,
-        primaryColor: updatedStudio.primaryColor,
-        currency: updatedStudio.stripeCurrency,
-      },
+      studio: toMobileStudioSummary(updatedStudio),
     })
   } catch (error) {
     console.error("Mobile branding PATCH error:", error)
