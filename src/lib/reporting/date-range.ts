@@ -20,6 +20,12 @@ export type EntityReportDateRange = {
   endDate: Date
 }
 
+export type ReportRangePayload = {
+  days: number
+  startDate: string
+  endDate: string
+}
+
 export const DEFAULT_REPORT_PERIOD_DAYS = 30
 export const MAX_REPORT_PERIOD_DAYS = 365
 export const DEFAULT_MOBILE_ALLOWED_DAY_PRESETS = [7, 30, 90] as const
@@ -154,4 +160,12 @@ export function resolveDefaultMobileReportRange(input: ReportRangeInput) {
     defaultDays: DEFAULT_REPORT_PERIOD_DAYS,
     allowedDays: Array.from(DEFAULT_MOBILE_ALLOWED_DAY_PRESETS),
   })
+}
+
+export function buildReportRangePayload(days: number, startDate: Date, endDate: Date): ReportRangePayload {
+  return {
+    days,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+  }
 }

@@ -3,7 +3,7 @@ import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
-import { resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
+import { buildReportRangePayload, resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { buildClassesSummary } from "@/lib/reporting/classes"
@@ -500,11 +500,7 @@ export async function GET(request: NextRequest) {
     bookings: bookingSummary,
     marketing,
     social,
-    range: {
-      days,
-      startDate: startDate.toISOString(),
-      endDate: reportEndDate.toISOString()
-    }
+    range: buildReportRangePayload(days, startDate, reportEndDate)
     })
   } catch (error) {
     console.error("Failed to load full reports payload:", error)

@@ -5,6 +5,7 @@ import {
   DEFAULT_ENTITY_REPORT_PERIOD_DAYS,
   DEFAULT_REPORT_PERIOD_DAYS,
   MAX_REPORT_PERIOD_DAYS,
+  buildReportRangePayload,
   parseReportDays,
   resolveDefaultEntityReportDateRange,
   resolveDefaultMobileReportRange,
@@ -91,6 +92,13 @@ function run() {
 
   const mobileDisallowedRange = resolveDefaultMobileReportRange({ days: '365' })
   assert.equal(mobileDisallowedRange.days, DEFAULT_REPORT_PERIOD_DAYS)
+
+  const rangePayload = buildReportRangePayload(7, new Date('2026-03-01T00:00:00.000Z'), new Date('2026-03-07T00:00:00.000Z'))
+  assert.deepEqual(rangePayload, {
+    days: 7,
+    startDate: '2026-03-01T00:00:00.000Z',
+    endDate: '2026-03-07T00:00:00.000Z',
+  })
 
   console.log('PASS reporting date-range logic')
 }

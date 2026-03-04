@@ -17,7 +17,7 @@ import {
   buildClientSummary,
 } from "@/lib/reporting/retention"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
-import { resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
+import { buildReportRangePayload, resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
 
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
 
@@ -493,11 +493,7 @@ export async function GET(request: NextRequest) {
     bookings: bookingSummary,
     marketing,
     social,
-    range: {
-      days,
-      startDate: startDate.toISOString(),
-      endDate: reportEndDate.toISOString()
-    }
+    range: buildReportRangePayload(days, startDate, reportEndDate)
     })
   } catch (error) {
     console.error("Failed to load full reports payload:", error)

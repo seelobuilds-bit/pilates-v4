@@ -1,3 +1,4 @@
+import { buildReportRangePayload } from "./date-range"
 import { buildClientSummary } from "./retention"
 
 function buildEmptyRevenueSummary() {
@@ -138,11 +139,7 @@ export function buildPartialReportsPayload(params: {
     bookings: buildEmptyBookingsSummary(),
     marketing: buildEmptyMarketingSummary(warningMessage),
     social: buildEmptySocialSummary(),
-    range: {
-      days,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-    },
+    range: buildReportRangePayload(days, startDate, endDate),
     partial: true,
   }
 }

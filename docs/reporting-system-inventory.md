@@ -518,6 +518,11 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/client-summary-query.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
+- Studio/demo report range payload normalization:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/date-range.ts`
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/fallback.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
 
 ## Non-Negotiable Safety Constraint
 
