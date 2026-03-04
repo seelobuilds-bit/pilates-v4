@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { buildStudioScheduleWhere, fetchStudioScheduleClasses } from "@/lib/studio-read-models"
 
 export async function GET(request: NextRequest) {
   const studioId = await getDemoStudioId()
@@ -13,42 +13,15 @@ export async function GET(request: NextRequest) {
   const endDate = searchParams.get("end")
   const recurringGroupId = searchParams.get("recurringGroupId")
   const futureOnly = searchParams.get("futureOnly") === "true"
-  const now = new Date()
-
-  const whereClause: {
-    studioId: string
-    startTime?: { gte?: Date; lte?: Date }
-    recurringGroupId?: string
-  } = { studioId }
-
-  if (recurringGroupId) {
-    whereClause.recurringGroupId = recurringGroupId
-  }
-
-  if (startDate || endDate) {
-    whereClause.startTime = {}
-    if (startDate) whereClause.startTime.gte = new Date(startDate)
-    if (endDate) whereClause.startTime.lte = new Date(endDate)
-  } else if (futureOnly) {
-    whereClause.startTime = { gte: now }
-  }
-
-  const classes = await db.classSession.findMany({
-    where: whereClause,
-    include: {
-      classType: true,
-      teacher: {
-        include: {
-          user: {
-            select: { id: true, firstName: true, lastName: true }
-          }
-        }
-      },
-      location: true,
-      _count: { select: { bookings: true } }
-    },
-    orderBy: { startTime: "asc" }
+  const whereClause = buildStudioScheduleWhere({
+    studioId,
+    startDate,
+    endDate,
+    recurringGroupId,
+    futureOnly,
+    applyGlobalFutureOnly: true,
   })
+  const classes = await fetchStudioScheduleClasses(whereClause)
 
   return NextResponse.json(classes)
 }

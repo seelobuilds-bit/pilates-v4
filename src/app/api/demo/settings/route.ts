@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { fetchStudioBrandingSummary } from "@/lib/studio-read-models"
 
 export async function GET() {
   try {
@@ -9,16 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: "Demo studio not configured" }, { status: 404 })
     }
 
-    const studio = await db.studio.findUnique({
-      where: { id: studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
+    const studio = await fetchStudioBrandingSummary(studioId)
 
     if (!studio) {
       return NextResponse.json({ error: "Studio not found" }, { status: 404 })

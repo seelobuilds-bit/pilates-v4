@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { fetchStudioBrandingSummary } from "@/lib/studio-read-models"
 
 function normalizeHexColor(value: unknown) {
   const candidate = String(value || "").trim().toLowerCase()
@@ -21,16 +22,7 @@ async function resolveStudioFromToken(request: NextRequest) {
     return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) }
   }
 
-  const studio = await db.studio.findUnique({
-    where: { id: decoded.studioId },
-    select: {
-      id: true,
-      name: true,
-      subdomain: true,
-      primaryColor: true,
-      stripeCurrency: true,
-    },
-  })
+  const studio = await fetchStudioBrandingSummary(decoded.studioId)
 
   if (!studio || studio.subdomain !== decoded.studioSubdomain) {
     return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) }
