@@ -4,9 +4,7 @@ import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performan
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
-import { splitMobileOwnerClientWindows } from "@/lib/reporting/mobile-owner-client-windows"
-import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-report-response"
-import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
+import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
 import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
 import {
@@ -21,7 +19,6 @@ import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
 } from "@/lib/reporting/studio-report-base-query"
-import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 export async function getMobileReports(
@@ -58,43 +55,15 @@ export async function getMobileReports(
       }),
     ])
 
-    const currentBookings = currentBase.bookings
-    const previousBookings = currentBase.previousBookings
-    const currentSessions = currentBase.classSessions
-    const ownerClientWindows = splitMobileOwnerClientWindows({
-      studioClients: currentBase.studioClients,
+    return runMobileOwnerReport({
+      studio: studioSummary,
+      periodDays,
       currentStart,
       previousStart,
       periodEnd,
-    })
-
-    const ownerMetrics = buildStudioOwnerWindowMetrics({
-      currentBookings,
-      previousBookings,
-      currentSessions,
+      responseEnd,
+      currentBase,
       previousSessions,
-      currentNewClients: currentBase.newClients,
-      previousNewClients: ownerClientWindows.previousCount,
-      periodEnd,
-    })
-
-    const ownerSeries = buildMobileOwnerSeries({
-      startDate: currentStart,
-      endDate: periodEnd,
-      bookings: currentBookings,
-      sessions: currentSessions,
-      newClients: ownerClientWindows.currentRows,
-    })
-
-    return buildMobileOwnerReportResponse({
-      studio: studioSummary,
-      periodDays,
-      periodEnd,
-      rangeStart: currentStart,
-      rangeEnd: responseEnd,
-      metrics: ownerMetrics,
-      sessions: currentSessions,
-      series: ownerSeries,
     })
   }
 
