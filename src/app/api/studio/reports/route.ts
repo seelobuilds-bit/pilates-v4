@@ -10,6 +10,7 @@ import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
 import { resolveReportRange } from "@/lib/reporting/date-range"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
+import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
@@ -496,22 +497,13 @@ export async function GET(request: NextRequest) {
   const totalAttendance = classSessions.reduce((sum, session) => sum + countAttendedBookings(session.bookings), 0)
   const overallAverageFill = classSessions.length > 0 ? calculateAverageFillRate(classSessions, 0) : 0
 
-  const statusCounts: Record<string, number> = {}
-  for (const booking of bookings) {
-    statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1
-  }
-
-  const validBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
   const clientCreatedAtById = new Map(studioClients.map((client) => [client.id, client.createdAt]))
-  const uniqueBookedClients = new Set(validBookings.map((booking) => booking.clientId))
-  const newClientBookings = validBookings.filter((booking) => {
-    const createdAt = clientCreatedAtById.get(booking.clientId)
-    return createdAt ? createdAt >= startDate && createdAt < reportEndDate : false
-  }).length
-  const averageBookingsPerClient = roundTo(
-    uniqueBookedClients.size > 0 ? validBookings.length / uniqueBookedClients.size : 0,
-    2
-  )
+  const bookingSummary = buildBookingSummary({
+    bookings,
+    clientCreatedAtById,
+    startDate,
+    reportEndDate,
+  })
 
   const marketing = await buildMarketingSummary({
     studioId,
@@ -811,13 +803,7 @@ export async function GET(request: NextRequest) {
       topClasses,
       underperforming
     },
-    bookings: {
-      total: validBookings.length,
-      uniqueClients: uniqueBookedClients.size,
-      newClientBookings,
-      averageBookingsPerClient,
-      byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
-    },
+    bookings: bookingSummary,
     marketing,
     social: {
       activeFlows: activeSocialFlows,

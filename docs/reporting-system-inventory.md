@@ -419,6 +419,8 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
 - Studio report revenue composition:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+- Studio report bookings composition:
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
 - Attendance / fill:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/reports/route.ts`
