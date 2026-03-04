@@ -3,6 +3,7 @@ import {
   countAttendedBookings,
 } from "@/lib/reporting/attendance"
 import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
+import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
@@ -357,73 +358,25 @@ export async function getMobileReports(
       throw new MobileReportsError("Teacher session invalid", 401)
     }
 
-    const [currentBookings, previousBookings, currentSessions, previousSessions] = await Promise.all([
-      db.booking.findMany({
-        where: {
-          studioId: studio.id,
-          classSession: {
-            teacherId: decoded.teacherId,
-            startTime: { gte: currentStart, lt: periodEnd },
-          },
-        },
-        select: {
-          status: true,
-          clientId: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              startTime: true,
-              classType: { select: { price: true } },
-            },
-          },
-        },
+    const [currentWindow, previousWindow] = await Promise.all([
+      fetchTeacherPerformanceWindow({
+        studioId: studio.id,
+        teacherId: decoded.teacherId,
+        startDate: currentStart,
+        endDate: periodEnd,
       }),
-      db.booking.findMany({
-        where: {
-          studioId: studio.id,
-          classSession: {
-            teacherId: decoded.teacherId,
-            startTime: { gte: previousStart, lt: currentStart },
-          },
-        },
-        select: {
-          status: true,
-          clientId: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              startTime: true,
-              classType: { select: { price: true } },
-            },
-          },
-        },
-      }),
-      db.classSession.findMany({
-        where: {
-          studioId: studio.id,
-          teacherId: decoded.teacherId,
-          startTime: { gte: currentStart, lt: periodEnd },
-        },
-        select: {
-          startTime: true,
-          capacity: true,
-          classType: { select: { name: true } },
-          bookings: { select: { status: true } },
-        },
-      }),
-      db.classSession.findMany({
-        where: {
-          studioId: studio.id,
-          teacherId: decoded.teacherId,
-          startTime: { gte: previousStart, lt: currentStart },
-        },
-        select: {
-          capacity: true,
-          classType: { select: { name: true } },
-          bookings: { select: { status: true } },
-        },
+      fetchTeacherPerformanceWindow({
+        studioId: studio.id,
+        teacherId: decoded.teacherId,
+        startDate: previousStart,
+        endDate: currentStart,
       }),
     ])
+
+    const currentBookings = currentWindow.bookings
+    const previousBookings = previousWindow.bookings
+    const currentSessions = currentWindow.sessions
+    const previousSessions = previousWindow.sessions
 
     const currentPerformance = buildTeacherPerformanceSummary(currentSessions, currentBookings, 1)
     const previousPerformance = buildTeacherPerformanceSummary(previousSessions, previousBookings, 1)

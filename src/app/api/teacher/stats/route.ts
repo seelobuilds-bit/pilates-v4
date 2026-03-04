@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
+import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import {
   addCountToMonthlyBuckets,
   buildMonthlyBucketLookup,
@@ -28,7 +29,7 @@ export async function GET() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const sixMonthWindowStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-    const [studio, upcomingClassesRaw, recentClasses, monthClasses, monthBookings, sixMonthClasses] = await Promise.all([
+    const [studio, upcomingClassesRaw, recentClasses, monthPerformance, sixMonthClasses] = await Promise.all([
       db.studio.findUnique({
         where: { id: studioId },
         select: {
@@ -81,55 +82,11 @@ export async function GET() {
         orderBy: { startTime: "desc" },
         take: 5
       }),
-      db.classSession.findMany({
-        where: {
-          teacherId,
-          studioId,
-          startTime: {
-            gte: startOfMonth,
-            lt: now
-          }
-        },
-        include: {
-          classType: {
-            select: {
-              name: true
-            }
-          },
-          bookings: {
-            select: {
-              status: true
-            }
-          }
-        }
-      }),
-      db.booking.findMany({
-        where: {
-          studioId,
-          classSession: {
-            teacherId,
-            studioId,
-            startTime: {
-              gte: startOfMonth,
-              lt: now
-            }
-          }
-        },
-        select: {
-          status: true,
-          clientId: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              classType: {
-                select: {
-                  name: true,
-                  price: true
-                }
-              }
-            }
-          }
-        }
+      fetchTeacherPerformanceWindow({
+        studioId,
+        teacherId,
+        startDate: startOfMonth,
+        endDate: now,
       }),
       db.classSession.findMany({
         where: {
@@ -159,7 +116,7 @@ export async function GET() {
       }
     })
 
-    const performance = buildTeacherPerformanceSummary(monthClasses, monthBookings, 0)
+    const performance = buildTeacherPerformanceSummary(monthPerformance.sessions, monthPerformance.bookings, 0)
 
     const monthlyClasses = buildMonthlyCountBuckets(now, 6)
     const monthlyClassesLookup = buildMonthlyBucketLookup(monthlyClasses)
@@ -189,7 +146,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 
