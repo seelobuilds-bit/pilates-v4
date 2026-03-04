@@ -6,6 +6,7 @@ import {
   buildMobileMetric,
   type MobileReportMetric,
 } from "@/lib/reporting/mobile-report-metrics"
+import { buildMobileOwnerReportMetrics } from "@/lib/reporting/mobile-owner-report-metrics"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
@@ -132,19 +133,7 @@ export async function getMobileReports(
         start: currentStart.toISOString(),
         end: responseEnd.toISOString(),
       },
-      metrics: [
-        buildMobileMetric("revenue", "Revenue", "currency", ownerMetrics.currentRevenue, ownerMetrics.previousRevenue),
-        buildMobileMetric("bookings", "Bookings", "number", ownerMetrics.currentBooked, ownerMetrics.previousBooked),
-        buildMobileMetric("classes", "Classes", "number", ownerMetrics.currentClasses, ownerMetrics.previousClasses),
-        buildMobileMetric("fill-rate", "Fill Rate", "percent", ownerMetrics.currentFillRate, ownerMetrics.previousFillRate),
-        buildMobileMetric(
-          "new-clients",
-          "New Clients",
-          "number",
-          ownerMetrics.currentNewClients,
-          ownerMetrics.previousNewClients
-        ),
-      ],
+      metrics: buildMobileOwnerReportMetrics(ownerMetrics),
       highlights: buildClassTypeHighlights(currentSessions),
       series: ownerSeries,
     }
