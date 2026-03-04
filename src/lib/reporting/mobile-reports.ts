@@ -2,8 +2,8 @@ import { BookingStatus } from "@prisma/client"
 import {
   countAttendedBookings,
 } from "@/lib/reporting/attendance"
-import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
+import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
@@ -298,8 +298,13 @@ export async function getMobileReports(
     const currentSessions = currentWindow.sessions
     const previousSessions = previousWindow.sessions
 
-    const currentPerformance = buildTeacherPerformanceSummary(currentSessions, currentBookings, 1)
-    const previousPerformance = buildTeacherPerformanceSummary(previousSessions, previousBookings, 1)
+    const teacherMetrics = buildTeacherWindowMetrics({
+      currentSessions,
+      previousSessions,
+      currentBookings,
+      previousBookings,
+      decimals: 1,
+    })
 
     const teacherBuckets = buildTrendBuckets(currentStart, periodEnd)
     const teacherSeries = teacherBuckets.map((bucket) => ({
@@ -356,16 +361,16 @@ export async function getMobileReports(
         end: responseEnd.toISOString(),
       },
       metrics: [
-        metric("revenue", "Revenue", "currency", currentPerformance.revenue, previousPerformance.revenue),
-        metric("classes", "Classes", "number", currentPerformance.totalClasses, previousPerformance.totalClasses),
-        metric("students", "Unique Students", "number", currentPerformance.totalStudents, previousPerformance.totalStudents),
-        metric("fill-rate", "Fill Rate", "percent", currentPerformance.avgFillRate, previousPerformance.avgFillRate),
+        metric("revenue", "Revenue", "currency", teacherMetrics.currentRevenue, teacherMetrics.previousRevenue),
+        metric("classes", "Classes", "number", teacherMetrics.currentClasses, teacherMetrics.previousClasses),
+        metric("students", "Unique Students", "number", teacherMetrics.currentStudents, teacherMetrics.previousStudents),
+        metric("fill-rate", "Fill Rate", "percent", teacherMetrics.currentFillRate, teacherMetrics.previousFillRate),
         metric(
           "completion-rate",
           "Completion Rate",
           "percent",
-          currentPerformance.completionRate,
-          previousPerformance.completionRate
+          teacherMetrics.currentCompletionRate,
+          teacherMetrics.previousCompletionRate
         ),
       ],
       highlights: classTypeHighlights(currentSessions),
