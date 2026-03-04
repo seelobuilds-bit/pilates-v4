@@ -8,6 +8,7 @@ import {
 } from "@/lib/reporting/mobile-report-metrics"
 import { buildMobileOwnerReportMetrics } from "@/lib/reporting/mobile-owner-report-metrics"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
+import { buildMobileTeacherReportMetrics } from "@/lib/reporting/mobile-teacher-report-metrics"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
 import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
@@ -188,31 +189,7 @@ export async function getMobileReports(
         start: currentStart.toISOString(),
         end: responseEnd.toISOString(),
       },
-      metrics: [
-        buildMobileMetric("revenue", "Revenue", "currency", teacherMetrics.currentRevenue, teacherMetrics.previousRevenue),
-        buildMobileMetric("classes", "Classes", "number", teacherMetrics.currentClasses, teacherMetrics.previousClasses),
-        buildMobileMetric(
-          "students",
-          "Unique Students",
-          "number",
-          teacherMetrics.currentStudents,
-          teacherMetrics.previousStudents
-        ),
-        buildMobileMetric(
-          "fill-rate",
-          "Fill Rate",
-          "percent",
-          teacherMetrics.currentFillRate,
-          teacherMetrics.previousFillRate
-        ),
-        buildMobileMetric(
-          "completion-rate",
-          "Completion Rate",
-          "percent",
-          teacherMetrics.currentCompletionRate,
-          teacherMetrics.previousCompletionRate
-        ),
-      ],
+      metrics: buildMobileTeacherReportMetrics(teacherMetrics),
       highlights: buildClassTypeHighlights(currentSessions),
       series: teacherSeries,
     }
