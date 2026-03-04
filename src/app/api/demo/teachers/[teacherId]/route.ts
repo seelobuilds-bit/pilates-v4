@@ -1,33 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
+import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
+import {
+  addCountToMonthlyBuckets,
+  buildMonthlyBucketLookup,
+  buildMonthlyCountBuckets,
+} from "@/lib/reporting/monthly"
+import { resolveBookingRevenue } from "@/lib/reporting/revenue"
+import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
 
 const DEFAULT_REPORT_PERIOD_DAYS = 30
 const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
-
-function getReportDateRange(searchParams: URLSearchParams) {
-  const startDateParam = searchParams.get("startDate")
-  const endDateParam = searchParams.get("endDate")
-
-  if (startDateParam && endDateParam) {
-    const start = new Date(`${startDateParam}T00:00:00.000Z`)
-    const end = new Date(`${endDateParam}T23:59:59.999Z`)
-
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= end) {
-      return { startDate: start, endDate: end }
-    }
-  }
-
-  const parsedDays = Number.parseInt(searchParams.get("days") || "", 10)
-  const days = ALLOWED_DAY_PRESETS.has(parsedDays) ? parsedDays : DEFAULT_REPORT_PERIOD_DAYS
-
-  const endDate = new Date()
-  const startDate = new Date(endDate)
-  startDate.setHours(0, 0, 0, 0)
-  startDate.setDate(startDate.getDate() - (days - 1))
-
-  return { startDate, endDate }
-}
 
 export async function GET(
   request: NextRequest,
@@ -40,7 +24,10 @@ export async function GET(
     }
 
     const { teacherId } = await params
-    const { startDate, endDate } = getReportDateRange(request.nextUrl.searchParams)
+    const { startDate, endDate } = resolveEntityReportDateRange(request.nextUrl.searchParams, {
+      defaultDays: DEFAULT_REPORT_PERIOD_DAYS,
+      allowedDays: Array.from(ALLOWED_DAY_PRESETS),
+    })
 
     const teacher = await db.teacher.findFirst({
       where: { id: teacherId, studioId },
@@ -116,7 +103,7 @@ export async function GET(
     const completedBookings = reportBookings.filter((booking) => booking.status === "COMPLETED").length
 
     const revenue = nonCancelledBookings.reduce((sum, booking) => {
-      const amount = booking.paidAmount ?? booking.classSession.classType.price ?? 0
+      const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
       return sum + amount
     }, 0)
 
@@ -136,9 +123,7 @@ export async function GET(
       clientBookingCounts.set(name, (clientBookingCounts.get(name) || 0) + 1)
     }
 
-    const repeatClientCount = Array.from(clientBookingCounts.values()).filter((count) => count > 1).length
-    const retentionRate =
-      clientBookingCounts.size > 0 ? Math.round((repeatClientCount / clientBookingCounts.size) * 100) : 0
+    const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
 
     const classCounts = new Map<string, number>()
     const locationCounts = new Map<string, number>()
@@ -147,21 +132,10 @@ export async function GET(
       locationCounts.set(session.location.name, (locationCounts.get(session.location.name) || 0) + 1)
     }
 
-    const bucketEndDate = new Date(endDate)
-    const monthlyBuckets = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(bucketEndDate.getFullYear(), bucketEndDate.getMonth() - 5 + index, 1)
-      return {
-        key: `${date.getFullYear()}-${date.getMonth()}`,
-        month: date.toLocaleDateString("en-US", { month: "short" }),
-        count: 0
-      }
-    })
-    const monthLookup = new Map(monthlyBuckets.map((bucket) => [bucket.key, bucket]))
+    const monthlyBuckets = buildMonthlyCountBuckets(endDate, 6)
+    const monthLookup = buildMonthlyBucketLookup(monthlyBuckets)
     for (const session of reportClassSessions) {
-      const date = new Date(session.startTime)
-      const key = `${date.getFullYear()}-${date.getMonth()}`
-      const bucket = monthLookup.get(key)
-      if (bucket) bucket.count += 1
+      addCountToMonthlyBuckets(monthLookup, new Date(session.startTime))
     }
 
     const topClients = Array.from(clientBookingCounts.entries())
