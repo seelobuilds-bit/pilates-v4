@@ -5,13 +5,11 @@ import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-re
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
-import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
-import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
+import { runMobileTeacherReport } from "@/lib/reporting/mobile-teacher-report-runner"
 import {
   resolveMobileClientReportId,
   resolveMobileTeacherReportId,
 } from "@/lib/reporting/mobile-report-role-context"
-import { buildTeacherWindowMetrics } from "@/lib/reporting/teacher-window-metrics"
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
@@ -85,35 +83,14 @@ export async function getMobileReports(
       }),
     ])
 
-    const currentBookings = currentWindow.bookings
-    const previousBookings = previousWindow.bookings
-    const currentSessions = currentWindow.sessions
-    const previousSessions = previousWindow.sessions
-
-    const teacherMetrics = buildTeacherWindowMetrics({
-      currentSessions,
-      previousSessions,
-      currentBookings,
-      previousBookings,
-      decimals: 1,
-    })
-
-    const teacherSeries = buildMobileTeacherSeries({
-      startDate: currentStart,
-      endDate: periodEnd,
-      bookings: currentBookings,
-      sessions: currentSessions,
-    })
-
-    return buildMobileTeacherReportResponse({
+    return runMobileTeacherReport({
       studio: studioSummary,
       periodDays,
+      currentStart,
       periodEnd,
-      rangeStart: currentStart,
-      rangeEnd: responseEnd,
-      metrics: teacherMetrics,
-      sessions: currentSessions,
-      series: teacherSeries,
+      responseEnd,
+      currentWindow,
+      previousWindow,
     })
   }
 
