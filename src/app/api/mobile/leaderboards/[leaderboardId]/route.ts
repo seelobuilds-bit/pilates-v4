@@ -4,7 +4,8 @@ import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
-  attachParticipantsToEntries,
+  attachParticipantToEntry,
+  collectEntryParticipantIds,
   createStudioParticipantMap,
   createTeacherParticipantMap,
   resolveExpectedParticipantCount,
@@ -169,8 +170,7 @@ export async function GET(
       ...(activePeriod?.entries ?? []),
       ...recentPeriods.flatMap((period) => period.entries),
     ]
-    const studioIds = Array.from(new Set(entryParticipantRows.map((row) => row.studioId).filter((id): id is string => Boolean(id))))
-    const teacherIds = Array.from(new Set(entryParticipantRows.map((row) => row.teacherId).filter((id): id is string => Boolean(id))))
+    const { studioIds, teacherIds } = collectEntryParticipantIds(entryParticipantRows)
 
     const [studios, teachers] = await Promise.all([
       studioIds.length
@@ -222,24 +222,25 @@ export async function GET(
       rank: number | null
       previousRank: number | null
       lastUpdated: Date
-    }) =>
-      attachParticipantsToEntries(
-        [
-          {
-            id: entry.id,
-            studioId: entry.studioId,
-            teacherId: entry.teacherId,
-            score: entry.score,
-            rank: entry.rank,
-            previousRank: entry.previousRank,
-            lastUpdated: entry.lastUpdated.toISOString(),
-          },
-        ],
+    }) => {
+      const enriched = attachParticipantToEntry(
+        {
+          id: entry.id,
+          studioId: entry.studioId,
+          teacherId: entry.teacherId,
+          score: entry.score,
+          rank: entry.rank,
+          previousRank: entry.previousRank,
+          lastUpdated: entry.lastUpdated.toISOString(),
+        },
         {
           studioById,
           teacherById,
         }
-      )[0] || null
+      )
+
+      return enriched.participant ? enriched : null
+    }
 
     const myEntry =
       activePeriod &&

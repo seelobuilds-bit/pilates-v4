@@ -6,6 +6,11 @@ type ParticipantEntry = {
   teacherId: string | null
 }
 
+type ParticipantMaps = {
+  studioById: Map<string, { id: string; name: string; subdomain?: string }>
+  teacherById: Map<string, { id: string; name: string; studioId?: string }>
+}
+
 type StudioParticipantRow = {
   id: string
   name: string
@@ -113,25 +118,38 @@ export function createTeacherParticipantMap(rows: TeacherParticipantRow[]) {
 
 export function attachParticipantsToEntries<T extends ParticipantEntry>(
   entries: T[],
-  participantMaps: {
-    studioById: Map<string, { id: string; name: string; subdomain?: string }>
-    teacherById: Map<string, { id: string; name: string; studioId?: string }>
-  }
+  participantMaps: ParticipantMaps
 ) {
   return entries
-    .map((entry) => {
-      const participant = entry.studioId
-        ? (participantMaps.studioById.get(entry.studioId) ?? null)
-        : entry.teacherId
-          ? (participantMaps.teacherById.get(entry.teacherId) ?? null)
-          : null
-
-      return {
-        ...entry,
-        participant,
-      }
-    })
+    .map((entry) => attachParticipantToEntry(entry, participantMaps))
     .filter((entry) => Boolean(entry.participant))
+}
+
+export function attachParticipantToEntry<T extends ParticipantEntry>(
+  entry: T,
+  participantMaps: ParticipantMaps
+) {
+  const participant = entry.studioId
+    ? (participantMaps.studioById.get(entry.studioId) ?? null)
+    : entry.teacherId
+      ? (participantMaps.teacherById.get(entry.teacherId) ?? null)
+      : null
+
+  return {
+    ...entry,
+    participant,
+  }
+}
+
+export function collectEntryParticipantIds(entries: ParticipantEntry[]) {
+  return {
+    studioIds: Array.from(
+      new Set(entries.map((entry) => entry.studioId).filter((id): id is string => Boolean(id)))
+    ),
+    teacherIds: Array.from(
+      new Set(entries.map((entry) => entry.teacherId).filter((id): id is string => Boolean(id)))
+    ),
+  }
 }
 
 export function resolveLeaderboardDisplayCategoryId(category: LeaderboardCategory) {

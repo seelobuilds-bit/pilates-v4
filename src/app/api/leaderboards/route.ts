@@ -5,6 +5,7 @@ import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
   attachParticipantsToEntries,
+  collectEntryParticipantIds,
   createStudioParticipantMap,
   createTeacherParticipantMap,
   groupLeaderboardsByDisplayCategory,
@@ -94,12 +95,7 @@ export async function GET(request: NextRequest) {
 
     // Enrich entries with studio/teacher names
     const allEntries = leaderboards.flatMap((lb) => lb.periods[0]?.entries ?? [])
-    const studioIds = Array.from(
-      new Set(allEntries.map((entry) => entry.studioId).filter((id): id is string => Boolean(id)))
-    )
-    const teacherIds = Array.from(
-      new Set(allEntries.map((entry) => entry.teacherId).filter((id): id is string => Boolean(id)))
-    )
+    const { studioIds, teacherIds } = collectEntryParticipantIds(allEntries)
 
     const [studios, teachers] = await Promise.all([
       studioIds.length

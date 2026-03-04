@@ -1,7 +1,9 @@
 import { strict as assert } from "assert"
 import {
   attachParticipantsToEntries,
+  attachParticipantToEntry,
   compareLeaderboardEntries,
+  collectEntryParticipantIds,
   createStudioParticipantMap,
   createTeacherParticipantMap,
   groupLeaderboardsByDisplayCategory,
@@ -39,6 +41,20 @@ const attached = attachParticipantsToEntries(
 assert.equal(attached.length, 2)
 assert.equal(attached[0].participant?.name, "Studio One")
 assert.equal(attached[1].participant?.name, "Teacher One")
+
+const singleAttached = attachParticipantToEntry(
+  { id: "e1", studioId: "s1", teacherId: null, score: 10 },
+  { studioById, teacherById }
+)
+assert.equal(singleAttached.participant?.name, "Studio One")
+
+const participantIds = collectEntryParticipantIds([
+  { id: "e1", studioId: "s1", teacherId: null },
+  { id: "e2", studioId: "s1", teacherId: "t1" },
+  { id: "e3", studioId: null, teacherId: "t2" },
+])
+assert.deepEqual(participantIds.studioIds, ["s1"])
+assert.deepEqual(participantIds.teacherIds, ["t1", "t2"])
 
 assert.equal(resolveLeaderboardDisplayCategoryId("TOP_REVENUE"), "bookings")
 assert.equal(resolveLeaderboardDisplayCategoryId("MOST_COURSE_ENROLLMENTS"), "courses")
