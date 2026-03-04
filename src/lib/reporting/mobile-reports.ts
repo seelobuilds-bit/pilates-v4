@@ -1,11 +1,9 @@
+import { buildMobileClientReportMetrics } from "@/lib/reporting/mobile-client-report-card-metrics"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
-import {
-  buildMobileMetric,
-  type MobileReportMetric,
-} from "@/lib/reporting/mobile-report-metrics"
+import { type MobileReportMetric } from "@/lib/reporting/mobile-report-metrics"
 import { buildMobileOwnerReportMetrics } from "@/lib/reporting/mobile-owner-report-metrics"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportMetrics } from "@/lib/reporting/mobile-teacher-report-metrics"
@@ -270,30 +268,7 @@ export async function getMobileReports(
       start: currentStart.toISOString(),
       end: responseEnd.toISOString(),
     },
-    metrics: [
-      buildMobileMetric("booked", "Booked Classes", "number", clientMetrics.currentBooked, clientMetrics.previousBooked),
-      buildMobileMetric(
-        "completed",
-        "Completed Classes",
-        "number",
-        clientMetrics.currentCompleted,
-        clientMetrics.previousCompleted
-      ),
-      buildMobileMetric(
-        "cancelled",
-        "Cancelled",
-        "number",
-        clientMetrics.currentCancelled,
-        clientMetrics.previousCancelled
-      ),
-      buildMobileMetric(
-        "completion-rate",
-        "Completion Rate",
-        "percent",
-        clientMetrics.currentCompletionRate,
-        clientMetrics.previousCompletionRate
-      ),
-    ],
+    metrics: buildMobileClientReportMetrics(clientMetrics),
     highlights: nextBooking
       ? [
           {
