@@ -2,6 +2,7 @@ import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
 import { runMobileClientReport } from "@/lib/reporting/mobile-client-report-runner"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
+import { loadMobileOwnerReportData } from "@/lib/reporting/mobile-owner-report-loader"
 import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
 import { runMobileTeacherReport } from "@/lib/reporting/mobile-teacher-report-runner"
 import {
@@ -11,10 +12,6 @@ import {
 import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
-import {
-  fetchStudioReportBaseData,
-  fetchStudioReportClassSessionsWindow,
-} from "@/lib/reporting/studio-report-base-query"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 export async function getMobileReports(
@@ -37,19 +34,12 @@ export async function getMobileReports(
   } = resolveDefaultMobileReportRange(input)
 
   if (decoded.role === "OWNER") {
-    const [currentBase, previousSessions] = await Promise.all([
-      fetchStudioReportBaseData({
-        studioId: studio.id,
-        startDate: currentStart,
-        reportEndDate: periodEnd,
-        previousStartDate: previousStart,
-      }),
-      fetchStudioReportClassSessionsWindow({
-        studioId: studio.id,
-        startDate: previousStart,
-        endDate: currentStart,
-      }),
-    ])
+    const { currentBase, previousSessions } = await loadMobileOwnerReportData({
+      studioId: studio.id,
+      currentStart,
+      previousStart,
+      periodEnd,
+    })
 
     return runMobileOwnerReport({
       studio: studioSummary,
