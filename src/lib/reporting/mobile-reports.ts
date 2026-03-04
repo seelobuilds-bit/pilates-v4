@@ -7,10 +7,7 @@ import { loadMobileOwnerReportData } from "@/lib/reporting/mobile-owner-report-l
 import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
 import { loadMobileTeacherReportData } from "@/lib/reporting/mobile-teacher-report-loader"
 import { runMobileTeacherReport } from "@/lib/reporting/mobile-teacher-report-runner"
-import {
-  resolveMobileClientReportId,
-  resolveMobileTeacherReportId,
-} from "@/lib/reporting/mobile-report-role-context"
+import { runMobileReportByRole } from "@/lib/reporting/mobile-report-role-runner"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { type ReportRangeInput } from "@/lib/reporting/date-range"
 
@@ -24,66 +21,65 @@ export async function getMobileReports(
   const { decoded, studio, studioSummary, periodDays, periodEnd, currentStart, previousStart, responseEnd } =
     buildMobileReportContext(auth, input)
 
-  if (decoded.role === "OWNER") {
-    const { currentBase, previousSessions } = await loadMobileOwnerReportData({
-      studioId: studio.id,
-      currentStart,
-      previousStart,
-      periodEnd,
-    })
+  return runMobileReportByRole({
+    decoded,
+    runOwner: async () => {
+      const { currentBase, previousSessions } = await loadMobileOwnerReportData({
+        studioId: studio.id,
+        currentStart,
+        previousStart,
+        periodEnd,
+      })
 
-    return runMobileOwnerReport({
-      studio: studioSummary,
-      periodDays,
-      currentStart,
-      previousStart,
-      periodEnd,
-      responseEnd,
-      currentBase,
-      previousSessions,
-    })
-  }
+      return runMobileOwnerReport({
+        studio: studioSummary,
+        periodDays,
+        currentStart,
+        previousStart,
+        periodEnd,
+        responseEnd,
+        currentBase,
+        previousSessions,
+      })
+    },
+    runTeacher: async (teacherId) => {
+      const { currentWindow, previousWindow } = await loadMobileTeacherReportData({
+        studioId: studio.id,
+        teacherId,
+        currentStart,
+        previousStart,
+        periodEnd,
+      })
 
-  if (decoded.role === "TEACHER") {
-    const teacherId = resolveMobileTeacherReportId(decoded)
+      return runMobileTeacherReport({
+        studio: studioSummary,
+        periodDays,
+        currentStart,
+        periodEnd,
+        responseEnd,
+        currentWindow,
+        previousWindow,
+      })
+    },
+    runClient: async (clientId) => {
+      const { currentBookings, previousBookings, nextBooking } = await loadMobileClientReportData({
+        studioId: studio.id,
+        clientId,
+        currentStart,
+        previousStart,
+        periodEnd,
+      })
 
-    const { currentWindow, previousWindow } = await loadMobileTeacherReportData({
-      studioId: studio.id,
-      teacherId,
-      currentStart,
-      previousStart,
-      periodEnd,
-    })
-
-    return runMobileTeacherReport({
-      studio: studioSummary,
-      periodDays,
-      currentStart,
-      periodEnd,
-      responseEnd,
-      currentWindow,
-      previousWindow,
-    })
-  }
-
-  const clientId = resolveMobileClientReportId(decoded)
-
-  const { currentBookings, previousBookings, nextBooking } = await loadMobileClientReportData({
-    studioId: studio.id,
-    clientId,
-    currentStart,
-    previousStart,
-    periodEnd,
-  })
-
-  return runMobileClientReport({
-    studio: studioSummary,
-    periodDays,
-    currentStart,
-    periodEnd,
-    responseEnd,
-    currentBookings,
-    previousBookings,
-    nextBooking,
+      return runMobileClientReport({
+        studio: studioSummary,
+        periodDays,
+        currentStart,
+        periodEnd,
+        responseEnd,
+        currentBookings,
+        previousBookings,
+        nextBooking,
+      })
+    },
   })
 }
