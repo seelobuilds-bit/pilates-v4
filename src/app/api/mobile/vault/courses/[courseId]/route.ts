@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 import { summarizeVaultCourseEnrollments } from "@/lib/vault/analytics"
 
 export async function GET(
@@ -9,15 +10,18 @@ export async function GET(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role === "CLIENT") {
       return NextResponse.json({ error: "Vault is available for studio and teacher accounts only" }, { status: 403 })
@@ -27,20 +31,7 @@ export async function GET(
       return NextResponse.json({ error: "Teacher session invalid" }, { status: 401 })
     }
 
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const studio = auth.studio
 
     const { courseId } = await params
     const visibilityWhere: Prisma.VaultCourseWhereInput = {
@@ -218,13 +209,7 @@ export async function GET(
 
     return NextResponse.json({
       role: decoded.role,
-      studio: {
-        id: studio.id,
-        name: studio.name,
-        subdomain: studio.subdomain,
-        primaryColor: studio.primaryColor,
-        currency: studio.stripeCurrency,
-      },
+      studio: toMobileStudioSummary(studio),
       course: {
         id: course.id,
         title: course.title,
@@ -362,30 +347,21 @@ export async function POST(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role !== "OWNER") {
       return NextResponse.json({ error: "Course publishing is available for studio owner accounts only" }, { status: 403 })
-    }
-
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        subdomain: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
     const payload = await request.json().catch(() => null)
@@ -398,7 +374,7 @@ export async function POST(
     const course = await db.vaultCourse.findFirst({
       where: {
         id: courseId,
-        studioId: studio.id,
+        studioId: auth.studio.id,
       },
       select: {
         id: true,
