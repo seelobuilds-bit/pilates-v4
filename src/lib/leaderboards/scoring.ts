@@ -1,17 +1,16 @@
 import { randomUUID } from "node:crypto"
 import {
   Leaderboard,
-  LeaderboardCategory,
   LeaderboardParticipantType,
   LeaderboardPeriod,
   Prisma,
 } from "@prisma/client"
 import { db } from "../db"
 import {
+  buildLeaderboardMetricsBreakdown,
   calculateLeaderboardDerivedMetrics,
   normalizeLeaderboardScore,
   resolveLeaderboardScoreByCategory,
-  roundLeaderboardValue,
 } from "./metrics"
 import { compareLeaderboardEntries } from "./presentation"
 
@@ -553,29 +552,25 @@ export async function populateLeaderboardPeriodEntries(params: {
     return {
       score: normalizeLeaderboardScore(score),
       previousScore: null,
-      metricsBreakdown: {
-        bookingsCurrent: bookingsCurrentCount,
-        bookingsPrevious: bookingsPreviousCount,
-        revenue: roundLeaderboardValue(revenue, 2),
-        classes: classesCount,
-        attendanceRate: roundLeaderboardValue(derived.attendanceRate, 2),
+      metricsBreakdown: buildLeaderboardMetricsBreakdown({
+        participantType: leaderboard.participantType,
+        bookingsCurrentCount,
+        bookingsPreviousCount,
+        revenue,
+        classesCount,
         newClients,
-        retention: roundLeaderboardValue(isStudio ? derived.retention : 0, 2),
         socialTriggered,
         socialResponded,
         socialBooked,
-        socialEngagementRate: roundLeaderboardValue(derived.socialEngagementRate, 2),
         contentConsistencyDays,
         coursesCreated,
         courseEnrollments,
         coursesCompleted,
-        averageRating: roundLeaderboardValue(derived.averageRating, 2),
-        communityMessages: mostActiveCommunity,
+        mostActiveCommunity,
         topReviewer,
         referrals,
-        newcomerScore: derived.newcomerScore,
-        comebackScore: derived.comebackScore,
-      } satisfies Prisma.JsonObject,
+        derived,
+      }) satisfies Prisma.JsonObject,
     }
   }
 

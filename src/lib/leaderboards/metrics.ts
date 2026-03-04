@@ -141,3 +141,49 @@ export function resolveLeaderboardScoreByCategory(input: LeaderboardScoreByCateg
 
   return metricByCategory[input.category] ?? fallbackScore
 }
+
+export function buildLeaderboardMetricsBreakdown(input: {
+  participantType: LeaderboardParticipantType
+  bookingsCurrentCount: number
+  bookingsPreviousCount: number
+  revenue: number
+  classesCount: number
+  newClients: number
+  socialTriggered: number
+  socialResponded: number
+  socialBooked: number
+  contentConsistencyDays: number
+  coursesCreated: number
+  courseEnrollments: number
+  coursesCompleted: number
+  mostActiveCommunity: number
+  topReviewer: number
+  referrals: number
+  derived: ReturnType<typeof calculateLeaderboardDerivedMetrics>
+}) {
+  const isStudio = input.participantType === LeaderboardParticipantType.STUDIO
+
+  return {
+    bookingsCurrent: input.bookingsCurrentCount,
+    bookingsPrevious: input.bookingsPreviousCount,
+    revenue: roundLeaderboardValue(input.revenue, 2),
+    classes: input.classesCount,
+    attendanceRate: roundLeaderboardValue(input.derived.attendanceRate, 2),
+    newClients: input.newClients,
+    retention: roundLeaderboardValue(isStudio ? input.derived.retention : 0, 2),
+    socialTriggered: input.socialTriggered,
+    socialResponded: input.socialResponded,
+    socialBooked: input.socialBooked,
+    socialEngagementRate: roundLeaderboardValue(input.derived.socialEngagementRate, 2),
+    contentConsistencyDays: input.contentConsistencyDays,
+    coursesCreated: input.coursesCreated,
+    courseEnrollments: input.courseEnrollments,
+    coursesCompleted: input.coursesCompleted,
+    averageRating: roundLeaderboardValue(input.derived.averageRating, 2),
+    communityMessages: input.mostActiveCommunity,
+    topReviewer: input.topReviewer,
+    referrals: input.referrals,
+    newcomerScore: input.derived.newcomerScore,
+    comebackScore: input.derived.comebackScore,
+  }
+}
