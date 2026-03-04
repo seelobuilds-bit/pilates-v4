@@ -1,11 +1,10 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
 import { MobileReportsError } from "@/lib/reporting/mobile-report-errors"
-import { buildMobileClientHighlights } from "@/lib/reporting/mobile-client-report-highlights"
-import { buildMobileClientReportMetrics } from "@/lib/reporting/mobile-client-report-card-metrics"
+import { buildMobileClientReportResponse } from "@/lib/reporting/mobile-client-report-response"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-report-metrics"
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
-import { buildMobileReportsPayload, type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
+import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-report-response"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportResponse } from "@/lib/reporting/mobile-teacher-report-response"
@@ -213,15 +212,14 @@ export async function getMobileReports(
     bookings: currentBookings,
   })
 
-  return buildMobileReportsPayload({
-    role: "CLIENT",
+  return buildMobileClientReportResponse({
     studio: studioSummary,
     periodDays,
     periodEnd,
     rangeStart: currentStart,
     rangeEnd: responseEnd,
-    metrics: buildMobileClientReportMetrics(clientMetrics),
-    highlights: buildMobileClientHighlights(nextBooking),
+    metrics: clientMetrics,
+    nextBooking,
     series: clientSeries,
   })
 }
