@@ -1,5 +1,7 @@
 import { db } from "@/lib/db"
 import { runDbQueries } from "@/lib/db-query-mode"
+import { mapClientSummaryCountResults } from "./client-summary-counts"
+import { buildClientSummaryCountQueries } from "./client-summary-query"
 
 export async function fetchStudioReportClassSessionsWindow(args: {
   studioId: string
@@ -165,41 +167,23 @@ export async function fetchStudioReportBaseData(args: {
       }),
   ])
 
+  const clientCountQueries = buildClientSummaryCountQueries({
+    studioId,
+    startDate,
+    endDate: reportEndDate,
+  })
+
   const [
     totalClients,
-    newClients,
     activeClients,
     churnedClients,
+    newClients,
     previousClassCounts,
     studioTeachers,
     studioClients,
     cancelledBookingsInPeriod,
   ] = await runDbQueries([
-    () => db.client.count({ where: { studioId } }),
-    () =>
-      db.client.count({
-        where: {
-          studioId,
-          createdAt: {
-            gte: startDate,
-            lt: reportEndDate,
-          },
-        },
-      }),
-    () =>
-      db.client.count({
-        where: {
-          studioId,
-          isActive: true,
-        },
-      }),
-    () =>
-      db.client.count({
-        where: {
-          studioId,
-          isActive: false,
-        },
-      }),
+    ...clientCountQueries,
     () =>
       db.classSession.groupBy({
         by: ["teacherId"] as const,
@@ -267,15 +251,22 @@ export async function fetchStudioReportBaseData(args: {
       }),
   ])
 
+  const clientCounts = mapClientSummaryCountResults({
+    totalClients,
+    activeClients,
+    churnedClients,
+    newClients,
+  })
+
   return {
     bookings,
     previousBookings,
     monthlyBookings,
     classSessions,
-    totalClients,
-    newClients,
-    activeClients,
-    churnedClients,
+    totalClients: clientCounts.totalClients,
+    newClients: clientCounts.newClients,
+    activeClients: clientCounts.activeClients,
+    churnedClients: clientCounts.churnedClients,
     previousClassCounts,
     studioTeachers,
     studioClients,
