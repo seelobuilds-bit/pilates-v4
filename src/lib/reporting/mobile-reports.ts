@@ -7,7 +7,7 @@ import { buildMobileClientWindowMetrics } from "@/lib/reporting/mobile-client-re
 import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
 import { buildMobileReportsPayload, type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
-import { buildMobileOwnerReportMetrics } from "@/lib/reporting/mobile-owner-report-metrics"
+import { buildMobileOwnerReportResponse } from "@/lib/reporting/mobile-owner-report-response"
 import { buildMobileOwnerSeries } from "@/lib/reporting/mobile-owner-report-series"
 import { buildMobileTeacherReportMetrics } from "@/lib/reporting/mobile-teacher-report-metrics"
 import { buildMobileTeacherSeries } from "@/lib/reporting/mobile-teacher-report-series"
@@ -84,15 +84,14 @@ export async function getMobileReports(
       newClients: currentNewClientRows,
     })
 
-    return buildMobileReportsPayload({
-      role: "OWNER",
+    return buildMobileOwnerReportResponse({
       studio: studioSummary,
       periodDays,
       periodEnd,
       rangeStart: currentStart,
       rangeEnd: responseEnd,
-      metrics: buildMobileOwnerReportMetrics(ownerMetrics),
-      highlights: buildClassTypeHighlights(currentSessions),
+      metrics: ownerMetrics,
+      sessions: currentSessions,
       series: ownerSeries,
     })
   }
