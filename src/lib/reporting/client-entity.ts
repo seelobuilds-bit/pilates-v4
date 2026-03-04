@@ -4,6 +4,7 @@ import {
   buildMonthlyCountBuckets,
 } from "./monthly"
 import { resolveBookingRevenue } from "./revenue"
+import { buildNonCancelledBookingAggregate } from "./booking-aggregates"
 
 export type ClientEntityBookingLike = {
   status: string
@@ -59,14 +60,15 @@ export function buildClientEntityStats(params: {
   credits: number
 }) {
   const { reportBookings, endDate, credits } = params
-  const nonCancelledBookings = reportBookings.filter((booking) => booking.status !== "CANCELLED")
+  const { nonCancelledBookings, totalRevenue: rawTotalSpent } = buildNonCancelledBookingAggregate({
+    bookings: reportBookings,
+    getStatus: (booking) => booking.status,
+    getRevenue: (booking) => resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price),
+  })
   const completedClasses = reportBookings.filter((booking) => booking.status === "COMPLETED").length
   const cancelledClasses = reportBookings.filter((booking) => booking.status === "CANCELLED").length
 
-  const totalSpent = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    return sum + amount
-  }, 0)
+  const totalSpent = rawTotalSpent
 
   const totalBookings = nonCancelledBookings.length
   const totalBookingAttempts = reportBookings.length

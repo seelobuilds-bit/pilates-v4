@@ -4,6 +4,7 @@ import {
   buildMonthlyRevenueBuckets,
 } from "./monthly"
 import { resolveBookingRevenue } from "./revenue"
+import { buildNonCancelledBookingAggregate } from "./booking-aggregates"
 
 export type LocationEntitySessionLike = {
   startTime: Date
@@ -44,11 +45,11 @@ export function buildLocationEntityStats(params: {
   endDate: Date
 }) {
   const { classSessions, bookings, endDate } = params
-  const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
-  const totalRevenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    return sum + amount
-  }, 0)
+  const { nonCancelledBookings, totalRevenue } = buildNonCancelledBookingAggregate({
+    bookings,
+    getStatus: (booking) => booking.status,
+    getRevenue: (booking) => resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price),
+  })
 
   const activeClientIds = new Set(
     nonCancelledBookings.filter((booking) => booking.client.isActive).map((booking) => booking.clientId)
@@ -118,4 +119,3 @@ export function buildLocationEntityStats(params: {
     })),
   }
 }
-

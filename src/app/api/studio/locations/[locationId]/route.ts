@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import { buildLocationEntityStats } from "@/lib/reporting/location-entity"
 import { getSession } from "@/lib/session"
 
@@ -8,18 +8,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ locationId: string }> }
 ) {
-  const session = await getSession()
-
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const context = await resolveOwnerEntityReportContext(request)
+  if (!context.ok) return context.response
 
   const { locationId } = await params
-  const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
   const location = await db.location.findFirst({
     where: {
       id: locationId,
-      studioId: session.user.studioId
+      studioId: context.studioId
     }
   })
 
@@ -29,11 +25,11 @@ export async function GET(
 
   const classSessions = await db.classSession.findMany({
     where: {
-      studioId: session.user.studioId,
+      studioId: context.studioId,
       locationId,
       startTime: {
-        gte: startDate,
-        lte: endDate
+        gte: context.startDate,
+        lte: context.endDate
       }
     },
     include: {
@@ -57,12 +53,12 @@ export async function GET(
 
   const bookings = await db.booking.findMany({
     where: {
-      studioId: session.user.studioId,
+      studioId: context.studioId,
       classSession: {
         locationId,
         startTime: {
-          gte: startDate,
-          lte: endDate
+          gte: context.startDate,
+          lte: context.endDate
         }
       }
     },
@@ -86,7 +82,7 @@ export async function GET(
   const stats = buildLocationEntityStats({
     classSessions,
     bookings,
-    endDate,
+    endDate: context.endDate,
   })
 
   return NextResponse.json({

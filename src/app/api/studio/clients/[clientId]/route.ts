@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import {
   buildClientEntityStats,
   mapClientCommunications,
@@ -12,18 +12,15 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const session = await getSession()
-    if (!session?.user?.studioId || session.user.role !== "OWNER") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const context = await resolveOwnerEntityReportContext(request)
+    if (!context.ok) return context.response
 
     const { clientId } = await params
-    const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
 
     const client = await db.client.findFirst({
       where: {
         id: clientId,
-        studioId: session.user.studioId
+        studioId: context.studioId
       }
     })
 
@@ -34,7 +31,7 @@ export async function GET(
     const allBookings = await db.booking.findMany({
       where: {
         clientId: client.id,
-        studioId: session.user.studioId
+        studioId: context.studioId
       },
       include: {
         classSession: {
@@ -52,7 +49,7 @@ export async function GET(
 
     const messages = await db.message.findMany({
       where: {
-        studioId: session.user.studioId,
+        studioId: context.studioId,
         clientId: client.id
       },
       orderBy: { createdAt: "desc" },
@@ -69,13 +66,13 @@ export async function GET(
 
     const reportBookings = allBookings.filter((booking) => {
       const classStart = new Date(booking.classSession.startTime)
-      return classStart >= startDate && classStart <= endDate
+      return classStart >= context.startDate && classStart <= context.endDate
     })
 
     const communications = mapClientCommunications(messages)
     const stats = buildClientEntityStats({
       reportBookings,
-      endDate,
+      endDate: context.endDate,
       credits: client.credits,
     })
 

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { db } from "@/lib/db"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import {
   buildTeacherEntityReportSummary,
 } from "@/lib/reporting/teacher-entity"
@@ -11,18 +11,15 @@ export async function GET(
   { params }: { params: Promise<{ teacherId: string }> }
 ) {
   try {
-    const session = await getSession()
-    if (!session?.user?.studioId || session.user.role !== "OWNER") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const context = await resolveOwnerEntityReportContext(request)
+    if (!context.ok) return context.response
 
     const { teacherId } = await params
-    const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
 
     const teacher = await db.teacher.findFirst({
       where: {
         id: teacherId,
-        studioId: session.user.studioId
+        studioId: context.studioId
       },
       include: {
         user: {
@@ -58,7 +55,7 @@ export async function GET(
     const allClassSessions = await db.classSession.findMany({
       where: {
         teacherId: teacher.id,
-        studioId: session.user.studioId
+        studioId: context.studioId
       },
       include: {
         classType: { select: { name: true } },
@@ -70,7 +67,7 @@ export async function GET(
 
     const allBookings = await db.booking.findMany({
       where: {
-        studioId: session.user.studioId,
+        studioId: context.studioId,
         classSession: {
           teacherId: teacher.id
         }
@@ -91,18 +88,18 @@ export async function GET(
 
     const reportClassSessions = allClassSessions.filter((session) => {
       const classStart = new Date(session.startTime)
-      return classStart >= startDate && classStart <= endDate
+      return classStart >= context.startDate && classStart <= context.endDate
     })
     const reportBookings = allBookings.filter((booking) => {
       const classStart = new Date(booking.classSession.startTime)
-      return classStart >= startDate && classStart <= endDate
+      return classStart >= context.startDate && classStart <= context.endDate
     })
 
     const { stats, extendedStats } = buildTeacherEntityReportSummary({
       reportClassSessions,
       reportBookings,
       allClassSessions,
-      endDate,
+      endDate: context.endDate,
     })
 
     return NextResponse.json({

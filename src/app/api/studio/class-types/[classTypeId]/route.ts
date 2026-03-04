@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveOwnerEntityReportContext } from "@/lib/reporting/entity-route-context"
 import { buildClassTypeEntityStats } from "@/lib/reporting/class-type-entity"
 import { getSession } from "@/lib/session"
 
@@ -8,18 +8,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ classTypeId: string }> }
 ) {
-  const session = await getSession()
-
-  if (!session?.user?.studioId || session.user.role !== "OWNER") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const context = await resolveOwnerEntityReportContext(request)
+  if (!context.ok) return context.response
 
   const { classTypeId } = await params
-  const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
   const classType = await db.classType.findFirst({
     where: {
       id: classTypeId,
-      studioId: session.user.studioId
+      studioId: context.studioId
     }
   })
 
@@ -29,11 +25,11 @@ export async function GET(
 
   const classSessions = await db.classSession.findMany({
     where: {
-      studioId: session.user.studioId,
+      studioId: context.studioId,
       classTypeId,
       startTime: {
-        gte: startDate,
-        lte: endDate
+        gte: context.startDate,
+        lte: context.endDate
       }
     },
     include: {
@@ -59,12 +55,12 @@ export async function GET(
 
   const bookings = await db.booking.findMany({
     where: {
-      studioId: session.user.studioId,
+      studioId: context.studioId,
       classSession: {
         classTypeId,
         startTime: {
-          gte: startDate,
-          lte: endDate
+          gte: context.startDate,
+          lte: context.endDate
         }
       }
     },
@@ -82,7 +78,7 @@ export async function GET(
     classSessions,
     bookings,
     classPrice: classType.price,
-    endDate,
+    endDate: context.endDate,
   })
 
   const locationIds = Array.from(new Set(classSessions.map((session) => session.locationId)))
