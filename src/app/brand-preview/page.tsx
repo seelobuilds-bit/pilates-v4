@@ -130,24 +130,9 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-amber-500,
         .brand-preview-shell .bg-violet-500,
         .brand-preview-shell .bg-pink-600 {
-          background-color: rgba(212, 206, 196, 0.9) !important;
+          background-color: #1a1a1a !important;
           background-image: none !important;
-          color: #1a1a1a !important;
-        }
-
-        .brand-preview-shell .from-pink-500,
-        .brand-preview-shell .to-violet-600,
-        .brand-preview-shell .from-violet-600,
-        .brand-preview-shell .to-pink-500 {
-          --tw-gradient-from: rgba(212, 206, 196, 0.92) !important;
-          --tw-gradient-to: rgba(245, 242, 237, 0.96) !important;
-          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-        }
-
-        .brand-preview-shell .bg-gradient-to-r,
-        .brand-preview-shell .bg-gradient-to-br,
-        .brand-preview-shell .bg-gradient-to-b {
-          background-image: linear-gradient(135deg, rgba(212, 206, 196, 0.92), rgba(245, 242, 237, 0.96)) !important;
+          color: #faf8f5 !important;
         }
 
         .brand-preview-shell .bg-violet-50,
@@ -163,7 +148,10 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .text-pink-600,
         .brand-preview-shell .text-emerald-600,
         .brand-preview-shell .text-blue-600,
-        .brand-preview-shell .text-amber-600 {
+        .brand-preview-shell .text-amber-600,
+        .brand-preview-shell .text-pink-700,
+        .brand-preview-shell .text-violet-700,
+        .brand-preview-shell .text-emerald-700 {
           color: #1a1a1a !important;
         }
 
@@ -210,12 +198,109 @@ export default function BrandPreviewPage() {
           border-color: rgba(212, 206, 196, 0.65) !important;
         }
 
+        .brand-preview-shell .from-pink-500,
+        .brand-preview-shell .from-rose-500,
+        .brand-preview-shell .from-violet-500,
+        .brand-preview-shell .from-violet-600,
+        .brand-preview-shell .from-purple-500,
+        .brand-preview-shell .from-purple-600,
+        .brand-preview-shell .from-amber-500,
+        .brand-preview-shell .from-orange-500,
+        .brand-preview-shell .from-pink-400 {
+          --tw-gradient-from: #1a1a1a !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 26, 26, 0)) !important;
+        }
+
+        .brand-preview-shell .to-violet-600,
+        .brand-preview-shell .to-violet-700,
+        .brand-preview-shell .to-purple-600,
+        .brand-preview-shell .to-rose-500,
+        .brand-preview-shell .to-orange-500,
+        .brand-preview-shell .to-pink-500,
+        .brand-preview-shell .to-violet-500 {
+          --tw-gradient-to: #0d0d0d !important;
+        }
+
+        .brand-preview-shell .from-pink-50,
+        .brand-preview-shell .from-violet-50,
+        .brand-preview-shell .from-amber-50,
+        .brand-preview-shell .from-emerald-50,
+        .brand-preview-shell .from-blue-50,
+        .brand-preview-shell .from-purple-50 {
+          --tw-gradient-from: #efebe4 !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(239, 235, 228, 0)) !important;
+        }
+
+        .brand-preview-shell .to-white {
+          --tw-gradient-to: #f5f2ed !important;
+        }
+
+        .brand-preview-shell .via-violet-950,
+        .brand-preview-shell .via-gray-800 {
+          --tw-gradient-stops: var(--tw-gradient-from), #1a1a1a, var(--tw-gradient-to) !important;
+        }
+
+        .brand-preview-shell .from-gray-900 {
+          --tw-gradient-from: #1a1a1a !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 26, 26, 0)) !important;
+        }
+
+        .brand-preview-shell .to-gray-900 {
+          --tw-gradient-to: #0d0d0d !important;
+        }
+
+        .brand-preview-shell .from-pink-200\\/40,
+        .brand-preview-shell .from-violet-200\\/30,
+        .brand-preview-shell .via-violet-200\\/30,
+        .brand-preview-shell .via-purple-100\\/20 {
+          --tw-gradient-from: rgba(212, 206, 196, 0.45) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), rgba(245, 242, 237, 0.18), var(--tw-gradient-to, transparent) !important;
+        }
+
+        .brand-preview-shell .bg-pink-500\\/20,
+        .brand-preview-shell .bg-violet-500\\/20 {
+          background-color: rgba(212, 206, 196, 0.18) !important;
+        }
+
+        .brand-preview-shell .shadow-violet-500\\/25,
+        .brand-preview-shell .shadow-violet-500\\/30,
+        .brand-preview-shell .shadow-pink-500\\/25,
+        .brand-preview-shell .shadow-pink-500\\/30,
+        .brand-preview-shell .shadow-purple-500\\/30,
+        .brand-preview-shell .shadow-amber-500\\/30 {
+          --tw-shadow-color: rgba(26, 26, 26, 0.12) !important;
+        }
+
         .brand-preview-shell .hover\\:bg-violet-700:hover,
         .brand-preview-shell .hover\\:bg-pink-600:hover,
         .brand-preview-shell .hover\\:bg-black:hover,
         .brand-preview-shell .hover\\:bg-gray-900:hover {
           background-color: #0d0d0d !important;
           color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell .hover\\:from-pink-600:hover,
+        .brand-preview-shell .hover\\:to-violet-700:hover {
+          --tw-gradient-from: #0d0d0d !important;
+          --tw-gradient-to: #1a1a1a !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+        }
+
+        .brand-preview-shell .border-white\\/30 {
+          border-color: rgba(212, 206, 196, 0.45) !important;
+        }
+
+        .brand-preview-shell .hover\\:bg-white\\/10:hover,
+        .brand-preview-shell .bg-white\\/10 {
+          background-color: rgba(250, 248, 245, 0.08) !important;
+        }
+
+        .brand-preview-shell .bg-white\\/20 {
+          background-color: rgba(250, 248, 245, 0.18) !important;
+        }
+
+        .brand-preview-shell .hover\\:bg-white\\/30:hover {
+          background-color: rgba(250, 248, 245, 0.24) !important;
         }
 
         .brand-preview-shell input,
