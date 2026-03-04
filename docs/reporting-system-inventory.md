@@ -514,6 +514,10 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/instructors.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
+- Studio/demo fallback client-count query normalization:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/client-summary-query.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
 
 ## Non-Negotiable Safety Constraint
 

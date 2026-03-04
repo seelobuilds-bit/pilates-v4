@@ -12,6 +12,7 @@ import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
+import { fetchClientSummaryCounts } from "@/lib/reporting/client-summary-query"
 import {
   buildActiveClientVisitIndex,
   buildAtRiskCandidates,
@@ -509,20 +510,11 @@ export async function GET(request: NextRequest) {
     console.error("Failed to load full reports payload:", error)
 
     try {
-      const [totalClients, activeClients, churnedClients, newClients] = await runDbQueries([
-        () => db.client.count({ where: { studioId } }),
-        () => db.client.count({ where: { studioId, isActive: true } }),
-        () => db.client.count({ where: { studioId, isActive: false } }),
-        () => db.client.count({
-          where: {
-            studioId,
-            createdAt: {
-              gte: startDate,
-              lt: reportEndDate
-            }
-          }
-        })
-      ])
+      const { totalClients, activeClients, churnedClients, newClients } = await fetchClientSummaryCounts({
+        studioId,
+        startDate,
+        endDate: reportEndDate,
+      })
 
       return NextResponse.json(
         buildPartialReportsPayload({
