@@ -1,9 +1,9 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
 import { runMobileClientReport } from "@/lib/reporting/mobile-client-report-runner"
-import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { loadMobileOwnerReportData } from "@/lib/reporting/mobile-owner-report-loader"
 import { runMobileOwnerReport } from "@/lib/reporting/mobile-owner-report-runner"
+import { loadMobileTeacherReportData } from "@/lib/reporting/mobile-teacher-report-loader"
 import { runMobileTeacherReport } from "@/lib/reporting/mobile-teacher-report-runner"
 import {
   resolveMobileClientReportId,
@@ -56,20 +56,13 @@ export async function getMobileReports(
   if (decoded.role === "TEACHER") {
     const teacherId = resolveMobileTeacherReportId(decoded)
 
-    const [currentWindow, previousWindow] = await Promise.all([
-      fetchTeacherPerformanceWindow({
-        studioId: studio.id,
-        teacherId,
-        startDate: currentStart,
-        endDate: periodEnd,
-      }),
-      fetchTeacherPerformanceWindow({
-        studioId: studio.id,
-        teacherId,
-        startDate: previousStart,
-        endDate: currentStart,
-      }),
-    ])
+    const { currentWindow, previousWindow } = await loadMobileTeacherReportData({
+      studioId: studio.id,
+      teacherId,
+      currentStart,
+      previousStart,
+      periodEnd,
+    })
 
     return runMobileTeacherReport({
       studio: studioSummary,
