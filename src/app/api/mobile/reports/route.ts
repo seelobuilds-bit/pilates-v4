@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { MobileReportsError } from "@/lib/reporting/mobile-report-errors"
 import {
   resolveMobileReportRangeInputFromBody,
   resolveMobileReportRangeInputFromSearchParams,
 } from "@/lib/reporting/mobile-report-request"
+import { resolveMobileReportRouteError } from "@/lib/reporting/mobile-report-route-errors"
 import { getMobileReports } from "@/lib/reporting/mobile-reports"
 import type { ReportRangeInput } from "@/lib/reporting/date-range"
 
@@ -15,11 +15,11 @@ async function handleReportRequest(request: NextRequest, input: ReportRangeInput
     const data = await getMobileReports(request.headers.get("authorization"), input)
     return NextResponse.json(data)
   } catch (error) {
-    if (error instanceof MobileReportsError) {
-      return NextResponse.json({ error: error.message }, { status: error.status })
+    const routeError = resolveMobileReportRouteError(error)
+    if (routeError.log) {
+      console.error("Mobile reports error:", error)
     }
-    console.error("Mobile reports error:", error)
-    return NextResponse.json({ error: "Failed to load reports" }, { status: 500 })
+    return NextResponse.json({ error: routeError.message }, { status: routeError.status })
   }
 }
 
