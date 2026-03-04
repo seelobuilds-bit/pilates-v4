@@ -4,11 +4,11 @@ import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
+  loadParticipantMapsForEntries,
+  resolveExpectedParticipantCountFromDb,
+} from "@/lib/leaderboards/query"
+import {
   attachParticipantToEntry,
-  collectEntryParticipantIds,
-  createStudioParticipantMap,
-  createTeacherParticipantMap,
-  resolveExpectedParticipantCount,
 } from "@/lib/leaderboards/presentation"
 
 export async function GET(
@@ -170,49 +170,10 @@ export async function GET(
       ...(activePeriod?.entries ?? []),
       ...recentPeriods.flatMap((period) => period.entries),
     ]
-    const { studioIds, teacherIds } = collectEntryParticipantIds(entryParticipantRows)
-
-    const [studios, teachers] = await Promise.all([
-      studioIds.length
-        ? db.studio.findMany({
-            where: { id: { in: studioIds } },
-            select: { id: true, name: true, subdomain: true },
-          })
-        : Promise.resolve([]),
-      teacherIds.length
-        ? db.teacher.findMany({
-            where: { id: { in: teacherIds } },
-            select: {
-              id: true,
-              studioId: true,
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          })
-        : Promise.resolve([]),
-    ])
-
-    const studioById = createStudioParticipantMap(studios)
-    const teacherById = createTeacherParticipantMap(
-      teachers.map((item) => ({
-        id: item.id,
-        name: `${item.user.firstName} ${item.user.lastName}`,
-        studioId: item.studioId,
-      }))
+    const { studioById, teacherById } = await loadParticipantMapsForEntries(entryParticipantRows)
+    const expectedParticipantCount = await resolveExpectedParticipantCountFromDb(
+      leaderboard.participantType
     )
-
-    const [studioCount, teacherCount] = await Promise.all([
-      db.studio.count(),
-      db.teacher.count({ where: { isActive: true } }),
-    ])
-    const expectedParticipantCount = resolveExpectedParticipantCount(leaderboard.participantType, {
-      studioCount,
-      teacherCount,
-    })
 
     const enrichEntry = (entry: {
       id: string

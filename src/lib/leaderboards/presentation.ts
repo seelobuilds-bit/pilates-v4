@@ -1,7 +1,6 @@
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 
-type ParticipantEntry = {
-  id: string
+type ParticipantRef = {
   studioId: string | null
   teacherId: string | null
 }
@@ -116,7 +115,7 @@ export function createTeacherParticipantMap(rows: TeacherParticipantRow[]) {
   )
 }
 
-export function attachParticipantsToEntries<T extends ParticipantEntry>(
+export function attachParticipantsToEntries<T extends ParticipantRef>(
   entries: T[],
   participantMaps: ParticipantMaps
 ) {
@@ -125,7 +124,7 @@ export function attachParticipantsToEntries<T extends ParticipantEntry>(
     .filter((entry) => Boolean(entry.participant))
 }
 
-export function attachParticipantToEntry<T extends ParticipantEntry>(
+export function attachParticipantToEntry<T extends ParticipantRef>(
   entry: T,
   participantMaps: ParticipantMaps
 ) {
@@ -141,7 +140,7 @@ export function attachParticipantToEntry<T extends ParticipantEntry>(
   }
 }
 
-export function collectEntryParticipantIds(entries: ParticipantEntry[]) {
+export function collectEntryParticipantIds<T extends ParticipantRef>(entries: T[]) {
   return {
     studioIds: Array.from(
       new Set(entries.map((entry) => entry.studioId).filter((id): id is string => Boolean(id)))

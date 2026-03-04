@@ -4,13 +4,13 @@ import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
+  loadParticipantMapsForEntries,
+  resolveExpectedParticipantCountFromDb,
+} from "@/lib/leaderboards/query"
+import {
   attachParticipantsToEntries,
-  collectEntryParticipantIds,
-  createStudioParticipantMap,
-  createTeacherParticipantMap,
   groupLeaderboardsByDisplayCategory,
   LEADERBOARD_DISPLAY_CATEGORIES,
-  resolveExpectedParticipantCount,
 } from "@/lib/leaderboards/presentation"
 
 export async function GET(request: NextRequest) {
@@ -65,14 +65,7 @@ export async function GET(request: NextRequest) {
         : decoded.role === "TEACHER"
           ? "TEACHER"
           : "STUDIO"
-    const [studioCount, teacherCount] = await Promise.all([
-      db.studio.count(),
-      db.teacher.count({ where: { isActive: true } }),
-    ])
-    const expectedParticipantCount = resolveExpectedParticipantCount(participantType, {
-      studioCount,
-      teacherCount,
-    })
+    const expectedParticipantCount = await resolveExpectedParticipantCountFromDb(participantType)
 
     const leaderboards = await db.leaderboard.findMany({
       where: {
@@ -119,40 +112,7 @@ export async function GET(request: NextRequest) {
     })
 
     const allEntries = leaderboards.flatMap((leaderboard) => leaderboard.periods[0]?.entries ?? [])
-    const { studioIds, teacherIds } = collectEntryParticipantIds(allEntries)
-
-    const [studios, teachers] = await Promise.all([
-      studioIds.length
-        ? db.studio.findMany({
-            where: { id: { in: studioIds } },
-            select: { id: true, name: true, subdomain: true },
-          })
-        : Promise.resolve([]),
-      teacherIds.length
-        ? db.teacher.findMany({
-            where: { id: { in: teacherIds } },
-            select: {
-              id: true,
-              studioId: true,
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          })
-        : Promise.resolve([]),
-    ])
-
-    const studioById = createStudioParticipantMap(studios)
-    const teacherById = createTeacherParticipantMap(
-      teachers.map((item) => ({
-        id: item.id,
-        name: `${item.user.firstName} ${item.user.lastName}`,
-        studioId: item.studioId,
-      }))
-    )
+    const { studioById, teacherById } = await loadParticipantMapsForEntries(allEntries)
 
     const enriched = leaderboards.map((leaderboard) => {
       const currentPeriod = leaderboard.periods[0]

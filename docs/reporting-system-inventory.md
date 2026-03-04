@@ -502,6 +502,7 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/lib/reporting/instructors.ts`
 - Leaderboard participant enrichment normalization:
   - `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/presentation.ts`
+  - `/Users/charlie/Development/pilates-v4/src/lib/leaderboards/query.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/[leaderboardId]/route.ts`
