@@ -34,12 +34,8 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header {
-          background:
-            radial-gradient(circle at 12% 18%, rgba(212, 206, 196, 0.4), transparent 26%),
-            radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.1), transparent 22%),
-            linear-gradient(180deg, #faf8f5 0%, #f5f2ed 44%, #efebe4 100%) !important;
-          background-size: 100% 100svh !important;
-          background-position: top center !important;
+          background: #f5f2ed !important;
+          background-image: none !important;
           border-bottom: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
@@ -47,10 +43,7 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header.bg-white\\/80 {
-          background:
-            radial-gradient(circle at 12% 18%, rgba(212, 206, 196, 0.4), transparent 26%),
-            radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.1), transparent 22%),
-            linear-gradient(180deg, #faf8f5 0%, #f5f2ed 44%, #efebe4 100%) !important;
+          background-color: #f5f2ed !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
@@ -362,6 +355,21 @@ export default function BrandPreviewPage() {
           background-image: linear-gradient(100deg, var(--brand-accent-soft), var(--brand-accent-strong)) !important;
           color: #fff7ef !important;
           border: 1px solid rgba(241, 213, 184, 0.34) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child {
+          background: linear-gradient(160deg, #1d2027 0%, #2d1f27 58%, #22252c 100%) !important;
+          border-color: rgba(157, 115, 80, 0.4) !important;
+          box-shadow: 0 24px 52px rgba(14, 14, 14, 0.3) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-900,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-600,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-emerald-700,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-emerald-600,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-violet-600,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-pink-600 {
+          color: var(--brand-cream) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
