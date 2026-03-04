@@ -112,6 +112,9 @@ jobs:
       - name: Reporting instructors regression
         run: pnpm test:reporting:instructors
 
+      - name: Reporting teacher performance regression
+        run: pnpm test:reporting:teacher-performance
+
       - name: Reporting marketing regression
         run: pnpm test:reporting:marketing
 

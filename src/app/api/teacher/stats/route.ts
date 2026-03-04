@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import {
-  calculateAverageClassSize,
-  calculateAverageFillRate,
-  countAttendedBookings,
-} from "@/lib/reporting/attendance"
+import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
 import { getSession } from "@/lib/session"
-import { ratioPercentage, roundCurrency } from "@/lib/reporting/metrics"
-import { resolveBookingRevenue } from "@/lib/reporting/revenue"
-import { calculateRepeatClientRetentionRate } from "@/lib/reporting/retention"
 
 export async function GET() {
   const session = await getSession()
@@ -161,38 +154,7 @@ export async function GET() {
       }
     })
 
-    const nonCancelledBookings = monthBookings.filter((booking) => booking.status !== "CANCELLED")
-    const uniqueStudents = new Set(nonCancelledBookings.map((booking) => booking.clientId))
-    const completedBookings = nonCancelledBookings.filter((booking) => booking.status === "COMPLETED").length
-
-    const revenue = nonCancelledBookings.reduce((sum, booking) => {
-      const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-      return sum + amount
-    }, 0)
-
-    const totalAttendance = monthClasses.reduce((sum, session) => {
-      return (
-        sum +
-        countAttendedBookings(session.bookings)
-      )
-    }, 0)
-
-    const avgClassSize = calculateAverageClassSize(totalAttendance, monthClasses.length)
-
-    const avgFillRate = calculateAverageFillRate(monthClasses, 0)
-
-    const completionRate = ratioPercentage(completedBookings, nonCancelledBookings.length, 0)
-
-    const clientBookingCounts = new Map<string, number>()
-    for (const booking of nonCancelledBookings) {
-      clientBookingCounts.set(booking.clientId, (clientBookingCounts.get(booking.clientId) || 0) + 1)
-    }
-    const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
-
-    const classCounts = new Map<string, number>()
-    for (const session of monthClasses) {
-      classCounts.set(session.classType.name, (classCounts.get(session.classType.name) || 0) + 1)
-    }
+    const performance = buildTeacherPerformanceSummary(monthClasses, monthBookings, 0)
 
     const monthlyClassesMap = new Map<string, { month: string; count: number }>()
     for (let i = 5; i >= 0; i -= 1) {
@@ -213,24 +175,19 @@ export async function GET() {
       }
     }
 
-    const topClasses = Array.from(classCounts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
-
     return NextResponse.json({
       currency: (studio?.stripeCurrency || "usd").toLowerCase(),
-      totalClasses: monthClasses.length,
-      totalStudents: uniqueStudents.size,
+      totalClasses: performance.totalClasses,
+      totalStudents: performance.totalStudents,
       avgRating: null,
       ratingDataAvailable: false,
-      revenue: roundCurrency(revenue),
-      retentionRate,
-      avgFillRate,
-      avgClassSize,
-      completionRate,
+      revenue: performance.revenue,
+      retentionRate: performance.retentionRate,
+      avgFillRate: performance.avgFillRate,
+      avgClassSize: performance.avgClassSize,
+      completionRate: performance.completionRate,
       monthlyClasses: Array.from(monthlyClassesMap.values()),
-      topClasses,
+      topClasses: performance.topClasses,
       recentReviews: [],
       upcomingClasses,
       recentClasses
@@ -240,7 +197,6 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }
-
 
 
 

@@ -2,6 +2,7 @@ import { BookingStatus } from "@prisma/client"
 import {
   countAttendedBookings,
 } from "@/lib/reporting/attendance"
+import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
 import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
@@ -429,28 +430,8 @@ export async function getMobileReports(
       }),
     ])
 
-    const currentNonCancelled = currentBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-    const previousNonCancelled = previousBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status))
-
-    const currentRevenue = roundCurrency(currentNonCancelled.reduce((sum, booking) => sum + bookingRevenue(booking), 0))
-    const previousRevenue = roundCurrency(previousNonCancelled.reduce((sum, booking) => sum + bookingRevenue(booking), 0))
-
-    const currentStudents = new Set(currentNonCancelled.map((booking) => booking.clientId)).size
-    const previousStudents = new Set(previousNonCancelled.map((booking) => booking.clientId)).size
-
-    const currentCompleted = currentNonCancelled.filter((booking) => booking.status === "COMPLETED").length
-    const previousCompleted = previousNonCancelled.filter((booking) => booking.status === "COMPLETED").length
-
-    const currentCapacity = currentSessions.reduce((sum, session) => sum + session.capacity, 0)
-    const previousCapacity = previousSessions.reduce((sum, session) => sum + session.capacity, 0)
-    const currentAttended = currentSessions.reduce(
-      (sum, session) => sum + countAttendedBookings(session.bookings),
-      0
-    )
-    const previousAttended = previousSessions.reduce(
-      (sum, session) => sum + countAttendedBookings(session.bookings),
-      0
-    )
+    const currentPerformance = buildTeacherPerformanceSummary(currentSessions, currentBookings, 1)
+    const previousPerformance = buildTeacherPerformanceSummary(previousSessions, previousBookings, 1)
 
     const teacherBuckets = buildTrendBuckets(currentStart, periodEnd)
     const teacherSeries = teacherBuckets.map((bucket) => ({
@@ -507,16 +488,16 @@ export async function getMobileReports(
         end: responseEnd.toISOString(),
       },
       metrics: [
-        metric("revenue", "Revenue", "currency", currentRevenue, previousRevenue),
-        metric("classes", "Classes", "number", currentSessions.length, previousSessions.length),
-        metric("students", "Unique Students", "number", currentStudents, previousStudents),
-        metric("fill-rate", "Fill Rate", "percent", ratioPercentage(currentAttended, currentCapacity, 1), ratioPercentage(previousAttended, previousCapacity, 1)),
+        metric("revenue", "Revenue", "currency", currentPerformance.revenue, previousPerformance.revenue),
+        metric("classes", "Classes", "number", currentPerformance.totalClasses, previousPerformance.totalClasses),
+        metric("students", "Unique Students", "number", currentPerformance.totalStudents, previousPerformance.totalStudents),
+        metric("fill-rate", "Fill Rate", "percent", currentPerformance.avgFillRate, previousPerformance.avgFillRate),
         metric(
           "completion-rate",
           "Completion Rate",
           "percent",
-          ratioPercentage(currentCompleted, currentNonCancelled.length, 1),
-          ratioPercentage(previousCompleted, previousNonCancelled.length, 1)
+          currentPerformance.completionRate,
+          previousPerformance.completionRate
         ),
       ],
       highlights: classTypeHighlights(currentSessions),
