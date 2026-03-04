@@ -17,6 +17,7 @@ Primary trusted reporting route:
 Supporting shared helpers already in use:
 
 - `/Users/charlie/Development/pilates-v4/src/lib/reporting/metrics.ts`
+- `/Users/charlie/Development/pilates-v4/src/lib/reporting/monthly.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/db-query-mode.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/class-flows/analytics.ts`
 - `/Users/charlie/Development/pilates-v4/src/lib/marketing/analytics.ts`
@@ -203,6 +204,10 @@ Key routes:
 - `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
 - `/Users/charlie/Development/pilates-v4/src/app/api/studio/class-types/[classTypeId]/route.ts`
 - `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
+
+Current note:
+
+- Monthly trend bucket composition for entity routes is now centralized in `/Users/charlie/Development/pilates-v4/src/lib/reporting/monthly.ts` and consumed by class type, location, and client reporting routes.
 
 ### E. Leaderboards
 
