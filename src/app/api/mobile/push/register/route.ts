@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { MobilePushActorType, MobilePushPlatform, MobilePushRole } from "@prisma/client"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import {
   isPrismaMissingColumnError,
   normalizeMobilePushCategories,
@@ -21,24 +21,18 @@ function normalizePlatform(value: unknown): MobilePushPlatform {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
-    }
-
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
-
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: { id: true, subdomain: true },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
       return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
+
+    const decoded = auth.decoded
 
     const body = await request.json()
     const expoPushToken = String(body?.expoPushToken || "").trim()
@@ -65,12 +59,12 @@ export async function POST(request: NextRequest) {
     const platform: MobilePushPlatform = normalizePlatform(body?.platform)
     const where = {
       studioId_expoPushToken: {
-        studioId: decoded.studioId,
+        studioId: auth.studio.id,
         expoPushToken,
       },
     }
     const createData = {
-      studioId: decoded.studioId,
+      studioId: auth.studio.id,
       actorType,
       role,
       userId,

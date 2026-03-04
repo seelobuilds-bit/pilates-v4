@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cancelClientBookingPlan } from "@/lib/client-booking-plans"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileTokenContext } from "@/lib/mobile-auth-context"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ planId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
-    }
-
-    const decoded = verifyMobileToken(token)
-    if (!decoded || decoded.role !== "CLIENT") {
+    const auth = resolveMobileTokenContext(request.headers.get("authorization"))
+    if (!auth.ok || auth.decoded.role !== "CLIENT") {
       return NextResponse.json({ error: "Client session required" }, { status: 401 })
     }
 
+    const decoded = auth.decoded
     const { planId } = await params
     const clientId = decoded.clientId || decoded.sub
 
