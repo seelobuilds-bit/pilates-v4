@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { summarizeClassFlowDetail } from "@/lib/class-flows/analytics"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 function articlePreview(value: string | null, maxLength = 420) {
   if (!value) return null
@@ -16,15 +17,18 @@ export async function GET(
   { params }: { params: Promise<{ contentId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role === "CLIENT") {
       return NextResponse.json({ error: "Class flows are only available for studio and teacher accounts" }, { status: 403 })
@@ -34,20 +38,7 @@ export async function GET(
       return NextResponse.json({ error: "Teacher session invalid" }, { status: 401 })
     }
 
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const studio = auth.studio
 
     const { contentId } = await params
     const content = await db.classFlowContent.findFirst({
@@ -163,13 +154,7 @@ export async function GET(
 
     return NextResponse.json({
       role: decoded.role,
-      studio: {
-        id: studio.id,
-        name: studio.name,
-        subdomain: studio.subdomain,
-        primaryColor: studio.primaryColor,
-        currency: studio.stripeCurrency,
-      },
+      studio: toMobileStudioSummary(studio),
       content: {
         id: content.id,
         title: content.title,

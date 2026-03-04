@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 
 function clampProgress(value: unknown) {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -14,27 +14,21 @@ export async function POST(
   { params }: { params: Promise<{ contentId: string }> }
 ) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role !== "TEACHER" || !decoded.teacherId) {
       return NextResponse.json({ error: "Only teachers can update class flow progress" }, { status: 403 })
-    }
-
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: { id: true, subdomain: true },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
     const { contentId } = await params
@@ -81,7 +75,7 @@ export async function POST(
       create: {
         contentId,
         teacherId: decoded.teacherId,
-        studioId: decoded.studioId,
+        studioId: auth.studio.id,
         progressPercent: nextProgress ?? (isCompleted ? 100 : 0),
         isCompleted: Boolean(isCompleted),
         completedAt: isCompleted ? new Date() : null,
