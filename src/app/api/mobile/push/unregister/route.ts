@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileTokenContext } from "@/lib/mobile-auth-context"
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
-    }
-
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
+    const auth = resolveMobileTokenContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+
+    const decoded = auth.decoded
 
     const body = await request.json().catch(() => ({}))
     const expoPushToken = String(body?.expoPushToken || "").trim()
