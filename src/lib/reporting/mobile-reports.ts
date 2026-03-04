@@ -9,11 +9,11 @@ import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
-import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
 } from "@/lib/reporting/studio-report-base-query"
+import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
@@ -200,29 +200,15 @@ export async function getMobileReports(
       (client) => client.createdAt >= previousStart && client.createdAt < currentStart
     ).length
 
-    const revenueSummary = buildRevenueSummary({
-      bookings: currentBookings,
+    const ownerMetrics = buildStudioOwnerWindowMetrics({
+      currentBookings,
       previousBookings,
-      monthlyBookings: [],
-      referenceDate: periodEnd,
+      currentSessions,
+      previousSessions,
+      currentNewClients: currentBase.newClients,
+      previousNewClients,
+      periodEnd,
     })
-    const currentRevenue = roundCurrency(revenueSummary.total)
-    const previousRevenue = roundCurrency(revenueSummary.previousTotal)
-
-    const currentBooked = currentBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status)).length
-    const previousBooked = previousBookings.filter((booking) => NON_CANCELLED_STATUSES.has(booking.status)).length
-
-    const currentCapacity = currentSessions.reduce((sum, session) => sum + session.capacity, 0)
-    const previousCapacity = previousSessions.reduce((sum, session) => sum + session.capacity, 0)
-    const currentAttended = currentSessions.reduce(
-      (sum, session) => sum + countAttendedBookings(session.bookings),
-      0
-    )
-    const previousAttended = previousSessions.reduce(
-      (sum, session) => sum + countAttendedBookings(session.bookings),
-      0
-    )
-    const currentNewClients = currentBase.newClients
 
     const ownerBuckets = buildTrendBuckets(currentStart, periodEnd)
     const ownerSeries = ownerBuckets.map((bucket) => ({
@@ -276,11 +262,11 @@ export async function getMobileReports(
         end: responseEnd.toISOString(),
       },
       metrics: [
-        metric("revenue", "Revenue", "currency", currentRevenue, previousRevenue),
-        metric("bookings", "Bookings", "number", currentBooked, previousBooked),
-        metric("classes", "Classes", "number", currentSessions.length, previousSessions.length),
-        metric("fill-rate", "Fill Rate", "percent", ratioPercentage(currentAttended, currentCapacity, 1), ratioPercentage(previousAttended, previousCapacity, 1)),
-        metric("new-clients", "New Clients", "number", currentNewClients, previousNewClients),
+        metric("revenue", "Revenue", "currency", ownerMetrics.currentRevenue, ownerMetrics.previousRevenue),
+        metric("bookings", "Bookings", "number", ownerMetrics.currentBooked, ownerMetrics.previousBooked),
+        metric("classes", "Classes", "number", ownerMetrics.currentClasses, ownerMetrics.previousClasses),
+        metric("fill-rate", "Fill Rate", "percent", ownerMetrics.currentFillRate, ownerMetrics.previousFillRate),
+        metric("new-clients", "New Clients", "number", ownerMetrics.currentNewClients, ownerMetrics.previousNewClients),
       ],
       highlights: classTypeHighlights(currentSessions),
       series: ownerSeries,
