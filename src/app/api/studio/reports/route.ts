@@ -3,7 +3,7 @@ import { BookingStatus } from "@prisma/client"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { runDbQueries } from "@/lib/db-query-mode"
-import { resolveReportRange } from "@/lib/reporting/date-range"
+import { resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
 import { buildMarketingSummary } from "@/lib/reporting/marketing"
 import { buildBookingSummary } from "@/lib/reporting/bookings"
 import { buildClassesSummary } from "@/lib/reporting/classes"
@@ -17,8 +17,6 @@ import {
   buildClientSummary,
 } from "@/lib/reporting/retention"
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
-const DEFAULT_REPORT_DAYS = 30
-const MAX_REPORT_DAYS = 365
 
 export async function GET(request: NextRequest) {
   let session: Awaited<ReturnType<typeof getSession>>
@@ -35,15 +33,11 @@ export async function GET(request: NextRequest) {
 
   const studioId = session.user.studioId
   const searchParams = request.nextUrl.searchParams
-  const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(
+  const { days, startDate, reportEndDate, previousStartDate } = resolveDefaultStudioReportRange(
     {
       days: searchParams.get("days"),
       startDate: searchParams.get("startDate"),
       endDate: searchParams.get("endDate"),
-    },
-    {
-      defaultDays: DEFAULT_REPORT_DAYS,
-      maxDays: MAX_REPORT_DAYS,
     }
   )
 

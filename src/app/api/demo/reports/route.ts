@@ -15,11 +15,9 @@ import {
   buildClientSummary,
 } from "@/lib/reporting/retention"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
-import { resolveReportRange } from "@/lib/reporting/date-range"
+import { resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
 
 const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMPLETED", "NO_SHOW"]
-const DEFAULT_REPORT_DAYS = 30
-const MAX_REPORT_DAYS = 365
 
 export async function GET(request: NextRequest) {
   const studioId = await getDemoStudioId()
@@ -28,15 +26,11 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams
-  const { days, startDate, reportEndDate, previousStartDate } = resolveReportRange(
+  const { days, startDate, reportEndDate, previousStartDate } = resolveDefaultStudioReportRange(
     {
       days: searchParams.get("days"),
       startDate: searchParams.get("startDate"),
       endDate: searchParams.get("endDate"),
-    },
-    {
-      defaultDays: DEFAULT_REPORT_DAYS,
-      maxDays: MAX_REPORT_DAYS,
     }
   )
 

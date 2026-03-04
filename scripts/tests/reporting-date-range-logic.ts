@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict'
 import {
+  DEFAULT_MOBILE_ALLOWED_DAY_PRESETS,
   DEFAULT_ENTITY_ALLOWED_DAY_PRESETS,
   DEFAULT_ENTITY_REPORT_PERIOD_DAYS,
+  DEFAULT_REPORT_PERIOD_DAYS,
+  MAX_REPORT_PERIOD_DAYS,
   parseReportDays,
   resolveDefaultEntityReportDateRange,
+  resolveDefaultMobileReportRange,
+  resolveDefaultStudioReportRange,
   resolveEntityReportDateRange,
   resolveReportRange,
 } from '../../src/lib/reporting/date-range'
@@ -70,6 +75,22 @@ function run() {
     new URLSearchParams({ days: String(defaultAllowed[0]) })
   )
   assert.equal(entityDefaultAllowed.days, defaultAllowed[0])
+
+  const studioDefault = resolveDefaultStudioReportRange({})
+  assert.equal(studioDefault.days, DEFAULT_REPORT_PERIOD_DAYS)
+
+  const studioMaxBound = resolveDefaultStudioReportRange({ days: '999' })
+  assert.equal(studioMaxBound.days, MAX_REPORT_PERIOD_DAYS)
+
+  const mobileDefault = resolveDefaultMobileReportRange({})
+  assert.equal(mobileDefault.days, DEFAULT_REPORT_PERIOD_DAYS)
+
+  const mobileAllowed = Array.from(DEFAULT_MOBILE_ALLOWED_DAY_PRESETS)
+  const mobileAllowedRange = resolveDefaultMobileReportRange({ days: String(mobileAllowed[0]) })
+  assert.equal(mobileAllowedRange.days, mobileAllowed[0])
+
+  const mobileDisallowedRange = resolveDefaultMobileReportRange({ days: '365' })
+  assert.equal(mobileDisallowedRange.days, DEFAULT_REPORT_PERIOD_DAYS)
 
   console.log('PASS reporting date-range logic')
 }

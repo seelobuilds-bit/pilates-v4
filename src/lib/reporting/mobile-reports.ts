@@ -5,13 +5,12 @@ import {
 import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
 import { db } from "@/lib/db"
 import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
-import { resolveReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
+import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
-const ALLOWED_DAYS = new Set([7, 30, 90])
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
 
 export type MobileMetricFormat = "number" | "currency" | "percent"
@@ -186,10 +185,7 @@ export async function getMobileReports(
     startDate: currentStart,
     previousStartDate: previousStart,
     responseEndDate: responseEnd,
-  } = resolveReportRange(input, {
-    defaultDays: 30,
-    allowedDays: Array.from(ALLOWED_DAYS),
-  })
+  } = resolveDefaultMobileReportRange(input)
 
   if (decoded.role === "OWNER") {
     const [currentBookings, previousBookings, currentSessions, previousSessions, currentNewClientRows, previousNewClients] = await Promise.all([
