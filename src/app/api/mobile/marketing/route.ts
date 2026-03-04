@@ -3,7 +3,8 @@ import { AutomationTrigger, MessageChannel } from "@prisma/client"
 import { fallbackAutomationStep, toPersistedStepPayload } from "@/lib/automation-chain"
 import { withAutomationBodyMarkers } from "@/lib/automation-metadata"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 function buildSearchWhere(search: string) {
   const normalized = search.trim()
@@ -65,43 +66,25 @@ function normalizeDelayMinutes(input: unknown) {
 }
 
 async function resolveOwnerStudio(request: NextRequest): Promise<{ studio: OwnerStudio } | { error: NextResponse }> {
-  const token = extractBearerToken(request.headers.get("authorization"))
-  if (!token) {
-    return { error: NextResponse.json({ error: "Missing bearer token" }, { status: 401 }) }
+  const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+  if (!auth.ok) {
+    if (auth.reason === "missing_token") {
+      return { error: NextResponse.json({ error: "Missing bearer token" }, { status: 401 }) }
+    }
+    if (auth.reason === "invalid_token") {
+      return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) }
+    }
+    return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) }
   }
 
-  const decoded = verifyMobileToken(token)
-  if (!decoded) {
-    return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) }
-  }
+  const decoded = auth.decoded
 
   if (decoded.role !== "OWNER") {
     return { error: NextResponse.json({ error: "Marketing is available for studio owner accounts only" }, { status: 403 }) }
   }
 
-  const studio = await db.studio.findUnique({
-    where: { id: decoded.studioId },
-    select: {
-      id: true,
-      name: true,
-      subdomain: true,
-      primaryColor: true,
-      stripeCurrency: true,
-    },
-  })
-
-  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-    return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) }
-  }
-
   return {
-    studio: {
-      id: studio.id,
-      name: studio.name,
-      subdomain: studio.subdomain,
-      primaryColor: studio.primaryColor,
-      currency: studio.stripeCurrency,
-    },
+    studio: toMobileStudioSummary(auth.studio),
   }
 }
 
