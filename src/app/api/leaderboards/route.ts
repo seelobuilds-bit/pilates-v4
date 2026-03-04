@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
-  loadParticipantMapsForEntries,
+  loadEnrichedLeaderboards,
   loadViewerEntryByPeriodId,
-  resolveExpectedParticipantCountFromDb,
 } from "@/lib/leaderboards/query"
 import {
-  attachParticipantsToEntries,
   buildUserRanksByLeaderboardId,
   collectCurrentPeriodIds,
   groupLeaderboardsByDisplayCategory,
@@ -44,75 +41,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const expectedParticipantCount = await resolveExpectedParticipantCountFromDb(participantType)
-
-    // Get active leaderboards
-    const leaderboards = await db.leaderboard.findMany({
-      where: {
-        isActive: true,
-        participantType,
-        ...(categoryFilter && { category: categoryFilter }),
-        ...(featured && { isFeatured: true })
-      },
-      include: {
-        prizes: {
-          orderBy: { position: "asc" },
-          take: 3
-        },
-        periods: {
-          where: { status: "ACTIVE" },
-          orderBy: { startDate: "desc" },
-          take: 1,
-          include: {
-            entries: {
-              orderBy: { score: "desc" },
-              take: 10,
-              select: {
-                id: true,
-                studioId: true,
-                teacherId: true,
-                score: true,
-                rank: true,
-                previousRank: true,
-                lastUpdated: true
-              }
-            },
-            _count: {
-              select: { entries: true }
-            }
-          }
-        }
-      },
-      orderBy: [
-        { isFeatured: "desc" },
-        { name: "asc" }
-      ]
-    })
-
-    // Enrich entries with studio/teacher names
-    const allEntries = leaderboards.flatMap((lb) => lb.periods[0]?.entries ?? [])
-    const { studioById: studioParticipantById, teacherById: teacherParticipantById } =
-      await loadParticipantMapsForEntries(allEntries)
-
-    const enrichedLeaderboards = leaderboards.map((lb) => {
-      const currentPeriod = lb.periods[0]
-      if (!currentPeriod) {
-        return { ...lb, currentPeriod: null }
-      }
-
-      const entries = attachParticipantsToEntries(currentPeriod.entries, {
-        studioById: studioParticipantById,
-        teacherById: teacherParticipantById,
-      })
-
-      return {
-        ...lb,
-        currentPeriod: {
-          ...currentPeriod,
-          entries,
-          totalEntries: expectedParticipantCount
-        }
-      }
+    const enrichedLeaderboards = await loadEnrichedLeaderboards({
+      participantType,
+      categoryFilter,
+      featuredOnly: featured,
+      includePrizes: true,
     })
 
     const viewerEntryByPeriodId = await loadViewerEntryByPeriodId({
