@@ -33,8 +33,11 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header {
-          background: rgba(250, 248, 245, 0.94) !important;
-          border-bottom-color: rgba(212, 206, 196, 0.75) !important;
+          background: #faf8f5 !important;
+          border-bottom: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          box-shadow: none !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
@@ -198,7 +201,11 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #videos {
-          background: transparent !important;
+          display: none !important;
+        }
+
+        .brand-preview-shell #videos + section {
+          display: none !important;
         }
 
         .brand-preview-shell #videos .text-pink-600 {
