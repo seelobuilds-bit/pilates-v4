@@ -505,6 +505,10 @@ Current shared primitive adoption:
   - `/Users/charlie/Development/pilates-v4/src/app/api/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/mobile/leaderboards/[leaderboardId]/route.ts`
+- Studio/demo report fallback payload normalization:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/fallback.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/reports/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/reports/route.ts`
 
 ## Non-Negotiable Safety Constraint
 

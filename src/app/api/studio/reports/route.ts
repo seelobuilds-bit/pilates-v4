@@ -11,6 +11,7 @@ import { buildInstructorRows } from "@/lib/reporting/instructors"
 import { buildSocialSummary } from "@/lib/reporting/social"
 import { buildRetentionSummary } from "@/lib/reporting/retention-summary"
 import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
+import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
 import {
   buildActiveClientVisitIndex,
   buildAtRiskCandidates,
@@ -534,138 +535,33 @@ export async function GET(request: NextRequest) {
         })
       ])
 
-      return NextResponse.json({
-        revenue: {
-          total: 0,
-          previousTotal: 0,
-          byLocation: [],
-          byClassType: [],
-          monthly: []
-        },
-        clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
-        instructors: [],
-        retention: {
-          atRiskClients: 0,
-          atRiskList: [],
-          membershipBreakdown: [],
-          churnReasons: [],
-          cohortRetention: []
-        },
-        classes: {
-          total: 0,
-          totalCapacity: 0,
-          totalAttendance: 0,
-          averageFill: 0,
-          byLocation: [],
-          byTeacher: [],
-          byTimeSlot: [],
-          byDay: [],
-          topClasses: [],
-          underperforming: []
-        },
-        bookings: {
-          total: 0,
-          uniqueClients: 0,
-          newClientBookings: 0,
-          averageBookingsPerClient: 0,
-          byStatus: []
-        },
-        marketing: {
-          emailsSent: 0,
-          emailOpenRate: 0,
-          emailClickRate: 0,
-          previousEmailOpenRate: 0,
-          previousEmailClickRate: 0,
-          bookingsFromEmail: 0,
-          remindersSent: 0,
-          noShowRate: 0,
-          previousNoShowRate: 0,
-          winbackSuccess: 0,
-          campaigns: [],
-          insights: [{ type: "warning", message: "Partial reports payload returned due to data timeout. Retry shortly." }]
-        },
-        social: {
-          activeFlows: 0,
-          totalTriggered: 0,
-          totalResponded: 0,
-          totalBooked: 0,
-          conversionRate: 0
-        },
-        range: {
+      return NextResponse.json(
+        buildPartialReportsPayload({
+          totalClients,
+          newClients,
+          activeClients,
+          churnedClients,
           days,
-          startDate: startDate.toISOString(),
-          endDate: reportEndDate.toISOString()
-        },
-        partial: true
-      })
+          startDate,
+          endDate: reportEndDate,
+          warningMessage: "Partial reports payload returned due to data timeout. Retry shortly.",
+        })
+      )
     } catch (fallbackError) {
       console.error("Failed to build fallback reports payload:", fallbackError)
-      return NextResponse.json({
-        revenue: {
-          total: 0,
-          previousTotal: 0,
-          byLocation: [],
-          byClassType: [],
-          monthly: []
-        },
-        clients: buildClientSummary(0, 0, 0, 0),
-        instructors: [],
-        retention: {
-          atRiskClients: 0,
-          atRiskList: [],
-          membershipBreakdown: [],
-          churnReasons: [],
-          cohortRetention: [],
-          churnRate: 0,
-          churnDefinition: "inactive clients / total clients"
-        },
-        classes: {
-          total: 0,
-          totalCapacity: 0,
-          totalAttendance: 0,
-          averageFill: 0,
-          byLocation: [],
-          byTeacher: [],
-          byTimeSlot: [],
-          byDay: [],
-          topClasses: [],
-          underperforming: []
-        },
-        bookings: {
-          total: 0,
-          uniqueClients: 0,
-          newClientBookings: 0,
-          averageBookingsPerClient: 0,
-          byStatus: []
-        },
-        marketing: {
-          emailsSent: 0,
-          emailOpenRate: 0,
-          emailClickRate: 0,
-          previousEmailOpenRate: 0,
-          previousEmailClickRate: 0,
-          bookingsFromEmail: 0,
-          remindersSent: 0,
-          noShowRate: 0,
-          previousNoShowRate: 0,
-          winbackSuccess: 0,
-          campaigns: [],
-          insights: [{ type: "warning", message: "Reports are temporarily degraded. Retry in a moment." }]
-        },
-        social: {
-          activeFlows: 0,
-          totalTriggered: 0,
-          totalResponded: 0,
-          totalBooked: 0,
-          conversionRate: 0
-        },
-        range: {
+      return NextResponse.json(
+        buildPartialReportsPayload({
+          totalClients: 0,
+          newClients: 0,
+          activeClients: 0,
+          churnedClients: 0,
           days,
-          startDate: startDate.toISOString(),
-          endDate: reportEndDate.toISOString()
-        },
-        partial: true
-      })
+          startDate,
+          endDate: reportEndDate,
+          warningMessage: "Reports are temporarily degraded. Retry in a moment.",
+          includeChurnMeta: true,
+        })
+      )
     }
   }
 }
