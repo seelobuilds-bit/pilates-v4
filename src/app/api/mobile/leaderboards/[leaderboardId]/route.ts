@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { runLeaderboardAutoCycle } from "@/lib/leaderboards/cycle"
 import {
   loadParticipantMapsForEntries,
@@ -10,6 +10,7 @@ import {
 import {
   attachParticipantToEntry,
 } from "@/lib/leaderboards/presentation"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 export async function GET(
   request: NextRequest,
@@ -19,15 +20,18 @@ export async function GET(
     const resolvedParams = await params
     const leaderboardId = resolvedParams.leaderboardId
 
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
+    const decoded = auth.decoded
 
     if (decoded.role === "CLIENT") {
       return NextResponse.json({ error: "Leaderboards are only available for studio and teacher accounts" }, { status: 403 })
@@ -45,20 +49,7 @@ export async function GET(
       console.error("Mobile leaderboard detail auto-cycle skipped due to error:", cycleError)
     }
 
-    const studio = await db.studio.findUnique({
-      where: { id: decoded.studioId },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        primaryColor: true,
-        stripeCurrency: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const studio = auth.studio
 
     const leaderboard = await db.leaderboard.findFirst({
       where: {
@@ -245,13 +236,7 @@ export async function GET(
 
     return NextResponse.json({
       role: decoded.role,
-      studio: {
-        id: studio.id,
-        name: studio.name,
-        subdomain: studio.subdomain,
-        primaryColor: studio.primaryColor,
-        currency: studio.stripeCurrency,
-      },
+      studio: toMobileStudioSummary(studio),
       leaderboard: {
         id: leaderboard.id,
         name: leaderboard.name,
