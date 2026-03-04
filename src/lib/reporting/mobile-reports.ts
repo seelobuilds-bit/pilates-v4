@@ -5,7 +5,7 @@ import {
 import { buildTeacherPerformanceSummary } from "@/lib/reporting/teacher-performance"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { ratioPercentage, roundCurrency, roundTo } from "@/lib/reporting/metrics"
 import { resolveBookingRevenue } from "@/lib/reporting/revenue"
@@ -14,7 +14,7 @@ import {
   fetchStudioReportBaseData,
   fetchStudioReportClassSessionsWindow,
 } from "@/lib/reporting/studio-report-base-query"
-import { fetchStudioBrandingSummary, toMobileStudioSummary } from "@/lib/studio-read-models"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
@@ -152,22 +152,19 @@ export async function getMobileReports(
   authorizationHeader: string | null,
   input: ReportRangeInput
 ): Promise<MobileReportsPayload> {
-  const token = extractBearerToken(authorizationHeader)
-  if (!token) {
-    throw new MobileReportsError("Missing bearer token", 401)
-  }
-
-  const decoded = verifyMobileToken(token)
-  if (!decoded) {
-    throw new MobileReportsError("Invalid token", 401)
-  }
-
-  const studio = await fetchStudioBrandingSummary(decoded.studioId)
-
-  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
+  const auth = await resolveMobileStudioAuthContext(authorizationHeader)
+  if (!auth.ok) {
+    if (auth.reason === "missing_token") {
+      throw new MobileReportsError("Missing bearer token", 401)
+    }
+    if (auth.reason === "invalid_token") {
+      throw new MobileReportsError("Invalid token", 401)
+    }
     throw new MobileReportsError("Studio not found", 401)
   }
 
+  const decoded = auth.decoded
+  const studio = auth.studio
   const studioSummary = toMobileStudioSummary(studio)
 
   const {

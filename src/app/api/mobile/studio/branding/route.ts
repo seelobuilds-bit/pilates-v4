@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, verifyMobileToken } from "@/lib/mobile-auth"
-import { fetchStudioBrandingSummary, toMobileStudioSummary } from "@/lib/studio-read-models"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 function normalizeHexColor(value: unknown) {
   const candidate = String(value || "").trim().toLowerCase()
@@ -11,31 +11,17 @@ function normalizeHexColor(value: unknown) {
   return candidate
 }
 
-async function resolveStudioFromToken(request: NextRequest) {
-  const token = extractBearerToken(request.headers.get("authorization"))
-  if (!token) {
-    return { error: NextResponse.json({ error: "Missing bearer token" }, { status: 401 }) }
-  }
-
-  const decoded = verifyMobileToken(token)
-  if (!decoded) {
-    return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) }
-  }
-
-  const studio = await fetchStudioBrandingSummary(decoded.studioId)
-
-  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-    return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) }
-  }
-
-  return { decoded, studio }
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const auth = await resolveStudioFromToken(request)
-    if ("error" in auth) {
-      return auth.error
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
     return NextResponse.json({
@@ -50,9 +36,15 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await resolveStudioFromToken(request)
-    if ("error" in auth) {
-      return auth.error
+    const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+    if (!auth.ok) {
+      if (auth.reason === "missing_token") {
+        return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+      }
+      if (auth.reason === "invalid_token") {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      }
+      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
     }
 
     if (auth.decoded.role !== "OWNER") {
