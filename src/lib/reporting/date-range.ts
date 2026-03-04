@@ -20,6 +20,9 @@ export type EntityReportDateRange = {
   endDate: Date
 }
 
+export const DEFAULT_ENTITY_REPORT_PERIOD_DAYS = 30
+export const DEFAULT_ENTITY_ALLOWED_DAY_PRESETS = [7, 30, 90] as const
+
 type ResolveOptions = {
   defaultDays: number
   maxDays?: number
@@ -127,4 +130,11 @@ export function resolveEntityReportDateRange(
   startDate.setDate(startDate.getDate() - (days - 1))
 
   return { days, startDate, endDate }
+}
+
+export function resolveDefaultEntityReportDateRange(searchParams: URLSearchParams) {
+  return resolveEntityReportDateRange(searchParams, {
+    defaultDays: DEFAULT_ENTITY_REPORT_PERIOD_DAYS,
+    allowedDays: Array.from(DEFAULT_ENTITY_ALLOWED_DAY_PRESETS),
+  })
 }

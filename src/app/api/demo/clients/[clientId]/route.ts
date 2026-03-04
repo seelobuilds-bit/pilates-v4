@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getDemoStudioId } from "@/lib/demo-studio"
-import { resolveEntityReportDateRange } from "@/lib/reporting/date-range"
+import { resolveDefaultEntityReportDateRange } from "@/lib/reporting/date-range"
 import {
   buildClientEntityStats,
   mapClientCommunications,
 } from "@/lib/reporting/client-entity"
-
-const DEFAULT_REPORT_PERIOD_DAYS = 30
-const ALLOWED_DAY_PRESETS = new Set([7, 30, 90])
 
 export async function GET(
   request: NextRequest,
@@ -21,10 +18,7 @@ export async function GET(
     }
 
     const { clientId } = await params
-    const { startDate, endDate } = resolveEntityReportDateRange(request.nextUrl.searchParams, {
-      defaultDays: DEFAULT_REPORT_PERIOD_DAYS,
-      allowedDays: Array.from(ALLOWED_DAY_PRESETS),
-    })
+    const { startDate, endDate } = resolveDefaultEntityReportDateRange(request.nextUrl.searchParams)
 
     const client = await db.client.findFirst({
       where: {

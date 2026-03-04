@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import {
+  DEFAULT_ENTITY_ALLOWED_DAY_PRESETS,
+  DEFAULT_ENTITY_REPORT_PERIOD_DAYS,
   parseReportDays,
+  resolveDefaultEntityReportDateRange,
   resolveEntityReportDateRange,
   resolveReportRange,
 } from '../../src/lib/reporting/date-range'
@@ -55,6 +58,18 @@ function run() {
   assert.equal(entityPreset.days, 7)
   assert.equal(entityPreset.startDate.getHours(), 0)
   assert.equal(entityPreset.startDate.getMinutes(), 0)
+
+  const entityDefaultPreset = resolveDefaultEntityReportDateRange(new URLSearchParams())
+  assert.equal(entityDefaultPreset.days, DEFAULT_ENTITY_REPORT_PERIOD_DAYS)
+
+  const entityDefaultInvalidDays = resolveDefaultEntityReportDateRange(new URLSearchParams({ days: '365' }))
+  assert.equal(entityDefaultInvalidDays.days, DEFAULT_ENTITY_REPORT_PERIOD_DAYS)
+
+  const defaultAllowed = Array.from(DEFAULT_ENTITY_ALLOWED_DAY_PRESETS)
+  const entityDefaultAllowed = resolveDefaultEntityReportDateRange(
+    new URLSearchParams({ days: String(defaultAllowed[0]) })
+  )
+  assert.equal(entityDefaultAllowed.days, defaultAllowed[0])
 
   console.log('PASS reporting date-range logic')
 }

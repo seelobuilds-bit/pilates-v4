@@ -480,6 +480,16 @@ Current shared primitive adoption:
 - Website analytics period/range normalization:
   - `/Users/charlie/Development/pilates-v4/src/app/api/studio/website-analytics/route.ts`
   - `/Users/charlie/Development/pilates-v4/src/app/api/demo/website-analytics/route.ts`
+- Entity profile date-range defaults normalization:
+  - `/Users/charlie/Development/pilates-v4/src/lib/reporting/date-range.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/teachers/[teacherId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/teachers/[teacherId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/class-types/[classTypeId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/class-types/[classTypeId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/locations/[locationId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/locations/[locationId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/studio/clients/[clientId]/route.ts`
+  - `/Users/charlie/Development/pilates-v4/src/app/api/demo/clients/[clientId]/route.ts`
 
 ## Non-Negotiable Safety Constraint
 
