@@ -1,7 +1,9 @@
 import { VaultAudience } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { extractBearerToken, type MobileTokenPayload, verifyMobileToken } from "@/lib/mobile-auth"
+import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
+import { type MobileTokenPayload } from "@/lib/mobile-auth"
+import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
 type AccessiblePlan = {
   id: string
@@ -17,29 +19,30 @@ type AccessiblePlan = {
 
 const TEACHER_ALLOWED_AUDIENCES: VaultAudience[] = ["TEACHERS", "CLIENTS"]
 
-async function resolveStudio(decoded: MobileTokenPayload) {
-  const studio = await db.studio.findUnique({
-    where: { id: decoded.studioId },
-    select: {
-      id: true,
-      name: true,
-      subdomain: true,
-      primaryColor: true,
-      stripeCurrency: true,
-    },
-  })
+async function resolveCommunitySession(request: NextRequest) {
+  const auth = await resolveMobileStudioAuthContext(request.headers.get("authorization"))
+  if (!auth.ok) {
+    if (auth.reason === "missing_token") {
+      return { error: NextResponse.json({ error: "Missing bearer token" }, { status: 401 }) } as const
+    }
+    if (auth.reason === "invalid_token") {
+      return { error: NextResponse.json({ error: "Invalid token" }, { status: 401 }) } as const
+    }
+    return { error: NextResponse.json({ error: "Studio not found" }, { status: 401 }) } as const
+  }
 
-  if (!studio || studio.subdomain !== decoded.studioSubdomain) {
-    return null
+  const decoded = auth.decoded
+
+  if (decoded.role !== "OWNER" && decoded.role !== "TEACHER") {
+    return {
+      error: NextResponse.json({ error: "Community is available for studio and teacher accounts only" }, { status: 403 }),
+    } as const
   }
 
   return {
-    id: studio.id,
-    name: studio.name,
-    subdomain: studio.subdomain,
-    primaryColor: studio.primaryColor,
-    currency: studio.stripeCurrency,
-  }
+    decoded,
+    studio: toMobileStudioSummary(auth.studio),
+  } as const
 }
 
 async function getAccessiblePlans(decoded: MobileTokenPayload): Promise<AccessiblePlan[]> {
@@ -155,24 +158,12 @@ function messageSenderName(message: {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveCommunitySession(request)
+    if ("error" in auth) {
+      return auth.error
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
-
-    if (decoded.role !== "OWNER" && decoded.role !== "TEACHER") {
-      return NextResponse.json({ error: "Community is available for studio and teacher accounts only" }, { status: 403 })
-    }
-
-    const studio = await resolveStudio(decoded)
-    if (!studio) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const { decoded, studio } = auth
 
     const plans = await getAccessiblePlans(decoded)
     if (plans.length === 0) {
@@ -301,24 +292,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get("authorization"))
-    if (!token) {
-      return NextResponse.json({ error: "Missing bearer token" }, { status: 401 })
+    const auth = await resolveCommunitySession(request)
+    if ("error" in auth) {
+      return auth.error
     }
 
-    const decoded = verifyMobileToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-    }
-
-    if (decoded.role !== "OWNER" && decoded.role !== "TEACHER") {
-      return NextResponse.json({ error: "Community is available for studio and teacher accounts only" }, { status: 403 })
-    }
-
-    const studio = await resolveStudio(decoded)
-    if (!studio) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const { decoded } = auth
 
     const body = await request.json()
     const planId = String(body?.planId || "")
