@@ -1,4 +1,5 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
+import { loadMobileClientReportData } from "@/lib/reporting/mobile-client-report-loader"
 import { runMobileClientReport } from "@/lib/reporting/mobile-client-report-runner"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { loadMobileOwnerReportData } from "@/lib/reporting/mobile-owner-report-loader"
@@ -9,7 +10,6 @@ import {
   resolveMobileClientReportId,
   resolveMobileTeacherReportId,
 } from "@/lib/reporting/mobile-report-role-context"
-import { db } from "@/lib/db"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
@@ -77,58 +77,13 @@ export async function getMobileReports(
 
   const clientId = resolveMobileClientReportId(decoded)
 
-  const [currentBookings, previousBookings, nextBooking] = await Promise.all([
-    db.booking.findMany({
-      where: {
-        studioId: studio.id,
-        clientId,
-        classSession: {
-          startTime: { gte: currentStart, lt: periodEnd },
-        },
-      },
-      select: {
-        status: true,
-        classSession: {
-          select: {
-            startTime: true,
-          },
-        },
-      },
-    }),
-    db.booking.findMany({
-      where: {
-        studioId: studio.id,
-        clientId,
-        classSession: {
-          startTime: { gte: previousStart, lt: currentStart },
-        },
-      },
-      select: {
-        status: true,
-      },
-    }),
-    db.booking.findFirst({
-      where: {
-        studioId: studio.id,
-        clientId,
-        classSession: {
-          startTime: { gte: periodEnd },
-        },
-        status: { in: ["PENDING", "CONFIRMED"] },
-      },
-      select: {
-        classSession: {
-          select: {
-            startTime: true,
-            classType: { select: { name: true } },
-          },
-        },
-      },
-      orderBy: {
-        classSession: { startTime: "asc" },
-      },
-    }),
-  ])
+  const { currentBookings, previousBookings, nextBooking } = await loadMobileClientReportData({
+    studioId: studio.id,
+    clientId,
+    currentStart,
+    previousStart,
+    periodEnd,
+  })
 
   return runMobileClientReport({
     studio: studioSummary,
