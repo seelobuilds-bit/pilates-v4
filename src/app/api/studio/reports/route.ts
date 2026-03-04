@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
-import { resolveDefaultStudioReportRange } from "@/lib/reporting/date-range"
+import { resolveStudioReportRangeFromSearchParams } from "@/lib/reporting/studio-report-request"
 import { buildStudioReportResponse } from "@/lib/reporting/studio-report-response"
 
 export async function GET(request: NextRequest) {
@@ -17,13 +17,8 @@ export async function GET(request: NextRequest) {
   }
 
   const studioId = session.user.studioId
-  const searchParams = request.nextUrl.searchParams
-  const { days, startDate, reportEndDate, previousStartDate } = resolveDefaultStudioReportRange(
-    {
-      days: searchParams.get("days"),
-      startDate: searchParams.get("startDate"),
-      endDate: searchParams.get("endDate"),
-    }
+  const { days, startDate, reportEndDate, previousStartDate } = resolveStudioReportRangeFromSearchParams(
+    request.nextUrl.searchParams
   )
 
   return buildStudioReportResponse({
