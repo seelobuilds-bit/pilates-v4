@@ -1,5 +1,6 @@
 import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
 import { loadMobileClientReportData } from "@/lib/reporting/mobile-client-report-loader"
+import { buildMobileReportContext } from "@/lib/reporting/mobile-report-context"
 import { runMobileClientReport } from "@/lib/reporting/mobile-client-report-runner"
 import { type MobileReportsPayload } from "@/lib/reporting/mobile-report-payload"
 import { loadMobileOwnerReportData } from "@/lib/reporting/mobile-owner-report-loader"
@@ -11,8 +12,7 @@ import {
   resolveMobileTeacherReportId,
 } from "@/lib/reporting/mobile-report-role-context"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
-import { resolveDefaultMobileReportRange, type ReportRangeInput } from "@/lib/reporting/date-range"
-import { toMobileStudioSummary } from "@/lib/studio-read-models"
+import { type ReportRangeInput } from "@/lib/reporting/date-range"
 
 export async function getMobileReports(
   authorizationHeader: string | null,
@@ -21,17 +21,8 @@ export async function getMobileReports(
   const auth = await resolveMobileStudioAuthContext(authorizationHeader)
   assertMobileReportsAuth(auth)
 
-  const decoded = auth.decoded
-  const studio = auth.studio
-  const studioSummary = toMobileStudioSummary(studio)
-
-  const {
-    days: periodDays,
-    reportEndDate: periodEnd,
-    startDate: currentStart,
-    previousStartDate: previousStart,
-    responseEndDate: responseEnd,
-  } = resolveDefaultMobileReportRange(input)
+  const { decoded, studio, studioSummary, periodDays, periodEnd, currentStart, previousStart, responseEnd } =
+    buildMobileReportContext(auth, input)
 
   if (decoded.role === "OWNER") {
     const { currentBase, previousSessions } = await loadMobileOwnerReportData({
