@@ -209,6 +209,7 @@ Current note:
 
 - Monthly trend bucket composition for entity routes is now centralized in `/Users/charlie/Development/pilates-v4/src/lib/reporting/monthly.ts` and consumed by teacher, class type, location, and client reporting routes.
 - Demo entity report parity (teacher/class type/location/client) now uses shared date-range, revenue, retention, and monthly helpers to keep demo behavior aligned with studio reporting semantics.
+- Demo aggregate reports now also use shared revenue, classes, bookings, instructors, marketing, social, and retention helper composition to reduce drift from studio reports.
 
 ### E. Leaderboards
 
