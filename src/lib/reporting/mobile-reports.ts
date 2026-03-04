@@ -1,3 +1,5 @@
+import { assertMobileReportsAuth } from "@/lib/reporting/mobile-report-auth"
+import { MobileReportsError } from "@/lib/reporting/mobile-report-errors"
 import { buildMobileClientHighlights } from "@/lib/reporting/mobile-client-report-highlights"
 import { buildMobileClientReportMetrics } from "@/lib/reporting/mobile-client-report-card-metrics"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
@@ -20,30 +22,12 @@ import {
 import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
 
-export class MobileReportsError extends Error {
-  status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = "MobileReportsError"
-    this.status = status
-  }
-}
-
 export async function getMobileReports(
   authorizationHeader: string | null,
   input: ReportRangeInput
 ): Promise<MobileReportsPayload> {
   const auth = await resolveMobileStudioAuthContext(authorizationHeader)
-  if (!auth.ok) {
-    if (auth.reason === "missing_token") {
-      throw new MobileReportsError("Missing bearer token", 401)
-    }
-    if (auth.reason === "invalid_token") {
-      throw new MobileReportsError("Invalid token", 401)
-    }
-    throw new MobileReportsError("Studio not found", 401)
-  }
+  assertMobileReportsAuth(auth)
 
   const decoded = auth.decoded
   const studio = auth.studio
