@@ -3,9 +3,9 @@ import {
   calculateAverageFillRate,
   countAttendedBookings,
 } from "./attendance"
-import { ratioPercentage, roundCurrency } from "./metrics"
+import { ratioPercentage } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
-import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
+import { buildTeacherBookingSnapshot } from "./teacher-metrics"
 
 type TeacherBookingLike = {
   status: string
@@ -33,23 +33,18 @@ export function buildTeacherPerformanceSummary(
   bookings: TeacherBookingLike[],
   decimals = 0
 ) {
-  const nonCancelledBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
-  const uniqueStudents = new Set(nonCancelledBookings.map((booking) => booking.clientId))
-  const completedBookings = nonCancelledBookings.filter((booking) => booking.status === "COMPLETED").length
-
-  const revenue = roundCurrency(
-    nonCancelledBookings.reduce((sum, booking) => {
-      return sum + resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    }, 0)
-  )
+  const { nonCancelledBookings, completedBookings, uniqueStudents, revenue, retentionRate } = buildTeacherBookingSnapshot({
+    bookings,
+    decimals,
+    getStatus: (booking) => booking.status,
+    getClientId: (booking) => booking.clientId,
+    getRevenue: (booking) => resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price),
+  })
 
   const totalAttendance = sessions.reduce((sum, session) => sum + countAttendedBookings(session.bookings), 0)
   const avgClassSize = calculateAverageClassSize(totalAttendance, sessions.length)
   const avgFillRate = calculateAverageFillRate(sessions, decimals)
   const completionRate = ratioPercentage(completedBookings, nonCancelledBookings.length, decimals)
-
-  const clientBookingCounts = buildClientVisitCounts(nonCancelledBookings, (booking) => booking.clientId)
-  const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, decimals)
 
   const classCounts = new Map<string, number>()
   for (const session of sessions) {

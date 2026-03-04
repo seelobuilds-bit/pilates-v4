@@ -1,7 +1,7 @@
 import { isAttendedBookingStatus } from "./attendance"
 import { ratioPercentage, roundCurrency } from "./metrics"
 import { resolveBookingRevenue } from "./revenue"
-import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
+import { buildRepeatClientRetentionFromValues } from "./teacher-metrics"
 
 type InstructorSessionLike = {
   teacherId: string
@@ -150,8 +150,7 @@ export function buildInstructorRows({
   return Array.from(instructorBuckets.values())
     .map((bucket) => {
       const avgFill = ratioPercentage(bucket.attended, bucket.totalCapacity, 0)
-      const clientVisitCounts = buildClientVisitCounts(bucket.clientVisits, (clientId) => clientId)
-      const retention = calculateRepeatClientRetentionRate(clientVisitCounts, 1)
+      const retention = buildRepeatClientRetentionFromValues(bucket.clientVisits, 1)
       const trend =
         bucket.classes > bucket.previousClasses
           ? ("up" as const)

@@ -1,0 +1,176 @@
+import { NextResponse } from "next/server"
+import { buildReportRangePayload } from "@/lib/reporting/date-range"
+import { buildMarketingSummary } from "@/lib/reporting/marketing"
+import { buildBookingSummary } from "@/lib/reporting/bookings"
+import { buildClassesSummary } from "@/lib/reporting/classes"
+import { buildInstructorRows, buildPreviousClassCountByTeacherId } from "@/lib/reporting/instructors"
+import { buildSocialSummary } from "@/lib/reporting/social"
+import { buildRevenueSummary } from "@/lib/reporting/revenue-summary"
+import { buildPartialReportsPayload } from "@/lib/reporting/fallback"
+import { fetchClientSummaryCounts } from "@/lib/reporting/client-summary-query"
+import { fetchMarketingAndSocialInputs } from "@/lib/reporting/marketing-social-query"
+import { fetchStudioReportBaseData } from "@/lib/reporting/studio-report-base-query"
+import {
+  buildRetentionAndClientSummary,
+  fetchActiveClientVisitRows,
+} from "@/lib/reporting/retention-composition"
+
+export async function buildStudioReportResponse(args: {
+  studioId: string
+  days: number
+  startDate: Date
+  reportEndDate: Date
+  previousStartDate: Date
+}) {
+  const { studioId, days, startDate, reportEndDate, previousStartDate } = args
+
+  try {
+    const {
+      bookings,
+      previousBookings,
+      monthlyBookings,
+      classSessions,
+      totalClients,
+      newClients,
+      activeClients,
+      churnedClients,
+      previousClassCounts,
+      studioTeachers,
+      studioClients,
+      cancelledBookingsInPeriod,
+    } = await fetchStudioReportBaseData({
+      studioId,
+      startDate,
+      reportEndDate,
+      previousStartDate,
+    })
+
+    const {
+      periodMessages,
+      previousPeriodMessages,
+      reminderAutomations,
+      winbackAutomations,
+      activeSocialFlows,
+      totalSocialTriggered,
+      totalSocialResponded,
+      totalSocialBooked,
+    } = await fetchMarketingAndSocialInputs({
+      studioId,
+      startDate,
+      reportEndDate,
+      previousStartDate,
+    })
+
+    const activityLookbackStart = new Date(reportEndDate)
+    activityLookbackStart.setDate(activityLookbackStart.getDate() - 365)
+
+    const activeClientVisitRows = await fetchActiveClientVisitRows({
+      studioId,
+      activityLookbackStart,
+      reportEndDate,
+    })
+
+    const revenue = buildRevenueSummary({
+      bookings,
+      previousBookings,
+      monthlyBookings,
+    })
+
+    const classesSummary = buildClassesSummary(classSessions)
+
+    const clientCreatedAtById = new Map(studioClients.map((client) => [client.id, client.createdAt]))
+    const bookingSummary = buildBookingSummary({
+      bookings,
+      clientCreatedAtById,
+      startDate,
+      reportEndDate,
+    })
+
+    const marketing = await buildMarketingSummary({
+      studioId,
+      startDate,
+      reportEndDate,
+      periodMessages,
+      previousPeriodMessages,
+      reminderAutomations,
+      winbackAutomations,
+      bookings,
+      previousBookings,
+    })
+
+    const social = buildSocialSummary({
+      activeFlows: activeSocialFlows,
+      totalTriggered: totalSocialTriggered,
+      totalResponded: totalSocialResponded,
+      totalBooked: totalSocialBooked,
+    })
+
+    const previousClassCountByTeacherId = buildPreviousClassCountByTeacherId(previousClassCounts)
+    const instructorRows = buildInstructorRows({
+      classSessions,
+      studioTeachers,
+      previousClassCountByTeacherId,
+    })
+
+    const { clients, retention } = buildRetentionAndClientSummary({
+      studioClients,
+      activeClientVisitRows,
+      cancelledBookingsInPeriod,
+      reportEndDate,
+      totalClients,
+      newClients,
+      activeClients,
+      churnedClients,
+    })
+
+    return NextResponse.json({
+      revenue,
+      clients,
+      instructors: instructorRows,
+      retention,
+      classes: classesSummary,
+      bookings: bookingSummary,
+      marketing,
+      social,
+      range: buildReportRangePayload(days, startDate, reportEndDate),
+    })
+  } catch (error) {
+    console.error("Failed to load full reports payload:", error)
+
+    try {
+      const { totalClients, activeClients, churnedClients, newClients } = await fetchClientSummaryCounts({
+        studioId,
+        startDate,
+        endDate: reportEndDate,
+      })
+
+      return NextResponse.json(
+        buildPartialReportsPayload({
+          totalClients,
+          newClients,
+          activeClients,
+          churnedClients,
+          days,
+          startDate,
+          endDate: reportEndDate,
+          warningMessage: "Partial reports payload returned due to data timeout. Retry shortly.",
+        })
+      )
+    } catch (fallbackError) {
+      console.error("Failed to build fallback reports payload:", fallbackError)
+      return NextResponse.json(
+        buildPartialReportsPayload({
+          totalClients: 0,
+          newClients: 0,
+          activeClients: 0,
+          churnedClients: 0,
+          days,
+          startDate,
+          endDate: reportEndDate,
+          warningMessage: "Reports are temporarily degraded. Retry in a moment.",
+          includeChurnMeta: true,
+        })
+      )
+    }
+  }
+}

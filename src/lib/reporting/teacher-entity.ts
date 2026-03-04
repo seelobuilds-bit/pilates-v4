@@ -4,7 +4,8 @@ import {
   buildMonthlyCountBucketsByOffsets,
 } from "./monthly"
 import { resolveBookingRevenue } from "./revenue"
-import { buildClientVisitCounts, calculateRepeatClientRetentionRate } from "./retention"
+import { buildClientVisitCounts } from "./retention"
+import { buildTeacherBookingSnapshot } from "./teacher-metrics"
 
 export type TeacherEntitySessionLike = {
   startTime: Date
@@ -50,14 +51,13 @@ export function buildTeacherEntityReportSummary(params: {
     (session) => new Date(session.startTime) >= thisMonthStart
   ).length
 
+  const { nonCancelledBookings, completedBookings, revenue, retentionRate } = buildTeacherBookingSnapshot({
+    bookings: reportBookings,
+    getStatus: (booking) => booking.status,
+    getClientId: (booking) => booking.clientId,
+    getRevenue: (booking) => resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price),
+  })
   const uniqueStudents = new Set(reportBookings.map((booking) => booking.clientId))
-  const nonCancelledBookings = reportBookings.filter((booking) => booking.status !== "CANCELLED")
-  const completedBookings = reportBookings.filter((booking) => booking.status === "COMPLETED").length
-
-  const revenue = nonCancelledBookings.reduce((sum, booking) => {
-    const amount = resolveBookingRevenue(booking.paidAmount, booking.classSession.classType.price)
-    return sum + amount
-  }, 0)
 
   const avgClassSize =
     reportClassSessions.length > 0 ? roundTwo(nonCancelledBookings.length / reportClassSessions.length) : 0
@@ -71,7 +71,6 @@ export function buildTeacherEntityReportSummary(params: {
     clientDisplayNameById.set(booking.clientId, name)
   }
   const clientBookingCounts = buildClientVisitCounts(nonCancelledBookings, (booking) => booking.clientId)
-  const retentionRate = calculateRepeatClientRetentionRate(clientBookingCounts, 0)
 
   const classCounts = new Map<string, number>()
   const locationCounts = new Map<string, number>()
