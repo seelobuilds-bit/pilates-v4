@@ -1,5 +1,6 @@
 import { BookingStatus } from "@prisma/client"
 import { fetchTeacherPerformanceWindow } from "@/lib/reporting/teacher-performance-query"
+import { buildMobileClientSeries } from "@/lib/reporting/mobile-client-report-series"
 import { buildClassTypeHighlights } from "@/lib/reporting/mobile-report-highlights"
 import {
   buildMobileMetric,
@@ -18,7 +19,6 @@ import {
 } from "@/lib/reporting/studio-report-base-query"
 import { buildStudioOwnerWindowMetrics } from "@/lib/reporting/studio-owner-window-metrics"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-import { bucketIndexForDate, buildTrendBuckets } from "@/lib/reporting/trend-series"
 const NON_CANCELLED_STATUSES = new Set<BookingStatus>(["PENDING", "CONFIRMED", "COMPLETED", "NO_SHOW"])
 
 export type MobileReportsPayload = {
@@ -295,42 +295,10 @@ export async function getMobileReports(
   const currentCancelled = currentBookings.filter((booking) => booking.status === "CANCELLED").length
   const previousCancelled = previousBookings.filter((booking) => booking.status === "CANCELLED").length
 
-  const clientBuckets = buildTrendBuckets(currentStart, periodEnd)
-  const clientSeries = clientBuckets.map((bucket) => ({
-    label: bucket.label,
-    start: bucket.start.toISOString(),
-    end: bucket.end.toISOString(),
-    metrics: {
-      booked: 0,
-      completed: 0,
-      cancelled: 0,
-      "completion-rate": 0,
-    },
-  }))
-  const clientCompletedByBucket = clientBuckets.map(() => 0)
-  const clientBookedByBucket = clientBuckets.map(() => 0)
-
-  for (const booking of currentBookings) {
-    const index = bucketIndexForDate(booking.classSession.startTime, clientBuckets)
-    if (index < 0) continue
-
-    if (NON_CANCELLED_STATUSES.has(booking.status)) {
-      clientBookedByBucket[index] += 1
-      clientSeries[index].metrics.booked += 1
-    }
-
-    if (booking.status === "COMPLETED") {
-      clientCompletedByBucket[index] += 1
-      clientSeries[index].metrics.completed += 1
-    }
-
-    if (booking.status === "CANCELLED") {
-      clientSeries[index].metrics.cancelled += 1
-    }
-  }
-
-  clientSeries.forEach((point, index) => {
-    point.metrics["completion-rate"] = ratioPercentage(clientCompletedByBucket[index], clientBookedByBucket[index], 1)
+  const clientSeries = buildMobileClientSeries({
+    startDate: currentStart,
+    endDate: periodEnd,
+    bookings: currentBookings,
   })
 
   return {
