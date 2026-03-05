@@ -377,6 +377,9 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div,
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
           text-align: center !important;
+          background: linear-gradient(160deg, var(--brand-accent) 0%, var(--brand-accent-strong) 100%) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.66) !important;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14,
@@ -385,24 +388,27 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
           margin-left: auto !important;
           margin-right: auto !important;
+          background: rgba(255, 247, 239, 0.22) !important;
+          border: 1px solid rgba(255, 247, 239, 0.44) !important;
         }
 
-        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div {
-          background: linear-gradient(160deg, rgba(var(--brand-accent-soft-rgb), 0.2), rgba(var(--brand-accent-rgb), 0.08)) !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.28) !important;
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-900,
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-600,
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-700,
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-900,
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-600,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .text-gray-900,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .text-gray-600,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-900,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-600 {
+          color: #fff7ef !important;
         }
 
-        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div {
-          border-color: rgba(var(--brand-accent-rgb), 0.38) !important;
-        }
-
-        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
-          border-color: rgba(var(--brand-accent-rgb), 0.38) !important;
-        }
-
-        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
-          background: linear-gradient(160deg, rgba(var(--brand-accent-soft-rgb), 0.2), rgba(var(--brand-accent-rgb), 0.08)) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.34) !important;
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div svg,
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div svg,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div svg,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div svg {
+          color: #fff7ef !important;
         }
 
         .brand-preview-shell #why {
