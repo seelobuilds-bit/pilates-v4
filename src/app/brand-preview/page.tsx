@@ -34,6 +34,7 @@ export default function BrandPreviewPage() {
             linear-gradient(180deg, #faf8f5 0%, #f5f2ed 44%, #efebe4 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
+          zoom: 1.1;
         }
 
         .brand-preview-shell header {
@@ -52,7 +53,7 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header .max-w-7xl {
-          max-width: min(860px, calc(100% - 1.25rem)) !important;
+          max-width: min(760px, calc(100% - 1.25rem)) !important;
           background: rgba(250, 248, 245, 0.78) !important;
           border: 1px solid rgba(26, 26, 26, 0.12) !important;
           border-radius: 1.1rem !important;
@@ -337,6 +338,10 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #videos + section {
+          display: none !important;
+        }
+
+        .brand-preview-shell #testimonials {
           display: none !important;
         }
 
@@ -628,13 +633,13 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-violet-200\\/30,
         .brand-preview-shell .via-violet-200\\/30,
         .brand-preview-shell .via-purple-100\\/20 {
-          --tw-gradient-from: rgba(var(--brand-accent-soft-rgb), 0.34) !important;
-          --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--brand-accent-rgb), 0.14), var(--tw-gradient-to, transparent) !important;
+          --tw-gradient-from: rgba(212, 206, 196, 0.34) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), rgba(245, 242, 237, 0.18), var(--tw-gradient-to, transparent) !important;
         }
 
         .brand-preview-shell .bg-pink-500\\/20,
         .brand-preview-shell .bg-violet-500\\/20 {
-          background-color: rgba(var(--brand-accent-rgb), 0.18) !important;
+          background-color: rgba(212, 206, 196, 0.18) !important;
         }
 
         .brand-preview-shell section:first-of-type .w-5.h-5.rounded-full.bg-emerald-100 {
@@ -722,6 +727,12 @@ export default function BrandPreviewPage() {
           background-image: none !important;
           color: var(--brand-ink) !important;
           border: 1px solid rgba(250, 248, 245, 0.8) !important;
+        }
+
+        .brand-preview-shell footer button,
+        .brand-preview-shell footer button * {
+          color: #1a1a1a !important;
+          -webkit-text-fill-color: #1a1a1a !important;
         }
 
         .brand-preview-shell footer button:hover {
