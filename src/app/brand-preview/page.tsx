@@ -52,7 +52,7 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header .max-w-7xl {
-          max-width: min(1100px, calc(100% - 2rem)) !important;
+          max-width: min(860px, calc(100% - 1.25rem)) !important;
           background: rgba(250, 248, 245, 0.78) !important;
           border: 1px solid rgba(26, 26, 26, 0.12) !important;
           border-radius: 1.1rem !important;
@@ -101,7 +101,7 @@ export default function BrandPreviewPage() {
           background-image: none !important;
           color: #faf8f5 !important;
           border: 1px solid rgba(13, 13, 13, 0.22) !important;
-          border-radius: 9999px !important;
+          border-radius: 0.75rem !important;
           box-shadow: none !important;
         }
 
@@ -263,8 +263,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-emerald-50,
         .brand-preview-shell .bg-blue-50,
         .brand-preview-shell .bg-amber-50 {
-          background-color: rgba(245, 242, 237, 0.8) !important;
-          border-color: rgba(212, 206, 196, 0.58) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.2) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.32) !important;
         }
 
         .brand-preview-shell .text-violet-600,
@@ -275,7 +275,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .text-pink-700,
         .brand-preview-shell .text-violet-700,
         .brand-preview-shell .text-emerald-700 {
-          color: #1a1a1a !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell .ring-1,
@@ -296,11 +296,17 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section:first-of-type .inline-flex span.bg-clip-text.text-transparent {
-          background-image: linear-gradient(90deg, var(--brand-accent), var(--brand-accent-strong)) !important;
-          color: transparent !important;
-          -webkit-text-fill-color: transparent !important;
+          background-image: none !important;
+          color: #0d0d0d !important;
+          -webkit-text-fill-color: #0d0d0d !important;
           letter-spacing: 0 !important;
           text-transform: uppercase;
+        }
+
+        .brand-preview-shell section:first-of-type h1 > span.bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: var(--brand-accent) !important;
+          -webkit-text-fill-color: var(--brand-accent) !important;
         }
 
         .brand-preview-shell section:first-of-type {
@@ -318,8 +324,8 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
           background-image: none !important;
-          background-color: rgba(var(--brand-accent-soft-rgb), 0.26) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.4) !important;
+          background-color: rgba(245, 242, 237, 0.86) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell section:first-of-type .inline-flex .text-pink-500 {
@@ -340,12 +346,12 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell #features .w-12.h-12 {
           background-image: none !important;
-          background-color: rgba(245, 242, 237, 0.9) !important;
-          border: 1px solid rgba(212, 206, 196, 0.68) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.24) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.36) !important;
         }
 
         .brand-preview-shell #features .w-6.h-6 {
-          color: #1a1a1a !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell #why {
@@ -473,6 +479,13 @@ export default function BrandPreviewPage() {
           color: var(--brand-cream) !important;
         }
 
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-50,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-violet-50,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-pink-50 {
+          background: rgba(250, 248, 245, 0.09) !important;
+          border-color: rgba(250, 248, 245, 0.24) !important;
+        }
+
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
           background: linear-gradient(150deg, #111111 0%, #1a1a1a 52%, #131313 100%) !important;
           color: var(--brand-cream) !important;
@@ -555,9 +568,9 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-blue-100,
         .brand-preview-shell .bg-emerald-100,
         .brand-preview-shell .bg-amber-100 {
-          background-color: rgba(245, 242, 237, 0.92) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.28) !important;
           color: #1a1a1a !important;
-          border-color: rgba(212, 206, 196, 0.62) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.48) !important;
         }
 
         .brand-preview-shell .from-pink-500,
@@ -569,8 +582,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-amber-500,
         .brand-preview-shell .from-orange-500,
         .brand-preview-shell .from-pink-400 {
-          --tw-gradient-from: #1a1a1a !important;
-          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 26, 26, 0)) !important;
+          --tw-gradient-from: var(--brand-accent) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(var(--brand-accent-rgb), 0)) !important;
         }
 
         .brand-preview-shell .to-violet-600,
@@ -580,7 +593,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .to-orange-500,
         .brand-preview-shell .to-pink-500,
         .brand-preview-shell .to-violet-500 {
-          --tw-gradient-to: #0d0d0d !important;
+          --tw-gradient-to: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell .from-pink-50,
@@ -615,13 +628,22 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-violet-200\\/30,
         .brand-preview-shell .via-violet-200\\/30,
         .brand-preview-shell .via-purple-100\\/20 {
-          --tw-gradient-from: rgba(212, 206, 196, 0.45) !important;
-          --tw-gradient-stops: var(--tw-gradient-from), rgba(245, 242, 237, 0.18), var(--tw-gradient-to, transparent) !important;
+          --tw-gradient-from: rgba(var(--brand-accent-soft-rgb), 0.34) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--brand-accent-rgb), 0.14), var(--tw-gradient-to, transparent) !important;
         }
 
         .brand-preview-shell .bg-pink-500\\/20,
         .brand-preview-shell .bg-violet-500\\/20 {
-          background-color: rgba(212, 206, 196, 0.18) !important;
+          background-color: rgba(var(--brand-accent-rgb), 0.18) !important;
+        }
+
+        .brand-preview-shell section:first-of-type .w-5.h-5.rounded-full.bg-emerald-100 {
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.36) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.5) !important;
+        }
+
+        .brand-preview-shell section:first-of-type .w-5.h-5.rounded-full.bg-emerald-100 .text-emerald-600 {
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell .shadow-violet-500\\/25,
