@@ -183,7 +183,7 @@ export default function HomePage() {
 
     html.style.fontSize = "110%"
     html.style.overflowY = "auto"
-    body.style.overflowY = "clip"
+    body.style.overflowY = "hidden"
 
     return () => {
       html.style.fontSize = prevHtmlFontSize
