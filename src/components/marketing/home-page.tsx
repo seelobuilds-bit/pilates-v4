@@ -189,42 +189,6 @@ export default function HomePage() {
     const root = rootRef.current
     if (!root) return
 
-    const changed: Array<{ el: HTMLElement; overflow: string; overflowY: string }> = []
-
-    let ancestor = root.parentElement
-    while (ancestor && ancestor !== document.body) {
-      const computed = window.getComputedStyle(ancestor)
-      const needsReset =
-        computed.overflowY === "auto" ||
-        computed.overflowY === "scroll" ||
-        computed.overflow === "auto" ||
-        computed.overflow === "scroll"
-
-      if (needsReset) {
-        changed.push({
-          el: ancestor,
-          overflow: ancestor.style.overflow,
-          overflowY: ancestor.style.overflowY,
-        })
-        ancestor.style.overflow = "visible"
-        ancestor.style.overflowY = "visible"
-      }
-
-      ancestor = ancestor.parentElement
-    }
-
-    return () => {
-      changed.forEach(({ el, overflow, overflowY }) => {
-        el.style.overflow = overflow
-        el.style.overflowY = overflowY
-      })
-    }
-  }, [])
-
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
     if (!motionEnabled) return
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
