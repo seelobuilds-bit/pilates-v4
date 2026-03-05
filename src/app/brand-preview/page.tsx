@@ -327,13 +327,13 @@ export default function BrandPreviewPage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 4.75rem !important;
-          padding-bottom: 1.5rem !important;
+          padding-top: 4.35rem !important;
+          padding-bottom: 1.2rem !important;
         }
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-1.45rem);
+          transform: translateY(-2rem);
         }
 
         .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
@@ -374,9 +374,9 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell #why {
           background:
-            radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.14), transparent 34%),
-            radial-gradient(circle at 84% 14%, rgba(255, 255, 255, 0.1), transparent 30%),
-            linear-gradient(180deg, #121212 0%, #1a1a1a 52%, #0f0f0f 100%) !important;
+            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
+            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
           color: var(--brand-cream) !important;
         }
 
@@ -467,9 +467,9 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 {
           background:
-            radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.14), transparent 34%),
-            radial-gradient(circle at 84% 14%, rgba(255, 255, 255, 0.1), transparent 30%),
-            linear-gradient(180deg, #121212 0%, #1a1a1a 52%, #0f0f0f 100%) !important;
+            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
+            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
           border-top: 1px solid rgba(250, 248, 245, 0.18) !important;
           border-bottom: 1px solid rgba(250, 248, 245, 0.18) !important;
         }
@@ -512,9 +512,9 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
           background:
-            radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.14), transparent 34%),
-            radial-gradient(circle at 84% 14%, rgba(255, 255, 255, 0.1), transparent 30%),
-            linear-gradient(180deg, #121212 0%, #1a1a1a 52%, #0f0f0f 100%) !important;
+            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
+            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
           color: var(--brand-cream) !important;
         }
 
@@ -576,9 +576,9 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section[class*="via-violet-950"] {
           background:
-            radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.14), transparent 34%),
-            radial-gradient(circle at 84% 14%, rgba(255, 255, 255, 0.1), transparent 30%),
-            linear-gradient(180deg, #121212 0%, #1a1a1a 52%, #0f0f0f 100%) !important;
+            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
+            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] h1,
