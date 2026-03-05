@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -163,11 +163,121 @@ const faqs = [
 ]
 
 export default function HomePage() {
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
   const [demoSubmitted, setDemoSubmitted] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    root.classList.add("motion-mounted")
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (prefersReducedMotion) {
+      root.classList.add("motion-reduced")
+      root.style.setProperty("--scroll-progress", "1")
+      return
+    }
+
+    const revealTargets = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        "section, footer, header .max-w-7xl, .hero-cta-row > *, .hero-trust > div, .max-w-6xl .rounded-3xl, .max-w-6xl .rounded-2xl"
+      )
+    )
+
+    revealTargets.forEach((node, index) => {
+      node.classList.add("motion-target")
+      node.style.setProperty("--reveal-delay", `${Math.min(index * 24, 320)}ms`)
+    })
+
+    const navShell = root.querySelector<HTMLElement>("header .max-w-7xl")
+    const firstSection = root.querySelector<HTMLElement>("section")
+    navShell?.classList.add("is-visible")
+    firstSection?.classList.add("is-visible")
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          ;(entry.target as HTMLElement).classList.add("is-visible")
+          observer.unobserve(entry.target)
+        })
+      },
+      { threshold: 0.14, rootMargin: "0px 0px -12% 0px" }
+    )
+
+    revealTargets.forEach((node) => {
+      if (!node.classList.contains("is-visible")) observer.observe(node)
+    })
+
+    const updateScrollProgress = () => {
+      const doc = document.documentElement
+      const scrollable = doc.scrollHeight - window.innerHeight
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 1
+      root.style.setProperty("--scroll-progress", `${Math.max(0, Math.min(1, progress))}`)
+    }
+
+    updateScrollProgress()
+    window.addEventListener("scroll", updateScrollProgress, { passive: true })
+    window.addEventListener("resize", updateScrollProgress)
+
+    const hero = root.querySelector<HTMLElement>(".hero-section")
+    const onHeroPointerMove = (event: PointerEvent) => {
+      if (!hero) return
+      const rect = hero.getBoundingClientRect()
+      const x = (event.clientX - rect.left) / rect.width - 0.5
+      const y = (event.clientY - rect.top) / rect.height - 0.5
+      hero.style.setProperty("--parallax-x", `${x}`)
+      hero.style.setProperty("--parallax-y", `${y}`)
+    }
+    const resetHeroParallax = () => {
+      hero?.style.setProperty("--parallax-x", "0")
+      hero?.style.setProperty("--parallax-y", "0")
+    }
+
+    hero?.addEventListener("pointermove", onHeroPointerMove)
+    hero?.addEventListener("pointerleave", resetHeroParallax)
+
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    const magneticCleanups: Array<() => void> = []
+    if (canHover) {
+      const magneticTargets = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          ".hero-cta-row button, .hero-cta-row a.inline-flex, section.py-16 button, section[class*='via-violet-950'] button"
+        )
+      )
+
+      magneticTargets.forEach((node) => {
+        const onMove = (event: MouseEvent) => {
+          const rect = node.getBoundingClientRect()
+          const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2)
+          const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2)
+          node.style.transform = `translate(${x * 4}px, ${y * 3}px)`
+        }
+        const onLeave = () => {
+          node.style.transform = ""
+        }
+        node.addEventListener("mousemove", onMove)
+        node.addEventListener("mouseleave", onLeave)
+        magneticCleanups.push(() => {
+          node.removeEventListener("mousemove", onMove)
+          node.removeEventListener("mouseleave", onLeave)
+        })
+      })
+    }
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("scroll", updateScrollProgress)
+      window.removeEventListener("resize", updateScrollProgress)
+      hero?.removeEventListener("pointermove", onHeroPointerMove)
+      hero?.removeEventListener("pointerleave", resetHeroParallax)
+      magneticCleanups.forEach((cleanup) => cleanup())
+    }
+  }, [])
 
   const handleDemoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -205,7 +315,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div ref={rootRef} className="marketing-home min-h-screen bg-white overflow-x-hidden">
+      <div className="scroll-progress" aria-hidden />
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -275,11 +386,11 @@ export default function HomePage() {
       {/* ============================================ */}
       {/* HERO SECTION */}
       {/* ============================================ */}
-      <section className="pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
+      <section className="hero-section pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
-          <div className="absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
+          <div className="hero-orb orb-a absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
+          <div className="hero-orb orb-b absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -307,7 +418,7 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <div className="hero-cta-row flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 px-8 h-14 text-lg shadow-xl shadow-violet-500/25 w-full sm:w-auto"
@@ -329,7 +440,7 @@ export default function HomePage() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
+          <div className="hero-trust flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Check className="w-3 h-3 text-emerald-600" />
@@ -1157,6 +1268,162 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .marketing-home {
+          --scroll-progress: 0;
+        }
+
+        .marketing-home .scroll-progress {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          z-index: 120;
+          background: rgba(13, 13, 13, 0.06);
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .marketing-home .scroll-progress::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          transform-origin: left center;
+          transform: scaleX(var(--scroll-progress));
+          background: linear-gradient(90deg, #e3120b 0%, #b10e08 55%, #1a1a1a 100%);
+          box-shadow: 0 0 26px rgba(227, 18, 11, 0.45);
+          transition: transform 100ms linear;
+        }
+
+        .marketing-home .hero-orb {
+          will-change: transform, opacity;
+          animation: heroFloat 18s ease-in-out infinite alternate;
+        }
+
+        .marketing-home .hero-orb.orb-b {
+          animation-duration: 22s;
+          animation-delay: -5s;
+        }
+
+        .marketing-home .hero-section .max-w-4xl {
+          transform: translate3d(calc(var(--parallax-x, 0) * 8px), calc(var(--parallax-y, 0) * 8px), 0);
+          transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+          will-change: transform;
+        }
+
+        .marketing-home .hero-section h1 span.bg-clip-text {
+          background-size: 200% 200% !important;
+          animation: gradientDrift 9s ease-in-out infinite;
+        }
+
+        .marketing-home.motion-mounted .motion-target {
+          opacity: 0;
+          transform: translate3d(0, 28px, 0) scale(0.985);
+          filter: blur(8px);
+          transition:
+            opacity 720ms cubic-bezier(0.2, 0.75, 0.2, 1),
+            transform 720ms cubic-bezier(0.2, 0.75, 0.2, 1),
+            filter 620ms ease;
+          transition-delay: var(--reveal-delay, 0ms);
+        }
+
+        .marketing-home.motion-mounted .motion-target.is-visible {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1);
+          filter: blur(0);
+        }
+
+        .marketing-home .rounded-3xl,
+        .marketing-home .rounded-2xl {
+          transition:
+            transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 320ms ease,
+            border-color 320ms ease;
+        }
+
+        .marketing-home .rounded-3xl:hover,
+        .marketing-home .rounded-2xl:hover {
+          transform: translateY(-5px);
+        }
+
+        .marketing-home .hero-cta-row button,
+        .marketing-home .hero-cta-row a.inline-flex,
+        .marketing-home section.py-16 button {
+          transition:
+            transform 140ms ease-out,
+            box-shadow 220ms ease,
+            filter 220ms ease;
+          will-change: transform;
+        }
+
+        .marketing-home .hero-cta-row button:hover,
+        .marketing-home .hero-cta-row a.inline-flex:hover,
+        .marketing-home section.py-16 button:hover {
+          filter: saturate(1.06);
+          box-shadow: 0 18px 42px rgba(13, 13, 13, 0.2);
+        }
+
+        .marketing-home footer h4 + ul li a {
+          position: relative;
+        }
+
+        .marketing-home footer h4 + ul li a::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: -2px;
+          width: 100%;
+          height: 1px;
+          transform: scaleX(0);
+          transform-origin: left center;
+          transition: transform 240ms ease;
+          background: currentColor;
+          opacity: 0.6;
+        }
+
+        .marketing-home footer h4 + ul li a:hover::after {
+          transform: scaleX(1);
+        }
+
+        @keyframes heroFloat {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1);
+            opacity: 0.72;
+          }
+          50% {
+            transform: translate3d(-22px, 16px, 0) scale(1.05);
+            opacity: 0.84;
+          }
+          100% {
+            transform: translate3d(18px, -14px, 0) scale(0.98);
+            opacity: 0.7;
+          }
+        }
+
+        @keyframes gradientDrift {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .marketing-home,
+          .marketing-home * {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            filter: none !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
