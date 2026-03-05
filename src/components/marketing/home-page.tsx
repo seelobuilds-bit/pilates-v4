@@ -175,13 +175,20 @@ export default function HomePage() {
 
   useEffect(() => {
     const html = document.documentElement
+    const body = document.body
 
     const prevHtmlFontSize = html.style.fontSize
+    const prevHtmlOverflowY = html.style.overflowY
+    const prevBodyOverflowY = body.style.overflowY
 
     html.style.fontSize = "110%"
+    html.style.overflowY = "auto"
+    body.style.overflowY = "clip"
 
     return () => {
       html.style.fontSize = prevHtmlFontSize
+      html.style.overflowY = prevHtmlOverflowY
+      body.style.overflowY = prevBodyOverflowY
     }
   }, [])
 
