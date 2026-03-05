@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import { DM_Sans, Instrument_Serif } from "next/font/google"
 import MarketingHomePage from "@/components/marketing/home-page"
 
@@ -19,19 +16,8 @@ const instrumentSerif = Instrument_Serif({
 })
 
 export default function BrandPreviewPage() {
-  const [showScrolledHeader, setShowScrolledHeader] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setShowScrolledHeader(window.scrollY > 28)
-    onScroll()
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
   return (
-    <div
-      className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell ${showScrolledHeader ? "preview-header-visible" : "preview-header-hidden"}`}
-    >
+    <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
         .brand-preview-shell {
           --brand-accent: #cb6932;
@@ -51,8 +37,10 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header {
-          background: #f5f2ed !important;
-          background-image: none !important;
+          top: 1rem !important;
+          left: 0 !important;
+          right: 0 !important;
+          background: transparent !important;
           border-bottom: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
@@ -60,29 +48,76 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header.bg-white\\/80 {
-          background-color: #f5f2ed !important;
+          background: transparent !important;
         }
 
-        .brand-preview-shell.preview-header-hidden header {
-          opacity: 0 !important;
-          transform: translateY(-110%) !important;
-          pointer-events: none !important;
-        }
-
-        .brand-preview-shell.preview-header-visible header {
-          opacity: 1 !important;
-          transform: translateY(0) !important;
-          pointer-events: auto !important;
-        }
-
-        .brand-preview-shell header {
-          transition:
-            opacity 220ms ease,
-            transform 220ms ease !important;
+        .brand-preview-shell header .max-w-7xl {
+          max-width: min(1100px, calc(100% - 2rem)) !important;
+          background: rgba(18, 18, 18, 0.72) !important;
+          border: 1px solid rgba(250, 248, 245, 0.14) !important;
+          border-radius: 1.1rem !important;
+          backdrop-filter: blur(14px) saturate(130%);
+          -webkit-backdrop-filter: blur(14px) saturate(130%);
+          box-shadow:
+            0 16px 40px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(250, 248, 245, 0.08) !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
           display: none !important;
+        }
+
+        .brand-preview-shell header .text-gray-600 {
+          color: rgba(250, 248, 245, 0.78) !important;
+        }
+
+        .brand-preview-shell header .hover\\:text-gray-900:hover {
+          color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.p-2 {
+          color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.bg-white {
+          background: rgba(18, 18, 18, 0.92) !important;
+          border-color: rgba(250, 248, 245, 0.14) !important;
+          border-radius: 0 0 1rem 1rem;
+          margin-top: 0.5rem;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > a button {
+          background: transparent !important;
+          color: rgba(250, 248, 245, 0.82) !important;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > a button:hover {
+          background: rgba(250, 248, 245, 0.1) !important;
+          color: #faf8f5 !important;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > button {
+          background: #0d0d0d !important;
+          background-image: none !important;
+          color: #faf8f5 !important;
+          border: 1px solid rgba(250, 248, 245, 0.2) !important;
+          border-radius: 9999px !important;
+          box-shadow: none !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.bg-white .text-gray-600 {
+          color: rgba(250, 248, 245, 0.82) !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.bg-white hr {
+          border-color: rgba(250, 248, 245, 0.16) !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.bg-white button {
+          background: #0d0d0d !important;
+          background-image: none !important;
+          color: #faf8f5 !important;
+          border: 1px solid rgba(250, 248, 245, 0.2) !important;
         }
 
         .brand-preview-shell * {
@@ -474,8 +509,8 @@ export default function BrandPreviewPage() {
           font-style: italic !important;
           font-weight: 400 !important;
           letter-spacing: -0.05em !important;
-          color: #1a1a1a !important;
-          -webkit-text-fill-color: #1a1a1a !important;
+          color: #faf8f5 !important;
+          -webkit-text-fill-color: #faf8f5 !important;
         }
 
         .brand-preview-shell .text-white,
