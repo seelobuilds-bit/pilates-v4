@@ -53,14 +53,14 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell header .max-w-7xl {
           max-width: min(1100px, calc(100% - 2rem)) !important;
-          background: rgba(18, 18, 18, 0.72) !important;
-          border: 1px solid rgba(250, 248, 245, 0.14) !important;
+          background: rgba(250, 248, 245, 0.78) !important;
+          border: 1px solid rgba(26, 26, 26, 0.12) !important;
           border-radius: 1.1rem !important;
           backdrop-filter: blur(14px) saturate(130%);
           -webkit-backdrop-filter: blur(14px) saturate(130%);
           box-shadow:
-            0 16px 40px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(250, 248, 245, 0.08) !important;
+            0 14px 34px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
         }
 
         .brand-preview-shell header nav.hidden.md\\:flex.items-center.gap-8 {
@@ -68,56 +68,87 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell header .text-gray-600 {
-          color: rgba(250, 248, 245, 0.78) !important;
+          color: rgba(26, 26, 26, 0.74) !important;
         }
 
         .brand-preview-shell header .hover\\:text-gray-900:hover {
-          color: #faf8f5 !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell header .md\\:hidden.p-2 {
-          color: #faf8f5 !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell header .md\\:hidden.bg-white {
-          background: rgba(18, 18, 18, 0.92) !important;
-          border-color: rgba(250, 248, 245, 0.14) !important;
+          background: rgba(250, 248, 245, 0.96) !important;
+          border-color: rgba(26, 26, 26, 0.12) !important;
           border-radius: 0 0 1rem 1rem;
           margin-top: 0.5rem;
         }
 
         .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > a button {
           background: transparent !important;
-          color: rgba(250, 248, 245, 0.82) !important;
+          color: rgba(26, 26, 26, 0.82) !important;
         }
 
         .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > a button:hover {
-          background: rgba(250, 248, 245, 0.1) !important;
-          color: #faf8f5 !important;
+          background: rgba(26, 26, 26, 0.06) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > button {
           background: #0d0d0d !important;
           background-image: none !important;
           color: #faf8f5 !important;
-          border: 1px solid rgba(250, 248, 245, 0.2) !important;
+          border: 1px solid rgba(13, 13, 13, 0.22) !important;
           border-radius: 9999px !important;
           box-shadow: none !important;
         }
 
         .brand-preview-shell header .md\\:hidden.bg-white .text-gray-600 {
-          color: rgba(250, 248, 245, 0.82) !important;
+          color: rgba(26, 26, 26, 0.8) !important;
         }
 
         .brand-preview-shell header .md\\:hidden.bg-white hr {
-          border-color: rgba(250, 248, 245, 0.16) !important;
+          border-color: rgba(26, 26, 26, 0.12) !important;
         }
 
         .brand-preview-shell header .md\\:hidden.bg-white button {
           background: #0d0d0d !important;
           background-image: none !important;
           color: #faf8f5 !important;
-          border: 1px solid rgba(250, 248, 245, 0.2) !important;
+          border: 1px solid rgba(13, 13, 13, 0.22) !important;
+        }
+
+        .brand-preview-shell header .flex.items-center.justify-between.h-16 {
+          position: relative;
+        }
+
+        .brand-preview-shell header .flex.items-center.select-none {
+          position: absolute !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          z-index: 2;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 {
+          display: flex !important;
+          width: 100% !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          gap: 0 !important;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > a:first-child {
+          margin-left: 0 !important;
+        }
+
+        .brand-preview-shell header .hidden.md\\:flex.items-center.gap-3 > button:last-child {
+          margin-right: 0 !important;
+        }
+
+        .brand-preview-shell header .md\\:hidden.p-2 {
+          margin-left: auto;
         }
 
         .brand-preview-shell * {
@@ -222,7 +253,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-amber-500,
         .brand-preview-shell .bg-violet-500,
         .brand-preview-shell .bg-pink-600 {
-          background-color: var(--brand-accent-strong) !important;
+          background-color: #1a1a1a !important;
           background-image: none !important;
           color: #faf8f5 !important;
         }
@@ -232,8 +263,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-emerald-50,
         .brand-preview-shell .bg-blue-50,
         .brand-preview-shell .bg-amber-50 {
-          background-color: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.35) !important;
+          background-color: rgba(245, 242, 237, 0.8) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell .text-violet-600,
@@ -244,7 +275,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .text-pink-700,
         .brand-preview-shell .text-violet-700,
         .brand-preview-shell .text-emerald-700 {
-          color: var(--brand-accent-strong) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell .ring-1,
@@ -309,16 +340,16 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell #features .w-12.h-12 {
           background-image: none !important;
-          background-color: rgba(var(--brand-accent-soft-rgb), 0.24) !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.36) !important;
+          background-color: rgba(245, 242, 237, 0.9) !important;
+          border: 1px solid rgba(212, 206, 196, 0.68) !important;
         }
 
         .brand-preview-shell #features .w-6.h-6 {
-          color: var(--brand-accent-strong) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell #why {
-          background: linear-gradient(145deg, #0f1114 0%, #181b20 52%, #111417 100%) !important;
+          background: linear-gradient(145deg, #121212 0%, #1a1a1a 52%, #0f0f0f 100%) !important;
           color: var(--brand-cream) !important;
         }
 
@@ -332,27 +363,27 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #why .bg-pink-100 {
-          background-color: rgba(var(--brand-accent-rgb), 0.24) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.42) !important;
+          background-color: rgba(250, 248, 245, 0.12) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
         }
 
         .brand-preview-shell #why .text-pink-700 {
-          color: var(--brand-accent-soft) !important;
+          color: rgba(250, 248, 245, 0.9) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(1) {
-          background: linear-gradient(160deg, #1f2228 0%, #15171b 100%) !important;
-          border-color: rgba(var(--brand-accent-soft-rgb), 0.4) !important;
+          background: linear-gradient(160deg, #1b1b1b 0%, #141414 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(2) {
-          background: linear-gradient(160deg, #1f2531 0%, #171a22 100%) !important;
-          border-color: rgba(156, 170, 210, 0.34) !important;
+          background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(3) {
-          background: linear-gradient(160deg, #1f2329 0%, #15171b 100%) !important;
-          border-color: rgba(var(--brand-accent-soft-rgb), 0.34) !important;
+          background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
@@ -365,8 +396,8 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child {
-          background: linear-gradient(160deg, #1e2129 0%, #242932 60%, #22262d 100%) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.45) !important;
+          background: linear-gradient(160deg, #191919 0%, #222222 60%, #171717 100%) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
           box-shadow: 0 26px 55px rgba(14, 14, 14, 0.34) !important;
         }
 
@@ -393,24 +424,24 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-50 {
-          background: linear-gradient(120deg, rgba(var(--brand-accent-soft-rgb), 0.32), rgba(var(--brand-accent-rgb), 0.2)) !important;
-          border-color: rgba(var(--brand-accent-soft-rgb), 0.4) !important;
+          background: rgba(250, 248, 245, 0.08) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-violet-50 {
-          background: linear-gradient(120deg, rgba(var(--brand-accent-rgb), 0.3), rgba(var(--brand-accent-strong-rgb), 0.2)) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.42) !important;
+          background: rgba(250, 248, 245, 0.08) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-pink-50 {
-          background: linear-gradient(120deg, rgba(var(--brand-accent-rgb), 0.24), rgba(var(--brand-accent-strong-rgb), 0.24)) !important;
-          border-color: rgba(var(--brand-accent-strong-rgb), 0.4) !important;
+          background: rgba(250, 248, 245, 0.08) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 {
-          background: linear-gradient(140deg, #15171b 0%, #201e22 58%, #131518 100%) !important;
-          border-top: 1px solid rgba(var(--brand-accent-rgb), 0.24) !important;
-          border-bottom: 1px solid rgba(var(--brand-accent-rgb), 0.24) !important;
+          background: linear-gradient(140deg, #121212 0%, #1a1a1a 58%, #0f0f0f 100%) !important;
+          border-top: 1px solid rgba(250, 248, 245, 0.18) !important;
+          border-bottom: 1px solid rgba(250, 248, 245, 0.18) !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 .text-gray-900 {
@@ -428,8 +459,8 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child {
-          background: linear-gradient(160deg, #1d2027 0%, #242a34 58%, #22252c 100%) !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.4) !important;
+          background: linear-gradient(160deg, #1a1a1a 0%, #232323 58%, #181818 100%) !important;
+          border-color: rgba(250, 248, 245, 0.22) !important;
           box-shadow: 0 24px 52px rgba(14, 14, 14, 0.3) !important;
         }
 
@@ -448,12 +479,12 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-purple-100 {
-          background-color: rgba(var(--brand-accent-rgb), 0.26) !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.4) !important;
+          background-color: rgba(250, 248, 245, 0.12) !important;
+          border: 1px solid rgba(250, 248, 245, 0.24) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-purple-700 {
-          color: var(--brand-accent-soft) !important;
+          color: rgba(250, 248, 245, 0.9) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-white {
@@ -509,8 +540,8 @@ export default function BrandPreviewPage() {
           font-style: italic !important;
           font-weight: 400 !important;
           letter-spacing: -0.05em !important;
-          color: #faf8f5 !important;
-          -webkit-text-fill-color: #faf8f5 !important;
+          color: #1a1a1a !important;
+          -webkit-text-fill-color: #1a1a1a !important;
         }
 
         .brand-preview-shell .text-white,
@@ -524,9 +555,9 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .bg-blue-100,
         .brand-preview-shell .bg-emerald-100,
         .brand-preview-shell .bg-amber-100 {
-          background-color: rgba(var(--brand-accent-soft-rgb), 0.28) !important;
+          background-color: rgba(245, 242, 237, 0.92) !important;
           color: #1a1a1a !important;
-          border-color: rgba(var(--brand-accent-rgb), 0.48) !important;
+          border-color: rgba(212, 206, 196, 0.62) !important;
         }
 
         .brand-preview-shell .from-pink-500,
@@ -538,8 +569,8 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-amber-500,
         .brand-preview-shell .from-orange-500,
         .brand-preview-shell .from-pink-400 {
-          --tw-gradient-from: var(--brand-accent) !important;
-          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(var(--brand-accent-rgb), 0)) !important;
+          --tw-gradient-from: #1a1a1a !important;
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 26, 26, 0)) !important;
         }
 
         .brand-preview-shell .to-violet-600,
@@ -549,7 +580,7 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .to-orange-500,
         .brand-preview-shell .to-pink-500,
         .brand-preview-shell .to-violet-500 {
-          --tw-gradient-to: var(--brand-accent-strong) !important;
+          --tw-gradient-to: #0d0d0d !important;
         }
 
         .brand-preview-shell .from-pink-50,
@@ -584,13 +615,13 @@ export default function BrandPreviewPage() {
         .brand-preview-shell .from-violet-200\\/30,
         .brand-preview-shell .via-violet-200\\/30,
         .brand-preview-shell .via-purple-100\\/20 {
-          --tw-gradient-from: rgba(var(--brand-accent-soft-rgb), 0.34) !important;
-          --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--brand-accent-rgb), 0.14), var(--tw-gradient-to, transparent) !important;
+          --tw-gradient-from: rgba(212, 206, 196, 0.45) !important;
+          --tw-gradient-stops: var(--tw-gradient-from), rgba(245, 242, 237, 0.18), var(--tw-gradient-to, transparent) !important;
         }
 
         .brand-preview-shell .bg-pink-500\\/20,
         .brand-preview-shell .bg-violet-500\\/20 {
-          background-color: rgba(var(--brand-accent-rgb), 0.18) !important;
+          background-color: rgba(212, 206, 196, 0.18) !important;
         }
 
         .brand-preview-shell .shadow-violet-500\\/25,
@@ -677,7 +708,7 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell .fixed.inset-0.z-\\[100\\] .relative.bg-white.rounded-2xl .bg-gradient-to-r.from-pink-500.to-violet-600 {
-          background: linear-gradient(140deg, #121417 0%, #1a1d22 60%, #101215 100%) !important;
+          background: linear-gradient(140deg, #121212 0%, #1a1a1a 60%, #0f0f0f 100%) !important;
           color: #faf8f5 !important;
         }
 
