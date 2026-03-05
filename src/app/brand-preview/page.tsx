@@ -19,22 +19,6 @@ export default function BrandPreviewPage() {
   return (
     <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
-        html,
-        body {
-          overflow-y: auto !important;
-          overscroll-behavior-y: auto !important;
-        }
-
-        body {
-          overflow-x: hidden !important;
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-
-        body::-webkit-scrollbar {
-          display: none !important;
-        }
-
         .brand-preview-shell {
           --brand-accent: #e3120b;
           --brand-accent-strong: #b10e08;
@@ -50,8 +34,7 @@ export default function BrandPreviewPage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
-          overflow-y: visible !important;
-          overflow-x: clip;
+          overflow: visible !important;
         }
 
         .brand-preview-shell header {
@@ -347,25 +330,25 @@ export default function BrandPreviewPage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 2.8rem !important;
+          padding-top: 7rem !important;
           padding-bottom: 1rem !important;
         }
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-3.7rem);
+          transform: none !important;
         }
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
             min-height: 100svh !important;
             align-items: center !important;
-            padding-top: 4.2rem !important;
+            padding-top: 8rem !important;
             padding-bottom: 1rem !important;
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-3.5rem);
+            transform: none !important;
             transform-origin: top center;
           }
         }
