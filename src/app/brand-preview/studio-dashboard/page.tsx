@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { DM_Sans, Instrument_Serif } from "next/font/google"
+import { Suspense } from "react"
 import { DashboardView } from "@/components/studio"
 import type { DashboardData } from "@/components/studio"
 import {
@@ -200,7 +201,9 @@ export default function BrandPreviewStudioDashboardPage() {
           </Link>
         </div>
 
-        <DashboardView data={dashboardData} linkPrefix="/brand-preview/studio-dashboard" />
+        <Suspense fallback={<div className="rounded-xl border border-border bg-background p-6 text-sm text-muted-foreground">Loading dashboard preview…</div>}>
+          <DashboardView data={dashboardData} linkPrefix="/brand-preview/studio-dashboard" />
+        </Suspense>
       </div>
     </div>
   )
