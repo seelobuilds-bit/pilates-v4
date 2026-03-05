@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -162,92 +162,12 @@ const faqs = [
   },
 ]
 
-const heroHeadlineTop = ["Stop", "managing", "software."]
-const heroHeadlineBottom = ["Start", "growing", "your", "studio."]
-
 export default function HomePage() {
-  const rootRef = useRef<HTMLDivElement | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
   const [demoSubmitted, setDemoSubmitted] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
-
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    root.classList.add("motion-mounted")
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (prefersReducedMotion) {
-      root.classList.add("motion-reduced")
-      root.style.setProperty("--scroll-progress", "1")
-      return
-    }
-
-    const revealTargets = Array.from(
-      root.querySelectorAll<HTMLElement>(
-        "section, footer, .hero-cta-row > *, .hero-trust > div, .max-w-6xl .rounded-3xl, .max-w-6xl .rounded-2xl"
-      )
-    )
-
-    revealTargets.forEach((node, index) => {
-      node.classList.add("motion-target")
-      node.style.setProperty("--reveal-delay", `${Math.min(index * 24, 320)}ms`)
-    })
-
-    const firstSection = root.querySelector<HTMLElement>("section")
-    firstSection?.classList.add("is-visible")
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return
-          ;(entry.target as HTMLElement).classList.add("is-visible")
-          observer.unobserve(entry.target)
-        })
-      },
-      { threshold: 0.14, rootMargin: "0px 0px -12% 0px" }
-    )
-
-    revealTargets.forEach((node) => {
-      if (!node.classList.contains("is-visible")) observer.observe(node)
-    })
-
-    let lastY = window.scrollY
-    let lastTs = performance.now()
-    const updateScrollProgress = () => {
-      const doc = document.documentElement
-      const scrollable = doc.scrollHeight - window.innerHeight
-      const progress = scrollable > 0 ? window.scrollY / scrollable : 1
-      root.style.setProperty("--scroll-progress", `${Math.max(0, Math.min(1, progress))}`)
-
-      const now = performance.now()
-      const deltaY = window.scrollY - lastY
-      const deltaT = Math.max(16, now - lastTs)
-      const velocity = Math.max(-1, Math.min(1, deltaY / deltaT / 2.2))
-      root.style.setProperty("--scroll-velocity", `${velocity}`)
-      lastY = window.scrollY
-      lastTs = now
-    }
-
-    updateScrollProgress()
-    window.addEventListener("scroll", updateScrollProgress, { passive: true })
-    window.addEventListener("resize", updateScrollProgress)
-
-    const onPointerMove = (event: PointerEvent) => {
-      root.style.setProperty("--pointer-x", `${event.clientX}px`)
-      root.style.setProperty("--pointer-y", `${event.clientY}px`)
-    }
-    window.addEventListener("pointermove", onPointerMove, { passive: true })
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener("scroll", updateScrollProgress)
-      window.removeEventListener("resize", updateScrollProgress)
-      window.removeEventListener("pointermove", onPointerMove)
-    }
-  }, [])
 
   const handleDemoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -285,10 +205,7 @@ export default function HomePage() {
   }
 
   return (
-    <div ref={rootRef} className="marketing-home min-h-screen bg-white overflow-x-hidden">
-      <div className="scroll-progress" aria-hidden />
-      <div className="pointer-aura" aria-hidden />
-      <div className="grain-overlay" aria-hidden />
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -358,11 +275,11 @@ export default function HomePage() {
       {/* ============================================ */}
       {/* HERO SECTION */}
       {/* ============================================ */}
-      <section className="hero-section pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
+      <section className="pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="hero-orb orb-a absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-gray-100/55 via-white/45 to-transparent rounded-full blur-3xl" />
-          <div className="hero-orb orb-b absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-gray-200/45 via-white/40 to-transparent rounded-full blur-3xl" />
+          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
+          <div className="absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -375,31 +292,11 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="hero-headline text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
-            <span className="hero-line">
-              {heroHeadlineTop.map((word, index) => (
-                <span
-                  key={word}
-                  className="hero-word"
-                  style={{ ["--word-delay" as string]: `${index * 90}ms` }}
-                >
-                  {word}
-                  {index < heroHeadlineTop.length - 1 ? "\u00A0" : ""}
-                </span>
-              ))}
-            </span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
+            Stop managing software.
             <br />
-            <span className="hero-line bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
-              {heroHeadlineBottom.map((word, index) => (
-                <span
-                  key={word}
-                  className="hero-word hero-word-accent"
-                  style={{ ["--word-delay" as string]: `${320 + index * 95}ms` }}
-                >
-                  {word}
-                  {index < heroHeadlineBottom.length - 1 ? "\u00A0" : ""}
-                </span>
-              ))}
+            <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
+              Start growing your studio.
             </span>
           </h1>
           
@@ -410,7 +307,7 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="hero-cta-row flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 px-8 h-14 text-lg shadow-xl shadow-violet-500/25 w-full sm:w-auto"
@@ -432,7 +329,7 @@ export default function HomePage() {
           </div>
 
           {/* Trust indicators */}
-          <div className="hero-trust flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Check className="w-3 h-3 text-emerald-600" />
@@ -523,14 +420,8 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-sm text-gray-500 mb-8">Trusted by 200+ studios across the US, UK, and Australia</p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-            {['ALIGN', 'BREATHE', 'CORE', 'FLOW STATE', 'PURE', 'REFORM'].map((name, index) => (
-              <span
-                key={name}
-                className="trust-logo text-xl font-bold text-gray-800 tracking-wide"
-                style={{ ["--logo-delay" as string]: `${index * 120}ms` }}
-              >
-                {name}
-              </span>
+            {['ALIGN', 'BREATHE', 'CORE', 'FLOW STATE', 'PURE', 'REFORM'].map((name) => (
+              <span key={name} className="text-xl font-bold text-gray-800 tracking-wide">{name}</span>
             ))}
           </div>
         </div>
@@ -1266,289 +1157,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-      <style jsx global>{`
-        .marketing-home {
-          --scroll-progress: 0;
-          --scroll-velocity: 0;
-          --pointer-x: 50vw;
-          --pointer-y: 28vh;
-          perspective: 1500px;
-        }
-
-        .marketing-home .scroll-progress {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          z-index: 120;
-          background: transparent;
-          overflow: hidden;
-          pointer-events: none;
-        }
-
-        .marketing-home .scroll-progress::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          transform-origin: left center;
-          transform: scaleX(var(--scroll-progress));
-          background: linear-gradient(90deg, #e3120b 0%, #b10e08 55%, #1a1a1a 100%);
-          box-shadow: 0 0 26px rgba(227, 18, 11, 0.45);
-          transition: transform 100ms linear;
-        }
-
-        .marketing-home .pointer-aura {
-          position: fixed;
-          inset: 4.5rem 0 0 0;
-          z-index: 1;
-          pointer-events: none;
-          background:
-            radial-gradient(420px circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.34), transparent 62%),
-            radial-gradient(720px circle at 85% 12%, rgba(26, 26, 26, 0.045), transparent 64%);
-          mix-blend-mode: normal;
-          transition: background 220ms ease;
-        }
-
-        .marketing-home .grain-overlay {
-          position: fixed;
-          inset: 4.5rem 0 0 0;
-          z-index: 1;
-          pointer-events: none;
-          opacity: 0.04;
-          background-image: radial-gradient(rgba(13, 13, 13, 0.15) 0.5px, transparent 0.5px);
-          background-size: 3px 3px;
-          animation: grainShift 7s steps(6) infinite;
-        }
-
-        .marketing-home > * {
-          position: relative;
-          z-index: 2;
-        }
-
-        .marketing-home .hero-orb {
-          will-change: transform, opacity;
-          opacity: 0.54;
-          transform: translate3d(
-            calc(var(--scroll-velocity, 0) * -26px),
-            calc(var(--scroll-velocity, 0) * 20px),
-            0
-          );
-          transition: transform 160ms linear, opacity 240ms ease;
-        }
-
-        .marketing-home .hero-orb.orb-b {
-          transform: translate3d(
-            calc(var(--scroll-velocity, 0) * 20px),
-            calc(var(--scroll-velocity, 0) * -18px),
-            0
-          );
-        }
-
-        .marketing-home .hero-section h1 span.bg-clip-text {
-          background-size: 200% 200% !important;
-          animation: gradientDrift 9s ease-in-out infinite;
-        }
-
-        .marketing-home .hero-line {
-          display: inline-block;
-        }
-
-        .marketing-home .hero-word {
-          display: inline-block;
-          opacity: 0;
-          transform: translate3d(0, 28px, 0) rotateX(14deg);
-          transform-origin: 50% 100%;
-          animation: heroWordIn 880ms cubic-bezier(0.18, 0.8, 0.22, 1) forwards;
-          animation-delay: var(--word-delay, 0ms);
-          will-change: transform, opacity;
-        }
-
-        .marketing-home .hero-word-accent {
-          filter: saturate(1.02);
-        }
-
-        .marketing-home.motion-mounted .motion-target {
-          opacity: 0;
-          transform: translate3d(0, 28px, 0) rotateX(7deg) scale(0.985);
-          filter: blur(8px);
-          transition:
-            opacity 720ms cubic-bezier(0.2, 0.75, 0.2, 1),
-            transform 720ms cubic-bezier(0.2, 0.75, 0.2, 1),
-            filter 620ms ease;
-          transition-delay: var(--reveal-delay, 0ms);
-        }
-
-        .marketing-home.motion-mounted .motion-target.is-visible {
-          opacity: 1;
-          transform: translate3d(0, 0, 0) rotateX(0deg) scale(1);
-          filter: blur(0);
-        }
-
-        .marketing-home .rounded-3xl,
-        .marketing-home .rounded-2xl {
-          transition:
-            transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
-            box-shadow 320ms ease,
-            border-color 320ms ease;
-          transform-style: preserve-3d;
-        }
-
-        .marketing-home .rounded-3xl:hover,
-        .marketing-home .rounded-2xl:hover {
-          transform: translateY(-5px);
-        }
-
-        .marketing-home .hero-cta-row button,
-        .marketing-home .hero-cta-row a.inline-flex,
-        .marketing-home section.py-16 button {
-          transition:
-            box-shadow 220ms ease,
-            filter 220ms ease;
-        }
-
-        .marketing-home .hero-cta-row button:hover,
-        .marketing-home .hero-cta-row a.inline-flex:hover,
-        .marketing-home section.py-16 button:hover {
-          filter: saturate(1.06);
-          box-shadow: 0 18px 42px rgba(13, 13, 13, 0.2);
-        }
-
-        .marketing-home .trust-logo {
-          opacity: 0;
-          transform: translateY(10px);
-          animation: logoRise 820ms cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
-          animation-delay: calc(340ms + var(--logo-delay, 0ms));
-          position: relative;
-        }
-
-        .marketing-home .trust-logo::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: -2px;
-          height: 1px;
-          background: linear-gradient(90deg, transparent 0%, rgba(13, 13, 13, 0.26) 50%, transparent 100%);
-          transform: scaleX(0.7);
-          opacity: 0;
-          animation: logoLine 5s ease-in-out infinite;
-          animation-delay: calc(900ms + var(--logo-delay, 0ms));
-        }
-
-        .marketing-home footer h4 + ul li a {
-          position: relative;
-        }
-
-        .marketing-home footer h4 + ul li a::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          bottom: -2px;
-          width: 100%;
-          height: 1px;
-          transform: scaleX(0);
-          transform-origin: left center;
-          transition: transform 240ms ease;
-          background: currentColor;
-          opacity: 0.6;
-        }
-
-        .marketing-home footer h4 + ul li a:hover::after {
-          transform: scaleX(1);
-        }
-
-        @keyframes gradientDrift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-
-        @keyframes heroWordIn {
-          0% {
-            opacity: 0;
-            transform: translate3d(0, 28px, 0) rotateX(14deg);
-          }
-          65% {
-            opacity: 1;
-            transform: translate3d(0, -2px, 0) rotateX(0deg);
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) rotateX(0deg);
-          }
-        }
-
-        @keyframes grainShift {
-          0% {
-            transform: translate(0, 0);
-          }
-          25% {
-            transform: translate(-1%, 1%);
-          }
-          50% {
-            transform: translate(1%, -1%);
-          }
-          75% {
-            transform: translate(1%, 1%);
-          }
-          100% {
-            transform: translate(0, 0);
-          }
-        }
-
-        @keyframes logoRise {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes logoLine {
-          0%,
-          74%,
-          100% {
-            opacity: 0;
-            transform: scaleX(0.7);
-          }
-          82%,
-          92% {
-            opacity: 0.72;
-            transform: scaleX(1);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .marketing-home,
-          .marketing-home * {
-            animation: none !important;
-            transition: none !important;
-            transform: none !important;
-            filter: none !important;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .marketing-home {
-            scroll-snap-type: y proximity;
-          }
-
-          .marketing-home section {
-            scroll-snap-align: start;
-          }
-        }
-      `}</style>
     </div>
   )
 }
