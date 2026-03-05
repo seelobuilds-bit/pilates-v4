@@ -336,19 +336,19 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-2.45rem);
+          transform: translateY(-0.9rem);
         }
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
             min-height: 100svh !important;
-            align-items: flex-start !important;
-            padding-top: 6.8rem !important;
-            padding-bottom: 0.8rem !important;
+            align-items: center !important;
+            padding-top: 5.4rem !important;
+            padding-bottom: 1rem !important;
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(0) scale(1.08);
+            transform: translateY(-0.65rem) scale(1.03);
             transform-origin: top center;
           }
         }
@@ -411,12 +411,12 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
-          background: #fff7ef !important;
-          border: 1px solid rgba(255, 247, 239, 0.68) !important;
+          background: var(--brand-accent) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.62) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 svg {
-          color: var(--brand-accent) !important;
+          color: #fff7ef !important;
         }
 
         .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div {
@@ -511,7 +511,7 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
-          border: 1px solid rgba(250, 248, 245, 0.18) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.62) !important;
         }
 
         .brand-preview-shell #features + section {
