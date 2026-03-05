@@ -62,7 +62,7 @@
   h2 {
     font-family: var(--font-display), serif;
     color: inherit;
-    letter-spacing: 0;
+    letter-spacing: 0.018em;
     line-height: 1.12;
   }
 
@@ -72,7 +72,7 @@
   h6 {
     font-family: var(--font-display), serif;
     color: inherit;
-    letter-spacing: 0.012em;
+    letter-spacing: 0.02em;
     line-height: 1.28;
   }
 
