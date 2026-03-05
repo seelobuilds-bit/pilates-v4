@@ -1540,7 +1540,7 @@ export default function HomePage() {
           height: 100%;
           width: 100%;
           transform-origin: left center;
-          background: rgba(17, 17, 17, 0.28);
+          background: linear-gradient(90deg, rgba(236, 72, 153, 0.85), rgba(139, 92, 246, 0.85));
         }
 
         @keyframes marketingGradientDrift {
