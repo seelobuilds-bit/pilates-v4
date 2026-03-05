@@ -62,7 +62,7 @@
   h2 {
     font-family: var(--font-display), serif;
     color: inherit;
-    letter-spacing: 0.018em;
+    letter-spacing: 0.015em;
     line-height: 1.12;
   }
 
@@ -78,6 +78,20 @@
 
   label {
     letter-spacing: 0.01em;
+  }
+}
+
+@layer components {
+  .app-ui-scope h1,
+  .app-ui-scope h2 {
+    letter-spacing: 0.06em;
+  }
+
+  .app-ui-scope h3,
+  .app-ui-scope h4,
+  .app-ui-scope h5,
+  .app-ui-scope h6 {
+    letter-spacing: 0.065em;
   }
 }
 

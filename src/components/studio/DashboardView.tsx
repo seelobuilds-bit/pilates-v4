@@ -344,7 +344,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
             <CardContent className="p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="text-white">
-                  <h2 className="text-lg font-semibold mb-1">Today&apos;s Overview</h2>
+                  <h2 className="text-lg font-semibold mb-1 tracking-[0.07em]">Today&apos;s Overview</h2>
                   <p className="text-violet-200 text-sm">
                     {data.todayOverview.classCount} classes scheduled • {data.todayOverview.bookingsCount} bookings • {data.todayOverview.fillRate}% fill rate
                   </p>
@@ -560,7 +560,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <Clock className="h-5 w-5 text-violet-600" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-gray-900">Today&apos;s Schedule</h3>
+                    <h3 className="font-semibold tracking-[0.07em] text-gray-900">Today&apos;s Schedule</h3>
                     <p className="text-sm text-gray-500">{data.todayClasses.length} classes today</p>
                   </div>
                 </div>
@@ -644,7 +644,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <AlertCircle className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Needs Attention</h3>
+                    <h3 className="font-semibold tracking-[0.07em] text-gray-900">Needs Attention</h3>
                     <p className="text-sm text-gray-500">Inactive 21+ days</p>
                   </div>
                 </div>
@@ -701,7 +701,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <Sparkles className="h-5 w-5 text-teal-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Coming Up</h3>
+                    <h3 className="font-semibold tracking-[0.07em] text-gray-900">Coming Up</h3>
                     <p className="text-sm text-gray-500">Next {data.upcomingClasses.length} classes</p>
                   </div>
                 </div>
@@ -753,7 +753,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <Activity className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+                    <h3 className="font-semibold tracking-[0.07em] text-gray-900">Recent Activity</h3>
                     <p className="text-sm text-gray-500">Latest bookings</p>
                   </div>
                 </div>
@@ -808,7 +808,7 @@ export function DashboardView({ data, linkPrefix = "/studio" }: DashboardViewPro
                     <BarChart3 className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Studio Stats</h3>
+                    <h3 className="font-semibold tracking-[0.07em] text-gray-900">Studio Stats</h3>
                     <p className="text-sm text-gray-500">Quick overview</p>
                   </div>
                 </div>

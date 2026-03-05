@@ -34,7 +34,7 @@ export default async function DashboardLayout({
 
   return (
     <div
-      className={`flex h-dvh min-h-screen overflow-x-hidden bg-gray-50 ${isStudioScopedRole ? "studio-brand-scope" : ""}`}
+      className={`app-ui-scope flex h-dvh min-h-screen overflow-x-hidden bg-gray-50 ${isStudioScopedRole ? "studio-brand-scope" : ""}`}
       style={brandVariables}
     >
       <Sidebar />

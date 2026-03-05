@@ -24,7 +24,7 @@ export default async function BookingLayout({
   const brandVariables = buildStudioBrandCssVariables(studio?.primaryColor) as CSSProperties
 
   return (
-    <div className="studio-brand-scope" style={brandVariables}>
+    <div className="app-ui-scope studio-brand-scope" style={brandVariables}>
       <Providers>
         {children}
       </Providers>
