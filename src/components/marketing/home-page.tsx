@@ -346,7 +346,7 @@ export default function HomePage() {
   return (
     <div
       ref={rootRef}
-      className={`marketing-motion-shell min-h-screen bg-white overflow-x-hidden ${motionEnabled ? "motion-enabled" : ""}`}
+      className={`marketing-motion-shell min-h-screen bg-white ${motionEnabled ? "motion-enabled" : ""}`}
     >
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">

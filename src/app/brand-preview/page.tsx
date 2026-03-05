@@ -25,7 +25,6 @@ export default function BrandPreviewPage() {
 
         body {
           overflow-y: visible !important;
-          overflow-x: hidden !important;
           height: auto !important;
           max-height: none !important;
         }
