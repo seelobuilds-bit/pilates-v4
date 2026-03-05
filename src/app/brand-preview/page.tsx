@@ -336,7 +336,7 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-0.9rem);
+          transform: translateY(-1.55rem);
         }
 
         @media (min-width: 1024px) {
@@ -348,7 +348,7 @@ export default function BrandPreviewPage() {
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-0.65rem) scale(1.03);
+            transform: translateY(-1.35rem) scale(1.03);
             transform-origin: top center;
           }
         }
@@ -653,9 +653,25 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
-          background: transparent !important;
-          border: 1px solid rgba(250, 248, 245, 0.5) !important;
-          box-shadow: none !important;
+          background: rgba(250, 248, 245, 0.05) !important;
+          border: 1px solid rgba(250, 248, 245, 0.2) !important;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
+          border-radius: 1.5rem !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(1) {
+          background: linear-gradient(160deg, #1b1b1b 0%, #141414 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(2) {
+          background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(3) {
+          background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%) !important;
+          border-color: rgba(250, 248, 245, 0.2) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16 {
