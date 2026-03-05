@@ -134,7 +134,7 @@ export default function SettingsPage() {
         setStudio({
           name: data.name,
           subdomain: data.subdomain,
-          primaryColor: data.primaryColor || "#7c3aed",
+          primaryColor: data.primaryColor || "#e3120b",
           logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
           logoScale: typeof data.logoScale === "number" ? data.logoScale : 100,
           currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
@@ -280,7 +280,7 @@ export default function SettingsPage() {
       setStudio((prev) => prev ? ({
         ...prev,
         name: data.name,
-        primaryColor: data.primaryColor || "#7c3aed",
+        primaryColor: data.primaryColor || "#e3120b",
         logoUrl: typeof data.logoUrl === "string" ? data.logoUrl : null,
         logoScale: typeof data.logoScale === "number" ? data.logoScale : prev.logoScale,
         currency: CURRENCY_OPTIONS.includes((data.stripeCurrency || "usd").toLowerCase())
@@ -1108,12 +1108,12 @@ export default function SettingsPage() {
                 <input 
                   type="color" 
                   id="color" 
-                  value={studio?.primaryColor || "#7c3aed"}
+                  value={studio?.primaryColor || "#e3120b"}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-12 h-10 rounded border cursor-pointer"
                 />
                 <Input 
-                  value={studio?.primaryColor || "#7c3aed"}
+                  value={studio?.primaryColor || "#e3120b"}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-32"
                 />

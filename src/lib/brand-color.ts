@@ -105,6 +105,11 @@ export function buildStudioBrandCssVariables(primaryColor: string | null | undef
   const resolvedPrimary = resolveStudioPrimaryColor(primaryColor)
   const shades = buildShades(resolvedPrimary)
   const hsl = rgbToHsl(hexToRgb(resolvedPrimary))
+  const accentSaturation = Math.max(22, Math.min(58, hsl.s))
+  const accentLightness = Math.max(90, Math.min(96, hsl.l + 40))
+  const accentForegroundLightness = Math.max(24, Math.min(40, hsl.l - 18))
+  const secondaryLightness = Math.max(94, Math.min(98, hsl.l + 46))
+  const mutedLightness = Math.max(92, Math.min(97, hsl.l + 44))
 
   return {
     "--studio-50": shades[50],
@@ -119,6 +124,12 @@ export function buildStudioBrandCssVariables(primaryColor: string | null | undef
     "--studio-900": shades[900],
     "--studio-950": shades[950],
     "--primary": `${hsl.h} ${hsl.s}% ${hsl.l}%`,
+    "--accent": `${hsl.h} ${accentSaturation}% ${accentLightness}%`,
+    "--accent-foreground": `${hsl.h} ${accentSaturation}% ${accentForegroundLightness}%`,
+    "--secondary": `${hsl.h} ${Math.max(14, accentSaturation - 10)}% ${secondaryLightness}%`,
+    "--secondary-foreground": `${hsl.h} ${accentSaturation}% ${accentForegroundLightness}%`,
+    "--muted": `${hsl.h} ${Math.max(12, accentSaturation - 14)}% ${mutedLightness}%`,
+    "--muted-foreground": `${hsl.h} ${Math.max(8, accentSaturation - 22)}% ${Math.max(42, accentForegroundLightness + 16)}%`,
     "--ring": `${hsl.h} ${hsl.s}% ${hsl.l}%`,
   } as Record<string, string>
 }

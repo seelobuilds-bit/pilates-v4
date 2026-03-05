@@ -201,7 +201,7 @@ export default function ClassFlowsAdminView({
     name: "",
     description: "",
     icon: "📚",
-    color: "#7c3aed"
+    color: "#e3120b"
   })
 
   const [trainingForm, setTrainingForm] = useState(createEmptyTrainingForm)
@@ -423,7 +423,7 @@ export default function ClassFlowsAdminView({
       })
       if (res.ok) {
         setShowAddCategory(false)
-        setNewCategory({ name: "", description: "", icon: "📚", color: "#7c3aed" })
+        setNewCategory({ name: "", description: "", icon: "📚", color: "#e3120b" })
         void fetchData()
       }
     } catch (error) {

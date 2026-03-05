@@ -484,20 +484,20 @@ export async function sendClientPasswordResetEmail(
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Reset Your Password</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
     <p style="color: #374151; font-size: 16px;">We received a request to reset your password for your account at ${studioName}.</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${resetUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Reset Password</a>
+      <a href="${resetUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Reset Password</a>
     </div>
     <p style="color: #6b7280; font-size: 14px;">This link will expire in 1 hour.</p>
     <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     <p style="color: #9ca3af; font-size: 12px;">Can't click the button? Copy and paste this link into your browser:</p>
-    <p style="color: #7c3aed; font-size: 12px; word-break: break-all;">${resetUrl}</p>
+    <p style="color: #e3120b; font-size: 12px; word-break: break-all;">${resetUrl}</p>
   </div>
 </body>
 </html>
@@ -523,20 +523,20 @@ export async function sendPlatformPasswordResetEmail(
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Reset Your Password</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi ${userName},</p>
     <p style="color: #374151; font-size: 16px;">We received a request to reset your Current platform password.</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${resetUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Reset Password</a>
+      <a href="${resetUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Reset Password</a>
     </div>
     <p style="color: #6b7280; font-size: 14px;">This link will expire in 1 hour.</p>
     <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     <p style="color: #9ca3af; font-size: 12px;">Can't click the button? Copy and paste this link into your browser:</p>
-    <p style="color: #7c3aed; font-size: 12px; word-break: break-all;">${resetUrl}</p>
+    <p style="color: #e3120b; font-size: 12px; word-break: break-all;">${resetUrl}</p>
   </div>
 </body>
 </html>
@@ -564,7 +564,7 @@ export async function sendClientWelcomeEmail(
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to ${studioName}! 🎉</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
@@ -577,7 +577,7 @@ export async function sendClientWelcomeEmail(
       <li>View your class history</li>
     </ul>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${bookingUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Book Your First Class</a>
+      <a href="${bookingUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Book Your First Class</a>
     </div>
     <p style="color: #374151; font-size: 16px;">See you in the studio!</p>
     <p style="color: #374151; font-size: 16px; margin-top: 30px;">${studioName}</p>
@@ -610,7 +610,7 @@ export async function sendStudioWelcomeEmail(params: {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to Current! 🎉</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
@@ -618,7 +618,7 @@ export async function sendStudioWelcomeEmail(params: {
     <p style="color: #374151; font-size: 16px;">Great news! Your studio <strong>${studioName}</strong> has been set up on Current.</p>
     <p style="color: #374151; font-size: 16px;">To get started, click the button below to set up your password and access your dashboard:</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${setupUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Set Up My Account</a>
+      <a href="${setupUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Set Up My Account</a>
     </div>
     <p style="color: #374151; font-size: 16px;">Once you're in, you can:</p>
     <ul style="color: #374151; font-size: 16px;">
@@ -630,7 +630,7 @@ export async function sendStudioWelcomeEmail(params: {
     <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">This link will expire in 7 days. If you need a new link, please contact support.</p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     <p style="color: #9ca3af; font-size: 12px;">Can't click the button? Copy and paste this link into your browser:</p>
-    <p style="color: #7c3aed; font-size: 12px; word-break: break-all;">${setupUrl}</p>
+    <p style="color: #e3120b; font-size: 12px; word-break: break-all;">${setupUrl}</p>
   </div>
 </body>
 </html>
@@ -721,15 +721,15 @@ export async function sendBookingConfirmationEmail(params: {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Booking Confirmed! ✓</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
     <p style="color: #374151; font-size: 16px;">Your class has been booked at <strong>${studioName}</strong>!</p>
     
-    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
-      <h2 style="color: #7c3aed; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #e3120b;">
+      <h2 style="color: #e3120b; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
           <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📅 Date</td>
@@ -759,7 +759,7 @@ export async function sendBookingConfirmationEmail(params: {
     </div>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View or Manage Booking</a>
+      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View or Manage Booking</a>
     </div>
 
     <div style="background: #fef3c7; border-radius: 8px; padding: 15px; margin-top: 20px;">
@@ -818,15 +818,15 @@ export async function sendClassReminderEmail(params: {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">${emoji} Class Reminder</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi ${clientName},</p>
     <p style="color: #374151; font-size: 18px; font-weight: 600;">${reminderText}</p>
     
-    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
-      <h2 style="color: #7c3aed; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #e3120b;">
+      <h2 style="color: #e3120b; margin: 0 0 15px 0; font-size: 20px;">${booking.className}</h2>
       <p style="color: #374151; font-size: 16px; margin: 5px 0;"><strong>${dateStr}</strong></p>
       <p style="color: #374151; font-size: 16px; margin: 5px 0;">${timeStr} with ${booking.teacherName}</p>
       <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">📍 ${booking.locationName}</p>
@@ -839,7 +839,7 @@ export async function sendClassReminderEmail(params: {
     </div>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View Booking Details</a>
+      <a href="${manageBookingUrl}" style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">View Booking Details</a>
     </div>
 
     ${reminderType === '24hr' ? `
@@ -1074,15 +1074,15 @@ We're excited to have you on the team!
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to the Team! 🎉</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi {{firstName}},</p>
     <p style="color: #374151; font-size: 16px;">You've been invited to join <strong>{{studioName}}</strong> as a teacher!</p>
     <p style="color: #374151; font-size: 16px;">To get started, please set up your account:</p>
-    <a href="{{inviteLink}}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 20px 0; font-weight: 600;">Set Up Your Account</a>
-    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+    <a href="{{inviteLink}}" style="display: inline-block; background: #e3120b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 20px 0; font-weight: 600;">Set Up Your Account</a>
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #e3120b;">
       <p style="margin: 0 0 10px 0; color: #374151; font-weight: 600;">Once you're set up, you'll be able to:</p>
       <p style="margin: 5px 0; color: #6b7280;">✓ View your class schedule</p>
       <p style="margin: 5px 0; color: #6b7280;">✓ Track your bookings</p>
@@ -1115,19 +1115,19 @@ We can't wait to see you in the studio!
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+  <div style="background: linear-gradient(135deg, #e3120b 0%, #b10e08 100%); padding: 30px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px;">Welcome! 🎉</h1>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="color: #374151; font-size: 16px;">Hi {{firstName}},</p>
     <p style="color: #374151; font-size: 16px;">Welcome to <strong>{{studioName}}</strong>! We're thrilled to have you join us.</p>
-    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed;">
+    <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #e3120b;">
       <p style="margin: 0 0 10px 0; color: #374151; font-weight: 600;">Your account is ready! You can now:</p>
       <p style="margin: 5px 0; color: #6b7280;">✓ Browse and book classes</p>
       <p style="margin: 5px 0; color: #6b7280;">✓ View your booking history</p>
       <p style="margin: 5px 0; color: #6b7280;">✓ Manage your profile</p>
     </div>
-    <a href="{{bookingUrl}}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 10px 0; font-weight: 600;">Book Your First Class</a>
+    <a href="{{bookingUrl}}" style="display: inline-block; background: #e3120b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin: 10px 0; font-weight: 600;">Book Your First Class</a>
     <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">We can't wait to see you in the studio!</p>
     <p style="color: #374151; font-size: 16px; margin-top: 30px;">{{studioName}}</p>
   </div>

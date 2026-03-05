@@ -206,7 +206,7 @@ export function LeaderboardsView({
               >
                 <div 
                   className="h-2"
-                  style={{ backgroundColor: lb.color || "#7c3aed" }}
+                  style={{ backgroundColor: lb.color || "#e3120b" }}
                 />
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
@@ -235,7 +235,7 @@ export function LeaderboardsView({
                             {entry.participantName}
                           </span>
                         </div>
-                        <span className="text-sm font-semibold" style={{ color: lb.color || "#7c3aed" }}>
+                        <span className="text-sm font-semibold" style={{ color: lb.color || "#e3120b" }}>
                           {formatScore(entry.score, lb.metricUnit)}
                         </span>
                       </div>
@@ -257,7 +257,7 @@ export function LeaderboardsView({
                   {data.myRanks[lb.id] && (
                     <div className="mt-3 pt-3 border-t flex items-center justify-between">
                       <span className="text-sm text-gray-500">Your Rank</span>
-                      <span className="font-bold" style={{ color: lb.color || "#7c3aed" }}>
+                      <span className="font-bold" style={{ color: lb.color || "#e3120b" }}>
                         #{data.myRanks[lb.id].rank}
                       </span>
                     </div>
@@ -284,7 +284,7 @@ export function LeaderboardsView({
                   <div className="flex items-center gap-3">
                     <div 
                       className="p-2 rounded-lg"
-                      style={{ backgroundColor: `${lb.color || "#7c3aed"}20` }}
+                      style={{ backgroundColor: `${lb.color || "#e3120b"}20` }}
                     >
                       {getCategoryIcon(lb.icon)}
                     </div>
@@ -393,7 +393,7 @@ export function LeaderboardsView({
           >
             <div 
               className="h-3"
-              style={{ backgroundColor: selectedLeaderboard.color || "#7c3aed" }}
+              style={{ backgroundColor: selectedLeaderboard.color || "#e3120b" }}
             />
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -488,7 +488,7 @@ export function LeaderboardsView({
                       <div className="text-right">
                         <p 
                           className="font-bold"
-                          style={{ color: selectedLeaderboard.color || "#7c3aed" }}
+                          style={{ color: selectedLeaderboard.color || "#e3120b" }}
                         >
                           {formatScore(entry.score, selectedLeaderboard.metricUnit)}
                         </p>
@@ -503,7 +503,7 @@ export function LeaderboardsView({
               {data.myRanks[selectedLeaderboard.id] && (
                 <div 
                   className="p-4 rounded-xl text-white"
-                  style={{ backgroundColor: selectedLeaderboard.color || "#7c3aed" }}
+                  style={{ backgroundColor: selectedLeaderboard.color || "#e3120b" }}
                 >
                   <div className="flex items-center justify-between">
                     <div>

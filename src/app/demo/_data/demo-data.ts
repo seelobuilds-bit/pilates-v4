@@ -8,7 +8,7 @@ export const demoStudio = {
   id: "demo-studio-1",
   name: "Align Pilates",
   subdomain: "alignpilates",
-  primaryColor: "#7c3aed",
+  primaryColor: "#e3120b",
 }
 
 export const demoUser = {

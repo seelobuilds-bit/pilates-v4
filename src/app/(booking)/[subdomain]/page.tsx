@@ -54,7 +54,7 @@ export default async function StudioLandingPage({
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4" style={{ color: studio.primaryColor || "#7c3aed" }}>
+          <h1 className="text-4xl font-bold mb-4" style={{ color: studio.primaryColor || "#e3120b" }}>
             {studio.name}
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -69,7 +69,7 @@ export default async function StudioLandingPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <Link href={`/${subdomain}/book${bookingQuerySuffix ? `?${bookingQuerySuffix}` : ""}`} className="block">
-                <Button className="w-full" style={{ backgroundColor: studio.primaryColor || "#7c3aed" }}>
+                <Button className="w-full" style={{ backgroundColor: studio.primaryColor || "#e3120b" }}>
                   Book a Class
                 </Button>
               </Link>

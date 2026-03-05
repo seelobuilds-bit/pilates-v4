@@ -108,7 +108,7 @@ export async function GET(
         description: store.storeDescription,
         logoUrl: store.logoUrl,
         bannerUrl: store.bannerUrl,
-        accentColor: store.accentColor || "#7c3aed",
+        accentColor: store.accentColor || "#e3120b",
         freeShippingThreshold: store.freeShippingThreshold,
         flatShippingRate: store.flatShippingRate,
         returnPolicy: store.returnPolicy,

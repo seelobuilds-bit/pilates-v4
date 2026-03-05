@@ -88,7 +88,7 @@ export default function PaymentsPage() {
         appearance: {
           overlays: "dialog",
           variables: {
-            colorPrimary: "#7c3aed",
+            colorPrimary: "#e3120b",
             colorBackground: "#ffffff",
             fontFamily: "Inter, system-ui, sans-serif",
             borderRadius: "8px",

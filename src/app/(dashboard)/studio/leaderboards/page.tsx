@@ -300,7 +300,7 @@ export default function StudioLeaderboardsPage() {
               >
                 <div 
                   className="h-2"
-                  style={{ backgroundColor: lb.color || "#7c3aed" }}
+                  style={{ backgroundColor: lb.color || "#e3120b" }}
                 />
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
@@ -334,7 +334,7 @@ export default function StudioLeaderboardsPage() {
                               {entry.participant?.name || "Unknown"}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold" style={{ color: lb.color || "#7c3aed" }}>
+                          <span className="text-sm font-semibold" style={{ color: lb.color || "#e3120b" }}>
                             {formatScore(entry.score, lb.metricUnit)}
                           </span>
                         </div>
@@ -357,7 +357,7 @@ export default function StudioLeaderboardsPage() {
                   {myRanks[lb.id] && (
                     <div className="mt-3 pt-3 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <span className="text-sm text-gray-500">Your Rank</span>
-                      <span className="font-bold" style={{ color: lb.color || "#7c3aed" }}>
+                      <span className="font-bold" style={{ color: lb.color || "#e3120b" }}>
                         #{myRanks[lb.id]?.rank}
                       </span>
                     </div>
@@ -398,9 +398,9 @@ export default function StudioLeaderboardsPage() {
                       <div className="flex items-center gap-3">
                         <div 
                           className="p-2 rounded-lg"
-                          style={{ backgroundColor: `${lb.color || "#7c3aed"}20` }}
+                          style={{ backgroundColor: `${lb.color || "#e3120b"}20` }}
                         >
-                          <Target className="h-5 w-5" style={{ color: lb.color || "#7c3aed" }} />
+                          <Target className="h-5 w-5" style={{ color: lb.color || "#e3120b" }} />
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">{lb.name}</h3>
@@ -486,7 +486,7 @@ export default function StudioLeaderboardsPage() {
           >
             <div 
               className="h-3"
-              style={{ backgroundColor: selectedLeaderboard.color || "#7c3aed" }}
+              style={{ backgroundColor: selectedLeaderboard.color || "#e3120b" }}
             />
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -598,7 +598,7 @@ export default function StudioLeaderboardsPage() {
                       <div className="text-right">
                         <p 
                           className="font-bold"
-                          style={{ color: selectedLeaderboard.color || "#7c3aed" }}
+                          style={{ color: selectedLeaderboard.color || "#e3120b" }}
                         >
                           {formatScore(entry.score, selectedLeaderboard.metricUnit)}
                         </p>
@@ -613,7 +613,7 @@ export default function StudioLeaderboardsPage() {
               {myRanks[selectedLeaderboard.id] && (
                 <div 
                   className="p-4 rounded-xl text-white"
-                  style={{ backgroundColor: selectedLeaderboard.color || "#7c3aed" }}
+                  style={{ backgroundColor: selectedLeaderboard.color || "#e3120b" }}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>

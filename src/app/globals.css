@@ -6,7 +6,7 @@
   :root {
     --background: 0 0% 97.6%;
     --foreground: 0 0% 10.2%;
-    --card: 0 0% 97.6%;
+    --card: 0 0% 95%;
     --card-foreground: 0 0% 10.2%;
     --popover: 0 0% 97.6%;
     --popover-foreground: 0 0% 10.2%;
@@ -65,17 +65,8 @@
   h5,
   h6 {
     font-family: var(--font-display), serif;
-    color: #0d0d0d;
+    color: inherit;
     letter-spacing: -0.02em;
-  }
-
-  .dark h1,
-  .dark h2,
-  .dark h3,
-  .dark h4,
-  .dark h5,
-  .dark h6 {
-    color: #f2f2f2;
   }
 }
 
@@ -215,6 +206,18 @@
 .app-brand-scope .bg-zinc-50 {
   background-color: var(--brand-bg) !important;
 }
+.app-brand-scope .bg-white {
+  background-color: var(--brand-surface-1) !important;
+}
+.app-brand-scope .bg-white\/95 {
+  background-color: color-mix(in srgb, var(--brand-surface-1) 95%, white) !important;
+}
+.app-brand-scope .bg-white\/90 {
+  background-color: color-mix(in srgb, var(--brand-surface-1) 90%, white) !important;
+}
+.app-brand-scope .bg-white\/80 {
+  background-color: color-mix(in srgb, var(--brand-surface-1) 80%, white) !important;
+}
 .app-brand-scope .bg-gray-100,
 .app-brand-scope .bg-zinc-100 {
   background-color: var(--brand-surface-1) !important;
@@ -235,6 +238,30 @@
 .app-brand-scope .border-gray-300,
 .app-brand-scope .border-zinc-300 {
   border-color: color-mix(in srgb, var(--brand-surface-2) 80%, var(--brand-ink)) !important;
+}
+.app-brand-scope .from-violet-50,
+.app-brand-scope .from-purple-50 {
+  --tw-gradient-from: var(--brand-accent-soft) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.app-brand-scope .from-violet-100,
+.app-brand-scope .from-purple-100 {
+  --tw-gradient-from: color-mix(in srgb, var(--brand-accent-soft) 70%, white) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.app-brand-scope .to-violet-50,
+.app-brand-scope .to-purple-50 {
+  --tw-gradient-to: var(--brand-accent-soft) var(--tw-gradient-to-position) !important;
+}
+.app-brand-scope .to-violet-100,
+.app-brand-scope .to-purple-100 {
+  --tw-gradient-to: color-mix(in srgb, var(--brand-accent-soft) 70%, white) var(--tw-gradient-to-position) !important;
+}
+.app-brand-scope .via-violet-50,
+.app-brand-scope .via-purple-50 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--brand-accent-soft) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
 }
 
 /* Studio branding: remap legacy violet/purple utility tokens to studio-selected color */

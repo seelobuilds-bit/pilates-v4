@@ -154,7 +154,7 @@ export default function HQLeaderboardsPage() {
     timeframe: "MONTHLY",
     metricName: "",
     metricUnit: "",
-    color: "#7c3aed",
+    color: "#e3120b",
     isActive: true,
     isFeatured: false,
     autoCalculate: true,
@@ -272,7 +272,7 @@ export default function HQLeaderboardsPage() {
       timeframe: "MONTHLY",
       metricName: "",
       metricUnit: "",
-      color: "#7c3aed",
+      color: "#e3120b",
       isActive: true,
       isFeatured: false,
       autoCalculate: true,
@@ -458,9 +458,9 @@ export default function HQLeaderboardsPage() {
                     <div className="flex items-start gap-4">
                       <div 
                         className="w-12 h-12 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${lb.color || "#7c3aed"}20` }}
+                        style={{ backgroundColor: `${lb.color || "#e3120b"}20` }}
                       >
-                        <Trophy className="h-6 w-6" style={{ color: lb.color || "#7c3aed" }} />
+                        <Trophy className="h-6 w-6" style={{ color: lb.color || "#e3120b" }} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
