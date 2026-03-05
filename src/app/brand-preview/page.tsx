@@ -316,7 +316,7 @@ export default function BrandPreviewPage() {
           font-style: normal !important;
           font-weight: 400 !important;
           letter-spacing: 0 !important;
-          text-transform: none !important;
+          text-transform: uppercase !important;
         }
 
         .brand-preview-shell section:first-of-type h1 > span.bg-clip-text.text-transparent {
@@ -330,25 +330,25 @@ export default function BrandPreviewPage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 4rem !important;
+          padding-top: 2.8rem !important;
           padding-bottom: 1rem !important;
         }
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-2.25rem);
+          transform: translateY(-3.7rem);
         }
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
             min-height: 100svh !important;
             align-items: center !important;
-            padding-top: 5.4rem !important;
+            padding-top: 4.2rem !important;
             padding-bottom: 1rem !important;
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-2.05rem) scale(1.03);
+            transform: translateY(-3.5rem) scale(1.03);
             transform-origin: top center;
           }
         }
