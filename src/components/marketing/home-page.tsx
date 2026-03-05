@@ -174,18 +174,6 @@ export default function HomePage() {
   const [demoLoading, setDemoLoading] = useState(false)
 
   useEffect(() => {
-    const html = document.documentElement
-
-    const prevHtmlFontSize = html.style.fontSize
-
-    html.style.fontSize = "110%"
-
-    return () => {
-      html.style.fontSize = prevHtmlFontSize
-    }
-  }, [])
-
-  useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
