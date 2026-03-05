@@ -426,7 +426,7 @@ export function Sidebar() {
             </div>
           ) : (
             <>
-              <h1 className="font-semibold tracking-[0.07em] text-gray-900">{headerTitle}</h1>
+              <h1 className="font-semibold tracking-[0.01em] text-gray-900">{headerTitle}</h1>
               <p className="text-xs text-gray-500">{subtitle}</p>
             </>
           )}

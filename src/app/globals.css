@@ -84,14 +84,18 @@
 @layer components {
   .app-ui-scope h1,
   .app-ui-scope h2 {
-    letter-spacing: 0.06em;
+    font-family: var(--font-body), sans-serif;
+    letter-spacing: 0.005em;
+    line-height: 1.2;
   }
 
   .app-ui-scope h3,
   .app-ui-scope h4,
   .app-ui-scope h5,
   .app-ui-scope h6 {
-    letter-spacing: 0.065em;
+    font-family: var(--font-body), sans-serif;
+    letter-spacing: 0.005em;
+    line-height: 1.25;
   }
 }
 
