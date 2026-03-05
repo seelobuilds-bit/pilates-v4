@@ -42,8 +42,14 @@ export default function LoginPage() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Welcome to CURRENT
+        <CardTitle className="text-2xl text-center font-medium tracking-[0.01em]">
+          Welcome to{" "}
+          <span
+            className="inline-block uppercase italic tracking-[-0.035em]"
+            style={{ fontFamily: "var(--font-display), serif" }}
+          >
+            CURRENT
+          </span>
         </CardTitle>
         <CardDescription className="text-center">
           Platform login for HQ Admins, Studio Owners & Teachers
@@ -99,5 +105,4 @@ export default function LoginPage() {
     </Card>
   )
 }
-
 
