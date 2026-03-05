@@ -54,8 +54,8 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell header .max-w-7xl {
           max-width: min(760px, calc(100% - 1.25rem)) !important;
-          background: rgba(250, 248, 245, 0.78) !important;
-          border: 1px solid rgba(26, 26, 26, 0.12) !important;
+          background: linear-gradient(145deg, rgba(245, 242, 237, 0.78), rgba(239, 235, 228, 0.72)) !important;
+          border: 1px solid rgba(212, 206, 196, 0.72) !important;
           border-radius: 1.1rem !important;
           backdrop-filter: blur(14px) saturate(130%);
           -webkit-backdrop-filter: blur(14px) saturate(130%);
@@ -327,13 +327,13 @@ export default function BrandPreviewPage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 4.35rem !important;
-          padding-bottom: 1.2rem !important;
+          padding-top: 4rem !important;
+          padding-bottom: 1rem !important;
         }
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-2rem);
+          transform: translateY(-2.45rem);
         }
 
         .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
@@ -370,6 +370,39 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell #features .w-6.h-6 {
           color: var(--brand-accent-strong) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div,
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
+          text-align: center !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14,
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .w-12.h-12,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div {
+          background: linear-gradient(160deg, rgba(var(--brand-accent-soft-rgb), 0.2), rgba(var(--brand-accent-rgb), 0.08)) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.28) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div {
+          border-color: rgba(var(--brand-accent-rgb), 0.38) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
+          border-color: rgba(var(--brand-accent-rgb), 0.38) !important;
+        }
+
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
+          background: linear-gradient(160deg, rgba(var(--brand-accent-soft-rgb), 0.2), rgba(var(--brand-accent-rgb), 0.08)) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.34) !important;
         }
 
         .brand-preview-shell #why {
@@ -486,6 +519,20 @@ export default function BrandPreviewPage() {
           background-image: linear-gradient(100deg, var(--brand-accent-soft), var(--brand-accent-strong)) !important;
           color: #fff7ef !important;
           border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.42) !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button svg {
+          display: none !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button {
+          font-size: 0 !important;
+        }
+
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button::before {
+          content: "Book a Demo";
+          font-size: 1rem;
+          line-height: 1;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child {
@@ -785,6 +832,12 @@ export default function BrandPreviewPage() {
         .brand-preview-shell footer button:hover {
           background-color: #f2ede6 !important;
           color: #0d0d0d !important;
+        }
+
+        .brand-preview-shell footer button:hover,
+        .brand-preview-shell footer button:hover * {
+          color: #0d0d0d !important;
+          -webkit-text-fill-color: #0d0d0d !important;
         }
 
         .brand-preview-shell .fixed.inset-0.z-\\[100\\] .relative.bg-white.rounded-2xl .bg-gradient-to-r.from-pink-500.to-violet-600 {
