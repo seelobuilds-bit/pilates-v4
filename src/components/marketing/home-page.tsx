@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -163,11 +163,59 @@ const faqs = [
 ]
 
 export default function HomePage() {
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
   const [demoSubmitted, setDemoSubmitted] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (prefersReducedMotion) return
+
+    const targets = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        "section, footer, .motion-card, .motion-hero-chip, .motion-hero-title, .motion-hero-copy, .motion-hero-actions, .motion-hero-trust, header .max-w-7xl"
+      )
+    )
+
+    targets.forEach((node, index) => {
+      node.classList.add("motion-reveal")
+      node.style.setProperty("--motion-delay", `${Math.min(index * 18, 280)}ms`)
+    })
+
+    const heroTargets = Array.from(
+      root.querySelectorAll<HTMLElement>(".motion-hero-chip, .motion-hero-title, .motion-hero-copy, .motion-hero-actions, .motion-hero-trust")
+    )
+    heroTargets.forEach((node, index) => {
+      node.style.setProperty("--motion-delay", `${index * 120}ms`)
+      requestAnimationFrame(() => node.classList.add("is-visible"))
+    })
+
+    const headerShell = root.querySelector<HTMLElement>("header .max-w-7xl")
+    headerShell?.classList.add("is-visible")
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          ;(entry.target as HTMLElement).classList.add("is-visible")
+          observer.unobserve(entry.target)
+        })
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -10% 0px" }
+    )
+
+    targets.forEach((target) => {
+      if (!target.classList.contains("is-visible")) observer.observe(target)
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   const handleDemoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -205,7 +253,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div ref={rootRef} className="marketing-motion-shell min-h-screen bg-white overflow-x-hidden">
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -232,7 +280,7 @@ export default function HomePage() {
               </Link>
               <Button 
                 size="sm" 
-                className="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 shadow-lg shadow-violet-500/25"
+                className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 shadow-lg shadow-violet-500/25"
                 onClick={() => setDemoModalOpen(true)}
               >
                 Book a Demo
@@ -262,7 +310,7 @@ export default function HomePage() {
               <hr className="my-2" />
               <Link href="/login" className="text-gray-600 py-2">Sign In</Link>
               <Button 
-                className="bg-gradient-to-r from-pink-500 to-violet-600 w-full"
+                className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600 w-full"
                 onClick={() => { setDemoModalOpen(true); setMobileMenuOpen(false); }}
               >
                 Book a Demo
@@ -284,7 +332,7 @@ export default function HomePage() {
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-50 to-violet-50 border border-pink-100/50 text-sm font-medium px-4 py-2 rounded-full mb-6">
+          <div className="motion-hero-chip inline-flex items-center gap-2 bg-gradient-to-r from-pink-50 to-violet-50 border border-pink-100/50 text-sm font-medium px-4 py-2 rounded-full mb-6">
             <Sparkles className="w-4 h-4 text-pink-500" />
             <span className="bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent">
               The studio platform built for growth
@@ -292,25 +340,25 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
+          <h1 className="motion-hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
             Stop managing software.
             <br />
-            <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
+            <span className="hero-gradient-accent bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
               Start growing your studio.
             </span>
           </h1>
           
           {/* Subheadline */}
-          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="motion-hero-copy text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
             Bookings, payments, marketing, and reporting — all handled. 
             <span className="text-gray-900 font-medium"> You focus on teaching. We focus on everything else.</span>
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <div className="motion-hero-actions flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 px-8 h-14 text-lg shadow-xl shadow-violet-500/25 w-full sm:w-auto"
+              className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 px-8 h-14 text-lg shadow-xl shadow-violet-500/25 w-full sm:w-auto"
               onClick={() => setDemoModalOpen(true)}
             >
               Book a Demo
@@ -329,7 +377,7 @@ export default function HomePage() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
+          <div className="motion-hero-trust flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Check className="w-3 h-3 text-emerald-600" />
@@ -371,7 +419,7 @@ export default function HomePage() {
                 key={i} 
                 className="flex-shrink-0 w-[200px] sm:w-auto snap-center"
               >
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl aspect-[9/16] relative overflow-hidden group cursor-pointer shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1">
+                <div className="motion-card bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl aspect-[9/16] relative overflow-hidden group cursor-pointer shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1">
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                   
@@ -444,7 +492,7 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Card 1 */}
-            <div className="bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                 <Zap className="w-7 h-7 text-white" />
               </div>
@@ -455,7 +503,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
@@ -466,7 +514,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
                 <Target className="w-7 h-7 text-white" />
               </div>
@@ -505,7 +553,7 @@ export default function HomePage() {
               { icon: Mail, title: "Email & SMS Marketing", desc: "Simple flows. Real engagement. Clients who come back. Or let us manage it completely for you." },
               { icon: MessageSquare, title: "24/7 Support", desc: "Not “24/7” with an asterisk. Actually 24/7. We’re always on because your studio never really stops." },
             ].map((feature, i) => (
-              <Card key={i} className="border-0 shadow-sm hover:shadow-lg transition-all bg-gray-50/50 hover:bg-white group">
+              <Card key={i} className="motion-card border-0 shadow-sm hover:shadow-lg transition-all bg-gray-50/50 hover:bg-white group">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-pink-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <feature.icon className="w-6 h-6 text-violet-600" />
@@ -558,7 +606,7 @@ export default function HomePage() {
             </div>
 
             {/* Visual Card */}
-            <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+            <div className="motion-card bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <h4 className="font-semibold text-gray-900">This month&apos;s growth snapshot</h4>
                 <Badge className="bg-emerald-100 text-emerald-700">Live</Badge>
@@ -601,7 +649,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Visual Card */}
-            <div className="order-2 lg:order-1 bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+            <div className="motion-card order-2 lg:order-1 bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
               <div className="border-b border-gray-100 pb-4 mb-6">
                 <h4 className="font-semibold text-gray-900">Weekly insights • Dec 11-17</h4>
               </div>
@@ -691,7 +739,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-            <Card className="border-0 shadow-lg bg-white">
+            <Card className="motion-card border-0 shadow-lg bg-white">
               <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/30">
                   <BarChart3 className="w-8 h-8 text-white" />
@@ -703,7 +751,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-white">
+            <Card className="motion-card border-0 shadow-lg bg-white">
               <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/30">
                   <Trophy className="w-8 h-8 text-white" />
@@ -715,7 +763,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-white">
+            <Card className="motion-card border-0 shadow-lg bg-white">
               <CardContent className="p-6 sm:p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-amber-500/30">
                   <Heart className="w-8 h-8 text-white" />
@@ -763,7 +811,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+            <div className="motion-card bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <h4 className="font-semibold text-gray-900">Vault growth</h4>
                 <Badge className="bg-emerald-100 text-emerald-700">Live</Badge>
@@ -815,7 +863,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            <div className="bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-pink-50 to-white p-6 sm:p-8 rounded-3xl border border-pink-100/50 hover:shadow-xl hover:shadow-pink-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
                 <Gift className="w-7 h-7 text-white" />
               </div>
@@ -825,7 +873,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-violet-50 to-white p-6 sm:p-8 rounded-3xl border border-violet-100/50 hover:shadow-xl hover:shadow-violet-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-500/30">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
@@ -835,7 +883,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
+            <div className="motion-card bg-gradient-to-br from-amber-50 to-white p-6 sm:p-8 rounded-3xl border border-amber-100/50 hover:shadow-xl hover:shadow-amber-500/5 transition-all">
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
@@ -862,7 +910,7 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
-              <Card key={i} className="border-0 shadow-sm hover:shadow-lg transition-all bg-white">
+              <Card key={i} className="motion-card border-0 shadow-sm hover:shadow-lg transition-all bg-white">
                 <CardContent className="p-6">
                   <div className="flex gap-1 mb-4">
                     {[...Array(5)].map((_, j) => (
@@ -901,7 +949,7 @@ export default function HomePage() {
             One plan. All features. Scales with your studio. No hidden fees. No per-booking charges.
           </p>
           <Button 
-            className="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 shadow-lg shadow-violet-500/25"
+            className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 shadow-lg shadow-violet-500/25"
             onClick={() => setDemoModalOpen(true)}
           >
             Get Custom Quote
@@ -924,7 +972,7 @@ export default function HomePage() {
 
           <div className="space-y-3">
             {faqs.map((faq, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div key={i} className="motion-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <button
                   className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -1015,7 +1063,7 @@ export default function HomePage() {
                 teaching, community, and growth.
               </p>
               <Button 
-                className="bg-gradient-to-r from-pink-500 to-violet-600"
+                className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600"
                 onClick={() => setDemoModalOpen(true)}
               >
                 Book a Demo
@@ -1115,7 +1163,7 @@ export default function HomePage() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 h-12 text-lg"
+                    className="motion-shine w-full bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 h-12 text-lg"
                     disabled={demoLoading}
                   >
                     {demoLoading ? (
@@ -1147,7 +1195,7 @@ export default function HomePage() {
                   Thanks for your interest in CURRENT. We&apos;ll reach out within 24 hours to schedule your personalized demo.
                 </p>
                 <Button 
-                  className="bg-gradient-to-r from-pink-500 to-violet-600"
+                  className="motion-shine bg-gradient-to-r from-pink-500 to-violet-600"
                   onClick={() => { setDemoModalOpen(false); setDemoSubmitted(false); }}
                 >
                   Close
@@ -1157,6 +1205,102 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      <style jsx global>{`
+        .marketing-motion-shell .motion-reveal {
+          opacity: 0;
+          transform: translate3d(0, 22px, 0) scale(0.992);
+          filter: blur(6px);
+          transition:
+            opacity 650ms cubic-bezier(0.2, 0.75, 0.2, 1),
+            transform 650ms cubic-bezier(0.2, 0.75, 0.2, 1),
+            filter 550ms ease;
+          transition-delay: var(--motion-delay, 0ms);
+        }
+
+        .marketing-motion-shell .motion-reveal.is-visible {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1);
+          filter: blur(0);
+        }
+
+        .marketing-motion-shell .hero-gradient-accent {
+          background-size: 190% 190% !important;
+          animation: marketingGradientDrift 8s ease-in-out infinite;
+        }
+
+        .marketing-motion-shell .motion-card {
+          transition:
+            transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 280ms ease;
+        }
+
+        .marketing-motion-shell .motion-card:hover {
+          transform: translateY(-5px);
+        }
+
+        .marketing-motion-shell .motion-shine {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
+        }
+
+        .marketing-motion-shell .motion-shine::after {
+          content: "";
+          position: absolute;
+          top: -160%;
+          left: -45%;
+          width: 34%;
+          height: 420%;
+          transform: rotate(24deg) translateX(-180%);
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.38) 50%,
+            transparent 100%
+          );
+          pointer-events: none;
+          transition: transform 620ms ease;
+          z-index: 1;
+        }
+
+        .marketing-motion-shell .motion-shine:hover::after {
+          transform: rotate(24deg) translateX(560%);
+        }
+
+        .marketing-motion-shell .motion-shine > * {
+          position: relative;
+          z-index: 2;
+        }
+
+        @keyframes marketingGradientDrift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+
+        @media (min-width: 1024px) {
+          .marketing-motion-shell {
+            scroll-snap-type: y proximity;
+          }
+
+          .marketing-motion-shell section {
+            scroll-snap-align: start;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .marketing-motion-shell .motion-reveal,
+          .marketing-motion-shell .motion-card,
+          .marketing-motion-shell .hero-gradient-accent,
+          .marketing-motion-shell .motion-shine::after {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            filter: none !important;
+            opacity: 1 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
