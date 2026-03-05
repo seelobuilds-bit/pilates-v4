@@ -24,6 +24,7 @@ export default function BrandPreviewPage() {
         }
 
         body {
+          overflow-x: clip !important;
           overflow-y: visible !important;
           height: auto !important;
           max-height: none !important;
@@ -46,6 +47,12 @@ export default function BrandPreviewPage() {
           font-family: var(--font-brand-preview-body), sans-serif;
           font-size: 110%;
           overflow: visible !important;
+        }
+
+        .brand-preview-shell .marketing-motion-shell {
+          overflow-x: visible !important;
+          overflow-y: visible !important;
+          max-height: none !important;
         }
 
         .brand-preview-shell header {
