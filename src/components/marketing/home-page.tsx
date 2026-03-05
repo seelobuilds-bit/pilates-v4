@@ -164,6 +164,9 @@ const faqs = [
 
 export default function HomePage() {
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const motionEnabled = process.env.NEXT_PUBLIC_MARKETING_MOTION_ENABLED !== "0" &&
+    process.env.NEXT_PUBLIC_MARKETING_MOTION_ENABLED !== "false"
+  const monitoringEnabled = process.env.NEXT_PUBLIC_FRONTEND_MONITORING_DISABLED !== "1"
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
@@ -173,6 +176,8 @@ export default function HomePage() {
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
+
+    if (!motionEnabled) return
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     if (prefersReducedMotion) return
@@ -215,7 +220,93 @@ export default function HomePage() {
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [motionEnabled])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || !motionEnabled) return
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (prefersReducedMotion) return
+
+    let raf = 0
+    let lastScrollY = window.scrollY
+
+    const updateParallax = () => {
+      const currentY = window.scrollY
+      const delta = Math.abs(currentY - lastScrollY)
+      lastScrollY = currentY
+
+      const velocityFactor = Math.min(1.8, 1 + delta * 0.015)
+      const fastShift = Math.min(72, currentY * 0.085 * velocityFactor)
+      const softShift = Math.min(44, currentY * 0.05 * velocityFactor)
+
+      root.style.setProperty("--hero-parallax-fast", `${fastShift.toFixed(2)}px`)
+      root.style.setProperty("--hero-parallax-soft", `${softShift.toFixed(2)}px`)
+    }
+
+    const onScroll = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        updateParallax()
+        raf = 0
+      })
+    }
+
+    updateParallax()
+    window.addEventListener("scroll", onScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
+  }, [motionEnabled])
+
+  useEffect(() => {
+    if (!monitoringEnabled) return
+
+    const reportFrontendIssue = (payload: Record<string, unknown>) => {
+      fetch("/api/monitoring/frontend-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          page: window.location.pathname,
+        }),
+        keepalive: true,
+      }).catch(() => {})
+    }
+
+    const onError = (event: ErrorEvent) => {
+      reportFrontendIssue({
+        type: "window.error",
+        message: event.message?.slice(0, 500),
+        source: event.filename?.slice(0, 300),
+        line: event.lineno,
+        column: event.colno,
+        stack: typeof event.error?.stack === "string" ? event.error.stack.slice(0, 2000) : null,
+      })
+    }
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason =
+        typeof event.reason === "string"
+          ? event.reason
+          : event.reason?.message || JSON.stringify(event.reason)
+      reportFrontendIssue({
+        type: "unhandledrejection",
+        message: String(reason).slice(0, 500),
+      })
+    }
+
+    window.addEventListener("error", onError)
+    window.addEventListener("unhandledrejection", onUnhandledRejection)
+
+    return () => {
+      window.removeEventListener("error", onError)
+      window.removeEventListener("unhandledrejection", onUnhandledRejection)
+    }
+  }, [monitoringEnabled])
 
   const handleDemoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -253,7 +344,10 @@ export default function HomePage() {
   }
 
   return (
-    <div ref={rootRef} className="marketing-motion-shell min-h-screen bg-white overflow-x-hidden">
+    <div
+      ref={rootRef}
+      className={`marketing-motion-shell min-h-screen bg-white overflow-x-hidden ${motionEnabled ? "motion-enabled" : ""}`}
+    >
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -292,6 +386,8 @@ export default function HomePage() {
               type="button"
               className="md:hidden p-2"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="marketing-mobile-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -301,7 +397,7 @@ export default function HomePage() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-xl">
+          <div id="marketing-mobile-menu" className="md:hidden bg-white border-t border-gray-100 py-4 px-4 shadow-xl">
             <nav className="flex flex-col gap-4">
               <a href="#why" className="text-gray-600 py-2">Why CURRENT</a>
               <a href="#features" className="text-gray-600 py-2">Features</a>
@@ -326,8 +422,8 @@ export default function HomePage() {
       <section className="pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
-          <div className="absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
+          <div className="hero-blob-fast absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
+          <div className="hero-blob-soft absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -1109,7 +1205,12 @@ export default function HomePage() {
           />
           
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Book demo request form"
+          >
             {/* Close button */}
             <button 
               className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 transition-colors z-10"
@@ -1206,7 +1307,7 @@ export default function HomePage() {
         </div>
       )}
       <style jsx global>{`
-        .marketing-motion-shell .motion-reveal {
+        .marketing-motion-shell.motion-enabled .motion-reveal {
           opacity: 0;
           transform: translate3d(0, 22px, 0) scale(0.992);
           filter: blur(6px);
@@ -1217,34 +1318,34 @@ export default function HomePage() {
           transition-delay: var(--motion-delay, 0ms);
         }
 
-        .marketing-motion-shell .motion-reveal.is-visible {
+        .marketing-motion-shell.motion-enabled .motion-reveal.is-visible {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
           filter: blur(0);
         }
 
-        .marketing-motion-shell .hero-gradient-accent {
+        .marketing-motion-shell.motion-enabled .hero-gradient-accent {
           background-size: 190% 190% !important;
           animation: marketingGradientDrift 8s ease-in-out infinite;
         }
 
-        .marketing-motion-shell .motion-card {
+        .marketing-motion-shell.motion-enabled .motion-card {
           transition:
             transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
             box-shadow 280ms ease;
         }
 
-        .marketing-motion-shell .motion-card:hover {
+        .marketing-motion-shell.motion-enabled .motion-card:hover {
           transform: translateY(-5px);
         }
 
-        .marketing-motion-shell .motion-shine {
+        .marketing-motion-shell.motion-enabled .motion-shine {
           position: relative;
           overflow: hidden;
           isolation: isolate;
         }
 
-        .marketing-motion-shell .motion-shine::after {
+        .marketing-motion-shell.motion-enabled .motion-shine::after {
           content: "";
           position: absolute;
           top: -160%;
@@ -1263,19 +1364,86 @@ export default function HomePage() {
           z-index: 1;
         }
 
-        .marketing-motion-shell .motion-shine:hover::after {
+        .marketing-motion-shell.motion-enabled .motion-shine:hover::after {
           transform: rotate(24deg) translateX(560%);
         }
 
-        .marketing-motion-shell .motion-shine > * {
+        .marketing-motion-shell.motion-enabled .motion-shine > * {
           position: relative;
           z-index: 2;
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-title {
+          animation: heroBreathe 5.8s ease-in-out infinite;
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-trust > div {
+          animation: trustFloat 3.6s ease-in-out infinite;
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-trust > div:nth-child(2) {
+          animation-delay: 180ms;
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-trust > div:nth-child(3) {
+          animation-delay: 360ms;
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-chip {
+          animation: heroChipFloat 4.2s ease-in-out infinite;
+        }
+
+        .marketing-motion-shell.motion-enabled .hero-blob-fast {
+          transform: translate3d(0, calc(var(--hero-parallax-fast, 0px) * -1), 0);
+          will-change: transform;
+        }
+
+        .marketing-motion-shell.motion-enabled .hero-blob-soft {
+          transform: translate3d(0, calc(var(--hero-parallax-soft, 0px) * -1), 0);
+          will-change: transform;
+        }
+
+        .marketing-motion-shell.motion-enabled nav.hidden.md\\:flex a {
+          position: relative;
+        }
+
+        .marketing-motion-shell.motion-enabled nav.hidden.md\\:flex a::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: -6px;
+          width: 100%;
+          height: 1px;
+          transform-origin: left center;
+          transform: scaleX(0);
+          transition: transform 240ms ease;
+          background: currentColor;
+          opacity: 0.5;
+        }
+
+        .marketing-motion-shell.motion-enabled nav.hidden.md\\:flex a:hover::after {
+          transform: scaleX(1);
         }
 
         @keyframes marketingGradientDrift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+
+        @keyframes heroBreathe {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+
+        @keyframes trustFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+
+        @keyframes heroChipFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
         }
 
         @media (min-width: 1024px) {
@@ -1292,7 +1460,12 @@ export default function HomePage() {
           .marketing-motion-shell .motion-reveal,
           .marketing-motion-shell .motion-card,
           .marketing-motion-shell .hero-gradient-accent,
-          .marketing-motion-shell .motion-shine::after {
+          .marketing-motion-shell .motion-shine::after,
+          .marketing-motion-shell .motion-hero-title,
+          .marketing-motion-shell .motion-hero-trust > div,
+          .marketing-motion-shell .motion-hero-chip,
+          .marketing-motion-shell .hero-blob-fast,
+          .marketing-motion-shell .hero-blob-soft {
             animation: none !important;
             transition: none !important;
             transform: none !important;
