@@ -735,6 +735,26 @@ export default function BrandPreviewPage() {
           background-color: rgba(var(--brand-accent-soft-rgb), 0.26) !important;
         }
 
+        .brand-preview-shell #why,
+        .brand-preview-shell #features + section,
+        .brand-preview-shell #faq,
+        .brand-preview-shell section.bg-gray-50,
+        .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50,
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"],
+        .brand-preview-shell section[class*="via-violet-950"] {
+          background: transparent !important;
+          background-image: none !important;
+          border-top: none !important;
+          border-bottom: none !important;
+        }
+
+        .brand-preview-shell #why .bg-pink-100.text-pink-700.mb-4.px-4.py-1 {
+          background: linear-gradient(100deg, var(--brand-accent), var(--brand-accent-strong)) !important;
+          color: #fcf2f2 !important;
+          -webkit-text-fill-color: #fcf2f2 !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.56) !important;
+        }
+
         .brand-preview-shell header .text-2xl.font-bold,
         .brand-preview-shell header .text-2xl.font-bold span {
           font-family: var(--font-brand-preview-display), serif !important;
