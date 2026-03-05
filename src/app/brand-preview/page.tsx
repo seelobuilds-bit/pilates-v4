@@ -312,6 +312,9 @@ export default function BrandPreviewPage() {
           background-image: none !important;
           color: #0d0d0d !important;
           -webkit-text-fill-color: #0d0d0d !important;
+          font-family: var(--font-brand-preview-body), sans-serif !important;
+          font-style: normal !important;
+          font-weight: 600 !important;
           letter-spacing: 0 !important;
           text-transform: uppercase;
         }
@@ -334,6 +337,19 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
           transform: translateY(-2.45rem);
+        }
+
+        @media (min-width: 1024px) {
+          .brand-preview-shell section:first-of-type {
+            min-height: calc(100svh + 8rem) !important;
+            padding-top: 3.4rem !important;
+            padding-bottom: 0.5rem !important;
+          }
+
+          .brand-preview-shell section:first-of-type > .max-w-4xl {
+            transform: translateY(-3.35rem) scale(1.04);
+            transform-origin: top center;
+          }
         }
 
         .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
@@ -377,9 +393,6 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div,
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
           text-align: center !important;
-          background: linear-gradient(160deg, var(--brand-accent) 0%, var(--brand-accent-strong) 100%) !important;
-          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.66) !important;
-          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14,
@@ -388,27 +401,71 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
           margin-left: auto !important;
           margin-right: auto !important;
-          background: rgba(255, 247, 239, 0.22) !important;
-          border: 1px solid rgba(255, 247, 239, 0.44) !important;
         }
 
-        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-900,
-        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-600,
-        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .text-gray-700,
-        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-900,
-        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-600,
-        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .text-gray-900,
-        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .text-gray-600,
-        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-900,
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div {
+          background: rgba(250, 248, 245, 0.05) !important;
+          border: 1px solid rgba(250, 248, 245, 0.2) !important;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          background: rgba(255, 247, 239, 0.16) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.56) !important;
+        }
+
+        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 svg {
+          color: var(--brand-accent) !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.46) !important;
+          box-shadow: none !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div:hover {
+          background: transparent !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-900 {
+          color: #0d0d0d !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-600 {
+          color: #8a8580 !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .w-12.h-12 {
+          background: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.5) !important;
+        }
+
+        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div svg {
+          color: var(--brand-accent) !important;
+        }
+
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.46) !important;
+          box-shadow: none !important;
+        }
+
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-900 {
+          color: #0d0d0d !important;
+        }
+
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-600 {
-          color: #fff7ef !important;
+          color: #8a8580 !important;
         }
 
-        .brand-preview-shell #why .grid.md\\:grid-cols-3 > div svg,
-        .brand-preview-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div svg,
-        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div svg,
+        .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          background: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.5) !important;
+        }
+
         .brand-preview-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div svg {
-          color: #fff7ef !important;
+          color: var(--brand-accent) !important;
         }
 
         .brand-preview-shell #why {
@@ -594,6 +651,21 @@ export default function BrandPreviewPage() {
           color: rgba(250, 248, 245, 0.8) !important;
         }
 
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.54) !important;
+          box-shadow: none !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16 {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.54) !important;
+        }
+
+        .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div svg {
+          color: var(--brand-accent) !important;
+        }
+
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-purple-500,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-pink-500,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-amber-500 {
@@ -676,6 +748,25 @@ export default function BrandPreviewPage() {
           background-color: rgba(var(--brand-accent-soft-rgb), 0.28) !important;
           color: #1a1a1a !important;
           border-color: rgba(var(--brand-accent-rgb), 0.48) !important;
+        }
+
+        .brand-preview-shell [class*="bg-emerald-100"][class*="text-emerald-700"][class*="mb-4"][class*="px-4"][class*="py-1"],
+        .brand-preview-shell [class*="bg-violet-100"][class*="text-violet-700"][class*="mb-4"][class*="px-4"][class*="py-1"],
+        .brand-preview-shell [class*="bg-pink-100"][class*="text-pink-700"][class*="mb-4"][class*="px-4"][class*="py-1"] {
+          background: linear-gradient(100deg, var(--brand-accent), var(--brand-accent-strong)) !important;
+          color: #fff7ef !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.56) !important;
+        }
+
+        .brand-preview-shell .w-6.h-6.rounded-full.bg-emerald-100,
+        .brand-preview-shell .w-6.h-6.rounded-full.bg-violet-100 {
+          background-color: var(--brand-accent) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.6) !important;
+        }
+
+        .brand-preview-shell .w-6.h-6.rounded-full.bg-emerald-100 .w-4.h-4,
+        .brand-preview-shell .w-6.h-6.rounded-full.bg-violet-100 .w-4.h-4 {
+          color: #fff7ef !important;
         }
 
         .brand-preview-shell .from-pink-500,
