@@ -315,12 +315,13 @@ export default function BrandPreviewPage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 6rem !important;
-          padding-bottom: 3.5rem !important;
+          padding-top: 4.75rem !important;
+          padding-bottom: 2.5rem !important;
         }
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
+          transform: translateY(-1rem);
         }
 
         .brand-preview-shell section:first-of-type .inline-flex.items-center.gap-2 {
