@@ -348,7 +348,7 @@ export default function BrandPreviewPage() {
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-3.5rem) scale(1.03);
+            transform: translateY(-3.5rem);
             transform-origin: top center;
           }
         }

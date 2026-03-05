@@ -177,18 +177,24 @@ export default function HomePage() {
     const html = document.documentElement
     const body = document.body
 
+    const prevHtmlFontSize = html.style.fontSize
     const prevHtmlOverflowY = html.style.overflowY
     const prevBodyOverflowY = body.style.overflowY
     const prevBodyOverflowX = body.style.overflowX
+    const prevBodyHeight = body.style.height
 
-    html.style.overflowY = "auto"
-    body.style.overflowY = "visible"
+    html.style.fontSize = "110%"
+    html.style.overflowY = "hidden"
+    body.style.overflowY = "auto"
     body.style.overflowX = "hidden"
+    body.style.height = "100%"
 
     return () => {
+      html.style.fontSize = prevHtmlFontSize
       html.style.overflowY = prevHtmlOverflowY
       body.style.overflowY = prevBodyOverflowY
       body.style.overflowX = prevBodyOverflowX
+      body.style.height = prevBodyHeight
     }
   }, [])
 
@@ -1329,18 +1335,15 @@ export default function HomePage() {
         .marketing-motion-shell.motion-enabled .motion-reveal {
           opacity: 0;
           transform: translate3d(0, 22px, 0) scale(0.992);
-          filter: blur(6px);
           transition:
             opacity 650ms cubic-bezier(0.2, 0.75, 0.2, 1),
-            transform 650ms cubic-bezier(0.2, 0.75, 0.2, 1),
-            filter 550ms ease;
+            transform 650ms cubic-bezier(0.2, 0.75, 0.2, 1);
           transition-delay: var(--motion-delay, 0ms);
         }
 
         .marketing-motion-shell.motion-enabled .motion-reveal.is-visible {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
-          filter: blur(0);
         }
 
         .marketing-motion-shell.motion-enabled .hero-gradient-accent {
