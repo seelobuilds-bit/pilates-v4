@@ -470,44 +470,41 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #why {
-          background:
-            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
-            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
-            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
-          color: var(--brand-cream) !important;
+          background: linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 52%, #ebebeb 100%) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell #why .text-gray-900 {
-          color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell #why .text-gray-600,
         .brand-preview-shell #why .text-gray-700 {
-          color: rgba(249, 249, 249, 0.78) !important;
+          color: #706f6e !important;
         }
 
         .brand-preview-shell #why .bg-pink-100 {
-          background-color: rgba(249, 249, 249, 0.12) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.34) !important;
         }
 
         .brand-preview-shell #why .text-pink-700 {
-          color: rgba(249, 249, 249, 0.9) !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(1) {
-          background: linear-gradient(160deg, #1b1b1b 0%, #141414 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #f2f2f2 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(2) {
-          background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div:nth-child(3) {
-          background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f2f2f2 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
@@ -526,63 +523,60 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child {
-          background: linear-gradient(160deg, #191919 0%, #222222 60%, #171717 100%) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
-          box-shadow: 0 26px 55px rgba(14, 14, 14, 0.34) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #f2f2f2 58%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child h4,
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-900 {
-          color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-600 {
-          color: rgba(249, 249, 249, 0.75) !important;
+          color: #706f6e !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-emerald-700,
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-emerald-600,
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-violet-600,
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .text-pink-600 {
-          color: var(--brand-cream) !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-100.text-emerald-700 {
-          background-color: rgba(249, 249, 249, 0.14) !important;
-          border: 1px solid rgba(249, 249, 249, 0.28) !important;
-          color: var(--brand-cream) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.24) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.42) !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-50 {
-          background: rgba(249, 249, 249, 0.08) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
+          background: rgba(249, 249, 249, 0.82) !important;
+          border-color: rgba(212, 206, 196, 0.5) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-violet-50 {
-          background: rgba(249, 249, 249, 0.08) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
+          background: rgba(249, 249, 249, 0.82) !important;
+          border-color: rgba(212, 206, 196, 0.5) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child .bg-pink-50 {
-          background: rgba(249, 249, 249, 0.08) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
+          background: rgba(249, 249, 249, 0.82) !important;
+          border-color: rgba(212, 206, 196, 0.5) !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 {
-          background:
-            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
-            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
-            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
-          border-top: 1px solid rgba(249, 249, 249, 0.18) !important;
-          border-bottom: 1px solid rgba(249, 249, 249, 0.18) !important;
+          background: linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 55%, #ebebeb 100%) !important;
+          border-top: 1px solid rgba(212, 206, 196, 0.46) !important;
+          border-bottom: 1px solid rgba(212, 206, 196, 0.46) !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 .text-gray-900 {
-          color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 .text-gray-600 {
-          color: rgba(249, 249, 249, 0.74) !important;
+          color: #706f6e !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button {
@@ -606,9 +600,9 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child {
-          background: linear-gradient(160deg, #1a1a1a 0%, #232323 58%, #181818 100%) !important;
-          border-color: rgba(249, 249, 249, 0.22) !important;
-          box-shadow: 0 24px 52px rgba(14, 14, 14, 0.3) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #f2f2f2 58%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+          box-shadow: 0 18px 34px rgba(0, 0, 0, 0.08) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-gray-900,
@@ -617,67 +611,64 @@ export default function BrandPreviewPage() {
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-emerald-600,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-violet-600,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .text-pink-600 {
-          color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-emerald-50,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-violet-50,
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] + section .grid.lg\\:grid-cols-2 > div:last-child .bg-pink-50 {
-          background: rgba(249, 249, 249, 0.09) !important;
-          border-color: rgba(249, 249, 249, 0.24) !important;
+          background: rgba(249, 249, 249, 0.82) !important;
+          border-color: rgba(212, 206, 196, 0.5) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] {
-          background:
-            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
-            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
-            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
-          color: var(--brand-cream) !important;
+          background: linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 52%, #ebebeb 100%) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-purple-100 {
-          background-color: rgba(249, 249, 249, 0.12) !important;
-          border: 1px solid rgba(249, 249, 249, 0.24) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.24) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.42) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-purple-700 {
-          color: rgba(249, 249, 249, 0.9) !important;
+          color: var(--brand-accent-strong) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .bg-white {
-          background-color: rgba(249, 249, 249, 0.05) !important;
-          border: 1px solid rgba(249, 249, 249, 0.14) !important;
-          box-shadow: none !important;
+          background-color: rgba(249, 249, 249, 0.86) !important;
+          border: 1px solid rgba(212, 206, 196, 0.58) !important;
+          box-shadow: 0 14px 28px rgba(0, 0, 0, 0.06) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-gray-900 {
-          color: var(--brand-cream) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .text-gray-600 {
-          color: rgba(249, 249, 249, 0.8) !important;
+          color: #706f6e !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
-          background: rgba(249, 249, 249, 0.05) !important;
-          border: 1px solid rgba(249, 249, 249, 0.2) !important;
-          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
+          background: rgba(249, 249, 249, 0.86) !important;
+          border: 1px solid rgba(212, 206, 196, 0.58) !important;
+          box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08) !important;
           border-radius: 1.5rem !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(1) {
-          background: linear-gradient(160deg, #1b1b1b 0%, #141414 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #f2f2f2 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(2) {
-          background: linear-gradient(160deg, #1d1d1d 0%, #151515 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f9f9f9 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div:nth-child(3) {
-          background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%) !important;
-          border-color: rgba(249, 249, 249, 0.2) !important;
+          background: linear-gradient(160deg, #f2f2f2 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16 {
@@ -709,42 +700,39 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button {
           background-color: transparent !important;
-          border: 1px solid rgba(249, 249, 249, 0.46) !important;
-          color: var(--brand-cream) !important;
+          border: 1px solid rgba(26, 26, 26, 0.24) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button:hover {
-          background-color: rgba(249, 249, 249, 0.14) !important;
-          color: var(--brand-cream) !important;
+          background-color: rgba(26, 26, 26, 0.05) !important;
+          color: #0d0d0d !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button svg {
-          color: var(--brand-cream) !important;
+          color: #1a1a1a !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] {
-          background:
-            radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0) 62%),
-            radial-gradient(ellipse at 50% 62%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%),
-            linear-gradient(180deg, #111111 0%, #1a1a1a 48%, #0e0e0e 100%) !important;
+          background: linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 52%, #ebebeb 100%) !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] h1,
         .brand-preview-shell section[class*="via-violet-950"] h2,
         .brand-preview-shell section[class*="via-violet-950"] h3,
         .brand-preview-shell section[class*="via-violet-950"] .text-white {
-          color: #f9f9f9 !important;
-          -webkit-text-fill-color: #f9f9f9 !important;
+          color: #0d0d0d !important;
+          -webkit-text-fill-color: #0d0d0d !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .text-gray-300,
         .brand-preview-shell section[class*="via-violet-950"] .text-gray-400 {
-          color: rgba(249, 249, 249, 0.72) !important;
+          color: #706f6e !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .bg-pink-500\\/20,
         .brand-preview-shell section[class*="via-violet-950"] .bg-violet-500\\/20 {
-          background-color: rgba(249, 249, 249, 0.12) !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.26) !important;
         }
 
         .brand-preview-shell header .text-2xl.font-bold,
