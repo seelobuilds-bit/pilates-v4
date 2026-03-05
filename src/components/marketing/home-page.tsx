@@ -162,6 +162,9 @@ const faqs = [
   },
 ]
 
+const headlinePrimaryWords = ["Stop", "managing", "software."]
+const headlineAccentWords = ["Start", "growing", "your", "studio."]
+
 export default function HomePage() {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const motionEnabled = process.env.NEXT_PUBLIC_MARKETING_MOTION_ENABLED !== "0" &&
@@ -172,6 +175,8 @@ export default function HomePage() {
   const [demoModalOpen, setDemoModalOpen] = useState(false)
   const [demoSubmitted, setDemoSubmitted] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [heroIntroReady, setHeroIntroReady] = useState(!motionEnabled)
 
   useEffect(() => {
     const root = rootRef.current
@@ -263,6 +268,56 @@ export default function HomePage() {
   }, [motionEnabled])
 
   useEffect(() => {
+    if (!motionEnabled) {
+      setHeroIntroReady(true)
+      return
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (prefersReducedMotion) {
+      setHeroIntroReady(true)
+      return
+    }
+
+    setHeroIntroReady(false)
+    const timer = window.setTimeout(() => setHeroIntroReady(true), 80)
+
+    return () => window.clearTimeout(timer)
+  }, [motionEnabled])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || !motionEnabled) return
+
+    let raf = 0
+
+    const updateProgress = () => {
+      const doc = document.documentElement
+      const maxScroll = doc.scrollHeight - window.innerHeight
+      const next = maxScroll <= 0 ? 0 : Math.min(1, Math.max(0, window.scrollY / maxScroll))
+      setScrollProgress(next)
+    }
+
+    const onScroll = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        updateProgress()
+        raf = 0
+      })
+    }
+
+    updateProgress()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", onScroll)
+
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
+  }, [motionEnabled])
+
+  useEffect(() => {
     if (!monitoringEnabled) return
 
     const reportFrontendIssue = (payload: Record<string, unknown>) => {
@@ -349,7 +404,13 @@ export default function HomePage() {
       className={`marketing-motion-shell min-h-screen bg-white overflow-x-hidden ${motionEnabled ? "motion-enabled" : ""}`}
     >
       {/* Sticky Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 relative">
+        <div className="marketing-scroll-progress" aria-hidden>
+          <div
+            className="marketing-scroll-progress-bar"
+            style={{ transform: `scaleX(${scrollProgress})` }}
+          />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -436,11 +497,33 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="motion-hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
-            Stop managing software.
+          <h1
+            className={`motion-hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight ${heroIntroReady ? "is-word-visible" : ""}`}
+          >
+            <span>
+              {headlinePrimaryWords.map((word, index) => (
+                <span
+                  key={`${word}-${index}`}
+                  className="motion-word"
+                  style={{ "--word-delay": `${index * 95}` } as React.CSSProperties}
+                >
+                  {word}
+                  {index < headlinePrimaryWords.length - 1 ? "\u00A0" : ""}
+                </span>
+              ))}
+            </span>
             <br />
             <span className="hero-gradient-accent bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
-              Start growing your studio.
+              {headlineAccentWords.map((word, index) => (
+                <span
+                  key={`${word}-${index}`}
+                  className="motion-word"
+                  style={{ "--word-delay": `${(headlinePrimaryWords.length + index) * 95}` } as React.CSSProperties}
+                >
+                  {word}
+                  {index < headlineAccentWords.length - 1 ? "\u00A0" : ""}
+                </span>
+              ))}
             </span>
           </h1>
           
@@ -1377,6 +1460,24 @@ export default function HomePage() {
           animation: heroBreathe 5.8s ease-in-out infinite;
         }
 
+        .marketing-motion-shell.motion-enabled .motion-word {
+          display: inline-block;
+          opacity: 0;
+          transform: translate3d(0, 20px, 0);
+          filter: blur(5px);
+          transition:
+            opacity 620ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            transform 620ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            filter 620ms ease;
+          transition-delay: calc(var(--word-delay, 0) * 1ms);
+        }
+
+        .marketing-motion-shell.motion-enabled .motion-hero-title.is-word-visible .motion-word {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+          filter: blur(0);
+        }
+
         .marketing-motion-shell.motion-enabled .motion-hero-trust > div {
           animation: trustFloat 3.6s ease-in-out infinite;
         }
@@ -1425,6 +1526,23 @@ export default function HomePage() {
           transform: scaleX(1);
         }
 
+        .marketing-scroll-progress {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -1px;
+          height: 2px;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .marketing-scroll-progress-bar {
+          height: 100%;
+          width: 100%;
+          transform-origin: left center;
+          background: linear-gradient(90deg, rgba(236, 72, 153, 0.85), rgba(139, 92, 246, 0.85));
+        }
+
         @keyframes marketingGradientDrift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
@@ -1462,6 +1580,7 @@ export default function HomePage() {
           .marketing-motion-shell .hero-gradient-accent,
           .marketing-motion-shell .motion-shine::after,
           .marketing-motion-shell .motion-hero-title,
+          .marketing-motion-shell .motion-word,
           .marketing-motion-shell .motion-hero-trust > div,
           .marketing-motion-shell .motion-hero-chip,
           .marketing-motion-shell .hero-blob-fast,
