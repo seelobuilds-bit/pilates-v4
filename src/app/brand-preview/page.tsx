@@ -316,7 +316,7 @@ export default function BrandPreviewPage() {
           font-style: normal !important;
           font-weight: 400 !important;
           letter-spacing: 0 !important;
-          text-transform: uppercase;
+          text-transform: none !important;
         }
 
         .brand-preview-shell section:first-of-type h1 > span.bg-clip-text.text-transparent {
@@ -336,7 +336,7 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-1.55rem);
+          transform: translateY(-2.25rem);
         }
 
         @media (min-width: 1024px) {
@@ -348,7 +348,7 @@ export default function BrandPreviewPage() {
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-1.35rem) scale(1.03);
+            transform: translateY(-2.05rem) scale(1.03);
             transform-origin: top center;
           }
         }
@@ -517,6 +517,12 @@ export default function BrandPreviewPage() {
         .brand-preview-shell #features + section {
           background-color: rgba(245, 242, 237, 0.92) !important;
           background-image: none !important;
+        }
+
+        .brand-preview-shell #faq {
+          background-image: linear-gradient(180deg, rgba(250, 248, 245, 0.94) 0%, rgba(245, 242, 237, 0.92) 100%) !important;
+          border-top: 1px solid rgba(212, 206, 196, 0.36) !important;
+          border-bottom: 1px solid rgba(212, 206, 196, 0.36) !important;
         }
 
         .brand-preview-shell #features + section .grid.lg\\:grid-cols-2 > div:last-child {
