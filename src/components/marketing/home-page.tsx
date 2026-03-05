@@ -174,6 +174,16 @@ export default function HomePage() {
   const [demoLoading, setDemoLoading] = useState(false)
 
   useEffect(() => {
+    document.documentElement.classList.add("marketing-hide-scrollbar")
+    document.body.classList.add("marketing-hide-scrollbar")
+
+    return () => {
+      document.documentElement.classList.remove("marketing-hide-scrollbar")
+      document.body.classList.remove("marketing-hide-scrollbar")
+    }
+  }, [])
+
+  useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
@@ -1307,6 +1317,15 @@ export default function HomePage() {
         </div>
       )}
       <style jsx global>{`
+        .marketing-hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .marketing-hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+
         .marketing-motion-shell.motion-enabled .motion-reveal {
           opacity: 0;
           transform: translate3d(0, 22px, 0) scale(0.992);
