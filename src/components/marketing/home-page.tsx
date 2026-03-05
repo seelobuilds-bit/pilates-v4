@@ -232,6 +232,8 @@ export default function HomePage() {
       const y = (event.clientY - rect.top) / rect.height - 0.5
       hero.style.setProperty("--parallax-x", `${x}`)
       hero.style.setProperty("--parallax-y", `${y}`)
+      root.style.setProperty("--pointer-x", `${event.clientX}px`)
+      root.style.setProperty("--pointer-y", `${event.clientY}px`)
     }
     const resetHeroParallax = () => {
       hero?.style.setProperty("--parallax-x", "0")
@@ -241,41 +243,12 @@ export default function HomePage() {
     hero?.addEventListener("pointermove", onHeroPointerMove)
     hero?.addEventListener("pointerleave", resetHeroParallax)
 
-    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches
-    const magneticCleanups: Array<() => void> = []
-    if (canHover) {
-      const magneticTargets = Array.from(
-        root.querySelectorAll<HTMLElement>(
-          ".hero-cta-row button, .hero-cta-row a.inline-flex, section.py-16 button, section[class*='via-violet-950'] button"
-        )
-      )
-
-      magneticTargets.forEach((node) => {
-        const onMove = (event: MouseEvent) => {
-          const rect = node.getBoundingClientRect()
-          const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2)
-          const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2)
-          node.style.transform = `translate(${x * 4}px, ${y * 3}px)`
-        }
-        const onLeave = () => {
-          node.style.transform = ""
-        }
-        node.addEventListener("mousemove", onMove)
-        node.addEventListener("mouseleave", onLeave)
-        magneticCleanups.push(() => {
-          node.removeEventListener("mousemove", onMove)
-          node.removeEventListener("mouseleave", onLeave)
-        })
-      })
-    }
-
     return () => {
       observer.disconnect()
       window.removeEventListener("scroll", updateScrollProgress)
       window.removeEventListener("resize", updateScrollProgress)
       hero?.removeEventListener("pointermove", onHeroPointerMove)
       hero?.removeEventListener("pointerleave", resetHeroParallax)
-      magneticCleanups.forEach((cleanup) => cleanup())
     }
   }, [])
 
@@ -317,6 +290,8 @@ export default function HomePage() {
   return (
     <div ref={rootRef} className="marketing-home min-h-screen bg-white overflow-x-hidden">
       <div className="scroll-progress" aria-hidden />
+      <div className="pointer-aura" aria-hidden />
+      <div className="grain-overlay" aria-hidden />
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -389,8 +364,8 @@ export default function HomePage() {
       <section className="hero-section pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="hero-orb orb-a absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
-          <div className="hero-orb orb-b absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
+          <div className="hero-orb orb-a absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-gray-100/55 via-white/45 to-transparent rounded-full blur-3xl" />
+          <div className="hero-orb orb-b absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-gray-200/45 via-white/40 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -531,8 +506,14 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-sm text-gray-500 mb-8">Trusted by 200+ studios across the US, UK, and Australia</p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-            {['ALIGN', 'BREATHE', 'CORE', 'FLOW STATE', 'PURE', 'REFORM'].map((name) => (
-              <span key={name} className="text-xl font-bold text-gray-800 tracking-wide">{name}</span>
+            {['ALIGN', 'BREATHE', 'CORE', 'FLOW STATE', 'PURE', 'REFORM'].map((name, index) => (
+              <span
+                key={name}
+                className="trust-logo text-xl font-bold text-gray-800 tracking-wide"
+                style={{ ["--logo-delay" as string]: `${index * 120}ms` }}
+              >
+                {name}
+              </span>
             ))}
           </div>
         </div>
@@ -1272,6 +1253,9 @@ export default function HomePage() {
       <style jsx global>{`
         .marketing-home {
           --scroll-progress: 0;
+          --pointer-x: 50vw;
+          --pointer-y: 28vh;
+          background: #f9f9f9;
         }
 
         .marketing-home .scroll-progress {
@@ -1297,9 +1281,38 @@ export default function HomePage() {
           transition: transform 100ms linear;
         }
 
+        .marketing-home .pointer-aura {
+          position: fixed;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background:
+            radial-gradient(480px circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.42), transparent 60%),
+            radial-gradient(720px circle at 85% 12%, rgba(26, 26, 26, 0.045), transparent 64%);
+          mix-blend-mode: normal;
+          transition: background 220ms ease;
+        }
+
+        .marketing-home .grain-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          opacity: 0.08;
+          background-image: radial-gradient(rgba(13, 13, 13, 0.15) 0.5px, transparent 0.5px);
+          background-size: 3px 3px;
+          animation: grainShift 7s steps(6) infinite;
+        }
+
+        .marketing-home > * {
+          position: relative;
+          z-index: 2;
+        }
+
         .marketing-home .hero-orb {
           will-change: transform, opacity;
           animation: heroFloat 18s ease-in-out infinite alternate;
+          opacity: 0.6;
         }
 
         .marketing-home .hero-orb.orb-b {
@@ -1341,6 +1354,7 @@ export default function HomePage() {
             transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
             box-shadow 320ms ease,
             border-color 320ms ease;
+          transform-style: preserve-3d;
         }
 
         .marketing-home .rounded-3xl:hover,
@@ -1352,10 +1366,8 @@ export default function HomePage() {
         .marketing-home .hero-cta-row a.inline-flex,
         .marketing-home section.py-16 button {
           transition:
-            transform 140ms ease-out,
             box-shadow 220ms ease,
             filter 220ms ease;
-          will-change: transform;
         }
 
         .marketing-home .hero-cta-row button:hover,
@@ -1363,6 +1375,28 @@ export default function HomePage() {
         .marketing-home section.py-16 button:hover {
           filter: saturate(1.06);
           box-shadow: 0 18px 42px rgba(13, 13, 13, 0.2);
+        }
+
+        .marketing-home .trust-logo {
+          opacity: 0;
+          transform: translateY(10px);
+          animation: logoRise 820ms cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
+          animation-delay: calc(340ms + var(--logo-delay, 0ms));
+          position: relative;
+        }
+
+        .marketing-home .trust-logo::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -2px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, rgba(13, 13, 13, 0.26) 50%, transparent 100%);
+          transform: scaleX(0.7);
+          opacity: 0;
+          animation: logoLine 5s ease-in-out infinite;
+          animation-delay: calc(900ms + var(--logo-delay, 0ms));
         }
 
         .marketing-home footer h4 + ul li a {
@@ -1411,6 +1445,49 @@ export default function HomePage() {
           }
           100% {
             background-position: 0% 50%;
+          }
+        }
+
+        @keyframes grainShift {
+          0% {
+            transform: translate(0, 0);
+          }
+          25% {
+            transform: translate(-1%, 1%);
+          }
+          50% {
+            transform: translate(1%, -1%);
+          }
+          75% {
+            transform: translate(1%, 1%);
+          }
+          100% {
+            transform: translate(0, 0);
+          }
+        }
+
+        @keyframes logoRise {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes logoLine {
+          0%,
+          74%,
+          100% {
+            opacity: 0;
+            transform: scaleX(0.7);
+          }
+          82%,
+          92% {
+            opacity: 0.72;
+            transform: scaleX(1);
           }
         }
 
