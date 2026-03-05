@@ -422,8 +422,8 @@ export default function HomePage() {
       <section className="pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="hero-blob-fast absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-pink-200/40 via-violet-200/30 to-transparent rounded-full blur-3xl" />
-          <div className="hero-blob-soft absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-violet-200/30 via-purple-100/20 to-transparent rounded-full blur-3xl" />
+          <div className="hero-blob-fast absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-slate-200/35 via-slate-100/20 to-transparent rounded-full blur-3xl" />
+          <div className="hero-blob-soft absolute -top-20 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-zinc-200/24 via-zinc-100/14 to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
