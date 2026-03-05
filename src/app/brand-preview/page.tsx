@@ -312,9 +312,9 @@ export default function BrandPreviewPage() {
           background-image: none !important;
           color: #0d0d0d !important;
           -webkit-text-fill-color: #0d0d0d !important;
-          font-family: var(--font-brand-preview-body), sans-serif !important;
+          font-family: var(--font-brand-preview-display), serif !important;
           font-style: normal !important;
-          font-weight: 600 !important;
+          font-weight: 400 !important;
           letter-spacing: 0 !important;
           text-transform: uppercase;
         }
@@ -341,13 +341,14 @@ export default function BrandPreviewPage() {
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
-            min-height: calc(100svh + 8rem) !important;
-            padding-top: 3.4rem !important;
-            padding-bottom: 0.5rem !important;
+            min-height: 100svh !important;
+            align-items: flex-start !important;
+            padding-top: 6.8rem !important;
+            padding-bottom: 0.8rem !important;
           }
 
           .brand-preview-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-3.35rem) scale(1.04);
+            transform: translateY(0) scale(1.08);
             transform-origin: top center;
           }
         }
@@ -410,8 +411,8 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
-          background: rgba(255, 247, 239, 0.16) !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.56) !important;
+          background: #fff7ef !important;
+          border: 1px solid rgba(255, 247, 239, 0.68) !important;
         }
 
         .brand-preview-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 svg {
@@ -579,9 +580,9 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button {
-          background-image: linear-gradient(100deg, var(--brand-accent-soft), var(--brand-accent-strong)) !important;
+          background-image: linear-gradient(100deg, var(--brand-accent), var(--brand-accent-strong)) !important;
           color: #fff7ef !important;
-          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.42) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.52) !important;
         }
 
         .brand-preview-shell section.py-16.px-4.sm\\:px-6.lg\\:px-8.bg-gray-50 button svg {
@@ -653,17 +654,17 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div {
           background: transparent !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.54) !important;
+          border: 1px solid rgba(250, 248, 245, 0.5) !important;
           box-shadow: none !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16 {
-          background: transparent !important;
-          border: 1px solid rgba(var(--brand-accent-rgb), 0.54) !important;
+          background: var(--brand-accent) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.62) !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div svg {
-          color: var(--brand-accent) !important;
+          color: #fff7ef !important;
         }
 
         .brand-preview-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .from-purple-500,
@@ -679,9 +680,9 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > button {
-          background-image: linear-gradient(100deg, var(--brand-accent-soft), var(--brand-accent-strong)) !important;
+          background-image: linear-gradient(100deg, var(--brand-accent), var(--brand-accent-strong)) !important;
           color: #fff7ef !important;
-          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.42) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.52) !important;
         }
 
         .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button {
@@ -752,7 +753,8 @@ export default function BrandPreviewPage() {
 
         .brand-preview-shell [class*="bg-emerald-100"][class*="text-emerald-700"][class*="mb-4"][class*="px-4"][class*="py-1"],
         .brand-preview-shell [class*="bg-violet-100"][class*="text-violet-700"][class*="mb-4"][class*="px-4"][class*="py-1"],
-        .brand-preview-shell [class*="bg-pink-100"][class*="text-pink-700"][class*="mb-4"][class*="px-4"][class*="py-1"] {
+        .brand-preview-shell [class*="bg-pink-100"][class*="text-pink-700"][class*="mb-4"][class*="px-4"][class*="py-1"],
+        .brand-preview-shell [class*="bg-purple-100"][class*="text-purple-700"][class*="mb-4"][class*="px-4"][class*="py-1"] {
           background: linear-gradient(100deg, var(--brand-accent), var(--brand-accent-strong)) !important;
           color: #fff7ef !important;
           border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.56) !important;
