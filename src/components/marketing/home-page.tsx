@@ -162,6 +162,9 @@ const faqs = [
   },
 ]
 
+const heroHeadlineTop = ["Stop", "managing", "software."]
+const heroHeadlineBottom = ["Start", "growing", "your", "studio."]
+
 export default function HomePage() {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -184,7 +187,7 @@ export default function HomePage() {
 
     const revealTargets = Array.from(
       root.querySelectorAll<HTMLElement>(
-        "section, footer, header .max-w-7xl, .hero-cta-row > *, .hero-trust > div, .max-w-6xl .rounded-3xl, .max-w-6xl .rounded-2xl"
+        "section, footer, .hero-cta-row > *, .hero-trust > div, .max-w-6xl .rounded-3xl, .max-w-6xl .rounded-2xl"
       )
     )
 
@@ -193,9 +196,7 @@ export default function HomePage() {
       node.style.setProperty("--reveal-delay", `${Math.min(index * 24, 320)}ms`)
     })
 
-    const navShell = root.querySelector<HTMLElement>("header .max-w-7xl")
     const firstSection = root.querySelector<HTMLElement>("section")
-    navShell?.classList.add("is-visible")
     firstSection?.classList.add("is-visible")
 
     const observer = new IntersectionObserver(
@@ -213,42 +214,38 @@ export default function HomePage() {
       if (!node.classList.contains("is-visible")) observer.observe(node)
     })
 
+    let lastY = window.scrollY
+    let lastTs = performance.now()
     const updateScrollProgress = () => {
       const doc = document.documentElement
       const scrollable = doc.scrollHeight - window.innerHeight
       const progress = scrollable > 0 ? window.scrollY / scrollable : 1
       root.style.setProperty("--scroll-progress", `${Math.max(0, Math.min(1, progress))}`)
+
+      const now = performance.now()
+      const deltaY = window.scrollY - lastY
+      const deltaT = Math.max(16, now - lastTs)
+      const velocity = Math.max(-1, Math.min(1, deltaY / deltaT / 2.2))
+      root.style.setProperty("--scroll-velocity", `${velocity}`)
+      lastY = window.scrollY
+      lastTs = now
     }
 
     updateScrollProgress()
     window.addEventListener("scroll", updateScrollProgress, { passive: true })
     window.addEventListener("resize", updateScrollProgress)
 
-    const hero = root.querySelector<HTMLElement>(".hero-section")
-    const onHeroPointerMove = (event: PointerEvent) => {
-      if (!hero) return
-      const rect = hero.getBoundingClientRect()
-      const x = (event.clientX - rect.left) / rect.width - 0.5
-      const y = (event.clientY - rect.top) / rect.height - 0.5
-      hero.style.setProperty("--parallax-x", `${x}`)
-      hero.style.setProperty("--parallax-y", `${y}`)
+    const onPointerMove = (event: PointerEvent) => {
       root.style.setProperty("--pointer-x", `${event.clientX}px`)
       root.style.setProperty("--pointer-y", `${event.clientY}px`)
     }
-    const resetHeroParallax = () => {
-      hero?.style.setProperty("--parallax-x", "0")
-      hero?.style.setProperty("--parallax-y", "0")
-    }
-
-    hero?.addEventListener("pointermove", onHeroPointerMove)
-    hero?.addEventListener("pointerleave", resetHeroParallax)
+    window.addEventListener("pointermove", onPointerMove, { passive: true })
 
     return () => {
       observer.disconnect()
       window.removeEventListener("scroll", updateScrollProgress)
       window.removeEventListener("resize", updateScrollProgress)
-      hero?.removeEventListener("pointermove", onHeroPointerMove)
-      hero?.removeEventListener("pointerleave", resetHeroParallax)
+      window.removeEventListener("pointermove", onPointerMove)
     }
   }, [])
 
@@ -378,11 +375,31 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
-            Stop managing software.
+          <h1 className="hero-headline text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
+            <span className="hero-line">
+              {heroHeadlineTop.map((word, index) => (
+                <span
+                  key={word}
+                  className="hero-word"
+                  style={{ ["--word-delay" as string]: `${index * 90}ms` }}
+                >
+                  {word}
+                  {index < heroHeadlineTop.length - 1 ? "\u00A0" : ""}
+                </span>
+              ))}
+            </span>
             <br />
-            <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
-              Start growing your studio.
+            <span className="hero-line bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 bg-clip-text text-transparent">
+              {heroHeadlineBottom.map((word, index) => (
+                <span
+                  key={word}
+                  className="hero-word hero-word-accent"
+                  style={{ ["--word-delay" as string]: `${320 + index * 95}ms` }}
+                >
+                  {word}
+                  {index < heroHeadlineBottom.length - 1 ? "\u00A0" : ""}
+                </span>
+              ))}
             </span>
           </h1>
           
@@ -1253,9 +1270,10 @@ export default function HomePage() {
       <style jsx global>{`
         .marketing-home {
           --scroll-progress: 0;
+          --scroll-velocity: 0;
           --pointer-x: 50vw;
           --pointer-y: 28vh;
-          background: #f9f9f9;
+          perspective: 1500px;
         }
 
         .marketing-home .scroll-progress {
@@ -1263,9 +1281,9 @@ export default function HomePage() {
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
+          height: 2px;
           z-index: 120;
-          background: rgba(13, 13, 13, 0.06);
+          background: transparent;
           overflow: hidden;
           pointer-events: none;
         }
@@ -1283,11 +1301,11 @@ export default function HomePage() {
 
         .marketing-home .pointer-aura {
           position: fixed;
-          inset: 0;
+          inset: 4.5rem 0 0 0;
           z-index: 1;
           pointer-events: none;
           background:
-            radial-gradient(480px circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.42), transparent 60%),
+            radial-gradient(420px circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.34), transparent 62%),
             radial-gradient(720px circle at 85% 12%, rgba(26, 26, 26, 0.045), transparent 64%);
           mix-blend-mode: normal;
           transition: background 220ms ease;
@@ -1295,10 +1313,10 @@ export default function HomePage() {
 
         .marketing-home .grain-overlay {
           position: fixed;
-          inset: 0;
+          inset: 4.5rem 0 0 0;
           z-index: 1;
           pointer-events: none;
-          opacity: 0.08;
+          opacity: 0.04;
           background-image: radial-gradient(rgba(13, 13, 13, 0.15) 0.5px, transparent 0.5px);
           background-size: 3px 3px;
           animation: grainShift 7s steps(6) infinite;
@@ -1311,19 +1329,21 @@ export default function HomePage() {
 
         .marketing-home .hero-orb {
           will-change: transform, opacity;
-          animation: heroFloat 18s ease-in-out infinite alternate;
-          opacity: 0.6;
+          opacity: 0.54;
+          transform: translate3d(
+            calc(var(--scroll-velocity, 0) * -26px),
+            calc(var(--scroll-velocity, 0) * 20px),
+            0
+          );
+          transition: transform 160ms linear, opacity 240ms ease;
         }
 
         .marketing-home .hero-orb.orb-b {
-          animation-duration: 22s;
-          animation-delay: -5s;
-        }
-
-        .marketing-home .hero-section .max-w-4xl {
-          transform: translate3d(calc(var(--parallax-x, 0) * 8px), calc(var(--parallax-y, 0) * 8px), 0);
-          transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-          will-change: transform;
+          transform: translate3d(
+            calc(var(--scroll-velocity, 0) * 20px),
+            calc(var(--scroll-velocity, 0) * -18px),
+            0
+          );
         }
 
         .marketing-home .hero-section h1 span.bg-clip-text {
@@ -1331,9 +1351,27 @@ export default function HomePage() {
           animation: gradientDrift 9s ease-in-out infinite;
         }
 
+        .marketing-home .hero-line {
+          display: inline-block;
+        }
+
+        .marketing-home .hero-word {
+          display: inline-block;
+          opacity: 0;
+          transform: translate3d(0, 28px, 0) rotateX(14deg);
+          transform-origin: 50% 100%;
+          animation: heroWordIn 880ms cubic-bezier(0.18, 0.8, 0.22, 1) forwards;
+          animation-delay: var(--word-delay, 0ms);
+          will-change: transform, opacity;
+        }
+
+        .marketing-home .hero-word-accent {
+          filter: saturate(1.02);
+        }
+
         .marketing-home.motion-mounted .motion-target {
           opacity: 0;
-          transform: translate3d(0, 28px, 0) scale(0.985);
+          transform: translate3d(0, 28px, 0) rotateX(7deg) scale(0.985);
           filter: blur(8px);
           transition:
             opacity 720ms cubic-bezier(0.2, 0.75, 0.2, 1),
@@ -1344,7 +1382,7 @@ export default function HomePage() {
 
         .marketing-home.motion-mounted .motion-target.is-visible {
           opacity: 1;
-          transform: translate3d(0, 0, 0) scale(1);
+          transform: translate3d(0, 0, 0) rotateX(0deg) scale(1);
           filter: blur(0);
         }
 
@@ -1421,21 +1459,6 @@ export default function HomePage() {
           transform: scaleX(1);
         }
 
-        @keyframes heroFloat {
-          0% {
-            transform: translate3d(0, 0, 0) scale(1);
-            opacity: 0.72;
-          }
-          50% {
-            transform: translate3d(-22px, 16px, 0) scale(1.05);
-            opacity: 0.84;
-          }
-          100% {
-            transform: translate3d(18px, -14px, 0) scale(0.98);
-            opacity: 0.7;
-          }
-        }
-
         @keyframes gradientDrift {
           0% {
             background-position: 0% 50%;
@@ -1445,6 +1468,21 @@ export default function HomePage() {
           }
           100% {
             background-position: 0% 50%;
+          }
+        }
+
+        @keyframes heroWordIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, 28px, 0) rotateX(14deg);
+          }
+          65% {
+            opacity: 1;
+            transform: translate3d(0, -2px, 0) rotateX(0deg);
+          }
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) rotateX(0deg);
           }
         }
 
@@ -1498,6 +1536,16 @@ export default function HomePage() {
             transition: none !important;
             transform: none !important;
             filter: none !important;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .marketing-home {
+            scroll-snap-type: y proximity;
+          }
+
+          .marketing-home section {
+            scroll-snap-align: start;
           }
         }
       `}</style>
