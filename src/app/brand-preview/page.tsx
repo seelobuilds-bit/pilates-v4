@@ -19,6 +19,17 @@ export default function BrandPreviewPage() {
   return (
     <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
+        html {
+          overflow-y: auto !important;
+        }
+
+        body {
+          overflow-y: visible !important;
+          overflow-x: hidden !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+
         .brand-preview-shell {
           --brand-accent: #e3120b;
           --brand-accent-strong: #b10e08;

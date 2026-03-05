@@ -1455,16 +1455,6 @@ export default function HomePage() {
           50% { transform: translateY(-2px); }
         }
 
-        @media (min-width: 1024px) {
-          .marketing-motion-shell {
-            scroll-snap-type: y proximity;
-          }
-
-          .marketing-motion-shell section {
-            scroll-snap-align: start;
-          }
-        }
-
         @media (prefers-reduced-motion: reduce) {
           .marketing-motion-shell .motion-reveal,
           .marketing-motion-shell .motion-card,
