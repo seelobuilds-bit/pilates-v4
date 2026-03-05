@@ -59,21 +59,21 @@
   }
 
   h1,
-  h2,
-  h3 {
+  h2 {
     font-family: var(--font-display), serif;
     color: inherit;
-    letter-spacing: -0.006em;
+    letter-spacing: -0.004em;
     line-height: 1.12;
   }
 
+  h3,
   h4,
   h5,
   h6 {
     font-family: var(--font-body), sans-serif;
     color: inherit;
-    letter-spacing: 0.008em;
-    line-height: 1.25;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
   }
 
   label {
