@@ -27,6 +27,12 @@ export default function BrandPreviewPage() {
 
         body {
           overflow-x: hidden !important;
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+
+        body::-webkit-scrollbar {
+          display: none !important;
         }
 
         .brand-preview-shell {
