@@ -175,26 +175,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const html = document.documentElement
-    const body = document.body
 
     const prevHtmlFontSize = html.style.fontSize
-    const prevHtmlOverflowY = html.style.overflowY
-    const prevBodyOverflowY = body.style.overflowY
-    const prevBodyOverflowX = body.style.overflowX
-    const prevBodyHeight = body.style.height
 
     html.style.fontSize = "110%"
-    html.style.overflowY = "hidden"
-    body.style.overflowY = "auto"
-    body.style.overflowX = "hidden"
-    body.style.height = "100%"
 
     return () => {
       html.style.fontSize = prevHtmlFontSize
-      html.style.overflowY = prevHtmlOverflowY
-      body.style.overflowY = prevBodyOverflowY
-      body.style.overflowX = prevBodyOverflowX
-      body.style.height = prevBodyHeight
     }
   }, [])
 
