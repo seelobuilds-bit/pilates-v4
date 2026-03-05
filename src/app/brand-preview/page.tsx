@@ -19,6 +19,16 @@ export default function BrandPreviewPage() {
   return (
     <div className={`${dmSans.variable} ${instrumentSerif.variable} brand-preview-shell`}>
       <style>{`
+        html,
+        body {
+          overflow-y: auto !important;
+          overscroll-behavior-y: auto !important;
+        }
+
+        body {
+          overflow-x: hidden !important;
+        }
+
         .brand-preview-shell {
           --brand-accent: #e3120b;
           --brand-accent-strong: #b10e08;
@@ -34,6 +44,7 @@ export default function BrandPreviewPage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
+          overflow-y: visible !important;
           overflow-x: clip;
         }
 

@@ -175,18 +175,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const html = document.documentElement
-    const body = document.body
 
     const prevHtmlFontSize = html.style.fontSize
 
     html.style.fontSize = "110%"
-    html.classList.add("homepage-scroll-owner")
-    body.classList.add("homepage-no-scroll")
 
     return () => {
       html.style.fontSize = prevHtmlFontSize
-      html.classList.remove("homepage-scroll-owner")
-      body.classList.remove("homepage-no-scroll")
     }
   }, [])
 
@@ -1324,19 +1319,6 @@ export default function HomePage() {
         </div>
       )}
       <style jsx global>{`
-        html.homepage-scroll-owner {
-          overflow-y: auto !important;
-        }
-
-        body.homepage-no-scroll {
-          overflow-y: hidden !important;
-        }
-
-        .brand-preview-shell,
-        .marketing-motion-shell {
-          overflow-y: visible !important;
-        }
-
         .marketing-motion-shell.motion-enabled .motion-reveal {
           opacity: 0;
           transform: translate3d(0, 22px, 0) scale(0.992);
