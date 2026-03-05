@@ -1,9 +1,21 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { DM_Sans, Instrument_Serif } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 
-const inter = Inter({ subsets: ["latin"] })
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-body",
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+})
 
 export const metadata: Metadata = {
   title: "CURRENT - Studio Management",
@@ -17,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${dmSans.variable} ${instrumentSerif.variable} app-brand-scope`}>
         <Providers>{children}</Providers>
       </body>
     </html>

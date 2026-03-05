@@ -1,4 +1,4 @@
-const DEFAULT_STUDIO_PRIMARY_COLOR = "#7c3aed"
+const DEFAULT_STUDIO_PRIMARY_COLOR = "#e3120b"
 
 type Rgb = { r: number; g: number; b: number }
 

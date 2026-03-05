@@ -1,4 +1,4 @@
-import MarketingHomePage from "@/components/marketing/home-page"
+import BrandPreviewPage from "@/app/brand-preview/page"
 import SiteLockScreen from "@/components/marketing/site-lock-screen"
 import { getPlatformSettings, hasValidSiteLockAccess } from "@/lib/platform-settings"
 
@@ -12,5 +12,5 @@ export default async function HomePage() {
     }
   }
 
-  return <MarketingHomePage />
+  return <BrandPreviewPage />
 }

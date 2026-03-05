@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --background: 0 0% 97.6%;
+    --foreground: 0 0% 10.2%;
+    --card: 0 0% 97.6%;
+    --card-foreground: 0 0% 10.2%;
+    --popover: 0 0% 97.6%;
+    --popover-foreground: 0 0% 10.2%;
+    --primary: 2 91% 47%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10.2%;
+    --muted: 0 0% 92.2%;
+    --muted-foreground: 30 1% 44%;
+    --accent: 0 43% 92%;
+    --accent-foreground: 0 0% 10.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
+    --border: 0 0% 92.2%;
+    --input: 0 0% 92.2%;
+    --ring: 2 91% 47%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --background: 0 0% 7.1%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 5.9%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 5.9%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 2 91% 47%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 13%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 13%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 2 91% 47%;
   }
 }
 
@@ -55,6 +55,27 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body), sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display), serif;
+    color: #0d0d0d;
+    letter-spacing: -0.02em;
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    color: #f2f2f2;
   }
 }
 
@@ -115,19 +136,120 @@
   background: rgba(100, 116, 139, 0.6);
 }
 
+/* App branding */
+.app-brand-scope {
+  --brand-accent: #e3120b;
+  --brand-accent-strong: #b10e08;
+  --brand-accent-soft: #f2e5e5;
+  --brand-ink: #1a1a1a;
+  --brand-heading: #0d0d0d;
+  --brand-muted: #706f6e;
+  --brand-bg: #f9f9f9;
+  --brand-surface-1: #f2f2f2;
+  --brand-surface-2: #ebebeb;
+  --brand-chip: #fcf2f2;
+  --brand-light-button: #f0f0f0;
+}
+
+.app-brand-scope .bg-violet-50,
+.app-brand-scope .bg-purple-50 {
+  background-color: var(--brand-accent-soft) !important;
+}
+.app-brand-scope .bg-violet-100,
+.app-brand-scope .bg-purple-100 {
+  background-color: color-mix(in srgb, var(--brand-accent-soft) 70%, white) !important;
+}
+.app-brand-scope .bg-violet-500,
+.app-brand-scope .bg-purple-500 {
+  background-color: var(--brand-accent) !important;
+}
+.app-brand-scope .bg-violet-600,
+.app-brand-scope .bg-purple-600 {
+  background-color: var(--brand-accent) !important;
+}
+.app-brand-scope .bg-violet-700,
+.app-brand-scope .bg-purple-700 {
+  background-color: var(--brand-accent-strong) !important;
+}
+
+.app-brand-scope .text-violet-500,
+.app-brand-scope .text-purple-500,
+.app-brand-scope .text-violet-600,
+.app-brand-scope .text-purple-600 {
+  color: var(--brand-accent) !important;
+}
+.app-brand-scope .text-violet-700,
+.app-brand-scope .text-purple-700 {
+  color: var(--brand-accent-strong) !important;
+}
+
+.app-brand-scope .border-violet-200,
+.app-brand-scope .border-purple-200 {
+  border-color: color-mix(in srgb, var(--brand-accent) 20%, #ffffff) !important;
+}
+.app-brand-scope .border-violet-500,
+.app-brand-scope .border-purple-500,
+.app-brand-scope .border-violet-600,
+.app-brand-scope .border-purple-600 {
+  border-color: var(--brand-accent) !important;
+}
+
+.app-brand-scope .text-gray-500,
+.app-brand-scope .text-zinc-500 {
+  color: var(--brand-muted) !important;
+}
+.app-brand-scope .text-gray-600,
+.app-brand-scope .text-zinc-600 {
+  color: color-mix(in srgb, var(--brand-ink) 78%, white) !important;
+}
+.app-brand-scope .text-gray-700,
+.app-brand-scope .text-zinc-700 {
+  color: var(--brand-ink) !important;
+}
+.app-brand-scope .text-gray-900,
+.app-brand-scope .text-zinc-900 {
+  color: var(--brand-heading) !important;
+}
+
+.app-brand-scope .bg-gray-50,
+.app-brand-scope .bg-zinc-50 {
+  background-color: var(--brand-bg) !important;
+}
+.app-brand-scope .bg-gray-100,
+.app-brand-scope .bg-zinc-100 {
+  background-color: var(--brand-surface-1) !important;
+}
+.app-brand-scope .bg-gray-200,
+.app-brand-scope .bg-zinc-200 {
+  background-color: var(--brand-surface-2) !important;
+}
+
+.app-brand-scope .border-gray-100,
+.app-brand-scope .border-zinc-100 {
+  border-color: color-mix(in srgb, var(--brand-surface-2) 85%, white) !important;
+}
+.app-brand-scope .border-gray-200,
+.app-brand-scope .border-zinc-200 {
+  border-color: var(--brand-surface-2) !important;
+}
+.app-brand-scope .border-gray-300,
+.app-brand-scope .border-zinc-300 {
+  border-color: color-mix(in srgb, var(--brand-surface-2) 80%, var(--brand-ink)) !important;
+}
+
 /* Studio branding: remap legacy violet/purple utility tokens to studio-selected color */
 .studio-brand-scope {
-  --studio-50: #f5f3ff;
-  --studio-100: #ede9fe;
-  --studio-200: #ddd6fe;
-  --studio-300: #c4b5fd;
-  --studio-400: #a78bfa;
-  --studio-500: #8b5cf6;
-  --studio-600: #7c3aed;
-  --studio-700: #6d28d9;
-  --studio-800: #5b21b6;
-  --studio-900: #4c1d95;
-  --studio-950: #2e1065;
+  --studio-50: #fef2f2;
+  --studio-100: #fde8e8;
+  --studio-200: #f9cdcc;
+  --studio-300: #f6a8a5;
+  --studio-400: #ef6f69;
+  --studio-500: #e3120b;
+  --studio-600: #e3120b;
+  --studio-700: #b10e08;
+  --studio-800: #8d0c07;
+  --studio-900: #6d0906;
+  --studio-950: #420504;
 }
 
 .studio-brand-scope .bg-violet-50,
