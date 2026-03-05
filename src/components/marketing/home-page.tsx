@@ -174,6 +174,25 @@ export default function HomePage() {
   const [demoLoading, setDemoLoading] = useState(false)
 
   useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+
+    const prevHtmlOverflowY = html.style.overflowY
+    const prevBodyOverflowY = body.style.overflowY
+    const prevBodyOverflowX = body.style.overflowX
+
+    html.style.overflowY = "auto"
+    body.style.overflowY = "visible"
+    body.style.overflowX = "hidden"
+
+    return () => {
+      html.style.overflowY = prevHtmlOverflowY
+      body.style.overflowY = prevBodyOverflowY
+      body.style.overflowX = prevBodyOverflowX
+    }
+  }, [])
+
+  useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
