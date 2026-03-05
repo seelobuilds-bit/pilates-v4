@@ -34,7 +34,7 @@ export default function BrandPreviewPage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
-          zoom: 1.1;
+          overflow-x: clip;
         }
 
         .brand-preview-shell header {
