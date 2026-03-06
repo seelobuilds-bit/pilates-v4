@@ -9,9 +9,9 @@ export default async function StudiosPage() {
   const studios = await db.studio.findMany({
     include: {
       owner: true,
-      locations: true,
       _count: {
         select: {
+          locations: true,
           teachers: true,
           clients: true,
           classSessions: true,
@@ -46,7 +46,7 @@ export default async function StudiosPage() {
               <CardContent>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>Owner: {studio.owner.firstName} {studio.owner.lastName}</p>
-                  <p>Locations: {studio.locations.length}</p>
+                  <p>Locations: {studio._count.locations}</p>
                   <p>Teachers: {studio._count.teachers}</p>
                   <p>Clients: {studio._count.clients}</p>
                   <p>Classes: {studio._count.classSessions}</p>
@@ -65,6 +65,5 @@ export default async function StudiosPage() {
     </div>
   )
 }
-
 
 

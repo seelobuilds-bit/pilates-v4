@@ -5,38 +5,31 @@ import { Button } from "@/components/ui/button"
 import { Building2, Users, Calendar, Plus, ArrowRight, Target } from "lucide-react"
 
 export default async function HQDashboardPage() {
-  // Count only real studios (exclude demo)
-  const studioCount = await db.studio.count({
-    where: { subdomain: { not: "zenith" } }
-  })
-  
-  // Count total clients across all real studios
-  const clientCount = await db.client.count({
-    where: { studio: { subdomain: { not: "zenith" } } }
-  })
-  
-  // Count active leads
-  const leadCount = await db.lead.count({
-    where: { status: { notIn: ["WON", "LOST"] } }
-  })
-  
-  // Count class sessions
-  const classCount = await db.classSession.count({
-    where: { studio: { subdomain: { not: "zenith" } } }
-  })
-  
-  // Get recent studios
-  const recentStudios = await db.studio.findMany({
-    where: { subdomain: { not: "zenith" } },
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: {
-      owner: true,
-      _count: {
-        select: { clients: true, teachers: true, locations: true }
+  const [studioCount, clientCount, leadCount, classCount, recentStudios] = await Promise.all([
+    db.studio.count({
+      where: { subdomain: { not: "zenith" } }
+    }),
+    db.client.count({
+      where: { studio: { subdomain: { not: "zenith" } } }
+    }),
+    db.lead.count({
+      where: { status: { notIn: ["WON", "LOST"] } }
+    }),
+    db.classSession.count({
+      where: { studio: { subdomain: { not: "zenith" } } }
+    }),
+    db.studio.findMany({
+      where: { subdomain: { not: "zenith" } },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        owner: true,
+        _count: {
+          select: { clients: true, teachers: true, locations: true }
+        }
       }
-    }
-  })
+    }),
+  ])
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 lg:p-8">
