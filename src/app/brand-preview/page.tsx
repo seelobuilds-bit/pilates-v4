@@ -344,11 +344,11 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section:first-of-type {
-          min-height: auto !important;
+          min-height: 100svh !important;
           display: flex !important;
-          align-items: flex-start !important;
-          justify-content: flex-start !important;
-          padding-top: 5.25rem !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding-top: 6rem !important;
           padding-bottom: 1rem !important;
         }
 
@@ -359,10 +359,10 @@ export default function BrandPreviewPage() {
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
-            min-height: auto !important;
-            align-items: flex-start !important;
-            justify-content: flex-start !important;
-            padding-top: 5.75rem !important;
+            min-height: 100svh !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding-top: 6.75rem !important;
             padding-bottom: 1rem !important;
           }
 
