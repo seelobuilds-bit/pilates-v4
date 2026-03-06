@@ -30,6 +30,8 @@ const prisma = new PrismaClient()
 
 const STUDIO_NAME = "Current"
 const STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "current-demo-admin"
+const STUDIO_LOGO_URL =
+  "https://bjbnhzniewdbzmwiuank.supabase.co/storage/v1/object/public/uploads/studio-logos/current-demo-admin/logo.png"
 const OWNER_EMAIL = process.env.DEMO_STUDIO_OWNER_EMAIL || "demo@thecurrent.app"
 const OWNER_PASSWORD = "CURRENTDemoOwner!2026"
 const TEACHER_PASSWORD = "CURRENTDemoTeacher!2026"
@@ -995,6 +997,7 @@ async function main() {
       subdomain: STUDIO_SUBDOMAIN,
       ownerId: owner.id,
       primaryColor: "#E3120B",
+      logoUrl: STUDIO_LOGO_URL,
       stripeCurrency: "gbp",
       country: "UK",
       invoicesEnabled: true,
