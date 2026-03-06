@@ -355,7 +355,7 @@ export default function LiveHomePage() {
 
         .live-home-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-7.5vh) !important;
+          transform: translateY(-9.5vh) !important;
         }
 
         @media (min-width: 1024px) {
@@ -368,7 +368,7 @@ export default function LiveHomePage() {
           }
 
           .live-home-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-9vh) !important;
+            transform: translateY(-11vh) !important;
             transform-origin: top center;
           }
         }
