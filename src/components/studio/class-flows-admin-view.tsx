@@ -227,7 +227,7 @@ export default function ClassFlowsAdminView({
 
   function isUploadedAsset(url: string | null | undefined): boolean {
     if (!url) return false
-    return url.startsWith("/uploads") || url.startsWith("http://") || url.startsWith("https://")
+    return url.startsWith("/uploads") || url.startsWith("/api/media") || url.startsWith("http://") || url.startsWith("https://")
   }
 
   async function handleFileUpload(file: File, type: "video" | "pdf" | "thumbnail") {
@@ -239,6 +239,7 @@ export default function ClassFlowsAdminView({
     const formData = new FormData()
     formData.append("file", file)
     formData.append("type", type)
+    formData.append("visibility", "private")
 
     try {
       const res = await fetch(uploadEndpoint, {

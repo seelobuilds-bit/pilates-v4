@@ -224,6 +224,7 @@ export default function HQTrainingPage() {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("folder", folder)
+      formData.append("visibility", "private")
 
       const res = await fetch("/api/upload", {
         method: "POST",

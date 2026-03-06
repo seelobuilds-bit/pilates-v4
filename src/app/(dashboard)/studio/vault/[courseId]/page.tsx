@@ -435,6 +435,7 @@ export default function StudioVaultCoursePage({
       const formData = new FormData()
       formData.append("file", file)
       formData.append("folder", `vault/${course.id}/lessons`)
+      formData.append("visibility", "private")
 
       const res = await fetch("/api/upload", {
         method: "POST",

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
+import {
+  buildProtectedMediaUrl,
+  buildPublicStorageUrl,
+  parseManagedStorageUrl,
+  PRIVATE_STORAGE_BUCKET,
+  PUBLIC_STORAGE_BUCKET,
+} from "@/lib/storage"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads"
 
 function getUploadFolder(formData: FormData): string {
   const explicitFolder = formData.get("folder")
@@ -22,6 +28,10 @@ function getUploadFolder(formData: FormData): string {
   return "misc"
 }
 
+function getUploadVisibility(formData: FormData): "public" | "private" {
+  return formData.get("visibility") === "private" ? "private" : "public"
+}
+
 function sanitizeFolder(folder: string): string {
   return folder
     .split("/")
@@ -32,19 +42,6 @@ function sanitizeFolder(folder: string): string {
 
 function encodeStoragePath(path: string): string {
   return path.split("/").map((segment) => encodeURIComponent(segment)).join("/")
-}
-
-function extractPathFromPublicUrl(url: string): string | null {
-  try {
-    const parsed = new URL(url)
-    const marker = `/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/`
-    const idx = parsed.pathname.indexOf(marker)
-    if (idx === -1) return null
-    const rawPath = parsed.pathname.slice(idx + marker.length)
-    return decodeURIComponent(rawPath)
-  } catch {
-    return null
-  }
 }
 
 function assertStorageConfig(): string | null {
@@ -65,6 +62,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get("file") as File
     const folder = getUploadFolder(formData)
+    const visibility = getUploadVisibility(formData)
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
@@ -100,14 +98,22 @@ export async function POST(request: NextRequest) {
     }
     const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY as string
 
+    const bucket = visibility === "private" ? PRIVATE_STORAGE_BUCKET : PUBLIC_STORAGE_BUCKET
+
     // Create unique object path
     const timestamp = Date.now()
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
-    const objectPath = `${folder}/${timestamp}-${sanitizedName}`
+    const relativeObjectPath = `${folder}/${timestamp}-${sanitizedName}`
+    const objectPath =
+      visibility === "private"
+        ? session.user.studioId
+          ? `studio/${session.user.studioId}/${relativeObjectPath}`
+          : `hq/${session.user.id || "shared"}/${relativeObjectPath}`
+        : relativeObjectPath
     const encodedPath = encodeStoragePath(objectPath)
 
     const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_STORAGE_BUCKET)}/${encodedPath}`,
+      `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(bucket)}/${encodedPath}`,
       {
         method: "POST",
         headers: {
@@ -127,14 +133,16 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    const publicUrl =
-      `${SUPABASE_URL}/storage/v1/object/public/` +
-      `${encodeURIComponent(SUPABASE_STORAGE_BUCKET)}/${encodedPath}`
+    const url =
+      visibility === "private"
+        ? buildProtectedMediaUrl(objectPath, bucket)
+        : buildPublicStorageUrl(objectPath, bucket)
 
     return NextResponse.json({
-      url: publicUrl,
+      url,
       path: objectPath,
-      bucket: SUPABASE_STORAGE_BUCKET,
+      bucket,
+      visibility,
       filename: file.name,
       size: file.size,
       type: file.type,
@@ -159,10 +167,15 @@ export async function DELETE(request: NextRequest) {
     }
     const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY as string
 
-    const { url, path } = await request.json()
+    const { url, path, bucket } = await request.json()
+    const managedUrl = typeof url === "string" ? parseManagedStorageUrl(url) : null
     const objectPath = typeof path === "string" && path.trim().length > 0
       ? path
-      : (typeof url === "string" ? extractPathFromPublicUrl(url) : null)
+      : (managedUrl?.path ?? null)
+    const targetBucket =
+      typeof bucket === "string" && bucket.trim().length > 0
+        ? bucket
+        : (managedUrl?.bucket ?? PUBLIC_STORAGE_BUCKET)
 
     if (!objectPath) {
       return NextResponse.json({ error: "No valid file path or URL provided" }, { status: 400 })
@@ -174,7 +187,7 @@ export async function DELETE(request: NextRequest) {
 
     const encodedPath = encodeStoragePath(objectPath)
     const deleteRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_STORAGE_BUCKET)}/${encodedPath}`,
+      `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(targetBucket)}/${encodedPath}`,
       {
         method: "DELETE",
         headers: {
