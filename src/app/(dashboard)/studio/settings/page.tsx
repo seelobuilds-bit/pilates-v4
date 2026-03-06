@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { buildStudioBrandCssVariables } from "@/lib/brand-color"
+import { DEMO_THEME_PRIMARY_COLOR_COOKIE, resolveDemoThemePrimaryColor } from "@/lib/demo-theme"
 import { EMBED_FONT_OPTIONS, EmbedFontKey, isEmbedFontKey } from "@/lib/embed-fonts"
 import { 
   Building2, 
@@ -115,6 +117,25 @@ export default function SettingsPage() {
     if (!studio?.subdomain || typeof window === "undefined") return
     window.localStorage.setItem(`embed-font:${studio.subdomain}`, embedFont)
   }, [studio?.subdomain, embedFont])
+
+  useEffect(() => {
+    if (!isDemoSession || !studio?.primaryColor || typeof document === "undefined") return
+
+    const resolvedPrimaryColor = resolveDemoThemePrimaryColor(studio.primaryColor)
+    if (!resolvedPrimaryColor) return
+
+    document.cookie = `${DEMO_THEME_PRIMARY_COLOR_COOKIE}=${encodeURIComponent(
+      resolvedPrimaryColor
+    )}; path=/; max-age=${60 * 60 * 8}; samesite=lax`
+
+    const root = document.querySelector(".studio-brand-scope") as HTMLElement | null
+    if (!root) return
+
+    const variables = buildStudioBrandCssVariables(resolvedPrimaryColor)
+    for (const [property, value] of Object.entries(variables)) {
+      root.style.setProperty(property, value)
+    }
+  }, [isDemoSession, studio?.primaryColor])
 
   const fetchStudioData = async () => {
     try {
@@ -467,7 +488,8 @@ export default function SettingsPage() {
       <div className="max-w-3xl space-y-6">
         {isDemoSession && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Demo mode is read-only. You can explore settings, but payment and settings changes are disabled.
+            Demo mode is read-only. Payment and settings writes are disabled, but the brand color preview is local to
+            this browser and resets whenever someone enters the demo again.
           </div>
         )}
         {/* Stripe Payments */}
@@ -1140,17 +1162,20 @@ export default function SettingsPage() {
                   type="color" 
                   id="color" 
                   value={studio?.primaryColor || "#e3120b"}
-                  disabled={isDemoSession}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-12 h-10 rounded border cursor-pointer"
                 />
                 <Input 
                   value={studio?.primaryColor || "#e3120b"}
-                  disabled={isDemoSession}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-32"
                 />
               </div>
+              {isDemoSession ? (
+                <p className="text-xs text-amber-700">
+                  Demo-only preview. This color is private to this browser and resets on the next demo entry.
+                </p>
+              ) : null}
             </div>
             {saveMessage && (
               <p className={`text-sm ${saveMessage.type === "success" ? "text-emerald-600" : "text-red-600"}`}>

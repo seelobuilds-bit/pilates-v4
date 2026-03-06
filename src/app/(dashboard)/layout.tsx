@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
 import { getSession } from "@/lib/session"
 import { Sidebar } from "@/components/layout/sidebar"
 import { SupportWidget } from "@/components/support/support-widget"
 import { db } from "@/lib/db"
 import { buildStudioBrandCssVariables } from "@/lib/brand-color"
+import { DEMO_THEME_PRIMARY_COLOR_COOKIE, resolveDemoThemePrimaryColor } from "@/lib/demo-theme"
 import type { CSSProperties } from "react"
 
 export default async function DashboardLayout({
@@ -26,6 +28,16 @@ export default async function DashboardLayout({
       select: { primaryColor: true },
     })
     studioPrimaryColor = studio?.primaryColor || null
+  }
+
+  if (session.user.isDemoSession) {
+    const cookieStore = await cookies()
+    const demoThemePrimaryColor = resolveDemoThemePrimaryColor(
+      cookieStore.get(DEMO_THEME_PRIMARY_COLOR_COOKIE)?.value
+    )
+    if (demoThemePrimaryColor) {
+      studioPrimaryColor = demoThemePrimaryColor
+    }
   }
 
   const brandVariables = isStudioScopedRole

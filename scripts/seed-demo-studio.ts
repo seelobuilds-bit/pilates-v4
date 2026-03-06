@@ -28,7 +28,7 @@ import {
 
 const prisma = new PrismaClient()
 
-const STUDIO_NAME = "Atelier Current"
+const STUDIO_NAME = "Current"
 const STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "current-demo-admin"
 const OWNER_EMAIL = process.env.DEMO_STUDIO_OWNER_EMAIL || "demo@thecurrent.app"
 const OWNER_PASSWORD = "CURRENTDemoOwner!2026"

@@ -338,11 +338,11 @@
   --studio-surface: #f9f9f9;
   --studio-surface-muted: #ebebeb;
   --background: 0 0% 95%;
-  --card: 0 0% 98%;
+  --card: 0 0% 97.6%;
   --card-foreground: 0 0% 10.2%;
-  --popover: 0 0% 98%;
+  --popover: 0 0% 97.6%;
   --popover-foreground: 0 0% 10.2%;
-  --secondary: 0 0% 98%;
+  --secondary: 0 0% 97.6%;
   --secondary-foreground: 0 0% 10.2%;
   --muted: 0 0% 95%;
   --muted-foreground: 30 1% 44%;
@@ -360,7 +360,8 @@
 .studio-brand-scope .bg-white\/90,
 .studio-brand-scope .bg-white\/95,
 .studio-brand-scope aside.bg-white,
-.studio-brand-scope [class*=" bg-white"] {
+.studio-brand-scope [class*=" bg-white"],
+.studio-brand-scope .bg-card {
   background-color: var(--studio-surface) !important;
 }
 

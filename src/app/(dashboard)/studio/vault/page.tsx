@@ -132,6 +132,7 @@ export default function StudioVaultPage() {
   // Subscription Plans (3 tiers)
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [selectedTier, setSelectedTier] = useState<"STUDIO_OWNERS" | "TEACHERS" | "CLIENTS">("CLIENTS")
+  const [failedThumbnailIds, setFailedThumbnailIds] = useState<Record<string, true>>({})
   const [editingPlan, setEditingPlan] = useState({
     audience: "CLIENTS" as "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS",
     name: "",
@@ -527,6 +528,10 @@ export default function StudioVaultPage() {
     return matchesSearch && matchesAudience && matchesCategory
   })
 
+  function markThumbnailFailed(courseId: string) {
+    setFailedThumbnailIds((prev) => (prev[courseId] ? prev : { ...prev, [courseId]: true }))
+  }
+
   if (loading) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -728,13 +733,14 @@ export default function StudioVaultPage() {
                   <CardContent className="p-0">
                     {/* Thumbnail */}
                     <div className="aspect-video bg-gradient-to-br from-white to-gray-100 relative">
-                      {course.thumbnailUrl ? (
+                      {course.thumbnailUrl && !failedThumbnailIds[course.id] ? (
                         <Image
                           src={course.thumbnailUrl}
-                          alt={course.title}
+                          alt=""
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           className="w-full h-full object-cover"
+                          onError={() => markThumbnailFailed(course.id)}
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-gray-100" />
@@ -1558,6 +1564,5 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
 
 

@@ -5,6 +5,7 @@ import {
   shouldUseSecureNextAuthCookie,
 } from "@/lib/demo-session"
 import { getDemoStudioContext } from "@/lib/demo-studio"
+import { DEMO_THEME_PRIMARY_COLOR_COOKIE } from "@/lib/demo-theme"
 
 function sanitizeNextPath(rawNext: string | null) {
   if (!rawNext) return "/studio"
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 7,
   })
   response.cookies.delete(alternateCookieName)
+  response.cookies.delete(DEMO_THEME_PRIMARY_COLOR_COOKIE)
 
   return response
 }
