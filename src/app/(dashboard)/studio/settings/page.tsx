@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -67,8 +68,10 @@ type StudioSettings = {
 }
 
 export default function SettingsPage() {
+  const { data: session } = useSession()
   const searchParams = useSearchParams()
   const stripeParam = searchParams.get("stripe")
+  const isDemoSession = session?.user?.isDemoSession === true
   
   const [studio, setStudio] = useState<StudioSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -181,6 +184,10 @@ export default function SettingsPage() {
   }
 
   const handleConnectStripe = async () => {
+    if (isDemoSession) {
+      setSaveMessage({ type: "error", text: "Demo account is read-only." })
+      return
+    }
     setConnectingStripe(true)
     try {
       const res = await fetch("/api/studio/stripe/connect", {
@@ -203,6 +210,10 @@ export default function SettingsPage() {
   }
 
   const handleDisconnectStripe = async () => {
+    if (isDemoSession) {
+      setSaveMessage({ type: "error", text: "Demo account is read-only." })
+      return
+    }
     if (!confirm("Are you sure you want to disconnect your Stripe account? You won't be able to accept payments until you reconnect.")) {
       return
     }
@@ -223,6 +234,10 @@ export default function SettingsPage() {
   }
 
   const handleContinueOnboarding = async () => {
+    if (isDemoSession) {
+      setSaveMessage({ type: "error", text: "Demo account is read-only." })
+      return
+    }
     setConnectingStripe(true)
     try {
       const res = await fetch("/api/studio/stripe/connect", {
@@ -247,6 +262,10 @@ export default function SettingsPage() {
 
   const handleSaveStudioSettings = async () => {
     if (!studio) return
+    if (isDemoSession) {
+      setSaveMessage({ type: "error", text: "Demo account is read-only." })
+      return
+    }
 
     setSavingStudio(true)
     setSaveMessage(null)
@@ -308,6 +327,10 @@ export default function SettingsPage() {
 
   const handleLogoUpload = async (file: File | null) => {
     if (!file) return
+    if (isDemoSession) {
+      setSaveMessage({ type: "error", text: "Demo account is read-only." })
+      return
+    }
     if (!file.type.startsWith("image/")) {
       setSaveMessage({ type: "error", text: "Logo must be an image file" })
       return
@@ -442,6 +465,11 @@ export default function SettingsPage() {
       )}
 
       <div className="max-w-3xl space-y-6">
+        {isDemoSession && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Demo mode is read-only. You can explore settings, but payment and settings changes are disabled.
+          </div>
+        )}
         {/* Stripe Payments */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-4">
@@ -527,7 +555,7 @@ export default function SettingsPage() {
                   {!stripeStatus.onboardingComplete && (
                     <Button 
                       onClick={handleContinueOnboarding}
-                      disabled={connectingStripe}
+                      disabled={connectingStripe || isDemoSession}
                       className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
                     >
                       {connectingStripe ? (
@@ -558,6 +586,7 @@ export default function SettingsPage() {
                 <div className="pt-4 border-t">
                   <button 
                     onClick={handleDisconnectStripe}
+                    disabled={isDemoSession}
                     className="text-sm text-red-600 hover:text-red-700"
                   >
                     Disconnect Stripe Account
@@ -597,7 +626,7 @@ export default function SettingsPage() {
                   </p>
                   <Button 
                     onClick={handleConnectStripe}
-                    disabled={connectingStripe}
+                    disabled={connectingStripe || isDemoSession}
                     className="bg-violet-600 hover:bg-violet-700"
                   >
                     {connectingStripe ? (
@@ -788,7 +817,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio || isDemoSession} className="bg-violet-600 hover:bg-violet-700">
               {savingStudio && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
@@ -867,7 +896,7 @@ export default function SettingsPage() {
                 {saveMessage.text}
               </p>
             )}
-            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio || isDemoSession} className="bg-violet-600 hover:bg-violet-700">
               {savingStudio && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
@@ -1046,7 +1075,7 @@ export default function SettingsPage() {
                     id="logo-upload"
                     type="file"
                     accept="image/*"
-                    disabled={uploadingLogo}
+                    disabled={uploadingLogo || isDemoSession}
                     onChange={(e) => {
                       const file = e.target.files?.[0] ?? null
                       void handleLogoUpload(file)
@@ -1077,6 +1106,7 @@ export default function SettingsPage() {
                         max={200}
                         step={5}
                         value={studio.logoScale}
+                        disabled={isDemoSession}
                         onChange={(e) =>
                           setStudio((prev) =>
                             prev ? { ...prev, logoScale: Number(e.target.value) } : prev
@@ -1091,6 +1121,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="outline"
                       size="sm"
+                      disabled={isDemoSession}
                       onClick={() => {
                         setStudio((prev) => (prev ? { ...prev, logoUrl: null } : prev))
                         setSaveMessage({ type: "success", text: "Logo removed. Click Save Changes to publish it." })
@@ -1109,11 +1140,13 @@ export default function SettingsPage() {
                   type="color" 
                   id="color" 
                   value={studio?.primaryColor || "#e3120b"}
+                  disabled={isDemoSession}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-12 h-10 rounded border cursor-pointer"
                 />
                 <Input 
                   value={studio?.primaryColor || "#e3120b"}
+                  disabled={isDemoSession}
                   onChange={(e) => setStudio((prev) => prev ? ({ ...prev, primaryColor: e.target.value }) : prev)}
                   className="w-32"
                 />
@@ -1124,7 +1157,7 @@ export default function SettingsPage() {
                 {saveMessage.text}
               </p>
             )}
-            <Button onClick={handleSaveStudioSettings} disabled={savingStudio} className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
+            <Button onClick={handleSaveStudioSettings} disabled={savingStudio || isDemoSession} className="bg-violet-600 hover:bg-violet-700">Save Changes</Button>
           </CardContent>
         </Card>
       </div>

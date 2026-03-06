@@ -337,6 +337,17 @@
   --studio-shell: #f2f2f2;
   --studio-surface: #f9f9f9;
   --studio-surface-muted: #ebebeb;
+  --background: 0 0% 95%;
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 10.2%;
+  --popover: 0 0% 98%;
+  --popover-foreground: 0 0% 10.2%;
+  --secondary: 0 0% 98%;
+  --secondary-foreground: 0 0% 10.2%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 30 1% 44%;
+  --border: 0 0% 92%;
+  --input: 0 0% 92%;
 }
 
 .studio-brand-scope,

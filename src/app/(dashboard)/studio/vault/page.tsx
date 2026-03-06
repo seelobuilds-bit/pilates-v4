@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useSession } from "next-auth/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -120,6 +121,8 @@ interface AffiliateLink {
 }
 
 export default function StudioVaultPage() {
+  const { data: session } = useSession()
+  const isDemoSession = session?.user?.isDemoSession === true
   const [loading, setLoading] = useState(true)
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -152,9 +155,12 @@ export default function StudioVaultPage() {
   // Create course modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const thumbnailInputRef = useRef<HTMLInputElement | null>(null)
   const [newCourse, setNewCourse] = useState({
     title: "",
     subtitle: "",
+    thumbnailUrl: "",
     coverPlaceholderText: "",
     description: "",
     audience: "CLIENTS",
@@ -183,6 +189,45 @@ export default function StudioVaultPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  function showDemoReadonlyMessage() {
+    alert("Demo account is read-only.")
+  }
+
+  async function uploadCourseThumbnail(file: File) {
+    setUploadingThumbnail(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("type", "thumbnail")
+      formData.append("folder", "vault/course-thumbnails")
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || "Failed to upload thumbnail")
+      }
+
+      const data = await res.json()
+      setNewCourse((prev) => ({ ...prev, thumbnailUrl: data.url }))
+    } catch (error) {
+      console.error("Thumbnail upload failed:", error)
+      alert(error instanceof Error ? error.message : "Failed to upload thumbnail")
+    } finally {
+      setUploadingThumbnail(false)
+    }
+  }
+
+  async function onThumbnailChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    await uploadCourseThumbnail(file)
+    event.target.value = ""
+  }
 
   async function fetchData() {
     try {
@@ -246,6 +291,10 @@ export default function StudioVaultPage() {
   }
 
   async function createCourse() {
+    if (isDemoSession) {
+      showDemoReadonlyMessage()
+      return
+    }
     if (!newCourse.title.trim()) {
       alert("Please enter a course title")
       return
@@ -270,6 +319,7 @@ export default function StudioVaultPage() {
         setNewCourse({
           title: "",
           subtitle: "",
+          thumbnailUrl: "",
           coverPlaceholderText: "",
           description: "",
           audience: "CLIENTS",
@@ -298,6 +348,10 @@ export default function StudioVaultPage() {
   }
 
   async function togglePublish(courseId: string, isPublished: boolean) {
+    if (isDemoSession) {
+      showDemoReadonlyMessage()
+      return
+    }
     try {
       const res = await fetch(`/api/vault/courses/${courseId}`, {
         method: "PATCH",
@@ -316,6 +370,10 @@ export default function StudioVaultPage() {
   }
 
   async function toggleSubscriptionInclusion(courseId: string, include: boolean) {
+    if (isDemoSession) {
+      showDemoReadonlyMessage()
+      return
+    }
     try {
       const res = await fetch("/api/vault/subscription", {
         method: "PATCH",
@@ -334,6 +392,10 @@ export default function StudioVaultPage() {
   }
 
   async function saveSubscriptionPlan() {
+    if (isDemoSession) {
+      showDemoReadonlyMessage()
+      return
+    }
     setSavingPlan(true)
     try {
       const res = await fetch("/api/vault/subscription", {
@@ -475,13 +537,22 @@ export default function StudioVaultPage() {
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+      {isDemoSession && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Demo mode is read-only. You can preview the vault, but course, subscription, and community changes are disabled.
+        </div>
+      )}
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">The Vault</h1>
           <p className="text-gray-500 mt-1">Create and manage courses for owners, teachers, and clients</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto">
+        <Button
+          onClick={() => (isDemoSession ? showDemoReadonlyMessage() : setShowCreateModal(true))}
+          disabled={isDemoSession}
+          className="w-full bg-violet-600 hover:bg-violet-700 sm:w-auto"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Course
         </Button>
@@ -640,7 +711,11 @@ export default function StudioVaultPage() {
                 <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
                 <p className="text-gray-500 mb-4">Create your first course to start building your vault</p>
-                <Button onClick={() => setShowCreateModal(true)} className="bg-violet-600 hover:bg-violet-700">
+                <Button
+                  onClick={() => (isDemoSession ? showDemoReadonlyMessage() : setShowCreateModal(true))}
+                  disabled={isDemoSession}
+                  className="bg-violet-600 hover:bg-violet-700"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Course
                 </Button>
@@ -652,7 +727,7 @@ export default function StudioVaultPage() {
                 <Card key={course.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     {/* Thumbnail */}
-                    <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 relative">
+                    <div className="aspect-video bg-gradient-to-br from-white to-gray-100 relative">
                       {course.thumbnailUrl ? (
                         <Image
                           src={course.thumbnailUrl}
@@ -662,14 +737,7 @@ export default function StudioVaultPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                          <BookOpen className="h-12 w-12 text-white/50" />
-                          {course.coverPlaceholderText ? (
-                            <p className="max-w-[18rem] text-sm font-medium text-white/85 line-clamp-3">
-                              {course.coverPlaceholderText}
-                            </p>
-                          ) : null}
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-gray-100" />
                       )}
                       <div className="absolute top-2 right-2 flex gap-1">
                         {course.isPublished ? (
@@ -727,6 +795,7 @@ export default function StudioVaultPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={isDemoSession}
                           onClick={() => togglePublish(course.id, course.isPublished)}
                         >
                           {course.isPublished ? (
@@ -867,7 +936,7 @@ export default function StudioVaultPage() {
                         {editingPlan.features.map((feature, i) => (
                         <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <Input value={feature} disabled className="flex-1" />
-                            <Button variant="ghost" size="sm" onClick={() => removeFeature(i)}>
+                            <Button variant="ghost" size="sm" disabled={isDemoSession} onClick={() => removeFeature(i)}>
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
@@ -877,9 +946,10 @@ export default function StudioVaultPage() {
                             value={newFeature}
                             onChange={(e) => setNewFeature(e.target.value)}
                             placeholder="Add a feature..."
+                            disabled={isDemoSession}
                             onKeyPress={(e) => e.key === "Enter" && addFeature()}
                           />
-                          <Button variant="outline" size="sm" onClick={addFeature}>
+                          <Button variant="outline" size="sm" disabled={isDemoSession} onClick={addFeature}>
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -888,7 +958,7 @@ export default function StudioVaultPage() {
 
                     <Button 
                       onClick={saveSubscriptionPlan} 
-                      disabled={savingPlan || !editingPlan.name}
+                      disabled={savingPlan || !editingPlan.name || isDemoSession}
                       className={`w-full ${subscriptionPlans.find(p => p.audience === selectedTier) 
                         ? "bg-violet-600 hover:bg-violet-700" 
                         : "bg-green-600 hover:bg-green-700"}`}
@@ -927,6 +997,7 @@ export default function StudioVaultPage() {
                         </div>
                         <Switch
                           checked={course.includeInSubscription}
+                          disabled={isDemoSession}
                           onCheckedChange={(v) => toggleSubscriptionInclusion(course.id, v)}
                         />
                       </div>
@@ -1227,12 +1298,54 @@ export default function StudioVaultPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Placeholder Text</Label>
-                <Input
-                  value={newCourse.coverPlaceholderText}
-                  onChange={(e) => setNewCourse({ ...newCourse, coverPlaceholderText: e.target.value })}
-                  placeholder="Optional text to show on the course cover when no image is uploaded"
+                <Label>Course Thumbnail</Label>
+                <input
+                  ref={thumbnailInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onThumbnailChange}
                 />
+                {newCourse.thumbnailUrl ? (
+                  <div className="space-y-3">
+                    <div className="relative h-40 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                      <Image src={newCourse.thumbnailUrl} alt="Course thumbnail" fill className="object-cover" />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => thumbnailInputRef.current?.click()}
+                        disabled={uploadingThumbnail || isDemoSession}
+                      >
+                        {uploadingThumbnail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Replace Thumbnail
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setNewCourse({ ...newCourse, thumbnailUrl: "" })}
+                        disabled={isDemoSession}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
+                    <p className="text-sm text-gray-600">Upload a thumbnail for the course cover.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-3"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      disabled={uploadingThumbnail || isDemoSession}
+                    >
+                      {uploadingThumbnail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Upload Thumbnail
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -1433,7 +1546,7 @@ export default function StudioVaultPage() {
             </Button>
             <Button 
               onClick={createCourse}
-              disabled={creating || !newCourse.title || !newCourse.description}
+              disabled={creating || !newCourse.title || !newCourse.description || isDemoSession}
               className="bg-violet-600 hover:bg-violet-700"
             >
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
@@ -1445,13 +1558,6 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
 
 
 

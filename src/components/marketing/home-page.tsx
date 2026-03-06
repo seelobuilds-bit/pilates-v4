@@ -572,6 +572,48 @@ export default function HomePage() {
       </section>
 
       {/* ============================================ */}
+      {/* FEATURES GRID */}
+      {/* ============================================ */}
+      <section id="features" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="bg-violet-100 text-violet-700 mb-4 px-4 py-1">Features</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Everything you need. Nothing you don&apos;t.
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              No bloat. No complexity. Just the tools that actually move the needle for your studio.
+            </p>
+          </div>
+
+          {/* Core Features */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {[
+              { icon: Calendar, title: "Clean Embed Booking", desc: "Seamless booking inside your site. No redirects. No third-party feel. Fully branded to you." },
+              { icon: CreditCard, title: "Invoicing on Autopilot", desc: "Teachers pick a date range. Current generates a perfect itemised invoice. You approve. You pay. Done." },
+              { icon: Users, title: "Custom App", desc: "A fully custom app for your studio on the App Store and Google Play. Your name. Your brand. Your clients connected to everything." },
+              { icon: BarChart3, title: "Easy Reporting", desc: "Revenue. Retention. Teacher performance. All in one clean, readable view built for studio owners." },
+              { icon: Mail, title: "Email & SMS Marketing", desc: "Simple flows. Real engagement. Clients who come back. Or let us manage it completely for you." },
+              { icon: MessageSquare, title: "24/7 Support", desc: "Not “24/7” with an asterisk. Actually 24/7. We’re always on because your studio never really stops." },
+            ].map((feature, i) => (
+              <Card key={i} className="motion-card border-0 shadow-sm hover:shadow-lg transition-all bg-gray-50/50 hover:bg-white group">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-pink-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <feature.icon className="w-6 h-6 text-violet-600" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">{feature.title}</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">{feature.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+
+
+      {/* ============================================ */}
       {/* WHY CURRENT WORKS */}
       {/* ============================================ */}
       <section id="why" className="pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
@@ -623,46 +665,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
-      {/* ============================================ */}
-      {/* FEATURES GRID */}
-      {/* ============================================ */}
-      <section id="features" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="bg-violet-100 text-violet-700 mb-4 px-4 py-1">Features</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Everything you need. Nothing you don&apos;t.
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              No bloat. No complexity. Just the tools that actually move the needle for your studio.
-            </p>
-          </div>
-
-          {/* Core Features */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {[
-              { icon: Calendar, title: "Clean Embed Booking", desc: "Seamless booking inside your site. No redirects. No third-party feel. Fully branded to you." },
-              { icon: CreditCard, title: "Invoicing on Autopilot", desc: "Teachers pick a date range. Current generates a perfect itemised invoice. You approve. You pay. Done." },
-              { icon: Users, title: "Custom App", desc: "A fully custom app for your studio on the App Store and Google Play. Your name. Your brand. Your clients connected to everything." },
-              { icon: BarChart3, title: "Easy Reporting", desc: "Revenue. Retention. Teacher performance. All in one clean, readable view built for studio owners." },
-              { icon: Mail, title: "Email & SMS Marketing", desc: "Simple flows. Real engagement. Clients who come back. Or let us manage it completely for you." },
-              { icon: MessageSquare, title: "24/7 Support", desc: "Not “24/7” with an asterisk. Actually 24/7. We’re always on because your studio never really stops." },
-            ].map((feature, i) => (
-              <Card key={i} className="motion-card border-0 shadow-sm hover:shadow-lg transition-all bg-gray-50/50 hover:bg-white group">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-pink-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <feature.icon className="w-6 h-6 text-violet-600" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">{feature.title}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{feature.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-        </div>
-      </section>
 
       {/* ============================================ */}
       {/* MARKETING & RETENTION */}

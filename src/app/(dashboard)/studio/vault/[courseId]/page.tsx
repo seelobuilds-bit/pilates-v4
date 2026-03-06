@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect, use, useRef } from "react"
+import { useState, useEffect, use, useRef, type ChangeEvent } from "react"
 import Link from "next/link"
+import Image from "next/image"
+import { useSession } from "next-auth/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -164,6 +166,8 @@ export default function StudioVaultCoursePage({
   params: Promise<{ courseId: string }>
 }) {
   const resolvedParams = use(params)
+  const { data: session } = useSession()
+  const isDemoSession = session?.user?.isDemoSession === true
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -182,13 +186,16 @@ export default function StudioVaultCoursePage({
   const [lessonForm, setLessonForm] = useState(defaultLessonForm)
   const [uploadingResource, setUploadingResource] = useState(false)
   const lessonFileInputRef = useRef<HTMLInputElement | null>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLessonId, setPreviewLessonId] = useState<string | null>(null)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
 
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
     title: "",
     subtitle: "",
+    thumbnailUrl: "",
     coverPlaceholderText: "",
     description: "",
     category: "",
@@ -214,6 +221,7 @@ export default function StudioVaultCoursePage({
         setEditedCourse({
           title: data.title,
           subtitle: data.subtitle || "",
+          thumbnailUrl: data.thumbnailUrl || "",
           coverPlaceholderText: data.coverPlaceholderText || "",
           description: data.description,
           category: data.category || "",
@@ -303,6 +311,10 @@ export default function StudioVaultCoursePage({
 
   async function saveCourse() {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
 
     setSaving(true)
     try {
@@ -324,6 +336,10 @@ export default function StudioVaultCoursePage({
 
   async function togglePublish() {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
 
     try {
       const res = await fetch(`/api/vault/courses/${course.id}`, {
@@ -338,6 +354,42 @@ export default function StudioVaultCoursePage({
     } catch (err) {
       console.error("Failed to toggle publish:", err)
     }
+  }
+
+  async function uploadThumbnail(file: File) {
+    if (!course) return
+    setUploadingThumbnail(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("type", "thumbnail")
+      formData.append("folder", `vault/${course.id}/thumbnail`)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || "Failed to upload thumbnail")
+      }
+
+      const data = await res.json()
+      setEditedCourse((prev) => ({ ...prev, thumbnailUrl: data.url }))
+    } catch (error) {
+      console.error("Thumbnail upload failed:", error)
+      alert(error instanceof Error ? error.message : "Failed to upload thumbnail")
+    } finally {
+      setUploadingThumbnail(false)
+    }
+  }
+
+  async function onThumbnailChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    await uploadThumbnail(file)
+    event.target.value = ""
   }
 
   function openCreateLesson(moduleId: string) {
@@ -374,6 +426,10 @@ export default function StudioVaultCoursePage({
 
   async function uploadLessonResource(file: File) {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     setUploadingResource(true)
     try {
       const formData = new FormData()
@@ -429,6 +485,10 @@ export default function StudioVaultCoursePage({
 
   async function createModule() {
     if (!course || !moduleForm.title.trim()) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     setContentBusy(true)
     try {
       const res = await fetch(`/api/vault/courses/${course.id}/modules`, {
@@ -455,6 +515,10 @@ export default function StudioVaultCoursePage({
 
   async function saveLesson() {
     if (!course || !selectedModuleId || !lessonForm.title.trim()) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
 
     setContentBusy(true)
     try {
@@ -524,6 +588,10 @@ export default function StudioVaultCoursePage({
 
   async function deleteLesson(moduleId: string, lessonId: string) {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     const confirmed = window.confirm("Delete this lesson? This cannot be undone.")
     if (!confirmed) return
 
@@ -552,6 +620,10 @@ export default function StudioVaultCoursePage({
 
   async function reorderModules(moduleIndex: number, direction: "up" | "down") {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     const targetIndex = direction === "up" ? moduleIndex - 1 : moduleIndex + 1
     if (targetIndex < 0 || targetIndex >= course.modules.length) return
 
@@ -577,6 +649,10 @@ export default function StudioVaultCoursePage({
 
   async function reorderLessons(moduleId: string, lessonIndex: number, direction: "up" | "down") {
     if (!course) return
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
 
     const foundModule = course.modules.find((item) => item.id === moduleId)
     if (!foundModule) return
@@ -636,6 +712,11 @@ export default function StudioVaultCoursePage({
 
   return (
     <div className="px-3 py-4 sm:px-4 sm:py-5 lg:p-8 bg-gray-50/50 min-h-screen">
+      {isDemoSession && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Demo mode is read-only. You can preview the course and content, but changes are disabled.
+        </div>
+      )}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -675,11 +756,11 @@ export default function StudioVaultCoursePage({
             <Eye className="h-4 w-4 mr-2" />
             Preview Course
           </Button>
-          <Button variant="outline" onClick={togglePublish} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={togglePublish} disabled={isDemoSession} className="w-full sm:w-auto">
             <Eye className="h-4 w-4 mr-2" />
             {course.isPublished ? "Unpublish" : "Publish"}
           </Button>
-          <Button onClick={saveCourse} disabled={saving} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
+          <Button onClick={saveCourse} disabled={saving || isDemoSession} className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
@@ -720,6 +801,7 @@ export default function StudioVaultCoursePage({
                   <Label>Title</Label>
                   <Input
                     value={editedCourse.title}
+                    disabled={isDemoSession}
                     onChange={(e) => setEditedCourse({ ...editedCourse, title: e.target.value })}
                   />
                 </div>
@@ -728,16 +810,69 @@ export default function StudioVaultCoursePage({
                   <Label>Subtitle</Label>
                   <Input
                     value={editedCourse.subtitle}
+                    disabled={isDemoSession}
                     onChange={(e) => setEditedCourse({ ...editedCourse, subtitle: e.target.value })}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Course Thumbnail</Label>
+                  <input
+                    ref={thumbnailInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={onThumbnailChange}
+                  />
+                  {editedCourse.thumbnailUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative h-44 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                        <Image src={editedCourse.thumbnailUrl} alt="Course thumbnail" fill className="object-cover" />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => thumbnailInputRef.current?.click()}
+                          disabled={uploadingThumbnail || isDemoSession}
+                        >
+                          {uploadingThumbnail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Replace Thumbnail
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setEditedCourse({ ...editedCourse, thumbnailUrl: "" })}
+                          disabled={isDemoSession}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
+                      <p className="text-sm text-gray-600">Upload a thumbnail for the course cover.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={() => thumbnailInputRef.current?.click()}
+                        disabled={uploadingThumbnail || isDemoSession}
+                      >
+                        {uploadingThumbnail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Upload Thumbnail
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Placeholder Text</Label>
                   <Input
                     value={editedCourse.coverPlaceholderText}
+                    disabled={isDemoSession}
                     onChange={(e) => setEditedCourse({ ...editedCourse, coverPlaceholderText: e.target.value })}
-                    placeholder="Shown on the course cover when no thumbnail is uploaded"
+                    placeholder="Internal cover placeholder copy"
                   />
                 </div>
 
@@ -745,6 +880,7 @@ export default function StudioVaultCoursePage({
                   <Label>Description</Label>
                   <Textarea
                     value={editedCourse.description}
+                    disabled={isDemoSession}
                     onChange={(e) => setEditedCourse({ ...editedCourse, description: e.target.value })}
                     rows={5}
                   />
@@ -755,6 +891,7 @@ export default function StudioVaultCoursePage({
                     <Label>Category</Label>
                     <Input
                       value={editedCourse.category}
+                      disabled={isDemoSession}
                       onChange={(e) => setEditedCourse({ ...editedCourse, category: e.target.value })}
                     />
                   </div>
@@ -762,6 +899,7 @@ export default function StudioVaultCoursePage({
                     <Label>Difficulty</Label>
                     <Input
                       value={editedCourse.difficulty}
+                      disabled={isDemoSession}
                       onChange={(e) => setEditedCourse({ ...editedCourse, difficulty: e.target.value })}
                     />
                   </div>
@@ -772,6 +910,7 @@ export default function StudioVaultCoursePage({
                   <Input
                     type="number"
                     value={editedCourse.price}
+                    disabled={isDemoSession}
                     onChange={(e) => setEditedCourse({ ...editedCourse, price: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
@@ -789,6 +928,7 @@ export default function StudioVaultCoursePage({
                   </div>
                   <Switch
                     checked={editedCourse.includeInSubscription}
+                    disabled={isDemoSession}
                     onCheckedChange={(v) => setEditedCourse({ ...editedCourse, includeInSubscription: v })}
                   />
                 </div>
@@ -800,6 +940,7 @@ export default function StudioVaultCoursePage({
                   </div>
                   <Switch
                     checked={editedCourse.hasCommunity}
+                    disabled={isDemoSession}
                     onCheckedChange={(v) => setEditedCourse({ ...editedCourse, hasCommunity: v })}
                   />
                 </div>
@@ -811,6 +952,7 @@ export default function StudioVaultCoursePage({
                   </div>
                   <Switch
                     checked={editedCourse.hasCertificate}
+                    disabled={isDemoSession}
                     onCheckedChange={(v) => setEditedCourse({ ...editedCourse, hasCertificate: v })}
                   />
                 </div>
@@ -822,6 +964,7 @@ export default function StudioVaultCoursePage({
                   </div>
                   <Switch
                     checked={editedCourse.affiliateEnabled}
+                    disabled={isDemoSession}
                     onCheckedChange={(v) => setEditedCourse({ ...editedCourse, affiliateEnabled: v })}
                   />
                 </div>
@@ -832,6 +975,7 @@ export default function StudioVaultCoursePage({
                     <Input
                       type="number"
                       value={editedCourse.affiliateCommission}
+                      disabled={isDemoSession}
                       onChange={(e) => setEditedCourse({ ...editedCourse, affiliateCommission: parseFloat(e.target.value) || 20 })}
                       min={0}
                       max={100}
@@ -852,6 +996,7 @@ export default function StudioVaultCoursePage({
                 <Button
                   size="sm"
                   className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700"
+                  disabled={isDemoSession}
                   onClick={() => setModuleDialogOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -878,13 +1023,13 @@ export default function StudioVaultCoursePage({
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Button variant="outline" size="icon" disabled={i === 0 || contentBusy} onClick={() => reorderModules(i, "up")}>
+                          <Button variant="outline" size="icon" disabled={i === 0 || contentBusy || isDemoSession} onClick={() => reorderModules(i, "up")}>
                             <ArrowUp className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"
                             size="icon"
-                            disabled={i === course.modules.length - 1 || contentBusy}
+                            disabled={i === course.modules.length - 1 || contentBusy || isDemoSession}
                             onClick={() => reorderModules(i, "down")}
                           >
                             <ArrowDown className="h-4 w-4" />
@@ -901,7 +1046,7 @@ export default function StudioVaultCoursePage({
                                   ? "Teachers subscription"
                                   : "At-home subscription"}
                           </Badge>
-                          <Button variant="ghost" size="sm" onClick={() => openCreateLesson(module.id)}>
+                          <Button variant="ghost" size="sm" disabled={isDemoSession} onClick={() => openCreateLesson(module.id)}>
                             <Plus className="h-4 w-4 mr-1" />
                             Add Lesson
                           </Button>
@@ -942,7 +1087,7 @@ export default function StudioVaultCoursePage({
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  disabled={j === 0 || contentBusy}
+                                  disabled={j === 0 || contentBusy || isDemoSession}
                                   onClick={() => reorderLessons(module.id, j, "up")}
                                 >
                                   <ArrowUp className="h-4 w-4" />
@@ -950,18 +1095,19 @@ export default function StudioVaultCoursePage({
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  disabled={j === module.lessons.length - 1 || contentBusy}
+                                  disabled={j === module.lessons.length - 1 || contentBusy || isDemoSession}
                                   onClick={() => reorderLessons(module.id, j, "down")}
                                 >
                                   <ArrowDown className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => openEditLesson(module.id, lesson)}>
+                                <Button variant="ghost" size="icon" disabled={isDemoSession} onClick={() => openEditLesson(module.id, lesson)}>
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="text-red-600 hover:text-red-700"
+                                  disabled={isDemoSession}
                                   onClick={() => deleteLesson(module.id, lesson.id)}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1093,6 +1239,7 @@ export default function StudioVaultCoursePage({
               <Input
                 id="module-title"
                 value={moduleForm.title}
+                disabled={isDemoSession}
                 onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                 placeholder="Module title"
               />
@@ -1103,6 +1250,7 @@ export default function StudioVaultCoursePage({
                 id="module-description"
                 rows={4}
                 value={moduleForm.description}
+                disabled={isDemoSession}
                 onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
                 placeholder="Optional"
               />
@@ -1111,6 +1259,7 @@ export default function StudioVaultCoursePage({
               <Label htmlFor="module-subscription-audience">Subscription Attribution</Label>
               <Select
                 value={moduleForm.subscriptionAudience}
+                disabled={isDemoSession}
                 onValueChange={(value: "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL") =>
                   setModuleForm({ ...moduleForm, subscriptionAudience: value })
                 }
@@ -1129,7 +1278,7 @@ export default function StudioVaultCoursePage({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModuleDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy} onClick={createModule}>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy || isDemoSession} onClick={createModule}>
               {contentBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Module
             </Button>
@@ -1152,6 +1301,7 @@ export default function StudioVaultCoursePage({
               <Input
                 id="lesson-title"
                 value={lessonForm.title}
+                disabled={isDemoSession}
                 onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
                 placeholder="Lesson title"
               />
@@ -1163,6 +1313,7 @@ export default function StudioVaultCoursePage({
                 id="lesson-description"
                 rows={3}
                 value={lessonForm.description}
+                disabled={isDemoSession}
                 onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
                 placeholder="Optional"
               />
@@ -1173,6 +1324,7 @@ export default function StudioVaultCoursePage({
               <Input
                 id="lesson-type"
                 value={lessonForm.contentType}
+                disabled={isDemoSession}
                 onChange={(e) => setLessonForm({ ...lessonForm, contentType: e.target.value || "video" })}
                 placeholder="video, text, pdf, quiz, assignment"
               />
@@ -1185,6 +1337,7 @@ export default function StudioVaultCoursePage({
                   <Input
                     id="lesson-video-url"
                     value={lessonForm.videoUrl}
+                    disabled={isDemoSession}
                     onChange={(e) => setLessonForm({ ...lessonForm, videoUrl: e.target.value })}
                     placeholder="https://..."
                   />
@@ -1196,6 +1349,7 @@ export default function StudioVaultCoursePage({
                     type="number"
                     min={0}
                     value={lessonForm.videoDuration}
+                    disabled={isDemoSession}
                     onChange={(e) => setLessonForm({ ...lessonForm, videoDuration: e.target.value })}
                     placeholder="600"
                   />
@@ -1210,6 +1364,7 @@ export default function StudioVaultCoursePage({
                   id="lesson-text-content"
                   rows={5}
                   value={lessonForm.textContent}
+                  disabled={isDemoSession}
                   onChange={(e) => setLessonForm({ ...lessonForm, textContent: e.target.value })}
                   placeholder="Write lesson notes or content..."
                 />
@@ -1222,6 +1377,7 @@ export default function StudioVaultCoursePage({
                 <Input
                   id="lesson-pdf-url"
                   value={lessonForm.pdfUrl}
+                  disabled={isDemoSession}
                   onChange={(e) => setLessonForm({ ...lessonForm, pdfUrl: e.target.value })}
                   placeholder="https://..."
                 />
@@ -1246,7 +1402,7 @@ export default function StudioVaultCoursePage({
                   size="sm"
                   variant="outline"
                   onClick={() => lessonFileInputRef.current?.click()}
-                  disabled={uploadingResource}
+                  disabled={uploadingResource || isDemoSession}
                 >
                   {uploadingResource ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                   Upload
@@ -1268,7 +1424,7 @@ export default function StudioVaultCoursePage({
                         <p className="text-sm font-medium truncate">{resource.title}</p>
                         <p className="text-xs text-gray-500 truncate">{resource.url}</p>
                       </div>
-                      <Button type="button" size="icon" variant="ghost" onClick={() => removeLessonResource(index)}>
+                      <Button type="button" size="icon" variant="ghost" disabled={isDemoSession} onClick={() => removeLessonResource(index)}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -1286,6 +1442,7 @@ export default function StudioVaultCoursePage({
               </div>
               <Switch
                 checked={lessonForm.isPreview}
+                disabled={isDemoSession}
                 onCheckedChange={(value) => setLessonForm({ ...lessonForm, isPreview: value })}
               />
             </div>
@@ -1297,6 +1454,7 @@ export default function StudioVaultCoursePage({
               </div>
               <Switch
                 checked={lessonForm.isPublished}
+                disabled={isDemoSession}
                 onCheckedChange={(value) => setLessonForm({ ...lessonForm, isPublished: value })}
               />
             </div>
@@ -1304,7 +1462,7 @@ export default function StudioVaultCoursePage({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy} onClick={saveLesson}>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={contentBusy || isDemoSession} onClick={saveLesson}>
               {contentBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingLessonId ? "Save Lesson" : "Create Lesson"}
             </Button>

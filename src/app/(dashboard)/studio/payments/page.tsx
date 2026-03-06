@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,7 +39,9 @@ interface StripeStatus {
 type StripeConnectInstance = Awaited<ReturnType<typeof loadConnectAndInitialize>>
 
 export default function PaymentsPage() {
+  const { data: session } = useSession()
   const router = useRouter()
+  const isDemoSession = session?.user?.isDemoSession === true
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null)
@@ -102,6 +105,10 @@ export default function PaymentsPage() {
   }
 
   const handleConnectStripe = async () => {
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     setConnectingStripe(true)
     try {
       const res = await fetch("/api/studio/stripe/connect", {
@@ -123,6 +130,10 @@ export default function PaymentsPage() {
   }
 
   const handleContinueOnboarding = async () => {
+    if (isDemoSession) {
+      alert("Demo account is read-only.")
+      return
+    }
     setConnectingStripe(true)
     try {
       const res = await fetch("/api/studio/stripe/connect", {
@@ -156,6 +167,12 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
         </div>
+
+        {isDemoSession && (
+          <div className="mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Demo mode is read-only. Stripe onboarding is disabled here.
+          </div>
+        )}
 
         <Card className="border-0 shadow-sm max-w-xl">
           <CardContent className="p-6 sm:p-8">
@@ -195,7 +212,7 @@ export default function PaymentsPage() {
             </p>
             <Button 
               onClick={handleConnectStripe}
-              disabled={connectingStripe}
+              disabled={connectingStripe || isDemoSession}
               size="lg"
               className="bg-violet-600 hover:bg-violet-700"
             >
@@ -249,6 +266,12 @@ export default function PaymentsPage() {
           <p className="text-gray-500 mt-1">Accept payments from your clients</p>
         </div>
 
+        {isDemoSession && (
+          <div className="mb-6 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Demo mode is read-only. Stripe onboarding is disabled here.
+          </div>
+        )}
+
         <Card className="border-0 shadow-sm max-w-xl">
           <CardContent className="p-6 text-center sm:p-8">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -289,7 +312,7 @@ export default function PaymentsPage() {
 
             <Button 
               onClick={handleContinueOnboarding}
-              disabled={connectingStripe}
+              disabled={connectingStripe || isDemoSession}
               size="lg"
               className="bg-violet-600 hover:bg-violet-700"
             >
