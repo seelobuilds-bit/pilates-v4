@@ -335,7 +335,10 @@ export default function EmbedAccountPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-4 bg-transparent py-10" style={{ fontFamily: embedFontFamily }}>
+      <div
+        className="booking-font-scope flex items-center justify-center p-4 bg-transparent py-10"
+        style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+      >
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     )
@@ -343,7 +346,10 @@ export default function EmbedAccountPage() {
 
   if (!client) {
     return (
-      <div className="bg-transparent p-4" style={{ fontFamily: embedFontFamily }}>
+      <div
+        className="booking-font-scope bg-transparent p-4"
+        style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+      >
         <div className="mx-auto max-w-lg space-y-4">
           <div className="text-center pt-2">
             <p className="text-sm text-gray-500">{studio?.name || "Studio Account"}</p>
@@ -465,7 +471,10 @@ export default function EmbedAccountPage() {
   }
 
   return (
-    <div className="bg-transparent p-4" style={{ fontFamily: embedFontFamily }}>
+    <div
+      className="booking-font-scope bg-transparent p-4"
+      style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+    >
       <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <Link href={`/${subdomain}/embed`} className="flex items-center gap-1 text-gray-600 hover:text-gray-900">

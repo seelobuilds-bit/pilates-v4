@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { 
   Calendar, 
   MapPin, 
@@ -814,6 +815,28 @@ export default function AccountPage() {
   const [cancelling, setCancelling] = useState(false)
   const [renewingSubscriptionId, setRenewingSubscriptionId] = useState<string | null>(null)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [bookingFontFamily, setBookingFontFamily] = useState(resolveEmbedFontFamily("inter"))
+  const [bookingFontHref, setBookingFontHref] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem(`embed-font:${subdomain}`)
+    const fontKey = resolveEmbedFontKey(stored)
+    setBookingFontFamily(resolveEmbedFontFamily(fontKey))
+    setBookingFontHref(resolveEmbedFontGoogleHref(fontKey))
+  }, [subdomain])
+
+  useEffect(() => {
+    if (!bookingFontHref || typeof document === "undefined") return
+    const existing = document.querySelector(`link[data-booking-font-href="${bookingFontHref}"]`)
+    if (existing) return
+
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = bookingFontHref
+    link.setAttribute("data-booking-font-href", bookingFontHref)
+    document.head.appendChild(link)
+  }, [bookingFontHref])
 
   useEffect(() => {
     fetchData()
@@ -1115,7 +1138,10 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="booking-font-scope min-h-screen flex items-center justify-center bg-gray-50"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     )
@@ -1123,7 +1149,10 @@ export default function AccountPage() {
 
   if (!studio) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="booking-font-scope min-h-screen flex items-center justify-center bg-gray-50"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         <p className="text-gray-500">Studio not found</p>
       </div>
     )
@@ -1134,7 +1163,10 @@ export default function AccountPage() {
   // Not logged in - show login/register
   if (!client) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div
+        className="booking-font-scope min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         {/* Header */}
         <div className="bg-white border-b shadow-sm">
           <div className="container mx-auto px-4 py-4">
@@ -1327,7 +1359,10 @@ export default function AccountPage() {
   const canUseFreeSubscribe = (selectedPlanPrice ?? 0) <= 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="booking-font-scope min-h-screen bg-gray-50"
+      style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+    >
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">

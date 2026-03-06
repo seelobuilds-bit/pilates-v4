@@ -97,6 +97,29 @@
     letter-spacing: 0.005em;
     line-height: 1.25;
   }
+
+  .booking-font-scope {
+    font-family: var(--booking-font-family, var(--font-body), sans-serif);
+  }
+
+  .booking-font-scope :where(
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      span,
+      a,
+      button,
+      input,
+      textarea,
+      select,
+      label
+    ) {
+    font-family: inherit !important;
+  }
 }
 
 /* Hide scrollbar for date selector */

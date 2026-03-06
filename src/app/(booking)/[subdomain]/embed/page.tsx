@@ -861,7 +861,10 @@ export default function BookingPage() {
 
   if (loading || !studioData) {
     return (
-      <div className="flex items-center justify-center bg-transparent py-10" style={{ fontFamily: embedFontFamily }}>
+      <div
+        className="booking-font-scope flex items-center justify-center bg-transparent py-10"
+        style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+      >
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500">Loading...</p>
@@ -873,7 +876,10 @@ export default function BookingPage() {
   // Show booking success screen
   if (bookingComplete || paymentSuccess) {
     return (
-      <div className="bg-transparent flex items-center justify-center p-4" style={{ fontFamily: embedFontFamily }}>
+      <div
+        className="booking-font-scope bg-transparent flex items-center justify-center p-4"
+        style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+      >
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             {/* Success Icon */}
@@ -948,7 +954,10 @@ export default function BookingPage() {
   // Show payment canceled message
   if (paymentCanceled) {
     return (
-      <div className="bg-transparent flex items-center justify-center p-4" style={{ fontFamily: embedFontFamily }}>
+      <div
+        className="booking-font-scope bg-transparent flex items-center justify-center p-4"
+        style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+      >
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -983,7 +992,10 @@ export default function BookingPage() {
   const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
-    <div className="bg-transparent" style={{ fontFamily: embedFontFamily }}>
+    <div
+      className="booking-font-scope bg-transparent"
+      style={{ "--booking-font-family": embedFontFamily } as React.CSSProperties}
+    >
       {/* Header */}
       <div className="w-full max-w-none sm:max-w-2xl mx-auto px-2 sm:px-4 pt-8 pb-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>

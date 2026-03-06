@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { resolveStudioPrimaryColor } from "@/lib/brand-color"
+import { resolveEmbedFontFamily, resolveEmbedFontGoogleHref, resolveEmbedFontKey } from "@/lib/embed-fonts"
 import { formatCurrency } from "@/lib/utils"
 import { 
   MapPin, Link2, User, Calendar, CreditCard, ChevronLeft, ChevronRight, 
@@ -432,7 +433,29 @@ export default function BookingPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
   const [storedTrackingCode, setStoredTrackingCode] = useState<string | null>(null)
+  const [bookingFontFamily, setBookingFontFamily] = useState(resolveEmbedFontFamily("inter"))
+  const [bookingFontHref, setBookingFontHref] = useState<string | null>(null)
   const activeTrackingCode = trackingCodeFromUrl || storedTrackingCode
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem(`embed-font:${subdomain}`)
+    const fontKey = resolveEmbedFontKey(stored)
+    setBookingFontFamily(resolveEmbedFontFamily(fontKey))
+    setBookingFontHref(resolveEmbedFontGoogleHref(fontKey))
+  }, [subdomain])
+
+  useEffect(() => {
+    if (!bookingFontHref || typeof document === "undefined") return
+    const existing = document.querySelector(`link[data-booking-font-href="${bookingFontHref}"]`)
+    if (existing) return
+
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = bookingFontHref
+    link.setAttribute("data-booking-font-href", bookingFontHref)
+    document.head.appendChild(link)
+  }, [bookingFontHref])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -801,7 +824,10 @@ export default function BookingPage() {
 
   if (loading || !studioData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="booking-font-scope min-h-screen flex items-center justify-center bg-gray-50"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500">Loading...</p>
@@ -813,7 +839,10 @@ export default function BookingPage() {
   // Show booking success screen
   if (bookingComplete || paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div
+        className="booking-font-scope min-h-screen bg-gray-50 flex items-center justify-center p-4"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             {/* Success Icon */}
@@ -888,7 +917,10 @@ export default function BookingPage() {
   // Show payment canceled message
   if (paymentCanceled) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div
+        className="booking-font-scope min-h-screen bg-gray-50 flex items-center justify-center p-4"
+        style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+      >
         <Card className="border-0 shadow-lg max-w-md w-full">
           <CardContent className="p-8 text-center">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -923,7 +955,10 @@ export default function BookingPage() {
   const totalPrice = bookingType === "single" && useCredit ? 0 : calculatePrice()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="booking-font-scope min-h-screen bg-gray-50"
+      style={{ "--booking-font-family": bookingFontFamily } as React.CSSProperties}
+    >
       {/* Header */}
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Book a Class</h1>
