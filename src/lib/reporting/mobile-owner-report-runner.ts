@@ -1,6 +1,5 @@
 import { buildMobileOwnerReportResponse } from "./mobile-owner-report-response"
 import { buildMobileOwnerSeries } from "./mobile-owner-report-series"
-import { splitMobileOwnerClientWindows } from "./mobile-owner-client-windows"
 import { type MobileReportsPayload } from "./mobile-report-payload"
 import { buildStudioOwnerWindowMetrics } from "./studio-owner-window-metrics"
 
@@ -32,6 +31,7 @@ type OwnerBaseData = {
   classSessions: OwnerSession[]
   studioClients: Array<{ createdAt: Date }>
   newClients: number
+  previousNewClients: number
 }
 
 export function runMobileOwnerReport(args: {
@@ -44,20 +44,13 @@ export function runMobileOwnerReport(args: {
   currentBase: OwnerBaseData
   previousSessions: OwnerSession[]
 }): MobileReportsPayload {
-  const ownerClientWindows = splitMobileOwnerClientWindows({
-    studioClients: args.currentBase.studioClients,
-    currentStart: args.currentStart,
-    previousStart: args.previousStart,
-    periodEnd: args.periodEnd,
-  })
-
   const ownerMetrics = buildStudioOwnerWindowMetrics({
     currentBookings: args.currentBase.bookings,
     previousBookings: args.currentBase.previousBookings,
     currentSessions: args.currentBase.classSessions,
     previousSessions: args.previousSessions,
     currentNewClients: args.currentBase.newClients,
-    previousNewClients: ownerClientWindows.previousCount,
+    previousNewClients: args.currentBase.previousNewClients,
     periodEnd: args.periodEnd,
   })
 
@@ -66,7 +59,7 @@ export function runMobileOwnerReport(args: {
     endDate: args.periodEnd,
     bookings: args.currentBase.bookings,
     sessions: args.currentBase.classSessions,
-    newClients: ownerClientWindows.currentRows,
+    newClients: args.currentBase.studioClients,
   })
 
   return buildMobileOwnerReportResponse({

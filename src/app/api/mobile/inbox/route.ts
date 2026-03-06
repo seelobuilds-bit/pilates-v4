@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { loadInboxConversationSummaries } from "@/lib/inbox-conversations"
 import { resolveMobileStudioAuthContext } from "@/lib/mobile-auth-context"
 import { toMobileStudioSummary } from "@/lib/studio-read-models"
-
-type ConversationSummary = {
-  clientId: string
-  clientName: string
-  clientEmail: string
-  clientPhone: string | null
-  messageCount: number
-  unreadCount: number
-  lastMessage: {
-    id: string
-    direction: "INBOUND" | "OUTBOUND"
-    channel: "CHAT" | "EMAIL" | "SMS"
-    body: string
-    createdAt: string
-  } | null
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,60 +48,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    let conversations: ConversationSummary[] = []
+    let conversations = [] as Awaited<ReturnType<typeof loadInboxConversationSummaries>>
 
     if (decoded.role === "OWNER") {
-      const messages = await db.message.findMany({
-        where: { studioId: studio.id },
-        orderBy: { createdAt: "desc" },
-        include: {
-          client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
-          },
-        },
-        take: 800,
+      conversations = await loadInboxConversationSummaries({
+        studioId: studio.id,
       })
-
-      const byClient = new Map<string, ConversationSummary>()
-
-      for (const message of messages) {
-        if (!message.clientId || !message.client) {
-          continue
-        }
-
-        const existing = byClient.get(message.clientId)
-        if (!existing) {
-          byClient.set(message.clientId, {
-            clientId: message.clientId,
-            clientName: `${message.client.firstName} ${message.client.lastName}`,
-            clientEmail: message.client.email,
-            clientPhone: message.client.phone,
-            messageCount: 1,
-            unreadCount: message.direction === "INBOUND" && !message.openedAt ? 1 : 0,
-            lastMessage: {
-              id: message.id,
-              direction: message.direction,
-              channel: message.channel,
-              body: message.body,
-              createdAt: message.createdAt.toISOString(),
-            },
-          })
-          continue
-        }
-
-        existing.messageCount += 1
-        if (message.direction === "INBOUND" && !message.openedAt) {
-          existing.unreadCount += 1
-        }
-      }
-
-      conversations = Array.from(byClient.values())
     }
 
     if (decoded.role === "TEACHER") {
@@ -148,64 +85,13 @@ export async function GET(request: NextRequest) {
       })
 
       const clientIds = bookings.map((booking) => booking.clientId)
-      const messages = clientIds.length
-        ? await db.message.findMany({
-            where: {
-              studioId: studio.id,
-              clientId: { in: clientIds },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 1000,
+      conversations = clientIds.length
+        ? await loadInboxConversationSummaries({
+            studioId: studio.id,
+            clientIds,
           })
         : []
-
-      const byClient = new Map<string, ConversationSummary>()
-
-      for (const booking of bookings) {
-        byClient.set(booking.clientId, {
-          clientId: booking.client.id,
-          clientName: `${booking.client.firstName} ${booking.client.lastName}`,
-          clientEmail: booking.client.email,
-          clientPhone: booking.client.phone,
-          messageCount: 0,
-          unreadCount: 0,
-          lastMessage: null,
-        })
-      }
-
-      for (const message of messages) {
-        if (!message.clientId) continue
-
-        const entry = byClient.get(message.clientId)
-        if (!entry) continue
-
-        entry.messageCount += 1
-        if (message.direction === "INBOUND" && !message.openedAt) {
-          entry.unreadCount += 1
-        }
-
-        if (!entry.lastMessage) {
-          entry.lastMessage = {
-            id: message.id,
-            direction: message.direction,
-            channel: message.channel,
-            body: message.body,
-            createdAt: message.createdAt.toISOString(),
-          }
-        }
-      }
-
-      conversations = Array.from(byClient.values())
     }
-
-    conversations.sort((a, b) => {
-      if (a.lastMessage && b.lastMessage) {
-        return new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
-      }
-      if (a.lastMessage) return -1
-      if (b.lastMessage) return 1
-      return a.clientName.localeCompare(b.clientName)
-    })
 
     return NextResponse.json({
       role: decoded.role,

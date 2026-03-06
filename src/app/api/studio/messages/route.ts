@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { loadInboxConversationSummaries } from "@/lib/inbox-conversations"
 import { getSession } from "@/lib/session"
 import { sendEmail, sendSMS } from "@/lib/communications"
 import { sendMobilePushNotification } from "@/lib/mobile-push"
@@ -42,58 +43,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all conversations (grouped by client)
-    const messages = await db.message.findMany({
-      where: { studioId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        client: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
+    const conversations = await loadInboxConversationSummaries({
+      studioId,
     })
-
-    // Group messages by client
-    const conversationMap = new Map<string, {
-      clientId: string
-      client: {
-        id: string
-        firstName: string
-        lastName: string
-        email: string
-        phone: string | null
-      } | null
-      lastMessage: typeof messages[0]
-      messageCount: number
-      unreadCount: number
-    }>()
-
-    for (const message of messages) {
-      if (message.clientId) {
-        const existing = conversationMap.get(message.clientId)
-        if (!existing) {
-          conversationMap.set(message.clientId, {
-            clientId: message.clientId,
-            client: message.client,
-            lastMessage: message,
-            messageCount: 1,
-            unreadCount: message.direction === "INBOUND" && !message.openedAt ? 1 : 0,
-          })
-        } else {
-          existing.messageCount++
-          if (message.direction === "INBOUND" && !message.openedAt) {
-            existing.unreadCount++
-          }
-        }
-      }
-    }
-
-    const conversations = Array.from(conversationMap.values())
 
     return NextResponse.json({ conversations })
   } catch (error) {

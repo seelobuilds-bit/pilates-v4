@@ -36,6 +36,7 @@ const response = runMobileOwnerReport({
     ],
     studioClients: [{ createdAt: new Date("2026-03-03T00:00:00.000Z") }],
     newClients: 1,
+    previousNewClients: 0,
   },
   previousSessions: [],
 })
