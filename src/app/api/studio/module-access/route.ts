@@ -27,6 +27,13 @@ export async function GET() {
         studioName: studio?.name ?? session.user.studioName ?? null,
         studioLogoUrl: studio?.logoUrl ?? null,
         studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
+        currentUserFirstName: session.user.isDemoSession ? "Demo" : session.user.firstName ?? "",
+        currentUserLastName: session.user.isDemoSession ? "" : session.user.lastName ?? "",
+        currentUserEmail: session.user.email ?? null,
+        currentUserDisplayName: session.user.isDemoSession
+          ? "Demo"
+          : `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
+        isDemoSession: Boolean(session.user.isDemoSession),
       })
     }
 
@@ -47,6 +54,13 @@ export async function GET() {
       studioName: studio?.name ?? session.user.studioName ?? null,
       studioLogoUrl: studio?.logoUrl ?? null,
       studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
+      currentUserFirstName: session.user.isDemoSession ? "Demo" : session.user.firstName ?? "",
+      currentUserLastName: session.user.isDemoSession ? "" : session.user.lastName ?? "",
+      currentUserEmail: session.user.email ?? null,
+      currentUserDisplayName: session.user.isDemoSession
+        ? "Demo"
+        : `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
+      isDemoSession: Boolean(session.user.isDemoSession),
       teacherEngagementType: teacher?.engagementType ?? null,
       isTeacherEmployee,
       canAccessTeacherInvoices: modules.invoicesEnabled && !isTeacherEmployee,

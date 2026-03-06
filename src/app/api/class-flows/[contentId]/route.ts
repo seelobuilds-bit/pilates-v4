@@ -10,7 +10,7 @@ export async function GET(
   const session = await getSession()
   const { contentId } = await params
 
-  if (!session?.user) {
+  if (!session?.user?.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -22,7 +22,7 @@ export async function GET(
       }
     })
 
-    if (!content) {
+    if (!content || content.category.studioId !== session.user.studioId || !content.category.isActive) {
       return NextResponse.json({ error: "Content not found" }, { status: 404 })
     }
 
@@ -44,7 +44,11 @@ export async function GET(
       where: {
         categoryId: content.categoryId,
         id: { not: contentId },
-        isPublished: true
+        isPublished: true,
+        category: {
+          studioId: session.user.studioId,
+          isActive: true,
+        },
       },
       take: 4
     })
@@ -59,7 +63,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
-
 
 
 

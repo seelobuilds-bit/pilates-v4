@@ -45,6 +45,11 @@ type ModuleAccess = {
   studioName?: string | null
   studioLogoUrl?: string | null
   studioLogoScale?: number
+  currentUserFirstName?: string | null
+  currentUserLastName?: string | null
+  currentUserEmail?: string | null
+  currentUserDisplayName?: string | null
+  isDemoSession?: boolean
 }
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed-v1"
@@ -240,6 +245,12 @@ export function Sidebar() {
             typeof data?.studioLogoScale === "number" && Number.isFinite(data.studioLogoScale)
               ? data.studioLogoScale
               : 100,
+          currentUserFirstName: typeof data?.currentUserFirstName === "string" ? data.currentUserFirstName : null,
+          currentUserLastName: typeof data?.currentUserLastName === "string" ? data.currentUserLastName : null,
+          currentUserEmail: typeof data?.currentUserEmail === "string" ? data.currentUserEmail : null,
+          currentUserDisplayName:
+            typeof data?.currentUserDisplayName === "string" ? data.currentUserDisplayName : null,
+          isDemoSession: data?.isDemoSession === true,
         })
       } catch {
         // Keep defaults if module fetch fails.
@@ -359,6 +370,15 @@ export function Sidebar() {
     role === "OWNER" || role === "TEACHER" ? moduleAccess.studioName || title : title
   const headerLogoUrl = role === "OWNER" || role === "TEACHER" ? moduleAccess.studioLogoUrl || null : null
   const headerLogoHeight = Math.round(28 + (((moduleAccess.studioLogoScale ?? 100) - 50) / 150) * 40)
+  const sidebarFirstName = moduleAccess.currentUserFirstName ?? session?.user?.firstName ?? ""
+  const sidebarLastName = moduleAccess.currentUserLastName ?? session?.user?.lastName ?? ""
+  const sidebarEmail = moduleAccess.currentUserEmail ?? session?.user?.email ?? ""
+  const sidebarDisplayName =
+    moduleAccess.currentUserDisplayName ||
+    `${sidebarFirstName} ${sidebarLastName}`.trim() ||
+    session?.user?.name ||
+    "Account"
+  const sidebarInitials = `${sidebarFirstName?.[0] ?? ""}${sidebarLastName?.[0] ?? ""}`.trim() || sidebarDisplayName[0] || "A"
 
   const renderLink = (link: NavLink) => {
     const Icon = link.icon
@@ -552,14 +572,14 @@ export function Sidebar() {
       <div className={cn("border-t border-gray-100", isCompact ? "p-2" : "p-3")}>
         <div className={cn("flex items-center px-3 py-2", isCompact ? "justify-center" : "gap-3")}>
           <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-medium text-violet-700">
-            {session?.user?.firstName?.[0]}{session?.user?.lastName?.[0]}
+            {sidebarInitials}
           </div>
           <div className={cn("flex-1 min-w-0", isCompact && "hidden")}>
             <p className="text-sm font-medium text-gray-900 truncate">
-              {session?.user?.firstName} {session?.user?.lastName}
+              {sidebarDisplayName}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              {session?.user?.email}
+              {sidebarEmail}
             </p>
           </div>
         </div>

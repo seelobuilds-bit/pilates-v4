@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
     const categories = await db.classFlowCategory.findMany({
       where: {
         isActive: true,
+        studioId: studio.id,
         ...(categoryId ? { id: categoryId } : {}),
       },
       select: {
@@ -103,6 +104,10 @@ export async function GET(request: NextRequest) {
       where: {
         ...contentWhere,
         isFeatured: true,
+        category: {
+          studioId: studio.id,
+          isActive: true,
+        },
       },
       select: {
         id: true,

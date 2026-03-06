@@ -28,6 +28,18 @@ export async function POST(request: NextRequest) {
       isFeatured
     } = body
 
+    const category = await db.classFlowCategory.findFirst({
+      where: {
+        id: categoryId,
+        studioId: session.user.studioId,
+      },
+      select: { id: true },
+    })
+
+    if (!category) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 })
+    }
+
     const content = await db.classFlowContent.create({
       data: {
         title,
@@ -69,6 +81,34 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Content ID required" }, { status: 400 })
     }
 
+    const existing = await db.classFlowContent.findFirst({
+      where: {
+        id,
+        category: {
+          studioId: session.user.studioId,
+        },
+      },
+      select: { id: true, categoryId: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "Content not found" }, { status: 404 })
+    }
+
+    if (typeof updateData.categoryId === "string" && updateData.categoryId !== existing.categoryId) {
+      const targetCategory = await db.classFlowCategory.findFirst({
+        where: {
+          id: updateData.categoryId,
+          studioId: session.user.studioId,
+        },
+        select: { id: true },
+      })
+
+      if (!targetCategory) {
+        return NextResponse.json({ error: "Target category not found" }, { status: 404 })
+      }
+    }
+
     const content = await db.classFlowContent.update({
       where: { id },
       data: updateData
@@ -97,6 +137,20 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    const existing = await db.classFlowContent.findFirst({
+      where: {
+        id,
+        category: {
+          studioId: session.user.studioId,
+        },
+      },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "Content not found" }, { status: 404 })
+    }
+
     await db.classFlowContent.delete({
       where: { id }
     })
@@ -107,7 +161,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete content" }, { status: 500 })
   }
 }
-
 
 
 

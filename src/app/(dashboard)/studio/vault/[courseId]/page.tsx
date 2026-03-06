@@ -83,6 +83,7 @@ interface Course {
   subtitle: string | null
   description: string
   thumbnailUrl: string | null
+  coverPlaceholderText?: string | null
   audience: string
   category: string | null
   difficulty: string | null
@@ -108,6 +109,7 @@ interface Course {
   }>
   chatRoom: { id: string; isEnabled: boolean } | null
   _count: { enrollments: number; modules: number }
+  studio?: { subdomain: string }
 }
 
 interface Enrollment {
@@ -180,11 +182,14 @@ export default function StudioVaultCoursePage({
   const [lessonForm, setLessonForm] = useState(defaultLessonForm)
   const [uploadingResource, setUploadingResource] = useState(false)
   const lessonFileInputRef = useRef<HTMLInputElement | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewLessonId, setPreviewLessonId] = useState<string | null>(null)
 
   // Edit state
   const [editedCourse, setEditedCourse] = useState({
     title: "",
     subtitle: "",
+    coverPlaceholderText: "",
     description: "",
     category: "",
     difficulty: "",
@@ -209,6 +214,7 @@ export default function StudioVaultCoursePage({
         setEditedCourse({
           title: data.title,
           subtitle: data.subtitle || "",
+          coverPlaceholderText: data.coverPlaceholderText || "",
           description: data.description,
           category: data.category || "",
           difficulty: data.difficulty || "",
@@ -284,6 +290,16 @@ export default function StudioVaultCoursePage({
     const totalLessons = nextModules.reduce((sum, module) => sum + module.lessons.length, 0)
     setCourse({ ...course, modules: nextModules, totalLessons })
   }
+
+  const previewLessons = course?.modules.flatMap((module) =>
+    module.lessons.map((lesson) => ({
+      ...lesson,
+      moduleTitle: module.title,
+    }))
+  ) ?? []
+
+  const selectedPreviewLesson =
+    previewLessons.find((lesson) => lesson.id === previewLessonId) ?? previewLessons[0] ?? null
 
   async function saveCourse() {
     if (!course) return
@@ -648,6 +664,17 @@ export default function StudioVaultCoursePage({
           </div>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setPreviewLessonId(previewLessons[0]?.id ?? null)
+              setPreviewOpen(true)
+            }}
+            className="w-full sm:w-auto"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview Course
+          </Button>
           <Button variant="outline" onClick={togglePublish} className="w-full sm:w-auto">
             <Eye className="h-4 w-4 mr-2" />
             {course.isPublished ? "Unpublish" : "Publish"}
@@ -702,6 +729,15 @@ export default function StudioVaultCoursePage({
                   <Input
                     value={editedCourse.subtitle}
                     onChange={(e) => setEditedCourse({ ...editedCourse, subtitle: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Placeholder Text</Label>
+                  <Input
+                    value={editedCourse.coverPlaceholderText}
+                    onChange={(e) => setEditedCourse({ ...editedCourse, coverPlaceholderText: e.target.value })}
+                    placeholder="Shown on the course cover when no thumbnail is uploaded"
                   />
                 </div>
 
@@ -894,6 +930,16 @@ export default function StudioVaultCoursePage({
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setPreviewLessonId(lesson.id)
+                                    setPreviewOpen(true)
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
                                   variant="outline"
                                   size="icon"
                                   disabled={j === 0 || contentBusy}
@@ -1036,7 +1082,7 @@ export default function StudioVaultCoursePage({
       </Tabs>
 
       <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add Module</DialogTitle>
             <DialogDescription>Create a new module for this course.</DialogDescription>
@@ -1092,7 +1138,7 @@ export default function StudioVaultCoursePage({
       </Dialog>
 
       <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{editingLessonId ? "Edit Lesson" : "Add Lesson"}</DialogTitle>
             <DialogDescription>
@@ -1263,6 +1309,89 @@ export default function StudioVaultCoursePage({
               {editingLessonId ? "Save Lesson" : "Create Lesson"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>{course.title} Preview</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
+            <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div className="space-y-1 px-1">
+                <p className="text-sm font-medium text-gray-900">{course.title}</p>
+                <p className="text-xs text-gray-500 line-clamp-4">{course.description}</p>
+              </div>
+              {previewLessons.map((lesson) => (
+                <button
+                  key={lesson.id}
+                  type="button"
+                  onClick={() => setPreviewLessonId(lesson.id)}
+                  className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                    selectedPreviewLesson?.id === lesson.id
+                      ? "border-violet-300 bg-violet-50"
+                      : "border-transparent bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <p className="text-xs text-gray-500">{lesson.moduleTitle}</p>
+                  <p className="text-sm font-medium text-gray-900">{lesson.title}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              {selectedPreviewLesson ? (
+                <>
+                  <div className="rounded-xl border border-gray-200 bg-white p-5">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{selectedPreviewLesson.contentType}</Badge>
+                      {selectedPreviewLesson.isPreview ? <Badge className="bg-green-100 text-green-700">Preview</Badge> : null}
+                      {!selectedPreviewLesson.isPublished ? <Badge className="bg-gray-100 text-gray-700">Draft</Badge> : null}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">{selectedPreviewLesson.title}</h3>
+                    {selectedPreviewLesson.description ? (
+                      <p className="mt-2 text-sm leading-6 text-gray-600">{selectedPreviewLesson.description}</p>
+                    ) : null}
+                  </div>
+
+                  {selectedPreviewLesson.videoUrl ? (
+                    <div className="aspect-video overflow-hidden rounded-xl bg-black">
+                      {selectedPreviewLesson.videoUrl.includes("youtube") ? (
+                        <iframe
+                          src={selectedPreviewLesson.videoUrl.replace("watch?v=", "embed/")}
+                          className="h-full w-full"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video src={selectedPreviewLesson.videoUrl} controls className="h-full w-full" />
+                      )}
+                    </div>
+                  ) : null}
+
+                  {selectedPreviewLesson.textContent ? (
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm leading-7 text-gray-700">
+                      {selectedPreviewLesson.textContent}
+                    </div>
+                  ) : null}
+
+                  {selectedPreviewLesson.pdfUrl ? (
+                    <Button asChild variant="outline">
+                      <a href={selectedPreviewLesson.pdfUrl} target="_blank" rel="noopener noreferrer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Open attached PDF
+                      </a>
+                    </Button>
+                  ) : null}
+                </>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-500">
+                  No lesson selected.
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

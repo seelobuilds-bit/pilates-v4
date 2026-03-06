@@ -36,6 +36,10 @@ export async function POST(
       where: {
         id: contentId,
         isPublished: true,
+        category: {
+          studioId: auth.studio.id,
+          isActive: true,
+        },
       },
       select: { id: true },
     })

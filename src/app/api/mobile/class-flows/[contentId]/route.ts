@@ -39,6 +39,7 @@ export async function GET(
         isPublished: true,
         category: {
           isActive: true,
+          studioId: studio.id,
         },
       },
       select: {
@@ -78,6 +79,10 @@ export async function GET(
         where: {
           categoryId: content.categoryId,
           isPublished: true,
+          category: {
+            studioId: studio.id,
+            isActive: true,
+          },
         },
       }),
       db.classFlowContent.findMany({
@@ -85,6 +90,10 @@ export async function GET(
           categoryId: content.categoryId,
           isPublished: true,
           id: { not: content.id },
+          category: {
+            studioId: studio.id,
+            isActive: true,
+          },
         },
         select: {
           id: true,

@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       subtitle,
       description,
       thumbnailUrl,
+      coverPlaceholderText,
       promoVideoUrl,
       audience,
       category,
@@ -162,6 +163,7 @@ export async function POST(request: NextRequest) {
         subtitle,
         description,
         thumbnailUrl,
+        coverPlaceholderText,
         promoVideoUrl,
         audience: audience || "CLIENTS",
         category,
@@ -217,7 +219,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create course" }, { status: 500 })
   }
 }
-
 
 
 

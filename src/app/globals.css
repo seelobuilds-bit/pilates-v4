@@ -334,6 +334,36 @@
   --studio-800: #8d0c07;
   --studio-900: #6d0906;
   --studio-950: #420504;
+  --studio-shell: #f2f2f2;
+  --studio-surface: #f9f9f9;
+  --studio-surface-muted: #ebebeb;
+}
+
+.studio-brand-scope,
+.studio-brand-scope.bg-gray-50,
+.studio-brand-scope.bg-gray-50\/50 {
+  background-color: var(--studio-shell) !important;
+}
+
+.studio-brand-scope .bg-white,
+.studio-brand-scope .bg-white\/90,
+.studio-brand-scope .bg-white\/95,
+.studio-brand-scope aside.bg-white,
+.studio-brand-scope [class*=" bg-white"] {
+  background-color: var(--studio-surface) !important;
+}
+
+.studio-brand-scope .bg-gray-50,
+.studio-brand-scope .bg-gray-50\/50,
+.studio-brand-scope .bg-gray-50\/60,
+.studio-brand-scope .bg-slate-50 {
+  background-color: var(--studio-shell) !important;
+}
+
+.studio-brand-scope .border-gray-100,
+.studio-brand-scope .border-gray-200,
+.studio-brand-scope .border-slate-200 {
+  border-color: var(--studio-surface-muted) !important;
 }
 
 .studio-brand-scope .bg-violet-50,

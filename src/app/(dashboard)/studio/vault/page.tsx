@@ -44,6 +44,7 @@ interface Course {
   subtitle: string | null
   description: string
   thumbnailUrl: string | null
+  coverPlaceholderText?: string | null
   audience: "STUDIO_OWNERS" | "TEACHERS" | "CLIENTS" | "ALL"
   category: string | null
   difficulty: string | null
@@ -154,6 +155,7 @@ export default function StudioVaultPage() {
   const [newCourse, setNewCourse] = useState({
     title: "",
     subtitle: "",
+    coverPlaceholderText: "",
     description: "",
     audience: "CLIENTS",
     category: "",
@@ -268,6 +270,7 @@ export default function StudioVaultPage() {
         setNewCourse({
           title: "",
           subtitle: "",
+          coverPlaceholderText: "",
           description: "",
           audience: "CLIENTS",
           category: "",
@@ -659,8 +662,13 @@ export default function StudioVaultPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
                           <BookOpen className="h-12 w-12 text-white/50" />
+                          {course.coverPlaceholderText ? (
+                            <p className="max-w-[18rem] text-sm font-medium text-white/85 line-clamp-3">
+                              {course.coverPlaceholderText}
+                            </p>
+                          ) : null}
                         </div>
                       )}
                       <div className="absolute top-2 right-2 flex gap-1">
@@ -1219,6 +1227,15 @@ export default function StudioVaultPage() {
               </div>
 
               <div className="space-y-2">
+                <Label>Placeholder Text</Label>
+                <Input
+                  value={newCourse.coverPlaceholderText}
+                  onChange={(e) => setNewCourse({ ...newCourse, coverPlaceholderText: e.target.value })}
+                  placeholder="Optional text to show on the course cover when no image is uploaded"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Description *</Label>
                 <Textarea
                   value={newCourse.description}
@@ -1428,8 +1445,6 @@ export default function StudioVaultPage() {
     </div>
   )
 }
-
-
 
 
 

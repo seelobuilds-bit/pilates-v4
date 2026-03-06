@@ -10,6 +10,7 @@ declare module "next-auth" {
       studioId: string | null
       studioName: string | null
       teacherId: string | null
+      isDemoSession?: boolean
     } & DefaultSession["user"]
   }
 
@@ -21,6 +22,7 @@ declare module "next-auth" {
     studioId: string | null
     studioName: string | null
     teacherId: string | null
+    isDemoSession?: boolean
   }
 }
 
@@ -33,5 +35,6 @@ declare module "next-auth/jwt" {
     studioId: string | null
     studioName: string | null
     teacherId: string | null
+    isDemoSession?: boolean
   }
 }

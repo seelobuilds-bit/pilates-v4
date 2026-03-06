@@ -147,6 +147,7 @@ model Studio {
   teacherInvoices TeacherInvoice[]
   
   // Class Flows & Training
+  classFlowCategories ClassFlowCategory[]
   classFlowProgress ClassFlowProgress[]
   trainingRequests  TrainingRequest[]
   classSwapRequests ClassSwapRequest[]
@@ -1218,7 +1219,11 @@ model ClassFlowCategory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  studioId    String?
+  studio      Studio?  @relation(fields: [studioId], references: [id], onDelete: Cascade)
   contents    ClassFlowContent[]
+
+  @@index([studioId, order])
 }
 
 // Content types
@@ -2057,6 +2062,7 @@ model VaultCourse {
   subtitle        String?
   description     String   @db.Text
   thumbnailUrl    String?
+  coverPlaceholderText String?
   promoVideoUrl   String?
   
   // Categorization

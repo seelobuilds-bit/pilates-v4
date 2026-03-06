@@ -289,12 +289,12 @@ async function resetExistingDemoStudio() {
   })
 }
 
-async function ensureClassFlowLibrary() {
+async function ensureClassFlowLibrary(studioId: string) {
   const seeds = [
     {
       name: "Reformer",
       description: "Signature reformer programming, sequencing ideas, and teaching cues.",
-      icon: "Sparkles",
+      icon: "✨",
       color: "#ef4444",
       contents: [
         { title: "Reformer Strength Ladder", type: ContentType.VIDEO, difficulty: DifficultyLevel.INTERMEDIATE },
@@ -306,7 +306,7 @@ async function ensureClassFlowLibrary() {
     {
       name: "Mat",
       description: "Mat-based flows, class structures, and prop-driven formats.",
-      icon: "BookOpen",
+      icon: "📖",
       color: "#0f766e",
       contents: [
         { title: "45-Minute Mat Burner", type: ContentType.VIDEO, difficulty: DifficultyLevel.INTERMEDIATE },
@@ -318,7 +318,7 @@ async function ensureClassFlowLibrary() {
     {
       name: "Tower",
       description: "Tower sequences and coaching patterns for smaller-group formats.",
-      icon: "Target",
+      icon: "🎯",
       color: "#2563eb",
       contents: [
         { title: "Tower Mobility Sequence", type: ContentType.VIDEO, difficulty: DifficultyLevel.BEGINNER },
@@ -329,7 +329,7 @@ async function ensureClassFlowLibrary() {
     {
       name: "Programming",
       description: "Programming systems for attendance, progression, and experience design.",
-      icon: "LineChart",
+      icon: "📈",
       color: "#7c3aed",
       contents: [
         { title: "4-Week Attendance Reset", type: ContentType.ARTICLE, difficulty: DifficultyLevel.INTERMEDIATE },
@@ -342,7 +342,10 @@ async function ensureClassFlowLibrary() {
   for (let categoryIndex = 0; categoryIndex < seeds.length; categoryIndex += 1) {
     const categorySeed = seeds[categoryIndex]
     let category = await prisma.classFlowCategory.findFirst({
-      where: { name: categorySeed.name },
+      where: {
+        studioId,
+        name: categorySeed.name,
+      },
       select: { id: true },
     })
 
@@ -355,6 +358,7 @@ async function ensureClassFlowLibrary() {
           color: categorySeed.color,
           order: categoryIndex,
           isActive: true,
+          studioId,
         },
         select: { id: true },
       })
@@ -853,24 +857,121 @@ async function seedVault(
     }
   }
 
+  const chatMembers = await prisma.vaultSubscriptionChatMember.findMany({
+    where: {
+      chatId: {
+        in: chats.map((chat) => chat.id),
+      },
+    },
+    select: {
+      id: true,
+      chatId: true,
+      role: true,
+    },
+    orderBy: { id: "asc" },
+  })
+
+  const membersByChat = new Map<string, Array<{ id: string; role: string }>>()
+  for (const member of chatMembers) {
+    const current = membersByChat.get(member.chatId) ?? []
+    current.push({ id: member.id, role: member.role })
+    membersByChat.set(member.chatId, current)
+  }
+
+  const pickMember = (chatId: string, index: number) => {
+    const members = membersByChat.get(chatId) ?? []
+    if (members.length === 0) {
+      throw new Error(`No chat members found for chat ${chatId}`)
+    }
+    return members[index % members.length]!.id
+  }
+
+  const ownerChat = chats[0]!
+  const teacherChat = chats[1]!
+  const clientChat = chats[2]!
+
   await prisma.vaultSubscriptionChatMessage.createMany({
     data: [
       {
-        chatId: chats[0].id,
-        memberId: (await prisma.vaultSubscriptionChatMember.findFirstOrThrow({ where: { chatId: chats[0].id } })).id,
-        content: "Weekly ops review: retention is strongest in the Marylebone evening block.",
+        chatId: ownerChat.id,
+        memberId: pickMember(ownerChat.id, 0),
+        content: "Weekly ops review: retention is strongest in the Marylebone evening block. Friday 7am is still our weakest class to fill.",
       },
       {
-        chatId: chats[2].id,
-        memberId: (await prisma.vaultSubscriptionChatMember.findFirstOrThrow({ where: { chatId: chats[2].id } })).id,
-        content: "Loved the shoulder mobility lesson from this week’s drop.",
+        chatId: ownerChat.id,
+        memberId: pickMember(ownerChat.id, 0),
+        content: "Action for this week: push the intro-offer follow-up to all new leads who viewed pricing but did not book within 48 hours.",
+      },
+      {
+        chatId: ownerChat.id,
+        memberId: pickMember(ownerChat.id, 0),
+        content: "The Tower Restore launch page is converting better than expected. Worth extending the campaign for one more week.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 0),
+        content: "New reformer challenge idea: finish every class with a standing balance block and compare client confidence after 4 weeks.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 1),
+        content: "Tried the shoulder stability flow from the library this morning. Landed really well in the 7am class.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 2),
+        content: "Could someone share a stronger prenatal finisher? I want something that still feels athletic without loading the wrong areas.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 0),
+        content: "Uploaded a cleaner cueing sequence for jumpboard transitions in Reformer. It should be easier for the team to teach from now.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 3),
+        content: "I’m stealing the 3-round glute ladder from today’s programming lab. Clients were obsessed with it.",
+      },
+      {
+        chatId: teacherChat.id,
+        memberId: pickMember(teacherChat.id, 1),
+        content: "Reminder: film one reel after your best-attended class this week and drop it into the growth thread for feedback.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 0),
+        content: "Loved the shoulder mobility lesson from this week’s drop. It made my desk posture feel way better.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 1),
+        content: "Has anyone tried pairing the at-home mat core session with the Sunday restore class? Great combo.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 2),
+        content: "Finished the beginner roadmap today. The pacing was perfect and I actually feel confident booking intermediate now.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 3),
+        content: "Request for next month: more 20-minute travel-friendly sequences please.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 4),
+        content: "The hip opener mini-session has become my pre-run ritual. Would love more like that.",
+      },
+      {
+        chatId: clientChat.id,
+        memberId: pickMember(clientChat.id, 5),
+        content: "Question for the team: which at-home lesson pairs best with Tower Restore when my lower back is tight?",
       },
     ],
   })
 }
 
 async function main() {
-  await ensureClassFlowLibrary()
   await resetExistingDemoStudio()
 
   const rng = createRng(`demo:${STUDIO_SUBDOMAIN}`)
@@ -902,6 +1003,8 @@ async function main() {
       requiresClassSwapApproval: true,
     },
   })
+
+  await ensureClassFlowLibrary(studio.id)
 
   await prisma.studioEmailConfig.create({
     data: {
@@ -1424,6 +1527,9 @@ async function main() {
   }
 
   const categories = await prisma.classFlowCategory.findMany({
+    where: {
+      studioId: studio.id,
+    },
     include: {
       contents: {
         orderBy: { order: "asc" },

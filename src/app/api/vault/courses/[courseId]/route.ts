@@ -191,6 +191,7 @@ export async function PATCH(
       subtitle,
       description,
       thumbnailUrl,
+      coverPlaceholderText,
       promoVideoUrl,
       audience,
       category,
@@ -220,6 +221,7 @@ export async function PATCH(
         ...(subtitle !== undefined && { subtitle }),
         ...(description !== undefined && { description }),
         ...(thumbnailUrl !== undefined && { thumbnailUrl }),
+        ...(coverPlaceholderText !== undefined && { coverPlaceholderText }),
         ...(promoVideoUrl !== undefined && { promoVideoUrl }),
         ...(audience !== undefined && { audience }),
         ...(category !== undefined && { category }),
@@ -318,7 +320,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete course" }, { status: 500 })
   }
 }
-
 
 
 

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { getClassFlowDisplayIcon } from "@/lib/class-flows/presentation"
 import { 
   FileText, 
   Video, 
@@ -308,7 +309,7 @@ export default function TeacherClassFlowsPage() {
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       {selectedContent.category && (
                         <Badge variant="secondary">
-                          {selectedContent.category.icon} {selectedContent.category.name}
+                          {getClassFlowDisplayIcon(selectedContent.category.icon)} {selectedContent.category.name}
                         </Badge>
                       )}
                       <Badge className={getDifficultyColor(selectedContent.difficulty)}>
@@ -463,7 +464,7 @@ export default function TeacherClassFlowsPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{category.icon || "📚"}</span>
+                            <span className="text-2xl">{getClassFlowDisplayIcon(category.icon)}</span>
                             <div>
                               <p className="font-medium text-gray-900">{category.name}</p>
                               <p className="text-xs text-gray-500">{category._count.contents} items</p>
@@ -707,7 +708,6 @@ export default function TeacherClassFlowsPage() {
     </div>
   )
 }
-
 
 
 

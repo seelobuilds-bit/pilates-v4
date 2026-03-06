@@ -13,6 +13,9 @@ export async function GET() {
 
   try {
     const categories = await db.classFlowCategory.findMany({
+      where: {
+        studioId: session.user.studioId,
+      },
       include: {
         contents: {
           orderBy: { order: "asc" }
@@ -112,7 +115,8 @@ export async function POST(request: NextRequest) {
         name,
         description,
         icon,
-        color
+        color,
+        studioId: session.user.studioId,
       }
     })
 
@@ -122,7 +126,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
   }
 }
-
 
 
 

@@ -96,6 +96,7 @@ export const authOptions: NextAuthOptions = {
         token.studioId = user.studioId
         token.studioName = user.studioName
         token.teacherId = user.teacherId
+        token.isDemoSession = Boolean((user as { isDemoSession?: boolean }).isDemoSession)
       }
       return token
     },
@@ -108,6 +109,7 @@ export const authOptions: NextAuthOptions = {
         session.user.studioId = token.studioId as string | null
         session.user.studioName = token.studioName as string | null
         session.user.teacherId = token.teacherId as string | null
+        session.user.isDemoSession = Boolean(token.isDemoSession)
       }
       return session
     }

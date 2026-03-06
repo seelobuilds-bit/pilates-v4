@@ -11,6 +11,9 @@ export async function GET() {
 
     const [categories, progressStats, completedCount, trainingRequests, studioTeachers] = await Promise.all([
       db.classFlowCategory.findMany({
+        where: {
+          studioId,
+        },
         include: {
           contents: {
             orderBy: { order: "asc" }

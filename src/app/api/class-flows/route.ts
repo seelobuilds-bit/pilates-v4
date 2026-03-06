@@ -6,7 +6,7 @@ import { getSession } from "@/lib/session"
 export async function GET(request: NextRequest) {
   const session = await getSession()
 
-  if (!session?.user) {
+  if (!session?.user?.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const categories = await db.classFlowCategory.findMany({
       where: {
         isActive: true,
+        studioId: session.user.studioId,
         ...(categoryId && { id: categoryId }),
       },
       include: {
@@ -43,7 +44,10 @@ export async function GET(request: NextRequest) {
     
     if (session.user.teacherId) {
       const teacherProgress = await db.classFlowProgress.findMany({
-        where: { teacherId: session.user.teacherId }
+        where: {
+          teacherId: session.user.teacherId,
+          studioId: session.user.studioId,
+        }
       })
       
       progress = teacherProgress.reduce((acc, p) => {
@@ -59,7 +63,11 @@ export async function GET(request: NextRequest) {
     const featured = await db.classFlowContent.findMany({
       where: {
         isPublished: true,
-        isFeatured: true
+        isFeatured: true,
+        category: {
+          studioId: session.user.studioId,
+          isActive: true,
+        },
       },
       include: {
         category: true
@@ -77,8 +85,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch class flows" }, { status: 500 })
   }
 }
-
-
 
 
 

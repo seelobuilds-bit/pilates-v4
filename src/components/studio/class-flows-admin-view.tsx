@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { getClassFlowDisplayIcon } from "@/lib/class-flows/presentation"
 import { 
   FileText, 
   Video, 
@@ -27,7 +29,8 @@ import {
   Edit,
   ChevronRight,
   File,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink
 } from "lucide-react"
 
 interface Category {
@@ -180,6 +183,7 @@ export default function ClassFlowsAdminView({
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null)
   const [linkedTeacherRequestId, setLinkedTeacherRequestId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const [previewContent, setPreviewContent] = useState<(Content & { categoryName?: string; categoryIcon?: string | null }) | null>(null)
 
   // Form state
   const [newContent, setNewContent] = useState({
@@ -891,7 +895,7 @@ export default function ClassFlowsAdminView({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{category.icon || "📚"}</span>
+                            <span className="text-2xl">{getClassFlowDisplayIcon(category.icon)}</span>
                             <div>
                               <p className="font-medium text-gray-900">{category.name}</p>
                               <p className="text-xs text-gray-500">{category._count.contents} items</p>
@@ -962,6 +966,20 @@ export default function ClassFlowsAdminView({
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={() =>
+                                  setPreviewContent({
+                                    ...content,
+                                    categoryName: activeCategory?.name,
+                                    categoryIcon: activeCategory?.icon,
+                                  })
+                                }
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1279,7 +1297,7 @@ export default function ClassFlowsAdminView({
       {showTrainingRequest && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={resetTrainingRequestModal} />
-          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[88vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="mb-6 flex items-start justify-between gap-3 sm:items-center">
@@ -1634,7 +1652,7 @@ export default function ClassFlowsAdminView({
       {showAddCategory && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowAddCategory(false)} />
-          <div className="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[88vh] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -1701,7 +1719,7 @@ export default function ClassFlowsAdminView({
       {showAddContent && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={closeContentModal} />
-          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[90vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
+          <div className="fixed top-1/2 left-1/2 z-50 w-full max-h-[88vh] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto px-4">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -2078,6 +2096,85 @@ export default function ClassFlowsAdminView({
           </div>
         </>
       )}
+
+      <Dialog open={Boolean(previewContent)} onOpenChange={(open) => !open && setPreviewContent(null)}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-xl">{getClassFlowDisplayIcon(previewContent?.categoryIcon)}</span>
+              <span>{previewContent?.title || "Class flow preview"}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {previewContent ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {previewContent.categoryName ? (
+                  <Badge variant="outline">
+                    {getClassFlowDisplayIcon(previewContent.categoryIcon)} {previewContent.categoryName}
+                  </Badge>
+                ) : null}
+                <Badge className={getDifficultyColor(previewContent.difficulty)}>{previewContent.difficulty}</Badge>
+                <Badge variant="secondary">{previewContent.type}</Badge>
+                {previewContent.duration ? <Badge variant="outline">{previewContent.duration} min</Badge> : null}
+              </div>
+
+              {previewContent.description ? (
+                <p className="text-sm leading-6 text-gray-600">{previewContent.description}</p>
+              ) : null}
+
+              {previewContent.type === "VIDEO" && previewContent.videoUrl ? (
+                <div className="space-y-3">
+                  <div className="aspect-video overflow-hidden rounded-xl bg-black">
+                    {previewContent.videoUrl.includes("youtube") ? (
+                      <iframe
+                        src={previewContent.videoUrl.replace("watch?v=", "embed/")}
+                        className="h-full w-full"
+                        allowFullScreen
+                      />
+                    ) : previewContent.videoUrl.includes("vimeo") ? (
+                      <iframe
+                        src={`https://player.vimeo.com/video/${previewContent.videoUrl.split("/").pop()}`}
+                        className="h-full w-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={previewContent.videoUrl} controls className="h-full w-full" />
+                    )}
+                  </div>
+                  <Button asChild variant="outline">
+                    <a href={previewContent.videoUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open video
+                    </a>
+                  </Button>
+                </div>
+              ) : null}
+
+              {previewContent.type === "PDF" && previewContent.pdfUrl ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
+                    <FileText className="mx-auto mb-3 h-10 w-10 text-amber-600" />
+                    <p className="text-sm text-gray-600">PDF preview opens in a new tab.</p>
+                  </div>
+                  <Button asChild variant="outline">
+                    <a href={previewContent.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open PDF
+                    </a>
+                  </Button>
+                </div>
+              ) : null}
+
+              {previewContent.type === "ARTICLE" ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm leading-7 text-gray-700">
+                  {previewContent.description || "Article preview is not available for this item yet."}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
