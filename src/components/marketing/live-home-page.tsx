@@ -720,18 +720,18 @@ export default function LiveHomePage() {
           border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.52) !important;
         }
 
-        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button {
+        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button {
           background-color: transparent !important;
           border: 1px solid rgba(26, 26, 26, 0.24) !important;
           color: #1a1a1a !important;
         }
 
-        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button:hover {
+        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button:hover {
           background-color: rgba(26, 26, 26, 0.05) !important;
           color: #0d0d0d !important;
         }
 
-        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button svg {
+        .live-home-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button svg {
           color: #1a1a1a !important;
         }
 

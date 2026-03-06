@@ -717,18 +717,18 @@ export default function BrandPreviewPage() {
           border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.52) !important;
         }
 
-        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button {
+        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button {
           background-color: transparent !important;
           border: 1px solid rgba(26, 26, 26, 0.24) !important;
           color: #1a1a1a !important;
         }
 
-        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button:hover {
+        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button:hover {
           background-color: rgba(26, 26, 26, 0.05) !important;
           color: #0d0d0d !important;
         }
 
-        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href="/demo"] button svg {
+        .brand-preview-shell section[class*="via-violet-950"] .flex.flex-col.sm\\:flex-row.items-center.justify-center.gap-4 > a[href^="/demo/access"] button svg {
           color: #1a1a1a !important;
         }
 

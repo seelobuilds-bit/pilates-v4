@@ -2,7 +2,8 @@ import { db } from "@/lib/db"
 
 export const DEMO_STUDIO_OWNER_EMAIL =
   process.env.DEMO_STUDIO_OWNER_EMAIL || "demo@thecurrent.app"
-export const DEMO_STUDIO_SUBDOMAIN = process.env.DEMO_STUDIO_SUBDOMAIN || "zenith"
+export const DEMO_STUDIO_SUBDOMAIN =
+  process.env.DEMO_STUDIO_SUBDOMAIN || "current-demo-admin"
 
 export type DemoStudioContext = {
   studioId: string

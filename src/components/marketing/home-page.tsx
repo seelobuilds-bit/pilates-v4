@@ -460,7 +460,7 @@ export default function HomePage() {
               Book a Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Link href="/demo">
+            <Link href="/demo/access?next=/studio">
               <Button 
                 size="lg" 
                 variant="outline" 
@@ -1113,7 +1113,7 @@ export default function HomePage() {
               Book a Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Link href="/demo">
+            <Link href="/demo/access?next=/studio">
               <Button 
                 size="lg" 
                 variant="outline" 

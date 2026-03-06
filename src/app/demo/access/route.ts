@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
 
   const useSecureCookie = shouldUseSecureNextAuthCookie(request.nextUrl.protocol)
   const cookieName = getNextAuthSessionCookieName(useSecureCookie)
+  const alternateCookieName = getNextAuthSessionCookieName(!useSecureCookie)
   const target = sanitizeNextPath(request.nextUrl.searchParams.get("next"))
   const response = NextResponse.redirect(new URL(target, request.url))
 
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   })
+  response.cookies.delete(alternateCookieName)
 
   return response
 }
