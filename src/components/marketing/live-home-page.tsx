@@ -56,6 +56,24 @@ export default function LiveHomePage() {
           zoom: 1.25;
         }
 
+        @supports (-webkit-touch-callout: none) {
+          .live-home-shell {
+            font-size: 125%;
+          }
+
+          .live-home-shell .marketing-motion-shell {
+            zoom: 1 !important;
+          }
+
+          .live-home-shell header .max-w-7xl {
+            max-width: min(950px, calc(100% - 1.5rem)) !important;
+          }
+
+          .live-home-shell section:first-of-type > .max-w-4xl {
+            transform: translateY(-5.5vh) !important;
+          }
+        }
+
         .live-home-shell header {
           top: 1rem !important;
           left: 0 !important;
@@ -370,6 +388,12 @@ export default function LiveHomePage() {
           .live-home-shell section:first-of-type > .max-w-4xl {
             transform: translateY(-11vh) !important;
             transform-origin: top center;
+          }
+
+          @supports (-webkit-touch-callout: none) {
+            .live-home-shell section:first-of-type > .max-w-4xl {
+              transform: translateY(-6.5vh) !important;
+            }
           }
         }
 
