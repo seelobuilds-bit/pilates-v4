@@ -150,29 +150,91 @@ export async function buildMarketingSummary({
     )
   )
 
-  const bookingsByEmailRecipient = emailRecipientClientIds.length
-    ? await db.booking.groupBy({
-        by: ["clientId"],
-        where: {
-          studioId,
-          clientId: {
-            in: emailRecipientClientIds,
-          },
-          status: {
-            in: ["CONFIRMED", "COMPLETED", "NO_SHOW"],
-          },
-          classSession: {
-            startTime: {
-              gte: startDate,
-              lt: reportEndDate,
+  const campaignIds = Array.from(
+    new Set(
+      periodEmailMessages
+        .map((message) => message.campaignId)
+        .filter((campaignId): campaignId is string => Boolean(campaignId))
+    )
+  )
+
+  const reminderAutomationIds = new Set(reminderAutomations.map((automation) => automation.id))
+  const remindersSent = periodMessages.filter(
+    (message) => message.automationId && reminderAutomationIds.has(message.automationId)
+  ).length
+
+  const winbackAutomationIds = new Set(winbackAutomations.map((automation) => automation.id))
+  const winbackClientIds = Array.from(
+    new Set(
+      periodMessages
+        .filter((message) => message.automationId && winbackAutomationIds.has(message.automationId))
+        .map((message) => message.clientId)
+        .filter((clientId): clientId is string => Boolean(clientId))
+    )
+  )
+
+  const [bookingsByEmailRecipient, campaignDefinitions, winbackRecoveredClients] = await Promise.all([
+    emailRecipientClientIds.length
+      ? db.booking.groupBy({
+          by: ["clientId"],
+          where: {
+            studioId,
+            clientId: {
+              in: emailRecipientClientIds,
+            },
+            status: {
+              in: ["CONFIRMED", "COMPLETED", "NO_SHOW"],
+            },
+            classSession: {
+              startTime: {
+                gte: startDate,
+                lt: reportEndDate,
+              },
             },
           },
-        },
-        _count: {
-          clientId: true,
-        },
-      })
-    : []
+          _count: {
+            clientId: true,
+          },
+        })
+      : Promise.resolve([]),
+    campaignIds.length
+      ? db.campaign.findMany({
+          where: {
+            studioId,
+            id: {
+              in: campaignIds,
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : Promise.resolve([]),
+    winbackClientIds.length
+      ? db.booking.findMany({
+          where: {
+            studioId,
+            clientId: {
+              in: winbackClientIds,
+            },
+            status: {
+              in: ["CONFIRMED", "COMPLETED", "NO_SHOW"],
+            },
+            classSession: {
+              startTime: {
+                gte: startDate,
+                lt: reportEndDate,
+              },
+            },
+          },
+          select: {
+            clientId: true,
+          },
+          distinct: ["clientId"],
+        })
+      : Promise.resolve([]),
+  ])
 
   const bookingsByClientId = new Map<string, number>()
   for (const row of bookingsByEmailRecipient) {
@@ -201,21 +263,6 @@ export async function buildMarketingSummary({
     campaignBuckets.set(message.campaignId, existing)
   }
 
-  const campaignIds = Array.from(campaignBuckets.keys())
-  const campaignDefinitions = campaignIds.length
-    ? await db.campaign.findMany({
-        where: {
-          studioId,
-          id: {
-            in: campaignIds,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-      })
-    : []
   const campaignNameById = new Map(campaignDefinitions.map((campaign) => [campaign.id, campaign.name]))
   const campaignRows = buildCampaignRows({
     campaignBuckets,
@@ -224,46 +271,6 @@ export async function buildMarketingSummary({
   })
 
   const bookingsFromEmail = bookingsByEmailRecipient.length
-
-  const reminderAutomationIds = new Set(reminderAutomations.map((automation) => automation.id))
-  const remindersSent = periodMessages.filter(
-    (message) => message.automationId && reminderAutomationIds.has(message.automationId)
-  ).length
-
-  const winbackAutomationIds = new Set(winbackAutomations.map((automation) => automation.id))
-  const winbackClientIds = Array.from(
-    new Set(
-      periodMessages
-        .filter((message) => message.automationId && winbackAutomationIds.has(message.automationId))
-        .map((message) => message.clientId)
-        .filter((clientId): clientId is string => Boolean(clientId))
-    )
-  )
-
-  const winbackRecoveredClients = winbackClientIds.length
-    ? await db.booking.findMany({
-        where: {
-          studioId,
-          clientId: {
-            in: winbackClientIds,
-          },
-          status: {
-            in: ["CONFIRMED", "COMPLETED", "NO_SHOW"],
-          },
-          classSession: {
-            startTime: {
-              gte: startDate,
-              lt: reportEndDate,
-            },
-          },
-        },
-        select: {
-          clientId: true,
-        },
-        distinct: ["clientId"],
-      })
-    : []
-
   const winbackSuccess = winbackRecoveredClients.length
 
   const attendedBookingsThisPeriod = bookings.filter((booking) => isAttendedBookingStatus(booking.status))
