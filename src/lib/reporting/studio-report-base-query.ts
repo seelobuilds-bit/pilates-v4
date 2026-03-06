@@ -59,6 +59,29 @@ export async function fetchStudioReportClassSessionsWindow(args: {
   })
 }
 
+function flattenStudioReportBookings(
+  classSessions: Awaited<ReturnType<typeof fetchStudioReportClassSessionsWindow>>
+) {
+  return classSessions.flatMap((session) =>
+    session.bookings.map((booking) => ({
+      status: booking.status,
+      clientId: booking.clientId,
+      paidAmount: booking.paidAmount,
+      classSession: {
+        startTime: session.startTime,
+        teacherId: session.teacherId,
+        classType: {
+          name: session.classType.name,
+          price: session.classType.price,
+        },
+        location: {
+          name: session.location.name,
+        },
+      },
+    }))
+  )
+}
+
 export async function fetchStudioReportBaseData(args: {
   studioId: string
   startDate: Date
@@ -72,41 +95,7 @@ export async function fetchStudioReportBaseData(args: {
   monthWindowStart.setDate(1)
   monthWindowStart.setHours(0, 0, 0, 0)
 
-  const [bookings, previousBookings, monthlyBookings, classSessions] = await runDbQueries([
-    () =>
-      db.booking.findMany({
-        where: {
-          studioId,
-          classSession: {
-            startTime: {
-              gte: startDate,
-              lt: reportEndDate,
-            },
-          },
-        },
-        select: {
-          status: true,
-          clientId: true,
-          paidAmount: true,
-          classSession: {
-            select: {
-              startTime: true,
-              teacherId: true,
-              classType: {
-                select: {
-                  name: true,
-                  price: true,
-                },
-              },
-              location: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      }),
+  const [previousBookings, monthlyBookings, classSessions] = await runDbQueries([
     () =>
       db.booking.findMany({
         where: {
@@ -166,6 +155,7 @@ export async function fetchStudioReportBaseData(args: {
         endDate: reportEndDate,
       }),
   ])
+  const bookings = flattenStudioReportBookings(classSessions)
 
   const clientCountQueries = buildClientSummaryCountQueries({
     studioId,
