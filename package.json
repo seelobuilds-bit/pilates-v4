@@ -25,6 +25,7 @@
     "test:employees:timeoff": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/tests/employees-timeoff-logic.ts",
     "seed:synthetic:studios": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-synthetic-studios.ts",
     "seed:synthetic:cleanup": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/cleanup-synthetic-studios.ts",
+    "seed:demo:studio": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/seed-demo-studio.ts",
     "test:integration": "pnpm test:authz && pnpm test:booking && pnpm test:smoke && pnpm test:smoke:reporting",
     "build": "pnpm demo:sync && prisma generate && next build",
     "demo:sync": "node scripts/sync-demo-mirrors.mjs",

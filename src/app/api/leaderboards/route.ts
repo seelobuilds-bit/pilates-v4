@@ -12,6 +12,8 @@ import {
   collectCurrentPeriodIds,
 } from "@/lib/leaderboards/presentation"
 import { buildWebLeaderboardsResponsePayload } from "@/lib/leaderboards/response"
+import { buildDemoWebLeaderboardsPayload } from "@/lib/demo-leaderboards"
+import { isDemoStudioId } from "@/lib/demo-studio"
 
 // GET - Fetch leaderboards for studios/teachers
 export async function GET(request: NextRequest) {
@@ -31,6 +33,17 @@ export async function GET(request: NextRequest) {
     category && Object.values(LeaderboardCategory).includes(category as LeaderboardCategory)
       ? (category as LeaderboardCategory)
       : null
+
+  if (await isDemoStudioId(session.user.studioId)) {
+    return NextResponse.json(
+      await buildDemoWebLeaderboardsPayload({
+        role: session.user.role,
+        studioId: session.user.studioId,
+        studioName: session.user.studioName,
+        teacherId: session.user.teacherId,
+      })
+    )
+  }
 
   try {
     if (process.env.LEADERBOARD_AUTO_CYCLE_ON_READ === "1") {

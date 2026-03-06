@@ -13,6 +13,7 @@ import {
   resolveLeaderboardScoreByCategory,
 } from "./metrics"
 import { compareLeaderboardEntries } from "./presentation"
+import { getDemoStudioId, getDemoTeacherIds } from "@/lib/demo-studio"
 
 const ATTENDED_BOOKING_STATUSES = new Set(["CONFIRMED", "COMPLETED", "NO_SHOW"])
 const NEWCOMER_WINDOW_DAYS = 120
@@ -64,15 +65,26 @@ export async function populateLeaderboardPeriodEntries(params: {
   const previousRangeStart = new Date(rangeStart.getTime() - rangeDuration)
   const previousRangeEnd = new Date(rangeStart.getTime() - 1)
   const newcomerThreshold = new Date(rangeEnd.getTime() - NEWCOMER_WINDOW_DAYS * MS_IN_DAY)
+  const [demoStudioId, demoTeacherIds] = await Promise.all([getDemoStudioId(), getDemoTeacherIds()])
 
   const participants: Participant[] =
     leaderboard.participantType === LeaderboardParticipantType.STUDIO
       ? await db.studio.findMany({
+          where: demoStudioId
+            ? {
+                id: {
+                  not: demoStudioId,
+                },
+              }
+            : undefined,
           select: { id: true, createdAt: true },
           orderBy: { createdAt: "asc" },
         })
       : await db.teacher.findMany({
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            ...(demoTeacherIds.length ? { id: { notIn: demoTeacherIds } } : {}),
+          },
           select: { id: true, createdAt: true },
           orderBy: { createdAt: "asc" },
         })

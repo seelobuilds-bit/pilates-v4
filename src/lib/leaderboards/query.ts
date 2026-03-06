@@ -1,5 +1,6 @@
 import { LeaderboardCategory, LeaderboardParticipantType } from "@prisma/client"
 import { db } from "@/lib/db"
+import { getDemoStudioId, getDemoTeacherIds } from "@/lib/demo-studio"
 import { enrichLeaderboardRowsWithParticipants } from "./enrichment"
 import {
   collectEntryParticipantIds,
@@ -61,9 +62,23 @@ export type EnrichedLeaderboard = {
 export async function resolveExpectedParticipantCountFromDb(
   participantType: LeaderboardParticipantType
 ) {
+  const [demoStudioId, demoTeacherIds] = await Promise.all([getDemoStudioId(), getDemoTeacherIds()])
   const [studioCount, teacherCount] = await Promise.all([
-    db.studio.count(),
-    db.teacher.count({ where: { isActive: true } }),
+    db.studio.count({
+      where: demoStudioId
+        ? {
+            id: {
+              not: demoStudioId,
+            },
+          }
+        : undefined,
+    }),
+    db.teacher.count({
+      where: {
+        isActive: true,
+        ...(demoTeacherIds.length ? { id: { notIn: demoTeacherIds } } : {}),
+      },
+    }),
   ])
 
   return resolveExpectedParticipantCount(participantType, {
@@ -74,17 +89,22 @@ export async function resolveExpectedParticipantCountFromDb(
 
 export async function loadParticipantMapsForEntries(entries: LeaderboardEntryParticipantRef[]) {
   const { studioIds, teacherIds } = collectEntryParticipantIds(entries)
+  const [demoStudioId, demoTeacherIds] = await Promise.all([getDemoStudioId(), getDemoTeacherIds()])
+  const filteredStudioIds = demoStudioId ? studioIds.filter((id) => id !== demoStudioId) : studioIds
+  const filteredTeacherIds = demoTeacherIds.length
+    ? teacherIds.filter((id) => !demoTeacherIds.includes(id))
+    : teacherIds
 
   const [studios, teachers] = await Promise.all([
-    studioIds.length
+    filteredStudioIds.length
       ? db.studio.findMany({
-          where: { id: { in: studioIds } },
+          where: { id: { in: filteredStudioIds } },
           select: { id: true, name: true, subdomain: true },
         })
       : Promise.resolve([]),
-    teacherIds.length
+    filteredTeacherIds.length
       ? db.teacher.findMany({
-          where: { id: { in: teacherIds } },
+          where: { id: { in: filteredTeacherIds } },
           select: {
             id: true,
             studioId: true,
@@ -124,7 +144,11 @@ export async function loadEnrichedLeaderboards(args: {
     includePrizes = false,
   } = args
 
-  const expectedParticipantCount = await resolveExpectedParticipantCountFromDb(participantType)
+  const [expectedParticipantCount, demoStudioId, demoTeacherIds] = await Promise.all([
+    resolveExpectedParticipantCountFromDb(participantType),
+    getDemoStudioId(),
+    getDemoTeacherIds(),
+  ])
 
   const leaderboards = await db.leaderboard.findMany({
     where: {
@@ -144,6 +168,22 @@ export async function loadEnrichedLeaderboards(args: {
         take: 1,
         include: {
           entries: {
+            where:
+              participantType === "STUDIO"
+                ? demoStudioId
+                  ? {
+                      studioId: {
+                        not: demoStudioId,
+                      },
+                    }
+                  : undefined
+                : demoTeacherIds.length
+                  ? {
+                      teacherId: {
+                        notIn: demoTeacherIds,
+                      },
+                    }
+                  : undefined,
             orderBy: { score: "desc" as const },
             take: 10,
             select: {
