@@ -10,28 +10,28 @@ export async function loadStudioReportData(args: {
 }) {
   const { studioId, startDate, reportEndDate, previousStartDate } = args
 
-  const base = await fetchStudioReportBaseData({
-    studioId,
-    startDate,
-    reportEndDate,
-    previousStartDate,
-  })
-
-  const marketingSocial = await fetchMarketingAndSocialInputs({
-    studioId,
-    startDate,
-    reportEndDate,
-    previousStartDate,
-  })
-
   const activityLookbackStart = new Date(reportEndDate)
   activityLookbackStart.setDate(activityLookbackStart.getDate() - 365)
 
-  const activeClientVisitRows = await fetchActiveClientVisitRows({
-    studioId,
-    activityLookbackStart,
-    reportEndDate,
-  })
+  const [base, marketingSocial, activeClientVisitRows] = await Promise.all([
+    fetchStudioReportBaseData({
+      studioId,
+      startDate,
+      reportEndDate,
+      previousStartDate,
+    }),
+    fetchMarketingAndSocialInputs({
+      studioId,
+      startDate,
+      reportEndDate,
+      previousStartDate,
+    }),
+    fetchActiveClientVisitRows({
+      studioId,
+      activityLookbackStart,
+      reportEndDate,
+    }),
+  ])
 
   return {
     ...base,

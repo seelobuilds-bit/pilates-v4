@@ -117,15 +117,16 @@ export default async function StudioDashboardPage({
 
   const studioId = session.user.studioId
 
-  const studio = await db.studio.findUnique({
-    where: { id: studioId },
-    select: { stripeCurrency: true }
-  })
-  const studioCurrency = (studio?.stripeCurrency || "usd").toLowerCase()
-
   // Get current date info
   const now = new Date()
-  const resolvedSearchParams = await searchParams
+  const [resolvedSearchParams, studio] = await Promise.all([
+    searchParams,
+    db.studio.findUnique({
+      where: { id: studioId },
+      select: { stripeCurrency: true },
+    }),
+  ])
+  const studioCurrency = (studio?.stripeCurrency || "usd").toLowerCase()
   const selectedRange = resolveDashboardRange(now, resolvedSearchParams)
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
@@ -353,27 +354,6 @@ export default async function StudioDashboardPage({
   const recentAtRiskClientIds = new Set(recentAtRiskClientRows.map((row) => row.clientId))
   const atRiskClientIds = Array.from(allBookedClientIds).filter((clientId) => !recentAtRiskClientIds.has(clientId))
 
-  const atRiskClients = atRiskClientIds.length
-    ? await db.client.findMany({
-        where: {
-          studioId,
-          isActive: true,
-          id: { in: atRiskClientIds },
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          isActive: true,
-          createdAt: true,
-        },
-        take: 5,
-        orderBy: { createdAt: "desc" },
-      })
-    : []
-
   // Get greeting based on time
   const getGreeting = () => {
     const hour = now.getHours()
@@ -387,73 +367,97 @@ export default async function StudioDashboardPage({
   const previousPeriodStart = new Date(selectedRange.startDate.getTime() - periodDuration)
   const previousPeriodEnd = selectedRange.startDate
 
+  const [atRiskClients, revenueInputs] = await Promise.all([
+    atRiskClientIds.length
+      ? db.client.findMany({
+          where: {
+            studioId,
+            isActive: true,
+            id: { in: atRiskClientIds },
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            isActive: true,
+            createdAt: true,
+          },
+          take: 5,
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+    runDbQueries([
+      () => db.booking.aggregate({
+        where: {
+          studioId,
+          status: { not: "CANCELLED" },
+          paidAmount: { not: null },
+          classSession: {
+            startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
+          }
+        },
+        _sum: {
+          paidAmount: true,
+        },
+      }),
+      () => db.booking.aggregate({
+        where: {
+          studioId,
+          status: { not: "CANCELLED" },
+          paidAmount: { not: null },
+          classSession: {
+            startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
+          }
+        },
+        _sum: {
+          paidAmount: true,
+        },
+      }),
+      () => db.booking.findMany({
+        where: {
+          studioId,
+          status: { not: "CANCELLED" },
+          paidAmount: null,
+          classSession: {
+            startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
+          }
+        },
+        select: {
+          classSession: {
+            select: {
+              classType: { select: { price: true } }
+            }
+          }
+        }
+      }),
+      () => db.booking.findMany({
+        where: {
+          studioId,
+          status: { not: "CANCELLED" },
+          paidAmount: null,
+          classSession: {
+            startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
+          }
+        },
+        select: {
+          classSession: {
+            select: {
+              classType: { select: { price: true } }
+            }
+          }
+        }
+      })
+    ]),
+  ])
+
   const [
     thisPeriodRevenueAggregate,
     previousPeriodRevenueAggregate,
     thisPeriodRevenueFallbackBookings,
     previousPeriodRevenueFallbackBookings,
-  ] = await runDbQueries([
-    () => db.booking.aggregate({
-      where: {
-        studioId,
-        status: { not: "CANCELLED" },
-        paidAmount: { not: null },
-        classSession: {
-          startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
-        }
-      },
-      _sum: {
-        paidAmount: true,
-      },
-    }),
-    () => db.booking.aggregate({
-      where: {
-        studioId,
-        status: { not: "CANCELLED" },
-        paidAmount: { not: null },
-        classSession: {
-          startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
-        }
-      },
-      _sum: {
-        paidAmount: true,
-      },
-    }),
-    () => db.booking.findMany({
-      where: {
-        studioId,
-        status: { not: "CANCELLED" },
-        paidAmount: null,
-        classSession: {
-          startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
-        }
-      },
-      select: {
-        classSession: {
-          select: {
-            classType: { select: { price: true } }
-          }
-        }
-      }
-    }),
-    () => db.booking.findMany({
-      where: {
-        studioId,
-        status: { not: "CANCELLED" },
-        paidAmount: null,
-        classSession: {
-          startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
-        }
-      },
-      select: {
-        classSession: {
-          select: {
-            classType: { select: { price: true } }
-          }
-        }
-      }
-    })
-  ])
+  ] = revenueInputs
 
   const periodRevenue =
     (thisPeriodRevenueAggregate._sum.paidAmount ?? 0) +

@@ -322,6 +322,7 @@ model Message {
 
   @@index([studioId, clientId])
   @@index([studioId, createdAt])
+  @@index([studioId, direction, createdAt])
   @@index([threadId])
 }
 
@@ -720,6 +721,8 @@ model Teacher {
   vaultBundleSubscriptions VaultBundleSubscription[]
   vaultReviews            VaultReview[]
   vaultSubscriptions      VaultSubscriber[] @relation("VaultTeacherSubscription")
+
+  @@index([studioId, isActive])
 }
 
 // Teacher blocked/unavailable times
@@ -859,6 +862,8 @@ model Client {
   mobilePushDevices MobilePushDevice[]
 
   @@unique([email, studioId])
+  @@index([studioId, isActive])
+  @@index([studioId, createdAt])
 }
 
 model ClientBookingPlan {
@@ -950,6 +955,10 @@ model ClassSession {
   swapRequests ClassSwapRequest[]
   
   @@index([recurringGroupId])
+  @@index([studioId, startTime])
+  @@index([studioId, teacherId, startTime])
+  @@index([studioId, locationId, startTime])
+  @@index([studioId, classTypeId, startTime])
 }
 
 enum BookingStatus {
@@ -987,6 +996,10 @@ model Booking {
   @@unique([clientId, classSessionId])
   @@index([studioId, status])
   @@index([classSessionId, status])
+  @@index([studioId, createdAt])
+  @@index([studioId, clientId])
+  @@index([studioId, clientId, status])
+  @@index([studioId, status, paidAmount])
 }
 
 // Waitlist for full classes

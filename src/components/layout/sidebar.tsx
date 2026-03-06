@@ -36,7 +36,7 @@ import {
 } from "lucide-react"
 
 type SidebarMode = "full" | "working"
-type ModuleAccess = {
+export type ModuleAccess = {
   invoicesEnabled: boolean
   employeesEnabled: boolean
   timeOffEnabled: boolean
@@ -146,7 +146,7 @@ function isRouteMatch(pathname: string, href: string): boolean {
   return pathname.startsWith(`${href}/`)
 }
 
-export function Sidebar() {
+export function Sidebar({ initialModuleAccess }: { initialModuleAccess?: ModuleAccess }) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session } = useSession()
@@ -157,8 +157,8 @@ export function Sidebar() {
   const [showExtras, setShowExtras] = useState(false)
   const [showWorkingCustomize, setShowWorkingCustomize] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [moduleAccess, setModuleAccess] = useState<ModuleAccess>(DEFAULT_MODULE_ACCESS)
-  const [moduleAccessLoaded, setModuleAccessLoaded] = useState(false)
+  const [moduleAccess, setModuleAccess] = useState<ModuleAccess>(initialModuleAccess ?? DEFAULT_MODULE_ACCESS)
+  const [moduleAccessLoaded, setModuleAccessLoaded] = useState(Boolean(initialModuleAccess))
 
   const filteredStudioGroups = useMemo(
     () => filterStudioLinkGroupsByModules(studioLinkGroups, moduleAccess),
@@ -220,7 +220,14 @@ export function Sidebar() {
     isStudioOwner && sidebarMode === "working" ? [{ title: "Working View", links: workingPrimaryLinks }] : linkGroups
 
   useEffect(() => {
+    if (!initialModuleAccess) return
+    setModuleAccess(initialModuleAccess)
+    setModuleAccessLoaded(true)
+  }, [initialModuleAccess])
+
+  useEffect(() => {
     if (role !== "OWNER" && role !== "TEACHER") return
+    if (initialModuleAccess) return
 
     let active = true
 
@@ -265,7 +272,7 @@ export function Sidebar() {
     return () => {
       active = false
     }
-  }, [role])
+  }, [initialModuleAccess, role])
 
   useEffect(() => {
     try {
