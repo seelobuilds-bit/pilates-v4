@@ -372,9 +372,12 @@ export function Sidebar() {
   const headerLogoHeight = Math.round(28 + (((moduleAccess.studioLogoScale ?? 100) - 50) / 150) * 40)
   const sidebarFirstName = moduleAccess.currentUserFirstName ?? session?.user?.firstName ?? ""
   const sidebarLastName = moduleAccess.currentUserLastName ?? session?.user?.lastName ?? ""
-  const sidebarEmail = moduleAccess.currentUserEmail ?? session?.user?.email ?? ""
+  const sidebarEmail =
+    moduleAccess.currentUserEmail ??
+    (moduleAccess.isDemoSession ? "demo@thecurrent.app" : session?.user?.email ?? "")
   const sidebarDisplayName =
     moduleAccess.currentUserDisplayName ||
+    (moduleAccess.isDemoSession ? "Demo" : "") ||
     `${sidebarFirstName} ${sidebarLastName}`.trim() ||
     session?.user?.name ||
     "Account"

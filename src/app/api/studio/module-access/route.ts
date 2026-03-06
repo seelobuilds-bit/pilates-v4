@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { getDemoStudioContext } from "@/lib/demo-studio"
 import { getStudioModuleAccess } from "@/modules/employees/module-access"
 
 export async function GET() {
@@ -12,8 +13,10 @@ export async function GET() {
 
   try {
     const modules = await getStudioModuleAccess(session.user.studioId)
+    const demoStudioContext = session.user.isDemoSession ? await getDemoStudioContext() : null
+    const studioLookupId = demoStudioContext?.studioId ?? session.user.studioId
     const studio = await db.studio.findUnique({
-      where: { id: session.user.studioId },
+      where: { id: studioLookupId },
       select: {
         name: true,
         logoUrl: true,
@@ -21,18 +24,32 @@ export async function GET() {
       },
     })
 
+    const currentUserFirstName = session.user.isDemoSession
+      ? demoStudioContext?.ownerFirstName || "Demo"
+      : session.user.firstName ?? ""
+    const currentUserLastName = session.user.isDemoSession
+      ? demoStudioContext?.ownerLastName || ""
+      : session.user.lastName ?? ""
+    const currentUserEmail = session.user.isDemoSession
+      ? demoStudioContext?.ownerEmail || "demo@thecurrent.app"
+      : session.user.email ?? null
+    const currentUserDisplayName = session.user.isDemoSession
+      ? "Demo"
+      : `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim()
+    const studioName = session.user.isDemoSession
+      ? studio?.name ?? demoStudioContext?.studioName ?? session.user.studioName ?? null
+      : studio?.name ?? session.user.studioName ?? null
+
     if (session.user.role !== "TEACHER" || !session.user.teacherId) {
       return NextResponse.json({
         ...modules,
-        studioName: studio?.name ?? session.user.studioName ?? null,
+        studioName,
         studioLogoUrl: studio?.logoUrl ?? null,
         studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
-        currentUserFirstName: session.user.isDemoSession ? "Demo" : session.user.firstName ?? "",
-        currentUserLastName: session.user.isDemoSession ? "" : session.user.lastName ?? "",
-        currentUserEmail: session.user.email ?? null,
-        currentUserDisplayName: session.user.isDemoSession
-          ? "Demo"
-          : `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
+        currentUserFirstName,
+        currentUserLastName,
+        currentUserEmail,
+        currentUserDisplayName,
         isDemoSession: Boolean(session.user.isDemoSession),
       })
     }
@@ -51,15 +68,13 @@ export async function GET() {
 
     return NextResponse.json({
       ...modules,
-      studioName: studio?.name ?? session.user.studioName ?? null,
+      studioName,
       studioLogoUrl: studio?.logoUrl ?? null,
       studioLogoScale: typeof studio?.logoScale === "number" ? studio.logoScale : 100,
-      currentUserFirstName: session.user.isDemoSession ? "Demo" : session.user.firstName ?? "",
-      currentUserLastName: session.user.isDemoSession ? "" : session.user.lastName ?? "",
-      currentUserEmail: session.user.email ?? null,
-      currentUserDisplayName: session.user.isDemoSession
-        ? "Demo"
-        : `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
+      currentUserFirstName,
+      currentUserLastName,
+      currentUserEmail,
+      currentUserDisplayName,
       isDemoSession: Boolean(session.user.isDemoSession),
       teacherEngagementType: teacher?.engagementType ?? null,
       isTeacherEmployee,
