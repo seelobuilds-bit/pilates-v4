@@ -45,7 +45,7 @@ export default function BrandPreviewPage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-brand-preview-body), sans-serif;
-          font-size: 110%;
+          font-size: 125%;
           overflow: visible !important;
         }
 
@@ -344,11 +344,11 @@ export default function BrandPreviewPage() {
         }
 
         .brand-preview-shell section:first-of-type {
-          min-height: 100svh !important;
+          min-height: auto !important;
           display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding-top: 7rem !important;
+          align-items: flex-start !important;
+          justify-content: flex-start !important;
+          padding-top: 5.25rem !important;
           padding-bottom: 1rem !important;
         }
 
@@ -359,9 +359,10 @@ export default function BrandPreviewPage() {
 
         @media (min-width: 1024px) {
           .brand-preview-shell section:first-of-type {
-            min-height: 100svh !important;
-            align-items: center !important;
-            padding-top: 8rem !important;
+            min-height: auto !important;
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            padding-top: 5.75rem !important;
             padding-bottom: 1rem !important;
           }
 
