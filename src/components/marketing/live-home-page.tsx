@@ -351,13 +351,13 @@ export default function LiveHomePage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 5rem !important;
+          padding-top: 5.5rem !important;
           padding-bottom: 1rem !important;
         }
 
         .live-home-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-100px) !important;
+          transform: translateY(-82px) !important;
         }
 
         @media (min-width: 1024px) {
@@ -365,12 +365,12 @@ export default function LiveHomePage() {
             min-height: 100svh !important;
             align-items: center !important;
             justify-content: center !important;
-            padding-top: 5.5rem !important;
+            padding-top: 6rem !important;
             padding-bottom: 1rem !important;
           }
 
           .live-home-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-100px) !important;
+            transform: translateY(-82px) !important;
             transform-origin: top center;
           }
         }
