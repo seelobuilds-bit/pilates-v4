@@ -1,4 +1,4 @@
-import BrandPreviewPage from "@/app/brand-preview/page"
+import LiveHomePage from "@/components/marketing/live-home-page"
 import SiteLockScreen from "@/components/marketing/site-lock-screen"
 import { getPlatformSettings, hasValidSiteLockAccess } from "@/lib/platform-settings"
 
@@ -12,5 +12,5 @@ export default async function HomePage() {
     }
   }
 
-  return <BrandPreviewPage />
+  return <LiveHomePage />
 }

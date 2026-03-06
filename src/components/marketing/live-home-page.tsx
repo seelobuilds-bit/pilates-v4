@@ -1,0 +1,538 @@
+import { DM_Sans, Instrument_Serif } from "next/font/google"
+import MarketingHomePage from "@/components/marketing/home-page"
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-live-home-body",
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-live-home-display",
+})
+
+export default function LiveHomePage() {
+  return (
+    <div className={`${dmSans.variable} ${instrumentSerif.variable} live-home-shell`}>
+      <style>{`
+        html {
+          overflow-y: auto !important;
+        }
+
+        body {
+          overflow-x: clip !important;
+          overflow-y: visible !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+
+        .live-home-shell {
+          --brand-accent: #e3120b;
+          --brand-accent-strong: #b10e08;
+          --brand-accent-soft: #f2e5e5;
+          --brand-accent-rgb: 227, 18, 11;
+          --brand-accent-strong-rgb: 177, 14, 8;
+          --brand-accent-soft-rgb: 242, 229, 229;
+          --brand-ink: #1a1a1a;
+          --brand-cream: #f9f9f9;
+          background:
+            radial-gradient(circle at 12% 18%, rgba(212, 206, 196, 0.4), transparent 26%),
+            radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.1), transparent 22%),
+            linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
+          color: #1a1a1a;
+          font-family: var(--font-live-home-body), sans-serif;
+          font-size: 125%;
+          overflow: visible !important;
+        }
+
+        .live-home-shell .marketing-motion-shell {
+          overflow-x: visible !important;
+          overflow-y: visible !important;
+          max-height: none !important;
+        }
+
+        .live-home-shell header {
+          top: 1rem !important;
+          left: 0 !important;
+          right: 0 !important;
+          background: transparent !important;
+          border-bottom: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          box-shadow: none !important;
+        }
+
+        .live-home-shell header.bg-white\\/80 {
+          background: transparent !important;
+        }
+
+        .live-home-shell header .max-w-7xl {
+          max-width: min(760px, calc(100% - 1.25rem)) !important;
+          background: linear-gradient(145deg, rgba(242, 242, 242, 0.78), rgba(235, 235, 235, 0.72)) !important;
+          border: 1px solid rgba(212, 206, 196, 0.72) !important;
+          border-radius: 1.1rem !important;
+          backdrop-filter: blur(14px) saturate(130%);
+          -webkit-backdrop-filter: blur(14px) saturate(130%);
+          box-shadow:
+            0 14px 34px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+        }
+
+        .live-home-shell header nav.hidden.md\\:flex.items-center.gap-8 {
+          display: none !important;
+        }
+
+        .live-home-shell header .text-gray-600 {
+          color: rgba(26, 26, 26, 0.74) !important;
+        }
+
+        .live-home-shell header .hover\\:text-gray-900:hover {
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell header .md\\:hidden.p-2 {
+          color: #1a1a1a !important;
+          margin-left: auto;
+        }
+
+        .live-home-shell header .md\\:hidden.bg-white {
+          background: rgba(249, 249, 249, 0.96) !important;
+          border-color: rgba(26, 26, 26, 0.12) !important;
+          border-radius: 0 0 1rem 1rem;
+          margin-top: 0.5rem;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > a button {
+          background: transparent !important;
+          color: rgba(26, 26, 26, 0.82) !important;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > a button:hover {
+          background: rgba(26, 26, 26, 0.06) !important;
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > button {
+          background: transparent !important;
+          background-image: none !important;
+          color: rgba(26, 26, 26, 0.82) !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > button:hover {
+          background: rgba(26, 26, 26, 0.06) !important;
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell header .md\\:hidden.bg-white .text-gray-600 {
+          color: rgba(26, 26, 26, 0.8) !important;
+        }
+
+        .live-home-shell header .md\\:hidden.bg-white hr {
+          border-color: rgba(26, 26, 26, 0.12) !important;
+        }
+
+        .live-home-shell header .md\\:hidden.bg-white button {
+          background: transparent !important;
+          background-image: none !important;
+          color: rgba(26, 26, 26, 0.82) !important;
+          border: none !important;
+          justify-content: flex-start !important;
+          padding-left: 0 !important;
+        }
+
+        .live-home-shell header .md\\:hidden.bg-white button:hover {
+          background: rgba(26, 26, 26, 0.06) !important;
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell header .flex.items-center.justify-between.h-16 {
+          position: relative;
+        }
+
+        .live-home-shell header .flex.items-center.select-none {
+          position: absolute !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          z-index: 2;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 {
+          display: flex !important;
+          width: 100% !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          gap: 0 !important;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > a:first-child {
+          margin-left: 0 !important;
+        }
+
+        .live-home-shell header .hidden.md\\:flex.items-center.gap-3 > button:last-child {
+          margin-right: 0 !important;
+        }
+
+        .live-home-shell * {
+          font-family: inherit;
+        }
+
+        .live-home-shell h1,
+        .live-home-shell h2,
+        .live-home-shell h3,
+        .live-home-shell h4,
+        .live-home-shell h5,
+        .live-home-shell h6 {
+          font-family: var(--font-live-home-display), serif !important;
+          font-weight: 400 !important;
+          color: #0d0d0d !important;
+          letter-spacing: -0.02em;
+        }
+
+        .live-home-shell p,
+        .live-home-shell span,
+        .live-home-shell li,
+        .live-home-shell label,
+        .live-home-shell input,
+        .live-home-shell textarea {
+          font-family: var(--font-live-home-body), sans-serif !important;
+        }
+
+        .live-home-shell .bg-white,
+        .live-home-shell .bg-gray-50,
+        .live-home-shell .bg-gray-100,
+        .live-home-shell .bg-zinc-50,
+        .live-home-shell .bg-zinc-100 {
+          background-color: rgba(242, 242, 242, 0.92) !important;
+        }
+
+        .live-home-shell [class*="bg-white/"]:not(header),
+        .live-home-shell [class*="bg-gray-50/"]:not(header),
+        .live-home-shell [class*="bg-zinc-50/"]:not(header) {
+          background-color: rgba(249, 249, 249, 0.95) !important;
+          backdrop-filter: blur(18px);
+        }
+
+        .live-home-shell .bg-gray-900\\/50,
+        .live-home-shell .bg-black\\/50,
+        .live-home-shell .bg-zinc-900\\/50 {
+          background-color: rgba(249, 249, 249, 0.82) !important;
+          color: #1a1a1a !important;
+        }
+
+        .live-home-shell .text-gray-400,
+        .live-home-shell .text-gray-500,
+        .live-home-shell .text-gray-600,
+        .live-home-shell .text-gray-700,
+        .live-home-shell .text-zinc-500,
+        .live-home-shell .text-zinc-600,
+        .live-home-shell .text-zinc-700 {
+          color: #706f6e !important;
+        }
+
+        .live-home-shell .text-gray-900,
+        .live-home-shell .text-zinc-900,
+        .live-home-shell .text-black {
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell .border,
+        .live-home-shell .border-gray-100,
+        .live-home-shell .border-gray-200,
+        .live-home-shell .border-gray-300,
+        .live-home-shell .border-zinc-100,
+        .live-home-shell .border-zinc-200 {
+          border-color: rgba(212, 206, 196, 0.7) !important;
+        }
+
+        .live-home-shell .shadow-xl,
+        .live-home-shell .shadow-2xl,
+        .live-home-shell .shadow-sm {
+          box-shadow:
+            0 24px 70px rgba(0, 0, 0, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+        }
+
+        .live-home-shell button,
+        .live-home-shell a[class*="inline-flex"],
+        .live-home-shell [role="button"] {
+          font-family: var(--font-live-home-body), sans-serif !important;
+          font-weight: 500 !important;
+        }
+
+        .live-home-shell .bg-black,
+        .live-home-shell .bg-zinc-900,
+        .live-home-shell .bg-gray-900 {
+          background-color: #1a1a1a !important;
+          background-image: none !important;
+          color: #f9f9f9 !important;
+        }
+
+        .live-home-shell .bg-violet-600,
+        .live-home-shell .bg-pink-500,
+        .live-home-shell .bg-blue-600,
+        .live-home-shell .bg-emerald-600,
+        .live-home-shell .bg-amber-500,
+        .live-home-shell .bg-violet-500,
+        .live-home-shell .bg-pink-600 {
+          background-color: #1a1a1a !important;
+          background-image: none !important;
+          color: #f9f9f9 !important;
+        }
+
+        .live-home-shell .bg-violet-50,
+        .live-home-shell .bg-pink-50,
+        .live-home-shell .bg-emerald-50,
+        .live-home-shell .bg-blue-50,
+        .live-home-shell .bg-amber-50 {
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.2) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.32) !important;
+        }
+
+        .live-home-shell .text-violet-600,
+        .live-home-shell .text-pink-600,
+        .live-home-shell .text-emerald-600,
+        .live-home-shell .text-blue-600,
+        .live-home-shell .text-amber-600,
+        .live-home-shell .text-pink-700,
+        .live-home-shell .text-violet-700,
+        .live-home-shell .text-emerald-700 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .live-home-shell .ring-1,
+        .live-home-shell .ring-gray-200,
+        .live-home-shell .ring-gray-300 {
+          --tw-ring-color: rgba(212, 206, 196, 0.6) !important;
+        }
+
+        .live-home-shell .bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: #1a1a1a !important;
+          -webkit-text-fill-color: #1a1a1a !important;
+          font-family: var(--font-live-home-display), serif !important;
+          font-style: italic !important;
+          font-weight: 400 !important;
+          letter-spacing: -0.04em !important;
+          text-transform: uppercase;
+        }
+
+        .live-home-shell section:first-of-type .inline-flex span.bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: #0d0d0d !important;
+          -webkit-text-fill-color: #0d0d0d !important;
+          font-family: var(--font-live-home-display), serif !important;
+          font-style: normal !important;
+          font-weight: 400 !important;
+          letter-spacing: 0 !important;
+          text-transform: uppercase !important;
+        }
+
+        .live-home-shell section:first-of-type h1 > span.bg-clip-text.text-transparent {
+          background-image: none !important;
+          color: var(--brand-accent) !important;
+          -webkit-text-fill-color: var(--brand-accent) !important;
+        }
+
+        .live-home-shell section:first-of-type {
+          min-height: 100svh !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding-top: 6rem !important;
+          padding-bottom: 1rem !important;
+        }
+
+        .live-home-shell section:first-of-type > .max-w-4xl {
+          width: 100%;
+          transform: none !important;
+        }
+
+        @media (min-width: 1024px) {
+          .live-home-shell section:first-of-type {
+            min-height: 100svh !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding-top: 6.75rem !important;
+            padding-bottom: 1rem !important;
+          }
+
+          .live-home-shell section:first-of-type > .max-w-4xl {
+            transform: none !important;
+            transform-origin: top center;
+          }
+        }
+
+        .live-home-shell section:first-of-type .inline-flex.items-center.gap-2 {
+          background-image: none !important;
+          background-color: rgba(242, 242, 242, 0.86) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+        }
+
+        .live-home-shell section:first-of-type .inline-flex .text-pink-500 {
+          color: var(--brand-accent) !important;
+        }
+
+        .live-home-shell #videos {
+          display: none !important;
+        }
+
+        .live-home-shell #videos + section {
+          display: none !important;
+        }
+
+        .live-home-shell #testimonials {
+          display: none !important;
+        }
+
+        .live-home-shell #videos .text-pink-600 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .live-home-shell #features .w-12.h-12 {
+          background-image: none !important;
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.24) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.36) !important;
+        }
+
+        .live-home-shell #features .w-6.h-6 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div,
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div,
+        .live-home-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div,
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
+          text-align: center !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14,
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .w-12.h-12,
+        .live-home-shell section[class*="from-purple-50"][class*="via-pink-50"][class*="to-violet-50"] .grid.md\\:grid-cols-3 > div .w-16.h-16,
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div {
+          background: rgba(249, 249, 249, 0.05) !important;
+          border: 1px solid rgba(249, 249, 249, 0.2) !important;
+          box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          background: var(--brand-accent) !important;
+          border: 1px solid rgba(var(--brand-accent-soft-rgb), 0.62) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div .w-14.h-14 svg {
+          color: #fcf2f2 !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.46) !important;
+          box-shadow: none !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div:hover {
+          background: transparent !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-900 {
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .text-gray-600 {
+          color: #706f6e !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div .w-12.h-12 {
+          background: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.5) !important;
+        }
+
+        .live-home-shell #features .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div svg {
+          color: var(--brand-accent) !important;
+        }
+
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div {
+          background: transparent !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.46) !important;
+          box-shadow: none !important;
+        }
+
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-900 {
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .text-gray-600 {
+          color: #706f6e !important;
+        }
+
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div .w-14.h-14 {
+          background: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.5) !important;
+        }
+
+        .live-home-shell section:has(+ #testimonials) .grid.md\\:grid-cols-3 > div svg {
+          color: var(--brand-accent) !important;
+        }
+
+        .live-home-shell #why {
+          background: linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 52%, #ebebeb 100%) !important;
+          color: #1a1a1a !important;
+        }
+
+        .live-home-shell #why .text-gray-900 {
+          color: #0d0d0d !important;
+        }
+
+        .live-home-shell #why .text-gray-600,
+        .live-home-shell #why .text-gray-700 {
+          color: #706f6e !important;
+        }
+
+        .live-home-shell #why .bg-pink-100 {
+          background-color: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border-color: rgba(var(--brand-accent-rgb), 0.34) !important;
+        }
+
+        .live-home-shell #why .text-pink-700 {
+          color: var(--brand-accent-strong) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div:nth-child(1) {
+          background: linear-gradient(160deg, #f9f9f9 0%, #f2f2f2 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div:nth-child(2) {
+          background: linear-gradient(160deg, #f9f9f9 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+        }
+
+        .live-home-shell #why .grid.md\\:grid-cols-3 > div:nth-child(3) {
+          background: linear-gradient(160deg, #f2f2f2 0%, #ebebeb 100%) !important;
+          border-color: rgba(212, 206, 196, 0.58) !important;
+        }
+
+        .live-home-shell section:first-of-type .w-5.h-5.rounded-full.bg-emerald-100 {
+          background: rgba(var(--brand-accent-soft-rgb), 0.22) !important;
+          border: 1px solid rgba(var(--brand-accent-rgb), 0.34) !important;
+        }
+
+        .live-home-shell section:first-of-type .w-5.h-5.rounded-full.bg-emerald-100 .text-emerald-600 {
+          color: var(--brand-accent) !important;
+        }
+      `}</style>
+      <MarketingHomePage />
+    </div>
+  )
+}
