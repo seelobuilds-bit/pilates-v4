@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { db } from "@/lib/db"
 
 export const DEMO_STUDIO_OWNER_EMAIL =
@@ -57,7 +58,7 @@ async function findDemoStudioBySubdomain() {
   })
 }
 
-export async function getDemoStudioContext(): Promise<DemoStudioContext | null> {
+const loadDemoStudioContext = cache(async (): Promise<DemoStudioContext | null> => {
   const studio = (await findDemoStudioByOwnerEmail()) || (await findDemoStudioBySubdomain())
 
   if (!studio?.owner?.email) {
@@ -73,6 +74,10 @@ export async function getDemoStudioContext(): Promise<DemoStudioContext | null> 
     ownerFirstName: studio.owner.firstName,
     ownerLastName: studio.owner.lastName,
   }
+})
+
+export async function getDemoStudioContext(): Promise<DemoStudioContext | null> {
+  return loadDemoStudioContext()
 }
 
 export async function getDemoStudioId() {
@@ -86,7 +91,7 @@ export async function isDemoStudioId(studioId: string | null | undefined) {
   return demoStudio?.studioId === studioId
 }
 
-export async function getDemoTeacherIds() {
+const loadDemoTeacherIds = cache(async () => {
   const studioId = await getDemoStudioId()
   if (!studioId) return []
 
@@ -96,4 +101,8 @@ export async function getDemoTeacherIds() {
   })
 
   return teachers.map((teacher) => teacher.id)
+})
+
+export async function getDemoTeacherIds() {
+  return loadDemoTeacherIds()
 }

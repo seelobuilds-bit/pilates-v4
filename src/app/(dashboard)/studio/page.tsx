@@ -130,6 +130,7 @@ export default async function StudioDashboardPage({
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const atRiskWindowStart = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000)
 
   const [
     clientCount,
@@ -177,7 +178,15 @@ export default async function StudioDashboardPage({
     () => db.classType.count({ where: { studioId } })
   ])
 
-  const [upcomingClasses, todayClasses, recentBookings, classesInPeriod] = await runDbQueries([
+  const [
+    upcomingClasses,
+    todayClasses,
+    recentBookings,
+    classSessionPeriodAggregate,
+    churnBookedClientRows,
+    recentAtRiskClientRows,
+    allBookedClientRows,
+  ] = await runDbQueries([
     () => db.classSession.findMany({
       where: { 
         studioId,
@@ -281,7 +290,7 @@ export default async function StudioDashboardPage({
       orderBy: { createdAt: "desc" },
       take: 8
     }),
-    () => db.classSession.findMany({
+    () => db.classSession.aggregate({
       where: {
         studioId,
         startTime: {
@@ -289,24 +298,43 @@ export default async function StudioDashboardPage({
           lt: selectedRange.endDate,
         }
       },
-      select: {
-        capacity: true,
-        _count: { select: { bookings: true } }
-      }
+      _count: { _all: true },
+      _sum: { capacity: true },
+    }),
+    () => db.booking.findMany({
+      where: {
+        studioId,
+        status: { not: "CANCELLED" },
+        classSession: {
+          startTime: { gte: thirtyDaysAgo }
+        }
+      },
+      distinct: ["clientId"],
+      select: { clientId: true },
+    }),
+    () => db.booking.findMany({
+      where: {
+        studioId,
+        status: { not: "CANCELLED" },
+        classSession: {
+          startTime: { gte: atRiskWindowStart }
+        }
+      },
+      distinct: ["clientId"],
+      select: { clientId: true },
+    }),
+    () => db.booking.findMany({
+      where: {
+        studioId,
+        status: { not: "CANCELLED" },
+      },
+      distinct: ["clientId"],
+      select: { clientId: true },
     })
   ])
 
-  // Calculate churn (clients who haven't booked in 30 days)
-  const activeClientsWithRecentBookings = await db.client.count({
-    where: {
-      studioId,
-      bookings: {
-        some: {
-          createdAt: { gte: thirtyDaysAgo }
-        }
-      }
-    }
-  })
+  // Calculate churn (clients who haven't booked in 30 days) from booking ids instead of nested client relation scans.
+  const activeClientsWithRecentBookings = churnBookedClientRows.length
   const churnRate = totalClients > 0 
     ? ((totalClients - activeClientsWithRecentBookings) / totalClients * 100).toFixed(1)
     : "0.0"
@@ -316,25 +344,35 @@ export default async function StudioDashboardPage({
   const todayTotalBookings = todayClasses.reduce((sum, c) => sum + c._count.bookings, 0)
   const todayFillRate = todayTotalCapacity > 0 ? Math.round((todayTotalBookings / todayTotalCapacity) * 100) : 0
 
-  const reportPeriodCapacity = classesInPeriod.reduce((sum, c) => sum + c.capacity, 0)
-  const reportPeriodBookings = classesInPeriod.reduce((sum, c) => sum + c._count.bookings, 0)
+  const reportPeriodCapacity = classSessionPeriodAggregate._sum.capacity ?? 0
+  const reportPeriodBookings = periodBookings
   const reportPeriodFillRate = reportPeriodCapacity > 0 ? Math.round((reportPeriodBookings / reportPeriodCapacity) * 100) : 0
 
-  // Get at-risk clients (haven't booked in 21+ days but were active before)
-  const atRiskClients = await db.client.findMany({
-    where: {
-      studioId,
-      isActive: true,
-      bookings: {
-        some: {},
-        none: {
-          createdAt: { gte: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000) }
-        }
-      }
-    },
-    take: 5,
-    orderBy: { createdAt: "desc" }
-  })
+  // Get at-risk clients (haven't booked in 21+ days but were active before) via distinct booking id sets.
+  const allBookedClientIds = new Set(allBookedClientRows.map((row) => row.clientId))
+  const recentAtRiskClientIds = new Set(recentAtRiskClientRows.map((row) => row.clientId))
+  const atRiskClientIds = Array.from(allBookedClientIds).filter((clientId) => !recentAtRiskClientIds.has(clientId))
+
+  const atRiskClients = atRiskClientIds.length
+    ? await db.client.findMany({
+        where: {
+          studioId,
+          isActive: true,
+          id: { in: atRiskClientIds },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          isActive: true,
+          createdAt: true,
+        },
+        take: 5,
+        orderBy: { createdAt: "desc" },
+      })
+    : []
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -349,17 +387,48 @@ export default async function StudioDashboardPage({
   const previousPeriodStart = new Date(selectedRange.startDate.getTime() - periodDuration)
   const previousPeriodEnd = selectedRange.startDate
 
-  const [thisPeriodRevenueBookings, previousPeriodRevenueBookings] = await runDbQueries([
+  const [
+    thisPeriodRevenueAggregate,
+    previousPeriodRevenueAggregate,
+    thisPeriodRevenueFallbackBookings,
+    previousPeriodRevenueFallbackBookings,
+  ] = await runDbQueries([
+    () => db.booking.aggregate({
+      where: {
+        studioId,
+        status: { not: "CANCELLED" },
+        paidAmount: { not: null },
+        classSession: {
+          startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
+        }
+      },
+      _sum: {
+        paidAmount: true,
+      },
+    }),
+    () => db.booking.aggregate({
+      where: {
+        studioId,
+        status: { not: "CANCELLED" },
+        paidAmount: { not: null },
+        classSession: {
+          startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
+        }
+      },
+      _sum: {
+        paidAmount: true,
+      },
+    }),
     () => db.booking.findMany({
       where: {
         studioId,
         status: { not: "CANCELLED" },
+        paidAmount: null,
         classSession: {
           startTime: { gte: selectedRange.startDate, lt: selectedRange.endDate }
         }
       },
       select: {
-        paidAmount: true,
         classSession: {
           select: {
             classType: { select: { price: true } }
@@ -371,12 +440,12 @@ export default async function StudioDashboardPage({
       where: {
         studioId,
         status: { not: "CANCELLED" },
+        paidAmount: null,
         classSession: {
           startTime: { gte: previousPeriodStart, lt: previousPeriodEnd }
         }
       },
       select: {
-        paidAmount: true,
         classSession: {
           select: {
             classType: { select: { price: true } }
@@ -386,13 +455,13 @@ export default async function StudioDashboardPage({
     })
   ])
 
-  const periodRevenue = thisPeriodRevenueBookings.reduce((sum, booking) => {
-    return sum + (booking.paidAmount ?? booking.classSession.classType.price ?? 0)
-  }, 0)
+  const periodRevenue =
+    (thisPeriodRevenueAggregate._sum.paidAmount ?? 0) +
+    thisPeriodRevenueFallbackBookings.reduce((sum, booking) => sum + (booking.classSession.classType.price ?? 0), 0)
 
-  const previousPeriodRevenue = previousPeriodRevenueBookings.reduce((sum, booking) => {
-    return sum + (booking.paidAmount ?? booking.classSession.classType.price ?? 0)
-  }, 0)
+  const previousPeriodRevenue =
+    (previousPeriodRevenueAggregate._sum.paidAmount ?? 0) +
+    previousPeriodRevenueFallbackBookings.reduce((sum, booking) => sum + (booking.classSession.classType.price ?? 0), 0)
 
   // Calculate percent change (avoid division by zero)
   const revenuePercentChange = previousPeriodRevenue > 0 
@@ -493,7 +562,7 @@ export default async function StudioDashboardPage({
       {
         id: "classesThisMonth",
         title: "Classes in Period",
-        value: classesInPeriod.length,
+        value: classSessionPeriodAggregate._count._all,
         description: selectedRange.label
       },
       {
