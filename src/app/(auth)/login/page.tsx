@@ -43,7 +43,12 @@ export default function LoginPage() {
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center font-medium tracking-[0.01em]">
-          <span className="inline-block tracking-[-0.012em]">Welcome to</span>{" "}
+          <span
+            className="inline-block tracking-[-0.012em]"
+            style={{ fontFamily: "var(--font-display), serif" }}
+          >
+            Welcome to
+          </span>{" "}
           <span
             className="inline-block uppercase italic tracking-[-0.035em]"
             style={{ fontFamily: "var(--font-display), serif" }}
