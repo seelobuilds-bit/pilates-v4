@@ -45,7 +45,7 @@ export default function LiveHomePage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-live-home-body), sans-serif;
-          font-size: 125%;
+          font-size: 100%;
           overflow: visible !important;
         }
 
@@ -53,6 +53,7 @@ export default function LiveHomePage() {
           overflow-x: visible !important;
           overflow-y: visible !important;
           max-height: none !important;
+          zoom: 1.25;
         }
 
         .live-home-shell header {
@@ -348,7 +349,7 @@ export default function LiveHomePage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 6rem !important;
+          padding-top: 4.25rem !important;
           padding-bottom: 1rem !important;
         }
 
@@ -362,7 +363,7 @@ export default function LiveHomePage() {
             min-height: 100svh !important;
             align-items: center !important;
             justify-content: center !important;
-            padding-top: 6.75rem !important;
+            padding-top: 4.75rem !important;
             padding-bottom: 1rem !important;
           }
 
