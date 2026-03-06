@@ -11,9 +11,6 @@ export const ATTENDED_BOOKING_STATUS_LIST: BookingStatus[] = ["CONFIRMED", "COMP
 
 type StudioClientLike = {
   id: string
-  firstName: string
-  lastName: string
-  email: string
   isActive: boolean
   credits: number
   createdAt: Date
@@ -68,7 +65,7 @@ export async function fetchActiveClientVisitRows(args: {
   })
 }
 
-export function buildRetentionAndClientSummary(args: {
+export async function buildRetentionAndClientSummary(args: {
   studioClients: StudioClientLike[]
   activeClientVisitRows: ActiveClientVisitRow[]
   cancelledBookingsInPeriod: CancelledBookingLike[]
@@ -96,11 +93,26 @@ export function buildRetentionAndClientSummary(args: {
 
   const atRiskCandidates = buildAtRiskCandidates(studioClients, lastVisitByClientId, visitCountByClientId, reportEndDate)
   const activeClientsList = studioClients.filter((client) => client.isActive)
+  const atRiskPreviewIds = atRiskCandidates.slice(0, 10).map((client) => client.id)
+  const atRiskClientDetails = atRiskPreviewIds.length
+    ? await db.client.findMany({
+        where: {
+          id: { in: atRiskPreviewIds },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      })
+    : []
 
   return {
     clients: buildClientSummary(totalClients, newClients, activeClients, churnedClients),
     retention: buildRetentionSummary({
       atRiskCandidates,
+      atRiskClientDetails,
       activeClientsList,
       recentlyActiveClientIds,
       cancelledBookingsInPeriod,

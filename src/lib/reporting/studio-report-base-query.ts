@@ -215,9 +215,6 @@ export async function fetchStudioReportBaseData(args: {
         },
         select: {
           id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
           isActive: true,
           credits: true,
           createdAt: true,

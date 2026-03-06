@@ -87,7 +87,7 @@ export async function runStudioReport(args: {
     previousClassCountByTeacherId,
   })
 
-  const { clients, retention } = buildRetentionAndClientSummary({
+  const { clients, retention } = await buildRetentionAndClientSummary({
     studioClients,
     activeClientVisitRows,
     cancelledBookingsInPeriod,

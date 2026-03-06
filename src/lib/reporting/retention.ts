@@ -2,9 +2,6 @@ import { ratioPercentage } from "./metrics"
 
 type ActiveClientLike = {
   id: string
-  firstName: string
-  lastName: string
-  email: string
   isActive: boolean
 }
 
@@ -17,8 +14,6 @@ type ActiveClientVisitLike = {
 
 export type AtRiskCandidate = {
   id: string
-  name: string
-  email: string
   lastVisit: Date | null
   visits: number
   isAtRisk: boolean
@@ -114,8 +109,6 @@ export function buildAtRiskCandidates(
       const { isAtRisk, status } = getClientRiskStatus(lastVisit, reportEndDate)
       return {
         id: client.id,
-        name: `${client.firstName} ${client.lastName}`,
-        email: client.email,
         lastVisit,
         visits,
         isAtRisk,
@@ -124,7 +117,7 @@ export function buildAtRiskCandidates(
     })
     .filter((client) => client.isAtRisk)
     .sort((a, b) => {
-      if (!a.lastVisit && !b.lastVisit) return a.name.localeCompare(b.name)
+      if (!a.lastVisit && !b.lastVisit) return a.id.localeCompare(b.id)
       if (!a.lastVisit) return -1
       if (!b.lastVisit) return 1
       return a.lastVisit.getTime() - b.lastVisit.getTime()

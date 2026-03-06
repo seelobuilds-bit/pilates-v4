@@ -5,43 +5,34 @@ const summary = buildRetentionSummary({
   atRiskCandidates: [
     {
       id: "c1",
-      name: "Alice Example",
-      email: "alice@example.com",
       lastVisit: new Date("2026-02-01T00:00:00.000Z"),
       visits: 4,
       status: "high-risk",
     },
     {
       id: "c2",
-      name: "Bria Example",
-      email: "bria@example.com",
       lastVisit: null,
       visits: 0,
       status: "high-risk",
     },
   ],
+  atRiskClientDetails: [
+    { id: "c1", firstName: "Alice", lastName: "Example", email: "alice@example.com" },
+    { id: "c2", firstName: "Bria", lastName: "Example", email: "bria@example.com" },
+  ],
   activeClientsList: [
     {
       id: "c1",
-      firstName: "Alice",
-      lastName: "Example",
-      email: "alice@example.com",
       createdAt: new Date("2026-02-15T00:00:00.000Z"),
       credits: 0,
     },
     {
       id: "c2",
-      firstName: "Bria",
-      lastName: "Example",
-      email: "bria@example.com",
       createdAt: new Date("2025-12-01T00:00:00.000Z"),
       credits: 6,
     },
     {
       id: "c3",
-      firstName: "Cara",
-      lastName: "Example",
-      email: "cara@example.com",
       createdAt: new Date("2025-06-01T00:00:00.000Z"),
       credits: 12,
     },

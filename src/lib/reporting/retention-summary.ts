@@ -3,20 +3,22 @@ import { buildChurnMeta } from "./retention-churn"
 
 type ActiveClientLike = {
   id: string
-  firstName: string
-  lastName: string
-  email: string
   createdAt: Date
   credits: number
 }
 
 type AtRiskCandidateLike = {
   id: string
-  name: string
-  email: string
   lastVisit: Date | null
   visits: number
   status: string
+}
+
+type AtRiskClientDetailLike = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
 }
 
 type CancelledBookingLike = {
@@ -52,6 +54,7 @@ type RetentionSummary = {
 
 export function buildRetentionSummary({
   atRiskCandidates,
+  atRiskClientDetails,
   activeClientsList,
   recentlyActiveClientIds,
   cancelledBookingsInPeriod,
@@ -60,6 +63,7 @@ export function buildRetentionSummary({
   totalClients,
 }: {
   atRiskCandidates: AtRiskCandidateLike[]
+  atRiskClientDetails: AtRiskClientDetailLike[]
   activeClientsList: ActiveClientLike[]
   recentlyActiveClientIds: Set<string>
   cancelledBookingsInPeriod: CancelledBookingLike[]
@@ -67,10 +71,20 @@ export function buildRetentionSummary({
   churnedClients: number
   totalClients: number
 }): RetentionSummary {
+  const atRiskClientDetailsById = new Map(
+    atRiskClientDetails.map((client) => [
+      client.id,
+      {
+        name: `${client.firstName} ${client.lastName}`.trim() || "Client",
+        email: client.email,
+      },
+    ])
+  )
+
   const atRiskList = atRiskCandidates.slice(0, 10).map((client) => ({
     id: client.id,
-    name: client.name,
-    email: client.email,
+    name: atRiskClientDetailsById.get(client.id)?.name || "Client",
+    email: atRiskClientDetailsById.get(client.id)?.email || "",
     lastVisit: client.lastVisit
       ? client.lastVisit.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
       : "Never",
