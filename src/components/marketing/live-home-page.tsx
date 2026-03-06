@@ -23,6 +23,10 @@ export default function LiveHomePage() {
           overflow-y: auto !important;
         }
 
+        html:has(.live-home-shell) {
+          font-size: 125% !important;
+        }
+
         body {
           overflow-x: clip !important;
           overflow-y: visible !important;
@@ -45,7 +49,6 @@ export default function LiveHomePage() {
             linear-gradient(180deg, #f9f9f9 0%, #f2f2f2 44%, #ebebeb 100%);
           color: #1a1a1a;
           font-family: var(--font-live-home-body), sans-serif;
-          font-size: 100%;
           overflow: visible !important;
         }
 
@@ -53,25 +56,6 @@ export default function LiveHomePage() {
           overflow-x: visible !important;
           overflow-y: visible !important;
           max-height: none !important;
-          zoom: 1.25;
-        }
-
-        @supports (-webkit-touch-callout: none) {
-          .live-home-shell {
-            font-size: 125%;
-          }
-
-          .live-home-shell .marketing-motion-shell {
-            zoom: 1 !important;
-          }
-
-          .live-home-shell header .max-w-7xl {
-            max-width: min(950px, calc(100% - 1.5rem)) !important;
-          }
-
-          .live-home-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-5.5vh) !important;
-          }
         }
 
         .live-home-shell header {
@@ -90,7 +74,7 @@ export default function LiveHomePage() {
         }
 
         .live-home-shell header .max-w-7xl {
-          max-width: min(760px, calc(100% - 1.25rem)) !important;
+          max-width: min(950px, calc(100% - 1.5rem)) !important;
           background: linear-gradient(145deg, rgba(242, 242, 242, 0.78), rgba(235, 235, 235, 0.72)) !important;
           border: 1px solid rgba(212, 206, 196, 0.72) !important;
           border-radius: 1.1rem !important;
@@ -373,7 +357,7 @@ export default function LiveHomePage() {
 
         .live-home-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-9.5vh) !important;
+          transform: translateY(-135px) !important;
         }
 
         @media (min-width: 1024px) {
@@ -386,14 +370,8 @@ export default function LiveHomePage() {
           }
 
           .live-home-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-11vh) !important;
+            transform: translateY(-135px) !important;
             transform-origin: top center;
-          }
-
-          @supports (-webkit-touch-callout: none) {
-            .live-home-shell section:first-of-type > .max-w-4xl {
-              transform: translateY(-6.5vh) !important;
-            }
           }
         }
 
