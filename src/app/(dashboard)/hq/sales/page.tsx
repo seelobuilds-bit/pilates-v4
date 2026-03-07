@@ -558,7 +558,7 @@ export default function HQSalesCRMPage() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 flex w-full overflow-x-auto whitespace-nowrap">
+        <TabsList className="mb-6 flex w-fit max-w-full overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="pipeline" className="px-4 shrink-0 sm:px-6">Pipeline</TabsTrigger>
           <TabsTrigger value="leads" className="px-4 shrink-0 sm:px-6">All Leads</TabsTrigger>
           <TabsTrigger value="demos" className="px-4 shrink-0 sm:px-6 relative">

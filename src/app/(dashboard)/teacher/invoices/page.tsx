@@ -525,7 +525,7 @@ export default function TeacherInvoicesPage() {
 
       {/* Invoices Tabs */}
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="all">
             All Invoices
             <Badge className="ml-2 bg-gray-100 text-gray-600">{invoices.length}</Badge>

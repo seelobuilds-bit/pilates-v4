@@ -19,27 +19,49 @@ export async function GET(request: NextRequest) {
     const clientId = searchParams.get("clientId")
 
     if (clientId) {
-      // Get messages for specific client
-      const messages = await db.message.findMany({
-        where: {
-          studioId,
-          clientId,
-        },
-        orderBy: { createdAt: "asc" },
-        include: {
-          client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
+      const [client, messages] = await Promise.all([
+        db.client.findFirst({
+          where: {
+            id: clientId,
+            studioId,
           },
-        },
-      })
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        }),
+        db.message.findMany({
+          where: {
+            studioId,
+            clientId,
+          },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            channel: true,
+            direction: true,
+            status: true,
+            subject: true,
+            body: true,
+            fromName: true,
+            toName: true,
+            createdAt: true,
+            sentAt: true,
+          },
+        }),
+      ])
+
+      if (!client) {
+        return NextResponse.json({ error: "Client not found" }, { status: 404 })
+      }
       
-      return NextResponse.json({ messages })
+      return NextResponse.json({
+        client,
+        messages,
+      })
     }
 
     // Get all conversations (grouped by client)

@@ -638,7 +638,7 @@ export default function StudioVaultPage() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="bg-white border flex w-full overflow-x-auto whitespace-nowrap">
+        <TabsList className="bg-white border flex w-fit max-w-full overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="courses" className="shrink-0">
             <BookOpen className="h-4 w-4 mr-2" />
             Courses

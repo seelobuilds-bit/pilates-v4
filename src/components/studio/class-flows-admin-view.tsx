@@ -835,7 +835,7 @@ export default function ClassFlowsAdminView({
       </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+        <TabsList className="h-auto w-fit max-w-full justify-start gap-1 overflow-x-auto p-1">
           <TabsTrigger value="content" className="shrink-0">Content Library</TabsTrigger>
           <TabsTrigger value="training" className="shrink-0">Training Requests</TabsTrigger>
         </TabsList>

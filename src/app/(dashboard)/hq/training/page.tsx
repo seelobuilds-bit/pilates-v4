@@ -577,7 +577,7 @@ export default function HQTrainingPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+        <TabsList className="mb-6 h-auto w-fit max-w-full justify-start gap-1 overflow-x-auto p-1">
           <TabsTrigger value="courses" className="shrink-0 flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             Growth Academy Courses

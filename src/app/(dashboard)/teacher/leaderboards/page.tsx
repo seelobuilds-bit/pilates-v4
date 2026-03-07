@@ -362,7 +362,7 @@ export default function TeacherLeaderboardsPage() {
       {/* All Leaderboards by Category */}
       {grouped.length > 0 && (
       <Tabs defaultValue={grouped[0]?.id || "content"} className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border h-auto p-1">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border h-auto p-1">
           {grouped.map(cat => (
             <TabsTrigger key={cat.id} value={cat.id} className="gap-2">
               {getCategoryIcon(cat.icon)}

@@ -760,7 +760,7 @@ export default function ReportsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white shadow-sm border-0 p-1">
           <TabsTrigger value="overview" className="shrink-0 whitespace-nowrap px-3 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview

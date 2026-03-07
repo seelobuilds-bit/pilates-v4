@@ -351,13 +351,13 @@ export default function LiveHomePage() {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          padding-top: 6.25rem !important;
+          padding-top: 7.25rem !important;
           padding-bottom: 1rem !important;
         }
 
         .live-home-shell section:first-of-type > .max-w-4xl {
           width: 100%;
-          transform: translateY(-56px) !important;
+          transform: translateY(-32px) !important;
         }
 
         @media (min-width: 1024px) {
@@ -365,13 +365,23 @@ export default function LiveHomePage() {
             min-height: 100svh !important;
             align-items: center !important;
             justify-content: center !important;
-            padding-top: 6.75rem !important;
+            padding-top: 7.25rem !important;
             padding-bottom: 1rem !important;
           }
 
           .live-home-shell section:first-of-type > .max-w-4xl {
-            transform: translateY(-56px) !important;
+            transform: translateY(-32px) !important;
             transform-origin: top center;
+          }
+        }
+
+        @media (min-width: 1024px) and (max-width: 1536px) {
+          .live-home-shell section:first-of-type {
+            padding-top: 7.75rem !important;
+          }
+
+          .live-home-shell section:first-of-type > .max-w-4xl {
+            transform: translateY(-8px) !important;
           }
         }
 

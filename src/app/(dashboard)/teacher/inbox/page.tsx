@@ -454,7 +454,7 @@ export default function TeacherInboxPage() {
       {/* Inbox Type Tabs */}
       <div className="border-b bg-white px-4 pt-4">
         <Tabs value={inboxTab} onValueChange={(v) => setInboxTab(v as typeof inboxTab)}>
-          <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-gray-100/50">
+          <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-gray-100/50">
             <TabsTrigger value="messages" className="data-[state=active]:bg-white">
               <Mail className="h-4 w-4 mr-2" />
               Inbox

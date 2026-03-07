@@ -353,7 +353,7 @@ export default function MarketingPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="app-scrollbar mb-6 flex w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar mb-6 flex w-fit max-w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="automations" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <Zap className="h-4 w-4 mr-2" />
             Automations

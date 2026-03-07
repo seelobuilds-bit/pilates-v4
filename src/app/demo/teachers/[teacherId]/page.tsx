@@ -508,7 +508,7 @@ export default function TeacherDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white shadow-sm border-0">
           <TabsTrigger value="reports" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BarChart3 className="h-4 w-4 mr-2" />
             Reports

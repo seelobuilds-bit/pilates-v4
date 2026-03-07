@@ -435,7 +435,7 @@ export default function StudioDetailPage({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border shadow-sm">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border shadow-sm">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Overview

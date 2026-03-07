@@ -70,7 +70,7 @@ export default async function DemoInboxPage() {
           </Card>
 
           <Tabs defaultValue="all" className="space-y-3">
-            <TabsList className="app-scrollbar bg-white border w-full justify-start overflow-x-auto">
+            <TabsList className="app-scrollbar bg-white border w-fit max-w-full justify-start overflow-x-auto">
               <TabsTrigger value="all" className="flex-1">
                 All
                 <Badge className="ml-2 bg-violet-100 text-violet-700">{conversations.length}</Badge>

@@ -158,7 +158,7 @@ export default async function DemoInvoicesPage() {
 
       {/* Invoices Tabs */}
       <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="pending">
             <Clock className="h-4 w-4 mr-2" />
             Pending Review

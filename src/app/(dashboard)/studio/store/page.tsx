@@ -444,7 +444,7 @@ export default function StudioStorePage() {
 
       {/* Main Content */}
       <Tabs defaultValue="products" className="space-y-6">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border bg-white p-1">
+        <TabsList className="h-auto w-fit max-w-full justify-start gap-1 overflow-x-auto border bg-white p-1">
           <TabsTrigger value="products" className="shrink-0">
             <ShoppingBag className="h-4 w-4 mr-2" />
             My Products

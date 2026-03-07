@@ -413,7 +413,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
           {/* Activity & Schedule Tabs */}
           <Tabs defaultValue="activity" className="space-y-4">
-            <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+            <TabsList className="h-auto w-fit max-w-full justify-start gap-1 overflow-x-auto p-1">
               <TabsTrigger value="activity" className="shrink-0">Activity ({lead.activities?.length || 0})</TabsTrigger>
               <TabsTrigger value="schedule" className="shrink-0">
                 <Calendar className="h-4 w-4 mr-1" />

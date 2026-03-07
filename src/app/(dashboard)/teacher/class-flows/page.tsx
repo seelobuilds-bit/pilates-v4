@@ -422,7 +422,7 @@ export default function TeacherClassFlowsPage() {
       </Card>
 
       <Tabs defaultValue="library" className="space-y-6">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border-0 bg-white p-1 shadow-sm">
+        <TabsList className="h-auto w-fit max-w-full justify-start gap-1 overflow-x-auto border-0 bg-white p-1 shadow-sm">
           <TabsTrigger value="library" className="shrink-0 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
             <BookOpen className="h-4 w-4 mr-2" />
             Content Library

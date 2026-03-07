@@ -47,7 +47,18 @@ export async function GET(request: Request) {
         orderBy: {
           createdAt: "asc"
         },
-        take: 100
+        take: 100,
+        select: {
+          id: true,
+          channel: true,
+          direction: true,
+          status: true,
+          subject: true,
+          body: true,
+          fromName: true,
+          sentAt: true,
+          createdAt: true,
+        },
       })
 
       return NextResponse.json({
@@ -188,7 +199,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 })
   }
 }
-
 
 
 

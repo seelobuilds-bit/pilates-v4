@@ -210,7 +210,7 @@ export default function TeacherVaultCoursePage({
 
       {/* Tabs */}
       <Tabs defaultValue={course.isEnrolled ? "learn" : "overview"} className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="overview">
             <BookOpen className="h-4 w-4 mr-2" />
             Overview

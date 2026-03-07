@@ -466,7 +466,7 @@ export default function EmailTemplatesPage() {
 
                       {/* Content Tabs */}
                       <Tabs value={editMode} onValueChange={(v) => setEditMode(v as "visual" | "html")}>
-                        <TabsList className="app-scrollbar mb-4 w-full justify-start overflow-x-auto">
+                        <TabsList className="app-scrollbar mb-4 w-fit max-w-full justify-start overflow-x-auto">
                           <TabsTrigger value="visual" className="gap-2">
                             <FileText className="h-4 w-4" />
                             Plain Text

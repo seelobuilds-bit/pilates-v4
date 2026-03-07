@@ -121,7 +121,7 @@ export default async function DemoPaymentsPage() {
       </div>
 
       <Tabs defaultValue="transactions" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="transactions">
             <CreditCard className="h-4 w-4 mr-2" />
             Transactions

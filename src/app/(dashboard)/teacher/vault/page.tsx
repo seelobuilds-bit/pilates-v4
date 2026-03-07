@@ -385,7 +385,7 @@ export default function TeacherVaultPage() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="subscription-courses" className="space-y-6">
-        <TabsList className="app-scrollbar w-full justify-start overflow-x-auto bg-white border">
+        <TabsList className="app-scrollbar w-fit max-w-full justify-start overflow-x-auto bg-white border">
           <TabsTrigger value="subscription-courses">
             <Sparkles className="h-4 w-4 mr-2" />
             Subscription Courses
