@@ -96,6 +96,14 @@ export async function POST(request: NextRequest) {
     // Get client details
     const client = await db.client.findFirst({
       where: { id: clientId, studioId },
+      select: {
+        id: true,
+        studioId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+      },
     })
 
     if (!client) {

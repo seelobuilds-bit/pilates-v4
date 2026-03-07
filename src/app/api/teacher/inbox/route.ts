@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { loadInboxConversationSummaries } from "@/lib/inbox-conversations"
 import { getSession } from "@/lib/session"
 
 export async function GET(request: Request) {
@@ -23,7 +24,8 @@ export async function GET(request: Request) {
           classSession: {
             teacherId
           }
-        }
+        },
+        select: { id: true },
       })
 
       if (!hasBooking) {
@@ -31,10 +33,14 @@ export async function GET(request: Request) {
       }
 
       const client = await db.client.findUnique({
-        where: { id: clientId }
+        where: { id: clientId },
+        select: {
+          id: true,
+          studioId: true,
+        },
       })
 
-      if (!client) {
+      if (!client?.studioId) {
         return NextResponse.json({ error: "Client not found" }, { status: 404 })
       }
 
@@ -92,94 +98,48 @@ export async function GET(request: Request) {
       },
       select: {
         clientId: true,
-        client: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            studioId: true
-          }
-        }
       },
       distinct: ['clientId']
     })
 
-    // Get unique clients
-    const clientMap = new Map()
-    for (const booking of bookings) {
-      if (!clientMap.has(booking.clientId)) {
-        clientMap.set(booking.clientId, booking.client)
-      }
-    }
-    const clients = Array.from(clientMap.values())
+    const clientIds = [...new Set(bookings.map((booking) => booking.clientId).filter(Boolean))]
 
-    const clientIds = clients.map((client) => client.id)
-    const messageRows = clientIds.length
-      ? await db.message.findMany({
-          where: {
-            clientId: { in: clientIds },
+    const [clients, summaries] = await Promise.all([
+      clientIds.length
+        ? db.client.findMany({
+            where: {
+              id: { in: clientIds },
+              studioId: teacher.studioId,
+            },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          })
+        : Promise.resolve([]),
+      clientIds.length
+        ? loadInboxConversationSummaries({
             studioId: teacher.studioId,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          select: {
-            clientId: true,
-            channel: true,
-            body: true,
-            createdAt: true,
-            direction: true,
-          },
-        })
-      : []
+            clientIds,
+          })
+        : Promise.resolve([]),
+    ])
 
-    const messageSummary = new Map<
-      string,
-      {
-        totalMessages: number
-        lastMessage: {
-          channel: "CHAT" | "EMAIL" | "SMS"
-          body: string
-          createdAt: string
-          direction: "INBOUND" | "OUTBOUND"
-        } | null
-      }
-    >()
-
-    for (const row of messageRows) {
-      const messageClientId = row.clientId
-      if (!messageClientId) {
-        continue
-      }
-
-      const existing = messageSummary.get(messageClientId)
-      if (!existing) {
-        messageSummary.set(messageClientId, {
-          totalMessages: 1,
-          lastMessage: {
-            channel: row.channel,
-            body: row.body,
-            createdAt: row.createdAt.toISOString(),
-            direction: row.direction,
-          },
-        })
-        continue
-      }
-      existing.totalMessages += 1
-    }
+    const summaryByClientId = new Map(summaries.map((summary) => [summary.clientId, summary]))
 
     const conversations = clients.map((client) => {
-      const summary = messageSummary.get(client.id)
+      const summary = summaryByClientId.get(client.id)
       return {
         clientId: client.id,
         clientName: `${client.firstName} ${client.lastName}`,
         clientEmail: client.email,
         clientPhone: client.phone,
         lastMessage: summary?.lastMessage || null,
-        unreadCount: 0, // Could implement read tracking later
-        totalMessages: summary?.totalMessages || 0,
+        unreadCount: 0, // kept intentionally for teacher UI behavior
+        totalMessages: summary?.messageCount || 0,
       }
     })
 
@@ -199,7 +159,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 })
   }
 }
-
 
 
 

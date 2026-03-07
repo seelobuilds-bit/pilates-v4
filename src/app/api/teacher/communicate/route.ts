@@ -27,7 +27,8 @@ export async function POST(request: Request) {
         classSession: {
           teacherId
         }
-      }
+      },
+      select: { id: true },
     })
 
     if (!hasBooking) {
@@ -37,27 +38,42 @@ export async function POST(request: Request) {
     }
 
     // Get client details
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      include: {
-        studio: {
-          include: {
-            emailConfig: true,
-            smsConfig: true
-          }
-        }
-      }
-    })
+    const [client, teacher] = await Promise.all([
+      db.client.findUnique({
+        where: { id: clientId },
+        select: {
+          id: true,
+          studioId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          studio: {
+            select: {
+              id: true,
+              name: true,
+              emailConfig: true,
+              smsConfig: true,
+            },
+          },
+        },
+      }),
+      db.teacher.findUnique({
+        where: { id: teacherId },
+        select: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      }),
+    ])
 
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 })
     }
-
-    // Get teacher name
-    const teacher = await db.teacher.findUnique({
-      where: { id: teacherId },
-      include: { user: true }
-    })
 
     const teacherName = teacher?.user ? `${teacher.user.firstName} ${teacher.user.lastName}` : "Your Teacher"
 
@@ -164,7 +180,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
   }
 }
-
 
 
 
