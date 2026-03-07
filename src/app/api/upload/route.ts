@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
+import { db } from "@/lib/db"
 import {
   buildProtectedMediaUrl,
   buildPublicStorageUrl,
@@ -51,6 +52,70 @@ function assertStorageConfig(): string | null {
   return null
 }
 
+async function getUploadScope(args: {
+  userId?: string | null
+  role?: string | null
+  studioId?: string | null
+}) {
+  const { userId, role, studioId } = args
+
+  if (role === "HQ_ADMIN") {
+    return {
+      publicPrefix: userId ? `hq/${userId}/` : null,
+      privatePrefix: userId ? `hq/${userId}/` : null,
+      legacyPublicPrefixes: [] as string[],
+      canManageAll: true,
+    }
+  }
+
+  if (!studioId) {
+    return {
+      publicPrefix: null,
+      privatePrefix: null,
+      legacyPublicPrefixes: [] as string[],
+      canManageAll: false,
+    }
+  }
+
+  const studio = await db.studio.findUnique({
+    where: { id: studioId },
+    select: { subdomain: true },
+  })
+
+  return {
+    publicPrefix: `studio/${studioId}/`,
+    privatePrefix: `studio/${studioId}/`,
+    legacyPublicPrefixes: studio?.subdomain ? [`studio-logos/${studio.subdomain}/`] : [],
+    canManageAll: false,
+  }
+}
+
+function isPathAuthorized(args: {
+  path: string
+  bucket: string
+  publicPrefix: string | null
+  privatePrefix: string | null
+  legacyPublicPrefixes: string[]
+  canManageAll: boolean
+}) {
+  const { path, bucket, publicPrefix, privatePrefix, legacyPublicPrefixes, canManageAll } = args
+
+  if (canManageAll) return true
+
+  if (bucket === PRIVATE_STORAGE_BUCKET) {
+    return Boolean(privatePrefix && path.startsWith(privatePrefix))
+  }
+
+  if (bucket === PUBLIC_STORAGE_BUCKET) {
+    return Boolean(
+      (publicPrefix && path.startsWith(publicPrefix)) ||
+        legacyPublicPrefixes.some((prefix) => path.startsWith(prefix))
+    )
+  }
+
+  return false
+}
+
 export async function POST(request: NextRequest) {
   const session = await getSession()
 
@@ -99,17 +164,27 @@ export async function POST(request: NextRequest) {
     const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY as string
 
     const bucket = visibility === "private" ? PRIVATE_STORAGE_BUCKET : PUBLIC_STORAGE_BUCKET
+    const scope = await getUploadScope({
+      userId: session.user.id,
+      role: session.user.role,
+      studioId: session.user.studioId,
+    })
+
+    const basePrefix =
+      visibility === "private"
+        ? scope.privatePrefix
+        : scope.publicPrefix
 
     // Create unique object path
     const timestamp = Date.now()
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
     const relativeObjectPath = `${folder}/${timestamp}-${sanitizedName}`
-    const objectPath =
-      visibility === "private"
-        ? session.user.studioId
-          ? `studio/${session.user.studioId}/${relativeObjectPath}`
-          : `hq/${session.user.id || "shared"}/${relativeObjectPath}`
-        : relativeObjectPath
+
+    if (!basePrefix) {
+      return NextResponse.json({ error: "Upload scope unavailable" }, { status: 403 })
+    }
+
+    const objectPath = `${basePrefix}${relativeObjectPath}`
     const encodedPath = encodeStoragePath(objectPath)
 
     const uploadRes = await fetch(
@@ -183,6 +258,25 @@ export async function DELETE(request: NextRequest) {
 
     if (objectPath.includes("..")) {
       return NextResponse.json({ error: "Invalid object path" }, { status: 400 })
+    }
+
+    const scope = await getUploadScope({
+      userId: session.user.id,
+      role: session.user.role,
+      studioId: session.user.studioId,
+    })
+
+    if (
+      !isPathAuthorized({
+        path: objectPath,
+        bucket: targetBucket,
+        publicPrefix: scope.publicPrefix,
+        privatePrefix: scope.privatePrefix,
+        legacyPublicPrefixes: scope.legacyPublicPrefixes,
+        canManageAll: scope.canManageAll,
+      })
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const encodedPath = encodeStoragePath(objectPath)

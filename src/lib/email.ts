@@ -96,6 +96,9 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
   // If Resend not configured, simulate
   if (!resend) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Email provider is not configured" }
+    }
     console.log("[EMAIL SIMULATION]", { to, subject, studioId })
     return { success: true, messageId: `sim_${Date.now()}` }
   }

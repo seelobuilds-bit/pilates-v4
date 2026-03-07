@@ -82,6 +82,9 @@ export async function sendSMS(
   const messageBody = smsParams.body || smsParams.message || ""
 
   if (!twilioClient) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "SMS provider is not configured" }
+    }
     // Log instead of actually sending when not configured
     console.log("[SMS SIMULATION]", { studioId, ...smsParams })
     return { success: true, messageId: "simulated-" + Date.now() }
@@ -142,6 +145,9 @@ export async function sendEmail(
   }
 
   if (!resend) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Email provider is not configured" }
+    }
     // Log instead of actually sending when not configured
     console.log("[EMAIL SIMULATION]", { studioId, ...emailParams })
     return { success: true, messageId: "simulated-" + Date.now() }
@@ -239,6 +245,9 @@ export async function sendEmail(
 // Initiate a call (returns TwiML for browser-based calling)
 export async function initiateCall(params: MakeCallParams): Promise<{ success: boolean; callSid?: string; error?: string }> {
   if (!twilioClient) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Voice provider is not configured" }
+    }
     console.log("[CALL SIMULATION]", params)
     return { success: true, callSid: "simulated-" + Date.now() }
   }
