@@ -253,56 +253,57 @@ export async function loadClassTypeEntityReport(args: {
     return null
   }
 
-  const classSessions = await db.classSession.findMany({
-    where: {
-      studioId: args.studioId,
-      classTypeId: args.classTypeId,
-      startTime: {
-        gte: args.startDate,
-        lte: args.endDate,
-      },
-    },
-    include: {
-      teacher: {
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      },
-      location: {
-        select: { name: true },
-      },
-      _count: {
-        select: { bookings: true },
-      },
-    },
-    orderBy: { startTime: "desc" },
-  })
-
-  const bookings = await db.booking.findMany({
-    where: {
-      studioId: args.studioId,
-      classSession: {
+  const [classSessions, bookings] = await Promise.all([
+    db.classSession.findMany({
+      where: {
+        studioId: args.studioId,
         classTypeId: args.classTypeId,
         startTime: {
           gte: args.startDate,
           lte: args.endDate,
         },
       },
-    },
-    include: {
-      classSession: {
-        include: {
-          location: { select: { name: true } },
+      include: {
+        teacher: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        location: {
+          select: { name: true },
+        },
+        _count: {
+          select: { bookings: true },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+      orderBy: { startTime: "desc" },
+    }),
+    db.booking.findMany({
+      where: {
+        studioId: args.studioId,
+        classSession: {
+          classTypeId: args.classTypeId,
+          startTime: {
+            gte: args.startDate,
+            lte: args.endDate,
+          },
+        },
+      },
+      include: {
+        classSession: {
+          include: {
+            location: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ])
 
   const stats = buildClassTypeEntityStats({
     classSessions,
@@ -336,61 +337,62 @@ export async function loadLocationEntityReport(args: {
     return null
   }
 
-  const classSessions = await db.classSession.findMany({
-    where: {
-      studioId: args.studioId,
-      locationId: args.locationId,
-      startTime: {
-        gte: args.startDate,
-        lte: args.endDate,
-      },
-    },
-    include: {
-      classType: { select: { name: true } },
-      teacher: {
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      },
-      _count: {
-        select: { bookings: true },
-      },
-    },
-    orderBy: { startTime: "desc" },
-  })
-
-  const bookings = await db.booking.findMany({
-    where: {
-      studioId: args.studioId,
-      classSession: {
+  const [classSessions, bookings] = await Promise.all([
+    db.classSession.findMany({
+      where: {
+        studioId: args.studioId,
         locationId: args.locationId,
         startTime: {
           gte: args.startDate,
           lte: args.endDate,
         },
       },
-    },
-    include: {
-      client: {
-        select: {
-          firstName: true,
-          lastName: true,
-          isActive: true,
+      include: {
+        classType: { select: { name: true } },
+        teacher: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: { bookings: true },
         },
       },
-      classSession: {
-        include: {
-          classType: { select: { name: true, price: true } },
+      orderBy: { startTime: "desc" },
+    }),
+    db.booking.findMany({
+      where: {
+        studioId: args.studioId,
+        classSession: {
+          locationId: args.locationId,
+          startTime: {
+            gte: args.startDate,
+            lte: args.endDate,
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+      include: {
+        client: {
+          select: {
+            firstName: true,
+            lastName: true,
+            isActive: true,
+          },
+        },
+        classSession: {
+          include: {
+            classType: { select: { name: true, price: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ])
 
   const stats = buildLocationEntityStats({
     classSessions,
