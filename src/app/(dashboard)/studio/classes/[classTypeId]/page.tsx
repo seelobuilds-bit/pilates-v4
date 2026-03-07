@@ -364,7 +364,7 @@ export default function EditClassTypePage({
 
       {/* Tabs */}
       <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="h-auto w-full justify-start gap-1 rounded-xl border border-violet-100 bg-violet-50/60 p-1">
+        <TabsList className="h-auto w-fit max-w-full justify-start gap-1 rounded-xl border border-violet-100 bg-violet-50/60 p-1">
           <TabsTrigger value="settings" className="rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-violet-700 data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4 mr-2" />
             Settings

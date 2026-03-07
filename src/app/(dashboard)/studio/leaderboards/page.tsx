@@ -372,7 +372,7 @@ export default function StudioLeaderboardsPage() {
       {/* All Leaderboards by Category */}
       {grouped.length > 0 && (
       <Tabs defaultValue={grouped[0]?.id || "content"} className="space-y-6">
-        <TabsList className="h-auto w-full justify-start gap-1 rounded-xl border bg-white p-1">
+        <TabsList className="h-auto w-fit max-w-full justify-start gap-1 rounded-xl border bg-white p-1">
           {grouped.map(cat => (
             <TabsTrigger key={cat.id} value={cat.id} className="gap-2 rounded-lg px-4 py-2 data-[state=active]:shadow-sm">
               {getCategoryIcon(cat.icon)}
@@ -665,7 +665,6 @@ export default function StudioLeaderboardsPage() {
     </div>
   )
 }
-
 
 
 
