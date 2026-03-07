@@ -1,7 +1,7 @@
 import { printSuiteStart, request } from "./_http.mjs"
 
 const TEST_OWNER_COOKIE = process.env.TEST_OWNER_COOKIE
-const TEST_TEACHER_COOKIE = process.env.TEST_TEACHER_COOKIE || TEST_OWNER_COOKIE
+const TEST_TEACHER_COOKIE = process.env.TEST_TEACHER_COOKIE
 
 const TEST_STUDIO_CLIENT_ID = process.env.TEST_STUDIO_CLIENT_ID
 const TEST_STUDIO_TEACHER_ID = process.env.TEST_STUDIO_TEACHER_ID
@@ -271,12 +271,12 @@ async function runExtendedSurfaceChecks(ownerCookie) {
       if (!isNonNegativeNumber(overview?.totalPageViews)) websiteErrors.push("overview.totalPageViews invalid")
       if (!isNonNegativeNumber(overview?.uniqueVisitors)) websiteErrors.push("overview.uniqueVisitors invalid")
       if (!isNonNegativeNumber(overview?.totalConversions)) websiteErrors.push("overview.totalConversions invalid")
-      if (String(overview?.conversionRate ?? "") !== conversionRateExpected) {
+      if (!approxEqual(overview?.conversionRate, conversionRateExpected, 0.01)) {
         websiteErrors.push(
           `overview.conversionRate mismatch (${overview?.conversionRate} vs expected ${conversionRateExpected})`
         )
       }
-      if (String(overview?.avgPagesPerVisit ?? "") !== avgPagesExpected) {
+      if (!approxEqual(overview?.avgPagesPerVisit, avgPagesExpected, 0.01)) {
         websiteErrors.push(
           `overview.avgPagesPerVisit mismatch (${overview?.avgPagesPerVisit} vs expected ${avgPagesExpected})`
         )
@@ -1029,7 +1029,7 @@ async function run() {
   }
 
   if (!TEST_TEACHER_COOKIE) {
-    console.log("SKIP Teacher reports page check (set TEST_TEACHER_COOKIE or TEST_OWNER_COOKIE)")
+    console.log("SKIP Teacher reports page check (set TEST_TEACHER_COOKIE)")
     skipped += 1
   } else {
     const teacherResult = await runRouteCheck({

@@ -24,12 +24,12 @@ export function buildBookingSummary({
   startDate: Date
   reportEndDate: Date
 }): BookingSummary {
+  const validBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
   const statusCounts: Record<string, number> = {}
-  for (const booking of bookings) {
+  for (const booking of validBookings) {
     statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1
   }
 
-  const validBookings = bookings.filter((booking) => booking.status !== "CANCELLED")
   const uniqueBookedClients = new Set(validBookings.map((booking) => booking.clientId))
   const newClientBookings = validBookings.filter((booking) => {
     const createdAt = clientCreatedAtById.get(booking.clientId)

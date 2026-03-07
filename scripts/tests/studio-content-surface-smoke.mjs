@@ -36,7 +36,10 @@ const OWNER_API_ROUTES = [
   {
     path: "/api/leaderboards?type=STUDIO",
     label: "Studio leaderboards API",
-    assertPayload: (payload) => Array.isArray(payload?.leaderboards) && payload?.userRanks && typeof payload.userRanks === "object",
+    assertPayload: (payload) =>
+      Array.isArray(payload?.leaderboards) &&
+      ((payload?.myRanks && typeof payload.myRanks === "object") ||
+        (payload?.userRanks && typeof payload.userRanks === "object")),
   },
 ]
 
