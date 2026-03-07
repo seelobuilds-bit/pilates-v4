@@ -27,6 +27,23 @@ export const authOptions: NextAuthOptions = {
               firstName: true,
               lastName: true,
               role: true,
+              ownedStudio: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              teacher: {
+                select: {
+                  id: true,
+                  studioId: true,
+                  studio: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           })
 
@@ -45,28 +62,14 @@ export const authOptions: NextAuthOptions = {
           let teacherId: string | null = null
 
           if (user.role === "OWNER") {
-            const studio = await db.studio.findFirst({
-              where: { ownerId: user.id },
-              select: { id: true, name: true },
-            })
-            studioId = studio?.id ?? null
-            studioName = studio?.name ?? null
+            studioId = user.ownedStudio?.id ?? null
+            studioName = user.ownedStudio?.name ?? null
           }
 
           if (user.role === "TEACHER") {
-            const teacher = await db.teacher.findFirst({
-              where: { userId: user.id },
-              select: {
-                id: true,
-                studioId: true,
-                studio: {
-                  select: { name: true },
-                },
-              },
-            })
-            teacherId = teacher?.id ?? null
-            studioId = teacher?.studioId ?? null
-            studioName = teacher?.studio?.name ?? null
+            teacherId = user.teacher?.id ?? null
+            studioId = user.teacher?.studioId ?? null
+            studioName = user.teacher?.studio?.name ?? null
           }
 
           return {
