@@ -18,20 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = auth.decoded
-
-    const studio = await db.studio.findUnique({
-      where: { id: auth.studio.id },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        ownerId: true,
-      },
-    })
-
-    if (!studio || studio.subdomain !== auth.studio.subdomain) {
-      return NextResponse.json({ error: "Studio not found" }, { status: 401 })
-    }
+    const studio = auth.studio
 
     const body = await request.json().catch(() => ({}))
     const clientIdFromBody = String(body?.clientId || "").trim()
@@ -45,18 +32,33 @@ export async function POST(request: NextRequest) {
 
     if (decoded.role === "CLIENT") {
       const clientId = decoded.clientId || decoded.sub
-      const client = await db.client.findFirst({
-        where: {
-          id: clientId,
-          studioId: studio.id,
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-        },
-      })
+      const [client, teacherRecipients, owner] = await Promise.all([
+        db.client.findFirst({
+          where: {
+            id: clientId,
+            studioId: studio.id,
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        }),
+        db.teacher.findMany({
+          where: {
+            studioId: studio.id,
+            isActive: true,
+          },
+          select: {
+            userId: true,
+          },
+        }),
+        db.studio.findUnique({
+          where: { id: studio.id },
+          select: { ownerId: true },
+        }),
+      ])
 
       if (!client) {
         return NextResponse.json({ error: "Client not found" }, { status: 404 })
@@ -82,17 +84,13 @@ export async function POST(request: NextRequest) {
       })
 
       try {
-        const teachers = await db.teacher.findMany({
-          where: {
-            studioId: studio.id,
-            isActive: true,
-          },
-          select: {
-            userId: true,
-          },
-        })
-
-        const recipientUserIds = Array.from(new Set([studio.ownerId, ...teachers.map((teacher) => teacher.userId)]))
+        const recipientUserIds = Array.from(
+          new Set(
+            [owner?.ownerId, ...teacherRecipients.map((teacher) => teacher.userId)].filter(
+              (userId): userId is string => Boolean(userId)
+            )
+          )
+        )
 
         await sendMobilePushNotification({
           studioId: studio.id,

@@ -30,6 +30,16 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
         take: 200,
+        select: {
+          id: true,
+          channel: true,
+          direction: true,
+          subject: true,
+          body: true,
+          fromName: true,
+          toName: true,
+          createdAt: true,
+        },
       })
 
       return NextResponse.json({
@@ -70,15 +80,6 @@ export async function GET(request: NextRequest) {
         },
         select: {
           clientId: true,
-          client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
-          },
         },
         distinct: ["clientId"],
         take: 300,

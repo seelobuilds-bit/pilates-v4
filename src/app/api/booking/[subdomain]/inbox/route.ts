@@ -52,6 +52,16 @@ export async function GET(
       },
       orderBy: { createdAt: "asc" },
       take: 400,
+      select: {
+        id: true,
+        channel: true,
+        direction: true,
+        subject: true,
+        body: true,
+        fromName: true,
+        toName: true,
+        createdAt: true,
+      },
     })
 
     return NextResponse.json({
