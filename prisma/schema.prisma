@@ -170,6 +170,9 @@ model Studio {
   // Mobile push devices
   mobilePushDevices MobilePushDevice[]
   publicApiKeys     PublicApiKey[]
+  brandingConfig    StudioBrandingConfig?
+  typographyConfig  StudioTypographyConfig?
+  appConfig         StudioAppConfig?
 }
 
 model PublicApiKey {
@@ -198,6 +201,62 @@ model PlatformSetting {
   siteLockPasswordHash String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+}
+
+model StudioBrandingConfig {
+  id               String   @id @default(cuid())
+  primaryColor     String?
+  primaryColorStrong String?
+  accentSoft       String?
+  canvasColor      String?
+  surfaceColor     String?
+  subtleColor      String?
+  textPrimary      String?
+  textMuted        String?
+  logoUrl          String?
+  logoInverseUrl   String?
+  logoScale        Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studioId String @unique
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+}
+
+model StudioTypographyConfig {
+  id                   String   @id @default(cuid())
+  displayFontKey       String   @default("instrument-serif")
+  bodyFontKey          String   @default("dm-sans")
+  displayFontFamily    String?
+  bodyFontFamily       String?
+  displayFontSourceUrl String?
+  bodyFontSourceUrl    String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  studioId String @unique
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+}
+
+model StudioAppConfig {
+  id                    String   @id @default(cuid())
+  appDisplayName        String?
+  supportEmail          String?
+  supportUrl            String?
+  privacyPolicyUrl      String?
+  termsUrl              String?
+  appStoreSubtitle      String?
+  iconUrl               String?
+  splashImageUrl        String?
+  splashBackgroundColor String?
+  iosBundleIdentifier   String?
+  androidPackageName    String?
+  expoProjectId         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  studioId String @unique
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
 }
 
 // Email configuration per studio

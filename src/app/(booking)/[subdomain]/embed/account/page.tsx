@@ -26,6 +26,7 @@ import {
 interface StudioData {
   name: string
   primaryColor: string | null
+  bookingFontKey?: string | null
 }
 
 interface Booking {
@@ -76,9 +77,7 @@ export default function EmbedAccountPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
-  const embedFontKey = resolveEmbedFontKey(searchParams.get("font"))
-  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
-  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
+  const queryFontParam = searchParams.get("font")
 
   const [studio, setStudio] = useState<StudioData | null>(null)
   const [client, setClient] = useState<Client | null>(null)
@@ -102,6 +101,16 @@ export default function EmbedAccountPage() {
   })
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+
+  const embedFontKey = useMemo(
+    () =>
+      (queryFontParam ? resolveEmbedFontKey(queryFontParam) : null) ||
+      (studio?.bookingFontKey ? resolveEmbedFontKey(studio.bookingFontKey) : null) ||
+      "inter",
+    [queryFontParam, studio?.bookingFontKey]
+  )
+  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
+  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
 
   const primaryColor = useMemo(
     () => resolveStudioPrimaryColor(studio?.primaryColor),

@@ -344,6 +344,7 @@ interface StudioData {
   id: string
   name: string
   primaryColor: string
+  bookingFontKey?: string | null
   stripeCurrency?: string | null
   locations: Location[]
   classTypes: ClassType[]
@@ -390,6 +391,7 @@ export default function BookingPage() {
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
   const classSessionIdFromUrl = searchParams.get("classSessionId")
+  const queryFontParam = searchParams.get("font")
   const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
@@ -440,10 +442,14 @@ export default function BookingPage() {
   useEffect(() => {
     if (typeof window === "undefined") return
     const stored = window.localStorage.getItem(`embed-font:${subdomain}`)
-    const fontKey = resolveEmbedFontKey(stored)
+    const fontKey =
+      (queryFontParam ? resolveEmbedFontKey(queryFontParam) : null) ||
+      (studioData?.bookingFontKey ? resolveEmbedFontKey(studioData.bookingFontKey) : null) ||
+      (stored ? resolveEmbedFontKey(stored) : null) ||
+      "inter"
     setBookingFontFamily(resolveEmbedFontFamily(fontKey))
     setBookingFontHref(resolveEmbedFontGoogleHref(fontKey))
-  }, [subdomain])
+  }, [queryFontParam, studioData?.bookingFontKey, subdomain])
 
   useEffect(() => {
     if (!bookingFontHref || typeof document === "undefined") return

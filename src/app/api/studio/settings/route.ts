@@ -3,6 +3,8 @@ import { StudioCountry } from "@prisma/client"
 import { db } from "@/lib/db"
 import { requireOwnerStudioAccess } from "@/lib/owner-auth"
 import { ensureCountryPolicy, getEffectiveTimeOffPolicy } from "@/modules/employees/time-off/policy"
+import { buildStudioBrandingFoundation } from "@/lib/studio-branding-foundation"
+import { isEmbedFontKey } from "@/lib/embed-fonts"
 
 const ALLOWED_CURRENCIES = ["usd", "eur", "gbp", "cad", "aud", "nzd"]
 const ALLOWED_COUNTRIES = Object.values(StudioCountry)
@@ -55,6 +57,47 @@ export async function GET() {
             metadata: true,
           },
         },
+        typographyConfig: {
+          select: {
+            displayFontKey: true,
+            bodyFontKey: true,
+            displayFontFamily: true,
+            bodyFontFamily: true,
+            displayFontSourceUrl: true,
+            bodyFontSourceUrl: true,
+          },
+        },
+        brandingConfig: {
+          select: {
+            primaryColor: true,
+            primaryColorStrong: true,
+            accentSoft: true,
+            canvasColor: true,
+            surfaceColor: true,
+            subtleColor: true,
+            textPrimary: true,
+            textMuted: true,
+            logoUrl: true,
+            logoInverseUrl: true,
+            logoScale: true,
+          },
+        },
+        appConfig: {
+          select: {
+            appDisplayName: true,
+            supportEmail: true,
+            supportUrl: true,
+            privacyPolicyUrl: true,
+            termsUrl: true,
+            appStoreSubtitle: true,
+            iconUrl: true,
+            splashImageUrl: true,
+            splashBackgroundColor: true,
+            iosBundleIdentifier: true,
+            androidPackageName: true,
+            expoProjectId: true,
+          },
+        },
       }
     })
 
@@ -63,9 +106,22 @@ export async function GET() {
     }
 
     const policy = await getEffectiveTimeOffPolicy(auth.studioId)
+    const foundation = buildStudioBrandingFoundation({
+      id: studio.id,
+      name: studio.name,
+      subdomain: studio.subdomain,
+      primaryColor: studio.primaryColor,
+      logoUrl: studio.logoUrl,
+      logoScale: studio.logoScale,
+      stripeCurrency: studio.stripeCurrency,
+      typographyConfig: studio.typographyConfig,
+      brandingConfig: studio.brandingConfig,
+      appConfig: studio.appConfig,
+    })
 
     return NextResponse.json({
       ...studio,
+      brandingFoundation: foundation,
       timeOffPolicy: {
         annualLeaveWeeks: policy.annualLeaveWeeks,
         paidSickDaysPerYear: policy.paidSickDaysPerYear,
@@ -107,6 +163,7 @@ export async function PATCH(request: NextRequest) {
       timeOffEnabled,
       country,
       timeOffPolicy,
+      typography,
     } = body
 
     const normalizedCurrency = currency ? String(currency).toLowerCase() : undefined
@@ -179,6 +236,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Logo size must be between 50 and 200" }, { status: 400 })
     }
 
+    const nextDisplayFontKey =
+      typography?.displayFontKey === undefined ? undefined : String(typography.displayFontKey || "").trim().toLowerCase()
+    const nextBodyFontKey =
+      typography?.bodyFontKey === undefined ? undefined : String(typography.bodyFontKey || "").trim().toLowerCase()
+
+    if (nextDisplayFontKey !== undefined && !isEmbedFontKey(nextDisplayFontKey)) {
+      return NextResponse.json({ error: "Invalid display font key" }, { status: 400 })
+    }
+
+    if (nextBodyFontKey !== undefined && !isEmbedFontKey(nextBodyFontKey)) {
+      return NextResponse.json({ error: "Invalid body font key" }, { status: 400 })
+    }
+
     const studio = await db.studio.update({
       where: { id: auth.studioId },
       data: {
@@ -216,6 +286,47 @@ export async function PATCH(request: NextRequest) {
             metadata: true,
           },
         },
+        typographyConfig: {
+          select: {
+            displayFontKey: true,
+            bodyFontKey: true,
+            displayFontFamily: true,
+            bodyFontFamily: true,
+            displayFontSourceUrl: true,
+            bodyFontSourceUrl: true,
+          },
+        },
+        brandingConfig: {
+          select: {
+            primaryColor: true,
+            primaryColorStrong: true,
+            accentSoft: true,
+            canvasColor: true,
+            surfaceColor: true,
+            subtleColor: true,
+            textPrimary: true,
+            textMuted: true,
+            logoUrl: true,
+            logoInverseUrl: true,
+            logoScale: true,
+          },
+        },
+        appConfig: {
+          select: {
+            appDisplayName: true,
+            supportEmail: true,
+            supportUrl: true,
+            privacyPolicyUrl: true,
+            termsUrl: true,
+            appStoreSubtitle: true,
+            iconUrl: true,
+            splashImageUrl: true,
+            splashBackgroundColor: true,
+            iosBundleIdentifier: true,
+            androidPackageName: true,
+            expoProjectId: true,
+          },
+        },
       }
     })
 
@@ -246,10 +357,46 @@ export async function PATCH(request: NextRequest) {
       })
     }
 
+    if (nextDisplayFontKey !== undefined || nextBodyFontKey !== undefined) {
+      await db.studioTypographyConfig.upsert({
+        where: { studioId: auth.studioId },
+        create: {
+          studioId: auth.studioId,
+          ...(nextDisplayFontKey !== undefined && { displayFontKey: nextDisplayFontKey }),
+          ...(nextBodyFontKey !== undefined && { bodyFontKey: nextBodyFontKey }),
+        },
+        update: {
+          ...(nextDisplayFontKey !== undefined && { displayFontKey: nextDisplayFontKey }),
+          ...(nextBodyFontKey !== undefined && { bodyFontKey: nextBodyFontKey }),
+        },
+      })
+    }
+
     const effectivePolicy = await getEffectiveTimeOffPolicy(auth.studioId)
+    const mergedTypographyConfig = {
+      displayFontKey: nextDisplayFontKey ?? studio.typographyConfig?.displayFontKey ?? null,
+      bodyFontKey: nextBodyFontKey ?? studio.typographyConfig?.bodyFontKey ?? null,
+      displayFontFamily: studio.typographyConfig?.displayFontFamily ?? null,
+      bodyFontFamily: studio.typographyConfig?.bodyFontFamily ?? null,
+      displayFontSourceUrl: studio.typographyConfig?.displayFontSourceUrl ?? null,
+      bodyFontSourceUrl: studio.typographyConfig?.bodyFontSourceUrl ?? null,
+    }
+    const foundation = buildStudioBrandingFoundation({
+      id: studio.id,
+      name: studio.name,
+      subdomain: studio.subdomain,
+      primaryColor: studio.primaryColor,
+      logoUrl: studio.logoUrl,
+      logoScale: studio.logoScale,
+      stripeCurrency: studio.stripeCurrency,
+      typographyConfig: mergedTypographyConfig,
+      brandingConfig: studio.brandingConfig,
+      appConfig: studio.appConfig,
+    })
 
     return NextResponse.json({
       ...studio,
+      brandingFoundation: foundation,
       timeOffPolicy: {
         annualLeaveWeeks: effectivePolicy.annualLeaveWeeks,
         paidSickDaysPerYear: effectivePolicy.paidSickDaysPerYear,

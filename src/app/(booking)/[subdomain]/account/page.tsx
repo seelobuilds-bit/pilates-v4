@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import Image from "next/image"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from "@stripe/react-stripe-js"
@@ -743,6 +743,7 @@ interface Studio {
   id: string
   name: string
   primaryColor: string
+  bookingFontKey?: string | null
   stripeCurrency?: string
   hasStore?: boolean
   hasVault?: boolean
@@ -763,7 +764,9 @@ interface SubscriptionPlan {
 export default function AccountPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const subdomain = params.subdomain as string
+  const queryFontParam = searchParams.get("font")
 
   const [client, setClient] = useState<ClientInfo | null>(null)
   const [studio, setStudio] = useState<Studio | null>(null)
@@ -821,10 +824,14 @@ export default function AccountPage() {
   useEffect(() => {
     if (typeof window === "undefined") return
     const stored = window.localStorage.getItem(`embed-font:${subdomain}`)
-    const fontKey = resolveEmbedFontKey(stored)
+    const fontKey =
+      (queryFontParam ? resolveEmbedFontKey(queryFontParam) : null) ||
+      (studio?.bookingFontKey ? resolveEmbedFontKey(studio.bookingFontKey) : null) ||
+      (stored ? resolveEmbedFontKey(stored) : null) ||
+      "inter"
     setBookingFontFamily(resolveEmbedFontFamily(fontKey))
     setBookingFontHref(resolveEmbedFontGoogleHref(fontKey))
-  }, [subdomain])
+  }, [queryFontParam, studio?.bookingFontKey, subdomain])
 
   useEffect(() => {
     if (!bookingFontHref || typeof document === "undefined") return

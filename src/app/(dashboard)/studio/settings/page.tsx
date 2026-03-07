@@ -62,6 +62,10 @@ type StudioSettings = {
   employeesEnabled: boolean
   timeOffEnabled: boolean
   country: CountryCode
+  typography: {
+    displayFontKey: EmbedFontKey
+    bodyFontKey: EmbedFontKey
+  }
   timeOffPolicy: {
     annualLeaveWeeks: number
     paidSickDaysPerYear: number
@@ -148,13 +152,15 @@ export default function SettingsPage() {
       const res = await fetch("/api/studio/settings")
       if (res.ok) {
         const data = await res.json()
+        const serverBodyFont = data.brandingFoundation?.typography?.bodyFontKey
         const storedFont =
           typeof window !== "undefined" ? window.localStorage.getItem(`embed-font:${data.subdomain}`) : null
-        if (isEmbedFontKey(storedFont)) {
-          setEmbedFont(storedFont)
-        } else {
-          setEmbedFont("inter")
-        }
+        const resolvedFont = isEmbedFontKey(serverBodyFont)
+          ? serverBodyFont
+          : isEmbedFontKey(storedFont)
+            ? storedFont
+            : "inter"
+        setEmbedFont(resolvedFont)
         setStudio({
           name: data.name,
           subdomain: data.subdomain,
@@ -169,6 +175,12 @@ export default function SettingsPage() {
           employeesEnabled: data.employeesEnabled === true,
           timeOffEnabled: data.timeOffEnabled !== false,
           country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
+          typography: {
+            displayFontKey: isEmbedFontKey(data.brandingFoundation?.typography?.displayFontKey)
+              ? data.brandingFoundation.typography.displayFontKey
+              : "instrument-serif",
+            bodyFontKey: resolvedFont,
+          },
           timeOffPolicy: {
             annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? 4),
             paidSickDaysPerYear: Number(data.timeOffPolicy?.paidSickDaysPerYear ?? 5),
@@ -306,6 +318,7 @@ export default function SettingsPage() {
           employeesEnabled: studio.employeesEnabled,
           timeOffEnabled: studio.timeOffEnabled,
           country: studio.country,
+          typography: studio.typography,
           timeOffPolicy: studio.timeOffPolicy,
         }),
       })
@@ -331,6 +344,14 @@ export default function SettingsPage() {
         employeesEnabled: data.employeesEnabled === true,
         timeOffEnabled: data.timeOffEnabled !== false,
         country: COUNTRY_OPTIONS.includes(data.country) ? data.country : "IE",
+        typography: {
+          displayFontKey: isEmbedFontKey(data.brandingFoundation?.typography?.displayFontKey)
+            ? data.brandingFoundation.typography.displayFontKey
+            : prev.typography.displayFontKey,
+          bodyFontKey: isEmbedFontKey(data.brandingFoundation?.typography?.bodyFontKey)
+            ? data.brandingFoundation.typography.bodyFontKey
+            : prev.typography.bodyFontKey,
+        },
         timeOffPolicy: {
           annualLeaveWeeks: Number(data.timeOffPolicy?.annualLeaveWeeks ?? prev.timeOffPolicy.annualLeaveWeeks),
           paidSickDaysPerYear: Number(data.timeOffPolicy?.paidSickDaysPerYear ?? prev.timeOffPolicy.paidSickDaysPerYear),
@@ -964,6 +985,13 @@ export default function SettingsPage() {
                 <Select value={embedFont} onValueChange={(value) => {
                   if (isEmbedFontKey(value)) {
                     setEmbedFont(value)
+                    setStudio((prev) => prev ? {
+                      ...prev,
+                      typography: {
+                        ...prev.typography,
+                        bodyFontKey: value,
+                      },
+                    } : prev)
                   }
                 }}>
                   <SelectTrigger id="embed-font">

@@ -345,6 +345,7 @@ interface StudioData {
   id: string
   name: string
   primaryColor: string
+  bookingFontKey?: string | null
   stripeCurrency?: string | null
   locations: Location[]
   classTypes: ClassType[]
@@ -393,9 +394,7 @@ export default function BookingPage() {
   const paymentCanceled = searchParams.get("canceled") === "true"
   const sessionId = searchParams.get("session_id")
   const classSessionIdFromUrl = searchParams.get("classSessionId")
-  const embedFontKey = resolveEmbedFontKey(searchParams.get("font"))
-  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
-  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
+  const queryFontParam = searchParams.get("font")
   const trackingCodeFromUrl = normalizeTrackingCode(searchParams.get("sf_track"))
 
   const [step, setStep] = useState<Step>("location")
@@ -404,6 +403,16 @@ export default function BookingPage() {
   const [slotsLoading, setSlotsLoading] = useState(false)
   const [bookingComplete, setBookingComplete] = useState(false)
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null)
+
+  const embedFontKey = useMemo(
+    () =>
+      (queryFontParam ? resolveEmbedFontKey(queryFontParam) : null) ||
+      (studioData?.bookingFontKey ? resolveEmbedFontKey(studioData.bookingFontKey) : null) ||
+      "inter",
+    [queryFontParam, studioData?.bookingFontKey]
+  )
+  const embedFontFamily = resolveEmbedFontFamily(embedFontKey)
+  const embedFontHref = resolveEmbedFontGoogleHref(embedFontKey)
 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedClass, setSelectedClass] = useState<ClassType | null>(null)
